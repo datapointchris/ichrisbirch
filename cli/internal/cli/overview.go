@@ -119,7 +119,7 @@ type projectItemSection struct {
 }
 
 // issueSection is the development queue at a glance. Ready is the head of what
-// an agent takes next; decisions are apart because they wait on a person.
+// an agent takes next. Decisions are listed apart, because they wait on a person.
 type issueSection struct {
 	Ready           []api.Issue `json:"ready"`
 	ReadyTotal      int         `json:"ready_total"`
@@ -188,9 +188,9 @@ func newOverviewCommand() *cobra.Command {
 		Short: "Show everything outstanding right now across the apps",
 		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
 			"articles you are reading and what is next in each, the next and blocked\n" +
-			"project items with the projects they belong to, the decisions and ready\n" +
-			"development issues, and approaching countdowns and events. Composed from\n" +
-			"those endpoints in one command so a dashboard needs a single call.",
+			"project items with the projects they belong to, the issues ready, claimed\n" +
+			"and awaiting a decision, and approaching countdowns and events. Composed\n" +
+			"from those endpoints in one command so a dashboard needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -270,8 +270,8 @@ func overviewFetches() []overviewFetch {
 			d.BlockedItems = blocked
 			return err
 		}},
-		// One read of every unclosed issue answers all four parts of the section,
-		// and its order is already the ready queue's.
+		// One read of every unclosed issue fills the whole section, already in
+		// the ready queue's order.
 		{sectionIssues, "issues", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			issues, err := c.ListIssues(ctx, api.IssueFilter{}, "", "", api.DayZone(LocalZoneName()), nil)
 			d.Issues = issues
@@ -410,7 +410,8 @@ type issueQueue struct {
 }
 
 // sortIssueQueue keeps the API's order, which for unclosed issues is the ready
-// queue's. In progress is a live claim only: an expired one is ready again.
+// queue's. In progress counts only a live claim, because an expired one is
+// ready again.
 func sortIssueQueue(issues []api.Issue) issueQueue {
 	queue := issueQueue{ready: []api.Issue{}, inProgress: []api.Issue{}, decisions: []api.Issue{}}
 	for _, issue := range issues {
@@ -534,9 +535,9 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 // An item can belong to several, so it competes in the round of the
 // highest-priority one rather than once per membership — otherwise
 // multi-project items get a slot per project. Only an active project draws
-// work: a shelved, completed or dropped one is out of the queue, and so is an
-// item belonging to nothing else. A kind limits the candidates to projects of
-// that kind; an empty kind considers every project.
+// work, so an item with no active project is out of the queue. A kind limits
+// the candidates to projects of that kind. An empty kind considers every
+// project.
 func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
 	var primary api.Project
 	found := false

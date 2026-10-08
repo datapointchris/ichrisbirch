@@ -1,6 +1,6 @@
 // A multi-select drawn as chips, for a form choosing from a closed vocabulary.
-// A chip is pressed or raised, which is the neumorphic vocabulary for on and
-// off, so the state reads without a checkbox beside it.
+// A pressed chip is on and a raised one is off, so the state reads without a
+// checkbox beside it.
 
 /// The chip row and its three states: off, on, and a value the vocabulary does
 /// not define, marked so it reads as the one chip to click off.

@@ -61,8 +61,8 @@ func handleAPIError(err error) error {
 	return err
 }
 
-// refusal is a 409 the API explained: it understood the request and declined
-// it, so its sentence is the whole error and the status prefix is transport.
+// refusal is a 409 the API explained. Its sentence is the whole error, printed
+// without the "API request failed (409 Conflict):" prefix APIError adds.
 type refusal struct{ *api.APIError }
 
 func (r refusal) Error() string { return r.Message }
@@ -73,9 +73,8 @@ func (r refusal) Unwrap() error { return r.APIError }
 // API validates, so its 422 is a usage error.
 //
 // The API refuses an unknown vocabulary value with a 422 naming the values that
-// would have worked, which is a usage mistake wherever it arrives. Left as a
-// generic failure it exits 1, and a caller that retries on 1 and fixes its
-// arguments on 2 retries a typo forever.
+// would have worked. Left as a generic failure it exits 1, and a caller that
+// retries on 1 and fixes its arguments on 2 retries a typo forever.
 func handleArgumentAPIError(err error) error {
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity && apiErr.Message != "" {

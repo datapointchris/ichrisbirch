@@ -3,10 +3,10 @@ import { test, expect } from '@playwright/test'
 const SUCCESS = '.flash-messages__message--success'
 const ERROR = '.flash-messages__message--error'
 
-/** Helper: open the file issue modal, fill in the one required field, and submit */
+/** Title is the form's one required field, so it is the only one filled. */
 async function fileIssue(page: import('@playwright/test').Page, title: string) {
   await page.getByTestId('issue-add-button').click()
-  // The page also mounts the cancel modal, so the shared modal id matches twice.
+  // The page mounts the cancel modal too, so `add-edit-modal` matches twice.
   await expect(page.getByTestId('issue-title-input')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('issue-title-input').fill(title)
   await page.getByTestId('issue-submit-button').click()

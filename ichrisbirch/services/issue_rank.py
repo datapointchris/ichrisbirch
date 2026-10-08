@@ -80,7 +80,12 @@ def _rank_beside(session: Session, issue: models.Issue, before: models.Issue | N
 
 
 def move_issue(session: Session, issue: models.Issue, *, before: models.Issue | None = None, after: models.Issue | None = None) -> None:
-    """Rank `issue` immediately before `before`, or immediately after `after`."""
+    """Rank `issue` immediately before `before`, or immediately after `after`.
+
+    The neighbors are read across every priority. Given an anchor of another
+    effective priority, the issue lands wherever that priority's ranks fall
+    among its own, so the `rank` endpoint refuses one.
+    """
     rank = _rank_beside(session, issue, before, after)
     if rank is None:
         renumber_ranks(session)

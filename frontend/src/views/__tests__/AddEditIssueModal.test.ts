@@ -147,8 +147,8 @@ describe('AddEditIssueModal write contract', () => {
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('not an issue number'), 'error')
   })
 
-  // A group's labels exclude each other, so choosing one sets its sibling down
-  // rather than building a pair the API refuses.
+  // `area-api` and `area-cli` share a group, so clicking the second drops the
+  // first. The API answers 422 to a pair from one group.
   it('keeps one label per group', async () => {
     const wrapper = await mountModal()
     await wrapper.find('[data-testid="issue-title-input"]').setValue('Rank renumber')
@@ -181,8 +181,9 @@ describe('AddEditIssueModal write contract', () => {
     expect(wrapper.emitted('update')![0]![0]).toEqual(existing)
   })
 
-  // A finished initiative takes no new issues, but an issue already in one
-  // keeps it as a choice, or saving would silently move it out.
+  // A finished initiative takes no new issues. Left out of the options, the one
+  // an edited issue is in would render as a blank select while the form still
+  // holds it.
   it('offers a finished initiative only to the issue already in it', async () => {
     const editing = await mountModal(existing)
     const choices = (wrapper: Wrapper) => {

@@ -43,15 +43,16 @@ func newIssuesCommand() *cobra.Command {
 			"its repo, labels and dependencies place it, and an optional initiative groups\n" +
 			"the issues that ship together. Personal projects stay in `icb projects`.\n" +
 			"\n" +
-			"An issue is ready when it is open, everything it depends on is closed, its\n" +
-			"deferral day has come, and none of its children is still open. `next` lists\n" +
-			"the ready issues in the order to take them: priority first, then rank. A\n" +
-			"blocker takes the most urgent priority of what it blocks, and an issue with no\n" +
-			"priority of its own takes its parent's or its initiative's.\n" +
+			"An issue is ready when it is open or its claim has run out, everything it\n" +
+			"depends on is closed, its deferral day has come, and none of its children is\n" +
+			"still open. `next` lists the ready issues in the order to take them: priority\n" +
+			"first, then rank. A blocker takes the most urgent priority of what it blocks,\n" +
+			"and an issue with no priority of its own takes its parent's or its\n" +
+			"initiative's.\n" +
 			"\n" +
 			"`claim` takes the head of that queue, or a named issue, until the claim runs\n" +
-			"out. Decisions wait on a person, so the queue leaves them out:\n" +
-			"icb issues list --type decision.",
+			"out. Decisions wait on a person, so the queue leaves them out.\n" +
+			"`icb issues list --type decision` lists them.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd, issueHints...)
@@ -361,8 +362,7 @@ func newIssuesNextCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			// The whole queue, capped here: an unset --limit on a read the API
-			// bounds sends no parameter, and this one defaults to the head.
+			// Uncapped, so an empty queue is told apart from --limit 0 below.
 			ready, err := client.ListReadyIssues(cmd.Context(), filter, issueZone(), nil)
 			if err != nil {
 				return handleArgumentAPIError(err)
@@ -371,7 +371,6 @@ func newIssuesNextCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), shown)
 			}
-			// Read off the uncapped queue: --limit 0 is a choice, not an empty queue.
 			if len(ready) == 0 {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "No issue is ready.")
 				return nil

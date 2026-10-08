@@ -63,7 +63,7 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 		{
 			Key:      "priority",
 			Label:    "Priority",
-			Hint:     "None sorts after every level, and takes its parent's or initiative's.",
+			Hint:     "None takes the parent's or initiative's. With neither, it sorts last.",
 			Default:  api.IssuePriorityNames[0],
 			Choices:  api.IssuePriorityNames,
 			Validate: priorityAnswer,
@@ -139,12 +139,12 @@ func newIssuesCreateCommand() *cobra.Command {
 		Use:   "create [flags]",
 		Short: "File an issue",
 		Long: "Pass every field as a flag to file in one shot. Leave --title out at a\n" +
-			"terminal and the rest are asked for one at a time; Tab lists the choices for\n" +
+			"terminal and the rest are asked for one at a time. Tab lists the choices for\n" +
 			"a field that has them. Label repeats until an empty answer, and Description\n" +
 			"and Acceptance take lines until a blank one. Ctrl-C abandons the issue.\n" +
 			"\n" +
-			"--status triage files it for someone to accept before an agent may take it,\n" +
-			"which is where anything a hook or a script files belongs.\n" +
+			"--status triage holds it for a person to accept before an agent may take it.\n" +
+			"Anything a hook or a script files belongs there.\n" +
 			"\n" +
 			"--parent, --discovered-from, --depends-on and --deferred-until are never\n" +
 			"asked for. A new issue that depends on its own parent is refused, since\n" +
@@ -237,7 +237,7 @@ func newIssuesCreateCommand() *cobra.Command {
 	f.String("description", "", "What an agent could not find in the repo on its own")
 	f.String("acceptance", "", "How to verify it is done")
 	f.StringVar(&issueStatus, "status", "", "Where it starts: "+strings.Join(createStatuses, " or ")+" (default open)")
-	f.StringVar(&parent, "parent", "", "Issue this is part of; the parent waits on it")
+	f.StringVar(&parent, "parent", "", "Parent issue, which waits on this one")
 	f.StringVar(&discoveredFrom, "discovered-from", "", "Issue whose work turned this up")
 	f.StringArrayVar(&dependsOn, "depends-on", nil, "Issue this waits on (repeatable)")
 	f.StringVar(&deferredUntil, "deferred-until", "", "Day before which it is not ready, as YYYY-MM-DD")
@@ -248,7 +248,7 @@ func newIssuesCreateCommand() *cobra.Command {
 // --- Edit ---
 
 // issueClearableFlags maps each edit flag an empty value clears to the field it
-// empties. --label is apart because labels empty to a list, not a null.
+// empties. --label is left out, because labels empty to [] rather than null.
 var issueClearableFlags = map[string]string{
 	"description": "description", "acceptance": "acceptance", "repo": "repo",
 	"initiative": "initiative", "parent": "parent", "discovered-from": "discovered_from",
@@ -278,7 +278,8 @@ func newIssuesEditCommand() *cobra.Command {
 			"An empty value empties the field: --repo \"\" takes it off every repo and\n" +
 			"--deferred-until \"\" makes it ready today. --label replaces the whole set,\n" +
 			"and --label \"\" removes every label. --title, --type and --priority cannot\n" +
-			"be emptied; --priority none is how an issue gives up its own.",
+			"be emptied. --priority none drops the issue's own, so it takes its parent's\n" +
+			"or its initiative's.",
 		Example: "  icb issues edit 412 --priority urgent\n" +
 			"  icb issues edit 412 --acceptance \"$(cat acceptance.md)\"\n" +
 			"  icb issues edit 412 --label area-api --label needs-design\n" +
@@ -400,8 +401,9 @@ func newIssuesDeleteCommand() *cobra.Command {
 		Use:   "delete <issue>",
 		Short: "Delete an issue, its comments and its edges",
 		Long: "For an issue filed by mistake. Work that will not be done is canceled\n" +
-			"instead, which keeps the reason. Its children and the issues it was found\n" +
-			"in or duplicates of stay, without the link. Prompts unless --yes.",
+			"instead, which keeps the reason. Its children, the issues found during its\n" +
+			"work and the issues canceled as its duplicates stay, with the link to it\n" +
+			"removed. Prompts unless --yes.",
 		Example: "  icb issues delete 412 --yes",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -507,7 +509,7 @@ func newIssuesCancelCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancel <issue> --reason <why> | --duplicate-of <issue>",
 		Short: "Close an issue that will not be done",
-		Long: "Canceling needs a reason, or the issue this one duplicates, or both: a bare\n" +
+		Long: "Canceling needs a reason, the issue this one duplicates, or both. A bare\n" +
 			"cancel invites the same issue back next month.",
 		Example: "  icb issues cancel 412 --reason \"the router rewrite removed the path\"\n" +
 			"  icb issues cancel 413 --duplicate-of 412",
@@ -564,12 +566,12 @@ func newIssuesClaimCommand() *cobra.Command {
 		Long: "With no issue, takes the head of the ready queue in one request, so two\n" +
 			"agents asking at once never hold the same one. `next` under the same flags\n" +
 			"shows what it would take. --repo, --type, --label and --initiative narrow\n" +
-			"that queue, and decisions are left out unless --type decision asks.\n" +
+			"that queue. Decisions are left out unless --type decision asks for them.\n" +
 			"\n" +
-			"Naming an issue takes that one, on the conditions the queue applies. It is\n" +
-			"refused while someone else holds it, while it is in triage or closed, while\n" +
-			"it waits on an open dependency or an open child, and before its deferral day.\n" +
-			"The refusal names which. Claiming one you already hold extends the claim.\n" +
+			"Naming an issue takes that one, a decision included. It is refused while\n" +
+			"someone else holds it, while it is in triage or closed, while it waits on an\n" +
+			"open dependency or an open child, and before its deferral day. The refusal\n" +
+			"names which. Claiming one you already hold extends the claim.\n" +
 			"\n" +
 			"A claim lasts --minutes, or the API's default without it. One that runs out\n" +
 			"returns the issue to the queue, and `release` returns it sooner. --claimant\n" +
@@ -686,10 +688,10 @@ func newIssuesReorderCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "reorder <issue> --before <issue> | --after <issue>",
 		Short: "Move an issue directly before or after another in the queue",
-		Long: "Rank orders issues of one priority, and priority comes first. So the issue\n" +
-			"named by --before or --after must sort at the same effective priority, and\n" +
-			"one of another priority is refused. `edit --priority` is what moves an issue\n" +
-			"past another priority's.",
+		Long: "The queue sorts by priority first. Rank only orders issues of the same\n" +
+			"effective priority, so the issue named by --before or --after must share it.\n" +
+			"One of another priority is refused. `edit --priority` moves an issue across\n" +
+			"priorities.",
 		Example: "  icb issues reorder 412 --before 398\n  icb issues reorder 412 --after 420",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -737,9 +739,10 @@ func newIssuesAddDependencyCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-dependency <issue> --depends-on <other-issue>",
 		Short: "Record that an issue waits on another",
-		Long: "An issue is not ready while anything it depends on is unclosed, and the issue\n" +
-			"it waits on takes its priority when that is more urgent. An edge that would\n" +
-			"leave an issue waiting on itself, through dependencies or a parent, is refused.",
+		Long: "An issue is not ready while anything it depends on is unclosed. The issue it\n" +
+			"waits on takes its priority when that is more urgent. An edge that would\n" +
+			"leave an issue waiting on itself, through dependencies or a parent, is\n" +
+			"refused, and the refusal prints the path.",
 		Example: "  icb issues add-dependency 412 --depends-on 411",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

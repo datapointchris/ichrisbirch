@@ -160,7 +160,7 @@ class TestProjectKind:
 
 
 class TestProjectStatus:
-    """`status` — active / someday / completed / dropped, from the project_statuses lookup table.
+    """`status`, from the `project_statuses` lookup table.
 
     A project is a finite effort with a definition of done, so completion IS the
     hide signal and there is no separate archive flag the way items have one. Two
@@ -387,7 +387,7 @@ class TestProjectNameOwnership:
         assert reopened.status_code == status.HTTP_409_CONFLICT, show_status_and_response(reopened)
 
     def test_resuming_a_someday_project_into_a_taken_name_is_refused(self, client_with_projects):
-        """A parked project holds no name, so a new effort can take it while it waits."""
+        """A `someday` project holds no name, so a new project can take it while the first waits."""
         parked = self.create(client_with_projects, name='clisteno').json()
         client_with_projects.patch(f'{PROJECTS_ENDPOINT}{parked["id"]}/', json={'status': 'someday'})
         assert self.create(client_with_projects, name='clisteno').status_code == status.HTTP_201_CREATED

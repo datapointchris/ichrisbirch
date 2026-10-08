@@ -27,11 +27,11 @@ func newIssuesTreeCommand() *cobra.Command {
 		Long: "Name an issue to draw the tree it belongs to, or nothing to draw every tree.\n" +
 			"An issue with no dependency either way is in no tree.\n" +
 			"\n" +
-			"A child is something its parent waits on. --invert reads the edges the other\n" +
-			"way, so the children are the work finishing the root releases.\n" +
+			"A row is something the row it hangs from waits on. --invert reads the edges\n" +
+			"the other way, so a row waits on the row it hangs from.\n" +
 			"\n" +
-			"--status and --repo choose which trees are drawn, never which rows: a tree is\n" +
-			"kept when any of its issues matches, then drawn whole, because dropping a row\n" +
+			"--status and --repo choose which trees are drawn, never which rows. A tree is\n" +
+			"kept when any of its issues matches, and then drawn whole. Dropping a row\n" +
 			"would orphan everything below it. Trees with nothing unclosed are hidden by\n" +
 			"default.\n" +
 			"\n" +

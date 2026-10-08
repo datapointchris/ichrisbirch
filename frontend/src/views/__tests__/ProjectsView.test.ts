@@ -157,8 +157,8 @@ describe('ProjectsView', () => {
     expect(wrapper.find('[data-testid="project-list-empty"]').text()).toBe('No projects yet')
   })
 
-  // Shelved and closed projects are hidden from the default list, so an empty
-  // one says which status came back empty rather than that none exist.
+  // An empty `someday` list says nothing about the active projects, so
+  // `No projects yet` there would be false.
   it('names the status filter in an empty list', () => {
     const wrapper = createWrapper({ statusFilter: 'someday' })
     expect(wrapper.find('[data-testid="project-list-empty"]').text()).toBe('No someday projects')

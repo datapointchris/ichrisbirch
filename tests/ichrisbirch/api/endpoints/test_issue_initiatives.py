@@ -45,8 +45,8 @@ def test_an_initiative_answers_to_its_name(client):
     assert ok(client.get(f'{INITIATIVES}Ship the issue tracker/'))['priority'] == 2
 
 
-# A client escapes the slash, and the path is decoded before routing, so the
-# name arrives split across segments.
+# The path is decoded before routing, so an escaped `%2F` arrives as a slash,
+# and a route taking one segment answers 404.
 def test_a_name_holding_a_slash_addresses_its_initiative(client):
     ok(client.post(INITIATIVES, json={'name': 'library/consumer pair'}), status.HTTP_201_CREATED)
     path = f'{INITIATIVES}library%2Fconsumer%20pair/'

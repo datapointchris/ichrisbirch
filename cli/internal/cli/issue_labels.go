@@ -18,9 +18,9 @@ func newIssueLabelsCommand() *cobra.Command {
 		Use:   "labels",
 		Short: "Manage the labels --label accepts",
 		Long: "An issue carries only labels made here, so a typo is refused rather than\n" +
-			"becoming a label nobody filters on. Labels sharing a group are exclusive: an\n" +
-			"issue carries at most one from each, the way area-api and area-cli are both\n" +
-			"areas.",
+			"becoming a label nobody filters on. An issue carries at most one label from\n" +
+			"each group, so area-api and area-cli, both in the area group, never meet on\n" +
+			"one issue.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd, labelHints...)

@@ -18,8 +18,8 @@ import (
 // projectHints is the command that finds a valid project name. The items
 // subcommands take a project name too, so their own hints name it as well.
 //
-// The two states are named rather than called "closed", because a reader
-// following a word --status does not accept gets a second refusal.
+// Each hidden status is named rather than summed up as "closed", because a
+// reader typing a word --status does not accept gets a second refusal.
 var projectHints = []string{"Shelved, completed and dropped projects are hidden: icb projects list --status all"}
 
 func newProjectsCommand() *cobra.Command {
@@ -58,8 +58,8 @@ func newProjectsListCommand() *cobra.Command {
 		Short: "List the active projects",
 		Long: "The active projects, with the repos their items touch. --repo narrows to the\n" +
 			"projects holding work on one repo — the efforts that span it, however they are\n" +
-			"named. Shelved, completed and dropped projects are hidden until you ask for\n" +
-			"them by --status; that is the whole point of setting one aside.\n" +
+			"named. Shelved, completed and dropped projects are hidden until --status\n" +
+			"asks for them.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first projects in\n" +
 			"position order rather than filtering a capped slice.",
@@ -162,10 +162,11 @@ func newProjectsShelveCommand() *cobra.Command {
 		Use:   "shelve <project>",
 		Short: "Set a project aside for someday, which hides it",
 		Long: "For a project you still mean to do, just not now. It moves to --status\n" +
-			"someday, out of the active list, and closes nothing: no close is recorded and\n" +
-			"its items are left as they are. It also gives up its name, so a new project\n" +
-			"may take it; bringing this one back is then refused until one is renamed.\n" +
-			"`icb projects reopen` returns it to the active list.",
+			"someday, out of the active list, and no close is recorded. Its items keep\n" +
+			"their state. One in no other active project leaves `icb projects items next`\n" +
+			"until this one returns. It also gives up its name, so a new project may take\n" +
+			"it, and bringing this one back is then refused until one of the two is\n" +
+			"renamed. `icb projects reopen` returns it to the active list.",
 		Example: "  icb projects shelve \"Home Building Projects\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -58,8 +58,8 @@ function makeIssue(overrides: Partial<Issue>): Issue {
   }
 }
 
-// The blocker sets no priority of its own and inherits urgent from the bug
-// waiting on it; the two urgent rows can trade places, the others cannot.
+// #906 sets no priority and inherits urgent from #907, which waits on it. So
+// the two can trade places, and neither can move past a row below urgent.
 const blocker = makeIssue({ number: 906, title: 'Rank renumber', effective_priority: 1, labels: ['area-api'] })
 const bug = makeIssue({
   number: 907,
@@ -144,8 +144,6 @@ describe('IssuesView', () => {
     route.query = {}
   })
 
-  // --- Rendering ---
-
   it('reads the issues, the vocabulary and the initiatives on mount', () => {
     createWrapper()
     const store = useIssuesStore()
@@ -165,8 +163,8 @@ describe('IssuesView', () => {
     expect(wrapper.find('[data-testid="issue-lens-decisions"]').text()).toBe('Decisions: 1')
   })
 
-  // Decisions wait on a person and the agent queue leaves them out, so the
-  // chip is the one place they surface.
+  // The agent queue leaves decisions out, so one waiting on a person is
+  // flagged here.
   it('marks the decisions chip while a decision is waiting', () => {
     const wrapper = createWrapper({ items: testIssues })
     expect(wrapper.find('[data-testid="issue-lens-decisions"]').classes()).toContain('issue-lens--attention')
@@ -200,8 +198,6 @@ describe('IssuesView', () => {
     const wrapper = createWrapper({ items: [], labelFilter: 'area-cli' })
     expect(wrapper.find('[data-testid="issue-empty"]').text()).toContain('label area-cli')
   })
-
-  // --- Actions by status ---
 
   it('offers each status only the moves it can make', () => {
     const wrapper = createWrapper({ items: testIssues })
@@ -244,10 +240,8 @@ describe('IssuesView', () => {
     expect(useIssuesStore().remove).toHaveBeenCalledWith(done)
   })
 
-  // --- Ordering ---
-
-  // Priority decides order across priorities, so a move is offered only
-  // between rows that share one.
+  // The API refuses a move beside a row of another effective priority, so no
+  // button offers one.
   it('moves an issue only past a neighbor of the same priority', async () => {
     const wrapper = createWrapper({ items: testIssues })
     expect(rowFor(wrapper, 906).find('[data-testid="issue-move-up-button"]').exists()).toBe(false)
@@ -257,8 +251,6 @@ describe('IssuesView', () => {
     await rowFor(wrapper, 907).find('[data-testid="issue-move-up-button"]').trigger('click')
     expect(useIssuesStore().move).toHaveBeenCalledWith(bug, { before: 906 })
   })
-
-  // --- Detail and modals ---
 
   it('expands the detail panel under the open issue only', () => {
     const wrapper = createWrapper({ items: testIssues, expandedId: bug.id })
@@ -284,8 +276,6 @@ describe('IssuesView', () => {
     await wrapper.find('[data-testid="issue-lens-triage"]').trigger('click')
     expect(useIssuesStore().setLens).toHaveBeenCalledWith('triage')
   })
-
-  // --- Links from the other pages ---
 
   it('replaces the filters with the ones a link names', () => {
     route.query = { initiative: 'Ship the tracker', status: 'all' }

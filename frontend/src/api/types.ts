@@ -628,10 +628,11 @@ export type ProjectKind = 'build' | 'chore' | 'life'
 /**
  * Where a project is in its lifecycle, from the project_statuses lookup table.
  * A project is a finite effort, so completing it is what hides it — there is no
- * separate archive flag the way items have one. `dropped` exists beside `done`
- * because `done` alone would force you to lie about anything you merely stopped
- * caring about, and it always carries a reason. `someday` is work set aside: it
- * hides like a closed project, but it is never closed and stamps no close.
+ * separate archive flag the way items have one. `dropped` exists beside
+ * `completed` because `completed` alone would force you to lie about anything
+ * you merely stopped caring about, and it always carries a reason. `someday`
+ * hides like a closed project, but it is open work set aside, so the server
+ * leaves `closed_at` empty.
  */
 export type ProjectStatus = 'active' | 'someday' | 'completed' | 'dropped'
 
@@ -1429,7 +1430,10 @@ export interface IssueVocabulary {
 
 export type InitiativeStatus = 'active' | 'completed' | 'dropped'
 
-/** The counts partition `issue_count`, and `repos` names what the work touches. */
+/**
+ * `open_count`, `completed_count` and `canceled_count` partition `issue_count`.
+ * `repos` lists the repos its issues are on, leaving out canceled ones.
+ */
 export interface Initiative {
   id: string
   name: string
@@ -1453,7 +1457,10 @@ export interface InitiativeCreate {
   priority?: number
 }
 
-/** Dropping takes a reason; the server stamps the close and clears it on reopen. */
+/**
+ * Dropping takes a `status_reason`. The server stamps `closed_ts` on a close,
+ * and clears it and the reason when the initiative returns to `active`.
+ */
 export interface InitiativeUpdate {
   name?: string
   description?: string | null

@@ -1,4 +1,4 @@
-"""Rank placement against a real table, since every move reads its neighbors from it."""
+"""`move_issue` reads its neighbors from the table, so these run against a real one."""
 
 import pytest
 from sqlalchemy import select

@@ -191,8 +191,8 @@ def downgrade() -> None:
     op.drop_table('issue_types')
     op.drop_table('issue_statuses')
 
-    # The identity restarts above the sequence's counter too, since the issues
-    # just dropped held numbers no surviving item does.
+    # The identity restarts above the sequence's counter, not just the highest
+    # item. Otherwise it would issue again the numbers the dropped issues held.
     op.execute('ALTER TABLE project_items ALTER COLUMN number DROP DEFAULT')
     op.execute("""
         DO $$
@@ -210,7 +210,7 @@ def downgrade() -> None:
     """)
     op.execute('DROP SEQUENCE item_numbers')
 
-    # A project parked as someday has no status to return to below this
-    # revision, and active is the one that keeps it in view.
+    # `someday` does not exist below this revision. A someday project becomes
+    # active, the status that keeps it in view.
     op.execute("UPDATE projects SET status = 'active' WHERE status = 'someday'")
     op.execute("DELETE FROM project_statuses WHERE name = 'someday'")

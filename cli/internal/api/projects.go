@@ -20,8 +20,8 @@ import (
 // project — one source of truth, and a project spanning an API, a CLI, and a TUI
 // lists all three.
 //
-// Status is one of the ProjectStatus values. ClosedAt and StatusReason are set by the
-// server as consequences of the transition, never sent by the client.
+// Status is one of the ProjectStatus values. ClosedAt and StatusReason are set
+// by the server as consequences of the transition, never sent by the client.
 type Project struct {
 	ID             string     `json:"id"`
 	Name           string     `json:"name"`
@@ -148,8 +148,8 @@ func (c *Client) DeleteProject(ctx context.Context, id string) error {
 // reader renders that word, so one concept spelled two ways on a resource and
 // its own children was the mismatch this removed.
 //
-// `someday` is open work set aside: hidden like a closed project, but never
-// closed, so it records no close and holds no name.
+// `someday` is open work set aside. It is hidden like a closed project, records
+// no close, and lets a new active project take its name.
 const (
 	ProjectStatusActive    = "active"
 	ProjectStatusSomeday   = "someday"

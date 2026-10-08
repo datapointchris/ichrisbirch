@@ -29,8 +29,8 @@ var IssueStatuses = []string{
 // waits on a person, so the ready queue leaves it out unless asked for.
 const IssueTypeDecision = "decision"
 
-// IssueTypes is the type vocabulary, compiled in because each value decides
-// behavior somewhere — a new type is a code change on both sides, not an insert.
+// IssueTypes is what --type accepts and the guided form offers. It matches the
+// API's issue_types table, so a type added there is added here too.
 var IssueTypes = []string{"bug", "feature", "task", "chore", IssueTypeDecision}
 
 // IssuePriorityNames is Linear's scale, indexed by value. 0 is the absence of a
@@ -133,10 +133,10 @@ type IssueCreateInput struct {
 	DependsOn         []string `json:"depends_on,omitempty"`
 }
 
-// IssueUpdateInput is a partial update. A field left nil is not sent; a field
+// IssueUpdateInput is a partial update. A field left nil is not sent. A field
 // to empty goes in the clear list UpdateIssue takes, which sends it as an
-// explicit null. Status moves through here, and the server stamps what a
-// transition implies.
+// explicit null. Status changes through here too, and the server stamps
+// closed_ts and drops the claim as the new status requires.
 type IssueUpdateInput struct {
 	Title             *string   `json:"title,omitempty"`
 	Description       *string   `json:"description,omitempty"`
@@ -195,7 +195,7 @@ func (f IssueFilter) query() url.Values {
 }
 
 // ReadyFilter narrows the ready queue. An empty Type leaves decisions out,
-// because they wait on a person; naming a type is the only way to see them.
+// because they wait on a person. Type "decision" is the only way to see them.
 type ReadyFilter struct {
 	Repo       *string `json:"repo,omitempty"`
 	Type       string  `json:"type,omitempty"`
@@ -437,7 +437,8 @@ func (c *Client) GetIssueVocabulary(ctx context.Context) (IssueVocabulary, error
 }
 
 // Initiative is a bounded outcome a set of issues ships together. The counts
-// cover every issue in it; Repos names the ones its unclosed issues touch.
+// cover every issue in it. Repos names the repos its issues touch, leaving out
+// canceled issues and keeping completed ones.
 type Initiative struct {
 	ID             string     `json:"id"`
 	Name           string     `json:"name"`

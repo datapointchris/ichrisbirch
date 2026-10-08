@@ -1,5 +1,3 @@
-"""Tests for the issues seeder."""
-
 from __future__ import annotations
 
 from datetime import UTC

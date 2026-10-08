@@ -352,7 +352,7 @@ const emptyMessage = computed(() => {
 })
 
 // The star marks a priority the issue did not set: inherited from its parent
-// or initiative, or raised by an urgent issue waiting on it.
+// or initiative, or raised by a more urgent issue waiting on it.
 function priorityCell(issue: Issue): string {
   const name = priorityLabel(store.vocabulary, issue.effective_priority)
   return issue.effective_priority !== issue.priority ? `${name}*` : name
@@ -381,8 +381,9 @@ function stateNotes(issue: Issue): string[] {
 }
 
 /**
- * The visible row an issue may move past. Order across priorities is the
- * priority's, so a move stays among issues of the same effective priority.
+ * The visible row an issue may move past: the unclosed row beside it, when
+ * that row sorts at the same effective priority. The rank endpoint answers 409
+ * to a move beside any other.
  */
 function neighbor(index: number, step: number): Issue | undefined {
   const rows = store.visibleItems

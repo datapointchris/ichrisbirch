@@ -48,7 +48,8 @@ export const useIssueInitiativesStore = defineStore('issueInitiatives', () => {
   }
 
   // The counts and the order both move with a write, so each is followed by a
-  // fresh list. A failed re-read is not the write failing.
+  // fresh list. A failed re-read logs `initiatives_refresh_failed`, and the
+  // write still resolves with its result.
   async function write<T>(action: string, context: Record<string, unknown>, request: () => Promise<T>): Promise<T> {
     error.value = null
     let result: T

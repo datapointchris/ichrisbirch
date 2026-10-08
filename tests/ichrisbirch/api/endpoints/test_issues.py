@@ -126,7 +126,7 @@ class TestCreate:
         assert [row['number'] for row in issue(client, bug['title'])['blocks']] == [created['number']]
 
     def test_depending_on_its_own_parent_is_refused(self, client):
-        """The parent waits on its open child and the child on the parent: nothing could ever start."""
+        """The parent waits on its open child and the child on the parent, so neither would ever enter the ready queue."""
         parent = issue(client, 'Ready task without priority')
         detail = refused(client.post(ISSUES, json={'title': 'x', 'parent': parent['number'], 'depends_on': [parent['number']]}), 409)
         assert f'#{parent["number"]}' in detail

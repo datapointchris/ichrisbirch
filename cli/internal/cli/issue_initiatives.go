@@ -20,9 +20,9 @@ func newIssueInitiativesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "initiatives",
 		Short: "Group the issues that ship one outcome",
-		Long: "An initiative is an outcome that finishes, and most issues belong to none.\n" +
-			"An issue with no priority of its own takes its active initiative's. A\n" +
-			"finished initiative takes no new issues, and its own stay where they are.",
+		Long: "An initiative is an outcome that finishes. Most issues belong to none. An\n" +
+			"issue with no priority of its own takes its active initiative's. A finished\n" +
+			"initiative takes no new issues and leaves the ones it holds as they are.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd, initiativeHints...)
@@ -245,7 +245,7 @@ func newInitiativesCompleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "complete <initiative>",
 		Short:   "Mark an initiative's outcome reached, which hides it",
-		Long:    "Its issues are left as they are: one still open was still open, and that is\nworth seeing.",
+		Long:    "Its issues keep their status, so one still open stays in the queue.",
 		Example: "  icb issues initiatives complete \"Ship the tracker\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -265,7 +265,7 @@ func newInitiativesDropCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "drop <initiative> --reason <why>",
 		Short:   "Close an initiative whose outcome you no longer want",
-		Long:    "--reason is required: dropped-and-here-is-why closes the question, where\na bare drop invites it back.",
+		Long:    "--reason is required. A drop with its reason closes the question, and a bare\ndrop invites it back.",
 		Example: "  icb issues initiatives drop \"Rewrite the router\" --reason \"Traefik covers it\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -302,7 +302,7 @@ func newInitiativesDeleteCommand() *cobra.Command {
 	var yes bool
 	cmd := &cobra.Command{
 		Use:     "delete <initiative>",
-		Short:   "Delete an initiative; its issues stay, belonging to none",
+		Short:   "Delete an initiative, leaving its issues in none",
 		Example: "  icb issues initiatives delete \"Ship the tracker\" --yes",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

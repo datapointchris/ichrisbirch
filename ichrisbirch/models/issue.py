@@ -28,8 +28,6 @@ from ichrisbirch.models.item_number_sequence import ITEM_NUMBER_SEQUENCE
 # `in_progress` is what a claim sets, and the only status a claim may sit on.
 ISSUE_STATUSES = ['triage', 'open', 'in_progress', 'completed', 'canceled']
 CLOSED_ISSUE_STATUSES = ['completed', 'canceled']
-# A status a reopen may return an issue to. `in_progress` is reached by claiming.
-UNCLOSED_ISSUE_STATUSES = ['triage', 'open', 'in_progress']
 
 # `decision` is the one type that changes what happens to an issue: it waits on
 # a person, so the ready queue an agent reads leaves it out.
@@ -98,17 +96,14 @@ class Issue(Base):
     number comes from the sequence project items also draw from, so a bare number
     is never ambiguous between the two.
 
-    Ordering is `priority`, then `rank`. Priority is coarse and inherited: an
-    issue with none takes its active initiative's, and anything blocking an issue
-    takes the most urgent priority of what it blocks, so a blocker never waits at
-    the bottom while the work it gates sits at the top. `rank` is a float total
-    order across every issue, placed by midpoint and renumbered when two
-    neighbors get too close to split.
+    Order is effective priority, then `rank`, then `number`.
+    `services/issue_readiness.py` derives the effective priority, and
+    `services/issue_rank.py` places `rank`.
 
     A claim is how an agent takes an issue: one compare-and-set writes
-    `claimed_by`, `claim_expires_ts` and `in_progress` together. An expired claim
-    puts the issue back in the ready queue without anyone releasing it, which is
-    what covers an agent that dies holding work.
+    `claimed_by`, `claim_expires_ts` and `in_progress` together. An agent that
+    dies holding work loses the claim when it expires, and the issue returns to
+    the ready queue with nobody releasing it.
     """
 
     __tablename__ = 'issues'
@@ -120,7 +115,8 @@ class Issue(Base):
     # Facts the agent cannot find in the repo. What the repo already says costs
     # tokens on every read and adds nothing.
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # How to tell the work is done, checked before the issue is completed.
+    # How to tell the work is done. Nothing enforces it; whoever completes the
+    # issue checks it.
     acceptance: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Repo registry name. Null is work no single repo owns.
     repo: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
@@ -130,14 +126,14 @@ class Issue(Base):
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     priority: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default='0')
     rank: Mapped[float] = mapped_column(Double, nullable=False)
-    # A calendar day: hidden from the ready queue until it arrives, without
-    # being blocked by anything.
+    # A calendar day. The issue stays out of the ready queue until the day
+    # arrives in the reader's zone, and does not count as blocked meanwhile.
     deferred_until_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     claimed_by: Mapped[str | None] = mapped_column(Text, nullable=True)
     claim_expires_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     initiative_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('initiatives.id', ondelete='SET NULL'), nullable=True, index=True)
-    # A parent is work too large for one issue, split into children that close
-    # it. It is never ready itself while any child is open.
+    # A parent is work too large for one issue, split into children. While any
+    # child is open the parent is not ready and cannot be completed.
     parent_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True, index=True)
     # Provenance only: found while working the other issue, and never gated by it.
     discovered_from_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True)
@@ -201,7 +197,11 @@ class Issue(Base):
 
 
 class IssueDependency(Base):
-    """`issue_id` cannot start until `depends_on_id` is closed — the only edge that gates readiness."""
+    """`issue_id` is blocked until `depends_on_id` closes.
+
+    A parent's open children also keep it out of the ready queue, but only this
+    edge sets `is_blocked`.
+    """
 
     __tablename__ = 'issue_dependencies'
     issue_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='CASCADE'), primary_key=True)

@@ -159,7 +159,7 @@ def ensure_parent_open(parent: models.Issue) -> None:
 
 
 def reopen_completed_ancestors(issue: models.Issue, now: datetime) -> None:
-    """Return each completed ancestor to open, since a parent is finished only by its children."""
+    """Return each completed ancestor to open, because a completed issue never holds open work."""
     parent = issue.parent
     while parent is not None and parent.status == 'completed':
         parent.status = 'open'
@@ -264,7 +264,8 @@ def single_view(session: Session, issue: models.Issue, zone: str) -> schemas.Iss
     return issue_views(session, [load_issue(session, issue.id)], zone)[0]
 
 
-# --- Collections (before /{id}/ so a static segment is never read as an issue) ---
+# `/ready/` and `/vocabulary/` are declared ahead of `/{id}/`, which would
+# otherwise take either segment as an issue reference.
 
 
 @router.get('/', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
@@ -445,9 +446,6 @@ def in_declared_order(values: set[str], declared: list[str]) -> list[str]:
     return [v for v in declared if v in values] + sorted(values - set(declared))
 
 
-# --- One issue ---
-
-
 @router.post('/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
 async def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
     if issue.status not in CREATE_STATUSES:
@@ -550,9 +548,6 @@ async def delete(issue: IssueFromPath, session: DbSession):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-# --- Claim ---
-
-
 def claim_conflict(issue: models.Issue) -> str:
     """Name who holds the issue, so the refused agent can tell whether to wait or move on."""
     if issue.claimed_by is None or issue.claim_expires_ts is None:
@@ -578,7 +573,7 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
         reasons.append(f'#{issue.number} is blocked by {numbered(blockers)}.')
     if readiness.open_child_count.get(issue.id):
         children = [child for child in issue.children if not child.is_closed]
-        reasons.append(f'#{issue.number} is finished by its open children: {numbered(children)}.')
+        reasons.append(f'#{issue.number} waits on its open children: {numbered(children)}.')
     if issue.id in readiness.deferred:
         reasons.append(f'#{issue.number} is deferred until {issue.deferred_until_date}.')
     return reasons
@@ -588,8 +583,9 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
 async def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
     """Take this issue, or extend the claim already held under the same name.
 
-    A named claim meets the conditions the ready queue does, so an agent never
-    holds work it could not finish. Only extending a claim skips them.
+    A named issue is taken only when it is ready, a decision included, so an
+    agent never holds work it could not finish. Only extending a claim skips
+    the readiness check.
     """
     extending = issue.status == 'in_progress' and issue.claimed_by == request.claimant
     today, now = calendar_now(zone)
@@ -630,9 +626,6 @@ async def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     return single_view(session, issue, zone)
 
 
-# --- Rank ---
-
-
 def priority_phrase(priority: int) -> str:
     return 'no priority' if priority == 0 else f'{ISSUE_PRIORITIES[priority]} priority'
 
@@ -671,9 +664,6 @@ async def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSes
     return single_view(session, issue, zone)
 
 
-# --- Dependencies ---
-
-
 @router.post('/{id}/dependencies/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
 async def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependencyCreate, session: DbSession, zone: RequestZone):
     depends_on = resolve_issue(session, dependency.depends_on)
@@ -707,9 +697,6 @@ async def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.I
     issue.updated_ts = datetime.now(UTC)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-# --- Comments ---
 
 
 @router.get('/{id}/comments/', response_model=list[schemas.IssueComment], status_code=status.HTTP_200_OK)

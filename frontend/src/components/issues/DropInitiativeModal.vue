@@ -12,7 +12,7 @@
         <h2>Drop {{ initiativeName }}</h2>
 
         <p class="issue-modal__note">
-          Dropping closes the initiative without pretending it was reached. Its issues stay exactly as they are.
+          Dropping closes the initiative as not reached. Its issues keep their status, and stop taking its priority.
         </p>
 
         <div class="add-edit-modal__form-item">
@@ -72,8 +72,8 @@ function handleModalClose() {
   emit('close')
 }
 
-// The API refuses a drop with no reason, because a dropped initiative nobody
-// explained reads as one that stalled and invites the same plan back.
+// The API answers 422 to a drop with no reason, so submit returns without
+// emitting until one is filled in.
 function handleSubmit(handleSuccess: () => void) {
   if (!reason.value.trim()) return
   emit('drop', reason.value.trim())

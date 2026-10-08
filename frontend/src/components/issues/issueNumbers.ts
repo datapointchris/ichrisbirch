@@ -8,7 +8,7 @@ export function parseIssueNumber(text: string): number | null {
 
 /**
  * Issue numbers separated by commas or spaces. Null when any one of them is
- * not a number, so a typo is refused rather than silently dropped.
+ * not a number, so `12, 1x4` is refused whole rather than read as `[12]`.
  */
 export function parseIssueNumbers(text: string): number[] | null {
   const tokens = text.split(/[\s,]+/).filter(Boolean)

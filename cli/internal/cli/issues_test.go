@@ -61,8 +61,9 @@ func parsedEdit(t *testing.T, args ...string) (*issueEditFlags, *cobra.Command) 
 	return v, cmd
 }
 
-// An empty value empties a field: as a null for the nullable ones, and as an
-// empty list for labels, whose column holds no null.
+// An empty --deferred-until or --initiative goes out as a null. An empty
+// --label goes out as an empty list, because the API answers a null labels
+// with 422.
 func TestIssueEdit_EmptyValuesClearEachFieldItsOwnWay(t *testing.T) {
 	v, cmd := parsedEdit(t, "--deferred-until", "", "--initiative", "", "--label", "", "--priority", "none")
 	in, clear, err := v.update(cmd)
@@ -142,8 +143,6 @@ func TestPriorityCell_StarsAnInheritedPriority(t *testing.T) {
 	}
 }
 
-// A hint that widens a filtered read keeps the filters, or it points at a
-// different question than the one asked.
 func TestReinvocation_KeepsTheFiltersItWidens(t *testing.T) {
 	cmd := findCommand(t, "issues", "list")
 	if err := cmd.ParseFlags([]string{"--repo", "", "--blocked=false", "--label", "area-cli", "--json"}); err != nil {
@@ -178,7 +177,6 @@ func TestResolveIssueComment_ByPlaceOrById(t *testing.T) {
 	}
 }
 
-// A tree with nothing left to do is history, and the default hides it.
 func TestIssueTrees_HideFinishedWorkByDefault(t *testing.T) {
 	byID := map[string]api.Issue{
 		"a": {ID: "a", Status: api.IssueStatusCompleted},

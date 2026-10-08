@@ -25,7 +25,7 @@ from ichrisbirch.models.item_number_sequence import ITEM_NUMBER_SEQUENCE
 PROJECT_KINDS = ['build', 'chore', 'life']
 # 'completed' rather than 'done' so one word covers the concept on a project and
 # on its items, which store a `completed` boolean. `complete` is the verb on
-# both, and it wrote a value called `done` until 2026-08-12.
+# both.
 #
 # `someday` is a project not being worked and not given up on: it holds no next
 # action yet. It is neither active nor terminal, so it hides from the default

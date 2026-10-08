@@ -42,8 +42,6 @@ function makeInitiative(overrides: Partial<Initiative> = {}): Initiative {
   }
 }
 
-// ── IssueInitiativesView ───────────────────────────────────────────────────────
-
 function mountInitiatives(items: Initiative[], statusFilter = 'active') {
   return mount(IssueInitiativesView, {
     global: {
@@ -104,8 +102,6 @@ describe('IssueInitiativesView', () => {
     expect(mountInitiatives([], 'completed').find('[data-testid="initiative-empty"]').text()).toBe('No completed initiatives.')
   })
 })
-
-// ── IssueLabelsView ────────────────────────────────────────────────────────────
 
 const labels: IssueLabel[] = [
   { slug: 'area-cli', group_slug: 'area', description: 'The Go client', open_issue_count: 4 },

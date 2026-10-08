@@ -267,9 +267,9 @@ const form = reactive(createEmptyForm())
 
 /**
  * Chips grouped the way the vocabulary groups them, plus any label the issue
- * carries that the vocabulary does not define. The API refuses an undefined
- * label and the whole set is resent, so a label with no chip would make the
- * issue unsavable; it renders marked, and clicking it off is the way out.
+ * carries that the vocabulary does not define. The API answers 422 to an
+ * undefined label and an edit resends the whole set, so a label with no chip
+ * would fail every save. It renders marked, and clicking it off is the way out.
  */
 const labelGroups = computed(() => {
   const groups = new Map<string, { slug: string; group: string | null; description: string | null; orphan: boolean }[]>()
@@ -290,8 +290,8 @@ const labelGroups = computed(() => {
   return [...groups.entries()].map(([name, chips]) => ({ name, chips }))
 })
 
-// A group's labels exclude each other, so choosing one sets the rest down
-// rather than leaving a pair the API would refuse.
+// A group's labels exclude each other and the API answers 422 to a pair, so
+// choosing one turns the rest of its group off.
 function toggleLabel(slug: string, group: string | null) {
   if (form.labels.includes(slug)) {
     form.labels = form.labels.filter((value) => value !== slug)

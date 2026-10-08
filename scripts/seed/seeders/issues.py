@@ -137,13 +137,14 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     # Deferred and nothing else, so the deferral alone keeps it out of the queue.
     by_title['Comment thread on issue detail'].deferred_until_date = (now + timedelta(days=14)).date()
 
-    # A parent finished by its children, one of them already done.
+    # A parent waiting on its children, one of them already completed.
     parent = by_title['Initiative board page']
     for child_title in ('Comment thread on issue detail', 'Seed every claim state'):
         by_title[child_title].parent_id = parent.id
 
-    # A chain and a fan-in. The low-priority rank fix gates the urgent routing
-    # bug, so it inherits urgent in the ready queue.
+    # One blocker gating two issues, and one issue waiting on two. The
+    # low-priority rank fix gates the urgent routing bug, so it inherits urgent
+    # in the ready queue.
     edges = [
         ('Routing file misses the issues paths', 'Rank renumbers when the gap is spent'),
         ('Claim expiry returns issue to the queue', 'Ready queue skips decisions'),

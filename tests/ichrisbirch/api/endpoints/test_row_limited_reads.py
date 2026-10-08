@@ -54,15 +54,17 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 
 # Collection reads that take no limit today. This is the backlog, not a blessing:
 # most of these answer with rows that grow outside the binary and should take
-# `RowLimit`. These are decided rather than pending, and each answers something a
-# cap would make wrong rather than shorter:
+# `RowLimit`. The ones listed here are decided rather than pending, and each
+# answers something a cap would make wrong rather than shorter:
 #
 #   /admin/config/         a config block, not a paged collection
 #   /admin/system/health/  one status report
 #   /strains/vocabulary/   the whole declared vocabulary, which a client reads to
 #                          build its dropdowns — a short one offers fewer values
-#   /issues/vocabulary/    every value an issue's closed fields accept, for the same reason
-#   /issues/labels/        the closed label vocabulary, which a picker must offer whole
+#   /issues/vocabulary/    every value an issue's closed fields accept, for the
+#                          same reason
+#   /issues/labels/        the closed label vocabulary, which a picker must
+#                          offer whole
 #   /tasks/categories/     every task category with its window, for the same reason
 #   /habits/day/           one day's board, bounded by the habits you track. A cap
 #                          hides a habit you still owe, and `current_total` would

@@ -14,12 +14,13 @@ language; the two share no code.
 ## What it covers
 
 `icb projects` is the Projects domain — `{list,show,create,edit,shelve,complete,
-drop,reopen,delete}`, where `create` and `edit` refuse a name the repo registry knows,
-since a project name is bounded work and a repo does not end. `shelve` sets a
-project aside for someday. That hides it like a closed project without closing
-it, and `reopen` brings it back. `icb projects
-items` nests under it, because an item is only meaningful inside a project:
-item CRUD, complete/reopen, archive/unarchive, reorder, multi-project membership,
+drop,reopen,delete}`, where `create` and `edit` refuse a name the repo registry
+knows, since a project name is bounded work and a repo does not end. `shelve`
+sets a project aside for someday. It is hidden like a closed project, but no
+close is recorded. An item in no other active project leaves `projects items
+next` until `reopen` brings the project back. `icb projects items` nests under
+it, because an item is only meaningful inside a project: item CRUD,
+complete/reopen, archive/unarchive, reorder, multi-project membership,
 dependencies and blockers, sub-task verbs, and `tree` for the dependency graph as
 a drawing or as nodes and edges under `--json`.
 
@@ -29,12 +30,13 @@ project never has to take the shape of a ticket. An issue needs no project:
 issues toward one outcome. Issue numbers come from the sequence project items
 use, so a bare `#812` names one row in either store.
 
-`icb issues next` is the ready queue. An issue is ready when it is open, its
-deferral day has arrived, and every dependency and child is closed. A
-`decision` is never ready, because it waits on a person rather than an agent.
-The queue orders by effective priority, then rank. A blocker inherits the most
-urgent priority of what it blocks, so a `none` issue gating an urgent bug prints
-as `urgent*`. The star marks a priority the issue did not set.
+`icb issues next` is the ready queue. An issue is ready when it is open or its
+claim has expired, its deferral day has arrived, and every dependency and child
+is closed. The queue leaves decisions out, because they wait on a person rather
+than an agent. `next --type decision` lists them. The queue orders by effective
+priority, then rank. A blocker inherits the most urgent priority of what it
+blocks, so a `none` issue gating an urgent bug prints as `urgent*`. The star
+marks a priority the issue did not set.
 
 `icb issues claim` takes the head of that queue, and `claim <issue>` takes one
 named issue. The server takes each with a compare-and-set, so two sessions
@@ -46,13 +48,13 @@ claims. Taking work is a verb rather than a `next --claim` flag, because a flag
 never decides whether a command writes.
 
 The lifecycle verbs refuse an issue in the wrong state rather than writing a
-no-op: `accept` takes an issue out of triage, then `complete`, `cancel` (with
-`--reason` or `--duplicate-of`) and `reopen`. `reorder --before|--after` moves
-an issue's rank. `add-dependency` refuses a cycle and prints its path. `tree`
-draws the dependency graph the way `projects items tree` does. `initiatives`
-and `labels` manage the two groupings, and `vocabulary` prints every closed
-value. Labels sharing a group are exclusive, so an issue takes one `area-*`.
-Nothing closes an issue for its age.
+no-op. `accept` takes an issue out of triage. `complete` and `cancel` (with
+`--reason` or `--duplicate-of`) close it, and `reopen` returns it to the queue.
+`reorder --before|--after` moves an issue's rank. `add-dependency` refuses a
+cycle and prints its path. `tree` draws the dependency graph the way `projects
+items tree` does. `initiatives` and `labels` manage the two groupings, and
+`vocabulary` prints every closed value. An issue carries at most one label from
+each group, such as one `area-*`. Nothing closes an issue for its age.
 
 The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
@@ -145,7 +147,8 @@ Every other command is `icb <resource> <verb>`. `overview` is the composition
 that crosses every app: open tasks, habits still due today, current and next
 reading, next and blocked project items, the issues ready, claimed and awaiting
 a decision, and approaching countdowns and events — fetched concurrently and
-returned as one payload, so a dashboard needs a single call instead of one per app.
+returned as one payload, so a dashboard needs a single call instead of one per
+app.
 
 Its `habits` section and `icb habits today` answer the same question through one
 split, so the two agree on which habits are outstanding. They differ in reach:

@@ -1,10 +1,9 @@
 """`project_items.number` moving from an identity to the shared sequence, run through alembic.
 
-The switch runs once against a table that has issued numbers for years. Two
-histories decide where the sequence must start, and each is a case: an item
-numbered by hand above the identity, which only the highest surviving number
-reveals, and a deleted item above every survivor, which only the identity's own
-counter remembers.
+The switch runs once against a table that has issued numbers for years. An item
+numbered by hand above the identity shows only in the highest surviving number.
+A deleted item above every survivor shows only in the identity's own counter.
+Each is a case, and the sequence must start above both.
 """
 
 from collections.abc import Callable

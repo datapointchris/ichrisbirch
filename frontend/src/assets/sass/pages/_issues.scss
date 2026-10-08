@@ -18,8 +18,8 @@ $priority-accents: (
   4: var(--issue-low-box-shadow),
 );
 
-// Included inside a table's `&__row`, so the accent outranks the row's own
-// raised shadow rather than racing it on declaration order.
+// Included inside a table's `&__row`, so `&__row.issue--p1` beats the row's own
+// shadow on specificity, whichever of the two is declared later.
 @mixin priority-rows {
   @each $priority, $accent in $priority-accents {
     &.issue--p#{$priority} {
@@ -41,12 +41,14 @@ $priority-accents: (
 
   box-shadow: var(--floating-box);
 
-  // Decisions wait on a person, and nothing else surfaces them.
+  // The decisions lens, while any are open. The ready queue leaves decisions
+  // out, so this accent is the only thing on the page pointing at them.
   &--attention {
     box-shadow: var(--issue-high-box-shadow), var(--floating-box);
   }
 
-  // Again after attention, so the chosen lens reads as chosen.
+  // After `&--attention` with equal specificity, so a selected decisions lens
+  // shows as selected rather than as needing attention.
   &--active {
     box-shadow: var(--filter-chip-active);
   }

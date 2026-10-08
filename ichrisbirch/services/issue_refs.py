@@ -96,7 +96,7 @@ def resolve_labels(session: Session, slugs: list[str]) -> list[models.IssueLabel
 
     The vocabulary is closed, so an unknown slug is a typo or a label nobody has
     defined yet, and either way it is named rather than created. Labels in one
-    group exclude each other, which is the whole meaning of a group.
+    group exclude each other.
     """
     wanted = list(dict.fromkeys(slugs))
     found = {label.slug: label for label in session.scalars(select(models.IssueLabel).where(models.IssueLabel.slug.in_(wanted)))}

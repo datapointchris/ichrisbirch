@@ -87,8 +87,8 @@ issued in creation order and never repeats.
 A move names the issue to sit before or after, and that issue must sort at the
 same effective priority. Ranks are one global sequence, so a move beside an
 issue of another priority would land wherever the other priorities' ranks fall.
-It is refused with a 409 naming both priorities. Changing the priority is what
-moves an issue past another priority's.
+Such a move is refused with a 409 naming both priorities. Changing the priority
+is what moves an issue past another priority's.
 
 ## A claim is one compare-and-set, and it expires
 
@@ -109,13 +109,15 @@ claim and never expires, because a person working on something does not
 vanish the way a process does. `DELETE /issues/{n}/claim/` returns either kind
 to `open`.
 
-Claiming a named issue applies the ready queue's conditions. An issue the
-queue leaves out is refused, so an agent never holds work it could not finish.
-Only extending a claim already held skips them.
+Claiming a named issue applies the readiness conditions listed under the ready
+queue. An issue failing any of them is refused, so an agent never holds work it
+could not finish. A decision meets them, so a named claim takes one the queue
+leaves out. Extending a claim already held skips the conditions.
 
-A refused claim answers 409 naming why. A held issue names who holds it and
-until when, so the refused agent can tell whether to wait or move on. Otherwise
-the refusal names the open dependencies, the open children or the deferral day.
+A refused claim answers 409 naming why. For a held issue the refusal names who
+holds it and until when, so the refused agent can tell whether to wait or move
+on. Otherwise it names the triage or closed status, the open dependencies, the
+open children or the deferral day.
 
 ## Nothing closes an issue for its age
 

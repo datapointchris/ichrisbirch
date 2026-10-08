@@ -25,8 +25,8 @@ export type IssueStatusFilter = 'unclosed' | IssueStatus | 'all'
  * A slice of the loaded rows, cut by the flags the server derived on the read.
  *
  * `ready` is the agent queue: the server's `is_ready` without decisions, which
- * wait on a person rather than an agent. `decisions` is that same set of
- * person-shaped work, so it is the one lens with nothing an agent can take.
+ * wait on a person rather than an agent. `decisions` is every unclosed
+ * decision, ready or not.
  */
 export type IssueLens = 'all' | 'ready' | 'in_progress' | 'blocked' | 'triage' | 'decisions'
 
@@ -104,9 +104,9 @@ export const useIssuesStore = defineStore('issues', () => {
   const search = ref('')
   const lens = ref<IssueLens>('all')
 
-  // Repos are no vocabulary on the server, so the choices are the repos the
-  // unfiltered list names. They are kept while a repo filter narrows the rows,
-  // or picking one repo would leave it the only choice.
+  // The server keeps no repo vocabulary, so the choices are the repos named by
+  // the last read without a repo filter. They are kept while a repo filter
+  // narrows the rows, or picking one repo would leave it the only choice.
   const knownRepos = ref<string[]>([])
 
   const expandedId = ref<string | null>(null)
@@ -263,7 +263,8 @@ export const useIssuesStore = defineStore('issues', () => {
    * Closing one issue unblocks the issues waiting on it and changes the
    * priority its blockers inherit, so a write is followed by a fresh list
    * rather than a patch of the one row. A failed re-read is logged and left on
-   * `error`: the write itself succeeded, and reporting it as failed would be wrong.
+   * `error`, and the write's promise still resolves, because the write itself
+   * succeeded.
    */
   async function refreshAfterWrite() {
     const expanded = expandedId.value ? items.value.find((issue) => issue.id === expandedId.value) : undefined

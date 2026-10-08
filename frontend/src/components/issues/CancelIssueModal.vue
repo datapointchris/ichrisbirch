@@ -89,8 +89,8 @@ function handleModalClose() {
   emit('close')
 }
 
-// The API refuses a cancel with neither: a canceled issue nobody explained
-// reads as forgotten, and the same work gets filed again.
+// The API answers 422 to a cancel with neither a reason nor a duplicate, so
+// submit returns without emitting until one is filled in.
 function handleSubmit(handleSuccess: () => void) {
   const duplicate = duplicateOf.value.trim() ? parseIssueNumber(duplicateOf.value) : null
   const valid = validate({

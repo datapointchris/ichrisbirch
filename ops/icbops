@@ -422,8 +422,9 @@ function dev-smoke() {
 
 # Test environment
 function test-run() {
-  # Every other argument goes to pytest, which runs only after the containers
-  # are up, so a help flag would otherwise tear down unhealthy ones first.
+  # A help flag answers here. Passed to pytest like every other argument, it
+  # would wait behind the health check below, which takes unhealthy containers
+  # down with their volumes and starts them again.
   case "${1:-}" in
     -h | --help | help)
       test-usage

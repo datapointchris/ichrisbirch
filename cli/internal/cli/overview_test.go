@@ -121,7 +121,6 @@ func TestBuildOverview_EmptyDataIsNotAFailure(t *testing.T) {
 	}
 }
 
-// activeProject is a project whose items are in the queue.
 var activeProject = api.Project{ID: "live", Name: "Live", Status: api.ProjectStatusActive}
 
 func TestActionableItems_ExcludesWhatCannotBeTakenNow(t *testing.T) {
@@ -291,8 +290,8 @@ func TestBooksByProgress_PreservesServerOrder(t *testing.T) {
 	}
 }
 
-// A decision waits on a person, so it never counts as ready for an agent, and an
-// expired claim is ready again rather than in progress.
+// An expired claim sorts as ready, not in progress. A decision in triage
+// counts as triage.
 func TestSortIssueQueue_KeepsDecisionsOutOfTheAgentQueue(t *testing.T) {
 	queue := sortIssueQueue([]api.Issue{
 		{Number: 1, Type: "bug", Status: api.IssueStatusOpen, IsReady: true},

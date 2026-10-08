@@ -125,8 +125,8 @@ describe('useIssuesStore', () => {
     })
   })
 
-  // An empty repo is the API's way of asking for issues on no repo, so it must
-  // travel rather than read as no filter.
+  // The API reads `repo=''` as the issues on no repo. Dropped by a truthiness
+  // check, it would become no filter and return every repo's issues.
   it('sends an empty repo for the issues that name none', async () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssuesStore()
@@ -192,8 +192,8 @@ describe('useIssuesStore', () => {
     expect(store.detail).toBeNull()
   })
 
-  // Completing one issue unblocks another and moves inherited priority, so
-  // every write is followed by a fresh list rather than a one-row patch.
+  // Completing one issue can unblock another and move inherited priority, so a
+  // one-row patch would leave the other rows' flags and priorities stale.
   it('reads the list again after a write', async () => {
     mockApi.patch.mockResolvedValueOnce({ data: detailOf({ ...ready, status: 'completed' }) })
     mockApi.get.mockImplementation(async (url: string) => ({ data: url === '/issues/vocabulary/' ? testVocabulary : [blocked] }))
