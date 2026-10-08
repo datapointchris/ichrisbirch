@@ -153,8 +153,15 @@ describe('ProjectsView', () => {
   })
 
   it('shows empty state when no projects', () => {
-    const wrapper = createWrapper()
-    expect(wrapper.text()).toContain('No projects yet')
+    const wrapper = createWrapper({ statusFilter: 'all' })
+    expect(wrapper.find('[data-testid="project-list-empty"]').text()).toBe('No projects yet')
+  })
+
+  // Shelved and closed projects are hidden from the default list, so an empty
+  // one says which status came back empty rather than that none exist.
+  it('names the status filter in an empty list', () => {
+    const wrapper = createWrapper({ statusFilter: 'someday' })
+    expect(wrapper.find('[data-testid="project-list-empty"]').text()).toBe('No someday projects')
   })
 
   it('renders project list from store state', () => {
@@ -496,10 +503,20 @@ describe('ProjectsView', () => {
     expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'completed', undefined)
   })
 
+  it('shelves the selected project for someday', async () => {
+    const wrapper = createWrapper(selectedState())
+    const store = useProjectsStore()
+
+    await wrapper.find('[data-testid="project-shelve-button"]').trigger('click')
+
+    expect(store.setProjectStatus).toHaveBeenCalledWith(PROJ_1_ID, 'someday', undefined)
+  })
+
   it('offers reopen instead of complete once a project is closed', () => {
     const wrapper = createWrapper(closedState())
 
     expect(wrapper.find('[data-testid="project-complete-button"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="project-shelve-button"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="project-drop-button"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="project-reopen-button"]').exists()).toBe(true)
   })

@@ -188,6 +188,24 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Projects' },
   },
   {
+    path: '/issues',
+    name: 'issues',
+    component: () => import('@/views/IssuesView.vue'),
+    meta: { title: 'Issues' },
+  },
+  {
+    path: '/issues/initiatives',
+    name: 'issue-initiatives',
+    component: () => import('@/views/IssueInitiativesView.vue'),
+    meta: { title: 'Initiatives' },
+  },
+  {
+    path: '/issues/labels',
+    name: 'issue-labels',
+    component: () => import('@/views/IssueLabelsView.vue'),
+    meta: { title: 'Issue Labels' },
+  },
+  {
     path: '/box-packing',
     name: 'box-packing',
     component: () => import('@/views/BoxPackingView.vue'),

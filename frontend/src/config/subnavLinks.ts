@@ -55,6 +55,12 @@ export const COFFEE_SUBNAV: SubnavLink[] = [
   { label: 'Beans', to: '/coffee/beans', testId: 'coffee-subnav-beans', icon: 'fa-solid fa-seedling' },
 ]
 
+export const ISSUES_SUBNAV: SubnavLink[] = [
+  { label: 'Issues', to: '/issues', testId: 'issues-subnav-issues', icon: 'fa-solid fa-circle-dot' },
+  { label: 'Initiatives', to: '/issues/initiatives', testId: 'issues-subnav-initiatives', icon: 'fa-solid fa-flag-checkered' },
+  { label: 'Labels', to: '/issues/labels', testId: 'issues-subnav-labels', icon: 'fa-solid fa-tags' },
+]
+
 export const ADMIN_SUBNAV: SubnavLink[] = [
   { label: 'System Health', to: '/admin', testId: 'admin-subnav-system', icon: 'fa-solid fa-heart-pulse' },
   { label: 'Scheduler', to: '/admin/scheduler', testId: 'admin-subnav-scheduler', icon: 'fa-solid fa-clock' },

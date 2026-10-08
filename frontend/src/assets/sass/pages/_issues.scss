@@ -1,0 +1,278 @@
+@use '../components/card_row';
+@use '../components/sortable_table';
+@use '../components/toggle_chips';
+
+// One accent per priority, inset into the row's raised shadow. Priority 0 is
+// none and takes no accent, so the eye lands on the rows that set one.
+:root {
+  --issue-urgent-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-error) calc(l * 0.7) c h / 0.85);
+  --issue-high-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-warning) calc(l * 0.6) c h / 0.8);
+  --issue-medium-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-info) calc(l * 0.6) c h / 0.8);
+  --issue-low-box-shadow: inset 0 0 8px 2px var(--clr-gray-600);
+}
+
+$priority-accents: (
+  1: var(--issue-urgent-box-shadow),
+  2: var(--issue-high-box-shadow),
+  3: var(--issue-medium-box-shadow),
+  4: var(--issue-low-box-shadow),
+);
+
+// Included inside a table's `&__row`, so the accent outranks the row's own
+// raised shadow rather than racing it on declaration order.
+@mixin priority-rows {
+  @each $priority, $accent in $priority-accents {
+    &.issue--p#{$priority} {
+      box-shadow: $accent, var(--floating-box);
+
+      &:hover {
+        box-shadow: $accent, var(--bubble-box);
+      }
+    }
+  }
+
+  &.issue--closed {
+    opacity: 0.6;
+  }
+}
+
+.issue-lens {
+  @include sortable_table.count-filter;
+
+  box-shadow: var(--floating-box);
+
+  // Decisions wait on a person, and nothing else surfaces them.
+  &--attention {
+    box-shadow: var(--issue-high-box-shadow), var(--floating-box);
+  }
+
+  // Again after attention, so the chosen lens reads as chosen.
+  &--active {
+    box-shadow: var(--filter-chip-active);
+  }
+}
+
+.issues {
+  @include card_row.card-row;
+
+  $number: 0.6fr;
+  $priority: 1.1fr;
+  $type: 1fr;
+  $status: 1.2fr;
+  $repo: 1.6fr;
+  $title: 6fr;
+  $actions: 3.4fr;
+
+  @include sortable_table.sortable-table(
+    $columns: $number $priority $type $status $repo $title $actions,
+    $centered: (
+      1,
+      2,
+      3,
+      4,
+    )
+  );
+  @include sortable_table.detail-panel;
+
+  &__row {
+    @include priority-rows;
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__search {
+    display: flex;
+    flex: 1 1 16rem;
+    gap: var(--space-3xs);
+  }
+
+  &__number {
+    color: var(--clr-accent-light);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__title {
+    font-size: var(--fs-400);
+  }
+
+  &__label,
+  &__note {
+    margin-left: var(--space-3xs);
+    padding-inline: var(--space-3xs);
+    border-radius: var(--button-border-radius);
+    font-size: var(--fs-300);
+  }
+
+  &__label {
+    color: var(--clr-accent-light);
+    box-shadow: var(--floating-box);
+  }
+
+  &__note {
+    color: var(--clr-gray-400);
+    font-style: italic;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3xs);
+  }
+
+  &__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3xs);
+  }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3xs);
+    padding-block: var(--space-3xs);
+    padding-inline: var(--space-xs);
+    border-radius: var(--button-border-radius);
+    box-shadow: var(--floating-box);
+
+    &--closed {
+      color: var(--clr-gray-500);
+      text-decoration: line-through;
+    }
+  }
+
+  &__link-remove {
+    border: none;
+    background: none;
+    color: var(--clr-gray-400);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--clr-error);
+    }
+  }
+
+  &__inline-form {
+    display: flex;
+    gap: var(--space-3xs);
+
+    .textbox {
+      width: 7rem;
+    }
+  }
+
+  &__comment {
+    padding-block: var(--space-3xs);
+    border-bottom: 1px solid var(--clr-gray-700);
+  }
+
+  &__comment-meta {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+
+  &__comment-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3xs);
+    margin-top: var(--space-xs);
+
+    .textbox {
+      width: 100%;
+    }
+  }
+}
+
+.issue-chips {
+  @include toggle_chips.toggle-chips;
+
+  flex-direction: column;
+
+  &__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3xs);
+  }
+
+  &__group-name {
+    min-width: 6rem;
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.issue-modal__note {
+  color: var(--clr-gray-400);
+  font-size: var(--fs-300);
+}
+
+.issue-initiatives {
+  @include card_row.card-row;
+
+  $name: 4fr;
+  $priority: 1fr;
+  $status: 1.1fr;
+  $open: 0.8fr;
+  $done: 0.8fr;
+  $canceled: 0.9fr;
+  $repos: 2.4fr;
+  $actions: 2.4fr;
+
+  @include sortable_table.sortable-table(
+    $columns: $name $priority $status $open $done $canceled $repos $actions,
+    $centered: (
+      2,
+      3,
+      4,
+      5,
+      6,
+    )
+  );
+  @include sortable_table.detail-panel;
+
+  &__row {
+    @include priority-rows;
+  }
+
+  &__link {
+    color: var(--clr-accent-light);
+    font-size: var(--fs-400);
+  }
+}
+
+.issue-labels {
+  @include card_row.card-row;
+
+  $label: 2fr;
+  $group: 1.2fr;
+  $open: 0.8fr;
+  $description: 5fr;
+  $actions: 1.2fr;
+
+  @include sortable_table.sortable-table(
+    $columns: $label $group $open $description $actions,
+    $centered: (
+      2,
+      3,
+    )
+  );
+
+  &__link {
+    color: var(--clr-accent-light);
+    font-size: var(--fs-400);
+  }
+}

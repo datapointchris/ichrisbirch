@@ -41,9 +41,10 @@
       </div>
       <div
         v-else-if="store.sortedProjects.length === 0"
+        data-testid="project-list-empty"
         class="projects-page__empty"
       >
-        No projects yet
+        {{ store.statusFilter === 'all' ? 'No projects yet' : `No ${store.statusFilter} projects` }}
       </div>
       <draggable
         v-else
@@ -240,6 +241,13 @@
                 variant="success"
                 title="Complete project — finished, and hidden from the list"
                 @click="store.selectedProject && handleCompleteProject(store.selectedProject)"
+              />
+              <ActionButton
+                v-if="store.selectedProject?.status === 'active'"
+                data-testid="project-shelve-button"
+                icon="fa-solid fa-box-archive"
+                title="Shelve project — set aside for someday, hidden but not closed"
+                @click="store.selectedProject && handleShelveProject(store.selectedProject)"
               />
               <ActionButton
                 v-if="store.selectedProject?.status === 'active'"
@@ -564,6 +572,7 @@ import NeuSelect from '@/components/NeuSelect.vue'
 
 const statusFilterOptions = [
   { value: 'active', label: 'Active' },
+  { value: 'someday', label: 'Someday' },
   { value: 'completed', label: 'Completed' },
   { value: 'dropped', label: 'Dropped' },
   { value: 'all', label: 'All' },
@@ -758,28 +767,40 @@ function openDropProject() {
   showDropModal.value = true
 }
 
-async function changeProjectStatus(project: ProjectWithItemCount, status: ProjectStatus, verb: string, reason?: string) {
+const STATUS_VERBS: Record<ProjectStatus, { verb: string; done: string }> = {
+  active: { verb: 'reopen', done: 'reopened' },
+  someday: { verb: 'shelve', done: 'shelved' },
+  completed: { verb: 'complete', done: 'completed' },
+  dropped: { verb: 'drop', done: 'dropped' },
+}
+
+async function changeProjectStatus(project: ProjectWithItemCount, status: ProjectStatus, reason?: string) {
+  const { verb, done } = STATUS_VERBS[status]
   try {
     await store.setProjectStatus(project.id, status, reason)
-    notify(`${project.name} ${verb}`, 'success')
+    notify(`${project.name} ${done}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to ${verb.replace(/ed$/, '')} project: ${detail}`, 'error')
+    notify(`Failed to ${verb} project: ${detail}`, 'error')
   }
 }
 
 function handleCompleteProject(project: ProjectWithItemCount) {
-  return changeProjectStatus(project, 'completed', 'completed')
+  return changeProjectStatus(project, 'completed')
+}
+
+function handleShelveProject(project: ProjectWithItemCount) {
+  return changeProjectStatus(project, 'someday')
 }
 
 function handleReopenProject(project: ProjectWithItemCount) {
-  return changeProjectStatus(project, 'active', 'reopened')
+  return changeProjectStatus(project, 'active')
 }
 
 async function handleDropProject(reason: string) {
   showDropModal.value = false
   if (!store.selectedProject) return
-  await changeProjectStatus(store.selectedProject, 'dropped', 'dropped', reason)
+  await changeProjectStatus(store.selectedProject, 'dropped', reason)
 }
 
 async function handleUpdateProject(id: string, data: ProjectUpdate) {
