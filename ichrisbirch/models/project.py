@@ -63,9 +63,10 @@ class Project(Base):
 
     `kind` separates making something new from the work that merely has to
     happen, so a consumer asking "what should I build next" is not handed the
-    next errand. It defaults to `life` rather than being required: development
-    work is an issue, so a project is personal unless it says otherwise, and a
-    required field breaks every existing caller of the create endpoint.
+    next errand. It defaults to `life`, because development work is an issue
+    and a project is personal unless it says otherwise. It is not required,
+    because a required field breaks every existing caller of the create
+    endpoint.
 
     `status` is a field rather than the `archived` boolean items carry, because
     for a project completion and hiding are the same event: a project is a

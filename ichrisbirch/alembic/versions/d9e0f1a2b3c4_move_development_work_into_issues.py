@@ -1,10 +1,11 @@
 """Move development work out of projects and into issues
 
-Every `build` project becomes an initiative with the same id, and every item
-whose projects are all `build` becomes an issue with the same id and number.
-A `chore` project stays, because its kind marks work that has to happen and
-makes nothing new. An item that also sits in a project of another kind stays a
-project item, and loses its membership in the projects that moved.
+When this runs, a `build` project holds development work. Every `build` project
+becomes an initiative with the same id. Every item whose projects are all
+`build` becomes an issue with the same id and number. A `chore` project stays,
+because its kind marks work that has to happen and makes nothing new. An item
+that also sits in a project of another kind stays a project item, and loses its
+membership in the projects that moved.
 
 Initiative status: completed and dropped carry over, and active and someday
 both become active. Priority ranks the active projects by position into
@@ -16,20 +17,20 @@ canceled, with a reason. Every other item is open. Notes become the
 description, and sub-tasks become a checklist in `acceptance`. Each issue gets
 priority 0, so it ranks by its initiative.
 
-An item in several projects joins the initiative of the one it was drawn
-under: its active project with the lowest position, else its project with the
-lowest position. Rank is that project's place, then the item's position in
-it, so each issue keeps the place its project queued it in. The moved issues
-rank after every issue that already exists.
+An item in several projects joins one initiative: its active project with the
+lowest position, else its project with the lowest position. Rank is that
+project's place, then the item's position in it, so each issue keeps the place
+its project queued it in. The moved issues rank after every issue that already
+exists.
 
 A dependency between two moved items is copied. An edge between a moved item
 and one that stays cannot cross tables. It becomes a line on the dependent
 side naming the other's number.
 
-The move writes only into `issues`, `initiatives` and `issue_dependencies`,
-plus those lines on the items that stay. So the downgrade refuses while either
-of the first two holds a row. Over neither, the revision before describes the
-database exactly.
+The move deletes the projects and items it copied, and no downgrade can
+restore them. Each left an initiative or an issue behind, so the downgrade
+refuses while either table holds a row. With both empty there is nothing to
+undo, and the downgrade only moves the revision back.
 
 Revision ID: d9e0f1a2b3c4
 Revises: c8d9e0f1a2b3

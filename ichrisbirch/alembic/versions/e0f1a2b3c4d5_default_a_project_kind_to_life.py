@@ -1,8 +1,9 @@
 """Default a project's kind to life
 
 Development work is an issue, so a project created without a kind is personal.
-The release serving while this runs sends its own default of `build` on every
-create, so the column default reaches only a writer that names no kind.
+The API's create schema fills in its own default before the insert, so this
+column default reaches only a writer naming no kind. A project created through
+the release still serving while this runs gets that release's `build`.
 
 Revision ID: e0f1a2b3c4d5
 Revises: d9e0f1a2b3c4
