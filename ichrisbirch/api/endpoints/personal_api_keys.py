@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.post('/', response_model=schemas.PersonalAPIKeyCreated, status_code=status.HTTP_201_CREATED)
-async def create(
+def create(
     data: schemas.PersonalAPIKeyCreate,
     user: CurrentUser,
     session: DbSession,
@@ -47,13 +47,13 @@ async def create(
 
 
 @router.get('/', response_model=list[schemas.PersonalAPIKey], status_code=status.HTTP_200_OK)
-async def read_many(user: CurrentUser, session: DbSession):
+def read_many(user: CurrentUser, session: DbSession):
     query = select(models.PersonalAPIKey).where(models.PersonalAPIKey.user_id == user.id).order_by(models.PersonalAPIKey.created_at.desc())
     return list(session.scalars(query).all())
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def revoke(id: int, user: CurrentUser, session: DbSession):
+def revoke(id: int, user: CurrentUser, session: DbSession):
     if key := session.get(models.PersonalAPIKey, id):
         if key.user_id != user.id:
             raise NotFoundException('API key', id, logger)

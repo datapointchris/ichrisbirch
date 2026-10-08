@@ -93,7 +93,7 @@ def project_with_counts(project: models.Project, item_count, open_count, complet
 
 
 @router.get('/', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     repo: str | None = Query(None, description='Only projects holding at least one item tagged with this repo'),
     project_status: str = Query(
@@ -184,7 +184,7 @@ def ensure_active_name_available(session: Session, name: str, exclude_id: UUID |
 
 
 @router.post('/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
-async def create(project: schemas.ProjectCreate, session: DbSession):
+def create(project: schemas.ProjectCreate, session: DbSession):
     validate_kind(project.kind, session)
     validate_status(project.status, session)
     require_reason_when_dropped(project.status, project.status_reason)
@@ -207,7 +207,7 @@ async def create(project: schemas.ProjectCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
-async def read_one(project: ProjectFromPath, session: DbSession):
+def read_one(project: ProjectFromPath, session: DbSession):
     counts = (
         select(*item_count_columns())
         .select_from(ProjectItemMembership)
@@ -249,7 +249,7 @@ def apply_status_transition(project: models.Project, update_data: dict, session:
 
 
 @router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
-async def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
+def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_update', project_id=project.id, update_data=update_data)
     if (kind := update_data.get('kind')) is not None:
@@ -273,7 +273,7 @@ async def update(project: ProjectFromPath, update: schemas.ProjectUpdate, sessio
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(project: ProjectFromPath, session: DbSession):
+def delete(project: ProjectFromPath, session: DbSession):
     # Find items that only belong to this project (would become orphans)
     multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != project.id)
     orphan_query = (
@@ -304,7 +304,7 @@ async def delete(project: ProjectFromPath, session: DbSession):
 
 
 @router.get('/{id}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
-async def list_items(
+def list_items(
     project: ProjectFromPath,
     session: DbSession,
     zone: RequestZone,

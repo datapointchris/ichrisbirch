@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.AutoFun], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, completed: bool | None = None):
+def read_many(session: DbSession, completed: bool | None = None):
     query = select(models.AutoFun).order_by(models.AutoFun.added_date.desc())
     if completed is not None:
         query = query.where(models.AutoFun.is_completed == completed)
@@ -22,7 +22,7 @@ async def read_many(session: DbSession, completed: bool | None = None):
 
 
 @router.post('/', response_model=schemas.AutoFun, status_code=status.HTTP_201_CREATED)
-async def create(autofun: schemas.AutoFunCreate, session: DbSession):
+def create(autofun: schemas.AutoFunCreate, session: DbSession):
     db_obj = models.AutoFun(**autofun.model_dump())
     session.add(db_obj)
     session.commit()
@@ -31,7 +31,7 @@ async def create(autofun: schemas.AutoFunCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if autofun := session.get(models.AutoFun, id):
         return autofun
     logger.warning('autofun_not_found', id=id)
@@ -39,7 +39,7 @@ async def read_one(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
-async def update(id: int, autofun_update: schemas.AutoFunUpdate, session: DbSession):
+def update(id: int, autofun_update: schemas.AutoFunUpdate, session: DbSession):
     if db_obj := session.get(models.AutoFun, id):
         for field, value in autofun_update.model_dump(exclude_unset=True).items():
             setattr(db_obj, field, value)
@@ -51,7 +51,7 @@ async def update(id: int, autofun_update: schemas.AutoFunUpdate, session: DbSess
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if autofun := session.get(models.AutoFun, id):
         # Remove any active task junction record before deleting the item
         active = session.execute(select(models.AutoFunActiveTask).where(models.AutoFunActiveTask.fun_item_id == id)).scalar_one_or_none()

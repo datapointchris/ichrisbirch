@@ -16,13 +16,13 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Countdown], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, limit: RowLimit = None):
+def read_many(session: DbSession, limit: RowLimit = None):
     query = select(models.Countdown).order_by(models.Countdown.due_date.asc())
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.post('/', response_model=schemas.Countdown, status_code=status.HTTP_201_CREATED)
-async def create(countdown: schemas.CountdownCreate, session: DbSession):
+def create(countdown: schemas.CountdownCreate, session: DbSession):
     db_obj = models.Countdown(**countdown.model_dump())
     session.add(db_obj)
     session.commit()
@@ -31,14 +31,14 @@ async def create(countdown: schemas.CountdownCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if countdown := session.get(models.Countdown, id):
         return countdown
     raise NotFoundException('countdown', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if countdown := session.get(models.Countdown, id):
         session.delete(countdown)
         session.commit()
@@ -48,7 +48,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Countdown, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.CountdownUpdate, session: DbSession):
+def update(id: int, update: schemas.CountdownUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('countdown_update', countdown_id=id, update_data=update_data)
 

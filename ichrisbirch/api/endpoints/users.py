@@ -66,7 +66,7 @@ async def require_admin_or_internal_service(
 
 
 @router.get('/', response_model=list[schemas.User], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: RowLimit = None):
+def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: RowLimit = None):
     """List all users.
 
     Requires admin user or internal service authentication.
@@ -107,7 +107,7 @@ async def require_user_access_or_admin_or_internal_service(
 
 
 @router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def me(user: CurrentUser):
+def me(user: CurrentUser):
     """Get the current user using authentication methods for CurrentUser.
 
     NOTE: even though CurrentUser accepts oauth2 authentication, the form data
@@ -119,7 +119,7 @@ async def me(user: CurrentUser):
 
 
 @router.get('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_one(
+def read_one(
     id: int,
     session: DbSession,
     _: bool = Depends(require_user_access_or_admin_or_internal_service),
@@ -134,7 +134,7 @@ async def read_one(
 
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
-async def create(
+def create(
     user: schemas.UserCreate,
     session: DbSession,
     settings: Settings = Depends(get_settings),
@@ -150,7 +150,7 @@ async def create(
     return db_obj
 
 
-async def _update_user_preferences_helper(db_user: models.User, update_data: dict, session: Session) -> models.User:
+def _update_user_preferences_helper(db_user: models.User, update_data: dict, session: Session) -> models.User:
     """Helper function to update user preferences with error handling."""
     try:
         db_user.preferences = deep_merge(db_user.preferences, update_data)
@@ -174,7 +174,7 @@ async def update_my_preferences(request: Request, user: CurrentUser, session: Db
 
     # The session attached to the CurrentUser has gone out of scope, must re-attach to the new session
     db_user = session.merge(user)
-    return await _update_user_preferences_helper(db_user, update_data, session)
+    return _update_user_preferences_helper(db_user, update_data, session)
 
 
 @router.patch('/{id}/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
@@ -196,11 +196,11 @@ async def update_user_preferences(
     if not (db_user := session.get(models.User, id)):
         raise NotFoundException('user', id, logger)
 
-    return await _update_user_preferences_helper(db_user, update_data, session)
+    return _update_user_preferences_helper(db_user, update_data, session)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession, admin_user: models.User = Depends(get_admin_user)):
+def delete(id: int, session: DbSession, admin_user: models.User = Depends(get_admin_user)):
     """Delete a user (admin only).
 
     Admin users cannot delete themselves.
@@ -249,7 +249,7 @@ async def require_update_access(
 
 
 @router.patch('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def update(
+def update(
     id: int,
     update: schemas.UserUpdate,
     session: DbSession,
@@ -273,7 +273,7 @@ async def update(
 
 
 @router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def read_by_alternative_id(
+def read_by_alternative_id(
     alternative_id: int,
     session: DbSession,
     current_user: models.User | None = Depends(get_current_user_or_none),
@@ -307,7 +307,7 @@ async def read_by_alternative_id(
 
 
 @router.get('/email/{email}/', response_model=schemas.User | None, status_code=status.HTTP_200_OK)
-async def read_by_email(
+def read_by_email(
     email: str,
     _: AdminOrInternalServiceAccess,
     session: DbSession,

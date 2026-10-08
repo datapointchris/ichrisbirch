@@ -17,7 +17,7 @@ shops_router = APIRouter()
 
 
 @shops_router.get('/', response_model=list[schemas.CoffeeShop], status_code=status.HTTP_200_OK)
-async def read_many_shops(session: DbSession, city: str | None = Query(None)):
+def read_many_shops(session: DbSession, city: str | None = Query(None)):
     query = select(models.CoffeeShop).order_by(models.CoffeeShop.name.asc())
     if city:
         query = query.filter(models.CoffeeShop.city.ilike(f'%{city}%'))
@@ -25,7 +25,7 @@ async def read_many_shops(session: DbSession, city: str | None = Query(None)):
 
 
 @shops_router.post('/', response_model=schemas.CoffeeShop, status_code=status.HTTP_201_CREATED)
-async def create_shop(shop: schemas.CoffeeShopCreate, session: DbSession):
+def create_shop(shop: schemas.CoffeeShopCreate, session: DbSession):
     obj = models.CoffeeShop(**shop.model_dump())
     session.add(obj)
     session.commit()
@@ -35,14 +35,14 @@ async def create_shop(shop: schemas.CoffeeShopCreate, session: DbSession):
 
 
 @shops_router.get('/{id}/', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
-async def read_one_shop(id: int, session: DbSession):
+def read_one_shop(id: int, session: DbSession):
     if shop := session.get(models.CoffeeShop, id):
         return shop
     raise NotFoundException('coffee shop', id, logger)
 
 
 @shops_router.patch('/{id}/', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
-async def update_shop(id: int, shop_update: schemas.CoffeeShopUpdate, session: DbSession):
+def update_shop(id: int, shop_update: schemas.CoffeeShopUpdate, session: DbSession):
     update_data = shop_update.model_dump(exclude_unset=True)
     logger.debug('coffee_shop_update', shop_id=id, update_data=update_data)
     if shop := session.get(models.CoffeeShop, id):
@@ -55,7 +55,7 @@ async def update_shop(id: int, shop_update: schemas.CoffeeShopUpdate, session: D
 
 
 @shops_router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_shop(id: int, session: DbSession):
+def delete_shop(id: int, session: DbSession):
     if shop := session.get(models.CoffeeShop, id):
         session.delete(shop)
         session.commit()
@@ -68,7 +68,7 @@ beans_router = APIRouter()
 
 
 @beans_router.get('/', response_model=list[schemas.CoffeeBean], status_code=status.HTTP_200_OK)
-async def read_many_beans(
+def read_many_beans(
     session: DbSession,
     roast_level: str | None = Query(None),
     brew_method: str | None = Query(None),
@@ -85,7 +85,7 @@ async def read_many_beans(
 
 
 @beans_router.post('/', response_model=schemas.CoffeeBean, status_code=status.HTTP_201_CREATED)
-async def create_bean(bean: schemas.CoffeeBeanCreate, session: DbSession):
+def create_bean(bean: schemas.CoffeeBeanCreate, session: DbSession):
     obj = models.CoffeeBean(**bean.model_dump())
     session.add(obj)
     session.commit()
@@ -95,14 +95,14 @@ async def create_bean(bean: schemas.CoffeeBeanCreate, session: DbSession):
 
 
 @beans_router.get('/{id}/', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
-async def read_one_bean(id: int, session: DbSession):
+def read_one_bean(id: int, session: DbSession):
     if bean := session.get(models.CoffeeBean, id):
         return bean
     raise NotFoundException('coffee bean', id, logger)
 
 
 @beans_router.patch('/{id}/', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
-async def update_bean(id: int, bean_update: schemas.CoffeeBeanUpdate, session: DbSession):
+def update_bean(id: int, bean_update: schemas.CoffeeBeanUpdate, session: DbSession):
     update_data = bean_update.model_dump(exclude_unset=True)
     logger.debug('coffee_bean_update', bean_id=id, update_data=update_data)
     if bean := session.get(models.CoffeeBean, id):
@@ -115,7 +115,7 @@ async def update_bean(id: int, bean_update: schemas.CoffeeBeanUpdate, session: D
 
 
 @beans_router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_bean(id: int, session: DbSession):
+def delete_bean(id: int, session: DbSession):
     if bean := session.get(models.CoffeeBean, id):
         session.delete(bean)
         session.commit()

@@ -74,7 +74,7 @@ def _read_page_for_request(url: str) -> ArticlePage:
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     zone: RequestZone,
     favorites: bool | None = None,
@@ -116,13 +116,13 @@ async def read_many(
 
 
 @router.get('/current/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
-async def current(session: DbSession):
+def current(session: DbSession):
     query = select(models.Article).where(models.Article.is_current.is_(True))
     return session.scalars(query).first()
 
 
 @router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one_url(url: str, session: DbSession):
+def read_one_url(url: str, session: DbSession):
     url = clean_url(url)
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
         return article
@@ -130,7 +130,7 @@ async def read_one_url(url: str, session: DbSession):
 
 
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
-async def create(article: schemas.ArticleCreate, session: DbSession):
+def create(article: schemas.ArticleCreate, session: DbSession):
     obj = models.Article(**article.model_dump())
     session.add(obj)
     session.commit()
@@ -209,7 +209,7 @@ async def bulk_import(request: Request):
 
 
 @router.get('/bulk-import/{batch_id}/', status_code=status.HTTP_200_OK)
-async def bulk_import_status(batch_id: str, request: Request):
+def bulk_import_status(batch_id: str, request: Request):
     """Check status of a bulk article import batch."""
     from ichrisbirch.api.article_import_worker import get_batch_status
 
@@ -221,14 +221,14 @@ async def bulk_import_status(batch_id: str, request: Request):
 
 
 @router.get('/failed-imports/', response_model=list[schemas.ArticleFailedImport], status_code=status.HTTP_200_OK)
-async def list_failed_imports(session: DbSession):
+def list_failed_imports(session: DbSession):
     """List all failed article imports."""
     query = select(models.ArticleFailedImport).order_by(models.ArticleFailedImport.failed_at.desc())
     return list(session.scalars(query).all())
 
 
 @router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
 
     Search terms must be separated and wildcards added.
@@ -313,14 +313,14 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         return article
     raise NotFoundException('article', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         session.delete(article)
         session.commit()
@@ -329,7 +329,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
+def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('article_update', article_id=id, update_data=update_data)
     if article := session.get(models.Article, id):

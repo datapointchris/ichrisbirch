@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.get('/search/', response_model=list[tuple[schemas.Box, schemas.BoxItem]], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     """This search is different from the other searches as it joins the Box and BoxItem tables and returns a list of tuples of Box and
     BoxItem objects instead of only BoxItem objects.
 
@@ -32,14 +32,14 @@ async def search(q: str, session: DbSession):
 
 
 @router.get('/boxes/', response_model=list[schemas.Box], status_code=status.HTTP_200_OK)
-async def read_many_boxes(session: DbSession, limit: RowLimit = None):
+def read_many_boxes(session: DbSession, limit: RowLimit = None):
     query = select(models.Box).order_by(models.Box.number)
     results = list(session.scalars(apply_row_limit(query, limit)).all())
     return results
 
 
 @router.post('/boxes/', response_model=schemas.Box, status_code=status.HTTP_201_CREATED)
-async def create_box(box: schemas.BoxCreate, session: DbSession):
+def create_box(box: schemas.BoxCreate, session: DbSession):
     db_obj = models.Box(**box.model_dump())
     session.add(db_obj)
     session.commit()
@@ -48,14 +48,14 @@ async def create_box(box: schemas.BoxCreate, session: DbSession):
 
 
 @router.get('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
-async def read_one_box(id: int, session: DbSession):
+def read_one_box(id: int, session: DbSession):
     if box := session.get(models.Box, id):
         return box
     raise NotFoundException('box', id, logger)
 
 
 @router.delete('/boxes/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_box(id: int, session: DbSession):
+def delete_box(id: int, session: DbSession):
     if box := session.get(models.Box, id):
         # orphan items in box
         for item in box.items:
@@ -68,7 +68,7 @@ async def delete_box(id: int, session: DbSession):
 
 
 @router.patch('/boxes/{id}/', response_model=schemas.Box, status_code=status.HTTP_200_OK)
-async def update_box(id: int, update: schemas.BoxUpdate, session: DbSession):
+def update_box(id: int, update: schemas.BoxUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('box_update', box_id=id, update_data=update_data)
     if obj := session.get(models.Box, id):
@@ -81,7 +81,7 @@ async def update_box(id: int, update: schemas.BoxUpdate, session: DbSession):
 
 
 @router.get('/items/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
-async def read_many_items(session: DbSession, limit: RowLimit = None):
+def read_many_items(session: DbSession, limit: RowLimit = None):
     query = select(models.BoxItem).order_by(models.BoxItem.name)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
@@ -100,7 +100,7 @@ def _update_box_details_based_on_contents(box: models.Box, session: Session):
 
 
 @router.post('/items/', response_model=schemas.BoxItem, status_code=status.HTTP_201_CREATED)
-async def create_item(item: schemas.BoxItemCreate, session: DbSession):
+def create_item(item: schemas.BoxItemCreate, session: DbSession):
     db_obj = models.BoxItem(**item.model_dump())
     session.add(db_obj)
     session.commit()
@@ -110,20 +110,20 @@ async def create_item(item: schemas.BoxItemCreate, session: DbSession):
 
 
 @router.get('/items/orphans/', response_model=list[schemas.BoxItem], status_code=status.HTTP_200_OK)
-async def read_many_orphans(session: DbSession):
+def read_many_orphans(session: DbSession):
     query = select(models.BoxItem).filter(models.BoxItem.box_id.is_(None)).order_by(models.BoxItem.name)
     return list(session.scalars(query).all())
 
 
 @router.get('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
-async def read_one_item(id: int, session: DbSession):
+def read_one_item(id: int, session: DbSession):
     if item := session.get(models.BoxItem, id):
         return item
     raise NotFoundException('box item', id, logger)
 
 
 @router.delete('/items/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_item(id: int, session: DbSession):
+def delete_item(id: int, session: DbSession):
     if item := session.get(models.BoxItem, id):
         box = item.box
         session.delete(item)
@@ -135,7 +135,7 @@ async def delete_item(id: int, session: DbSession):
 
 
 @router.patch('/items/{id}/', response_model=schemas.BoxItem, status_code=status.HTTP_200_OK)
-async def update_item(id: int, update: schemas.BoxItemUpdate, session: DbSession):
+def update_item(id: int, update: schemas.BoxItemUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('box_item_update', item_id=id, update_data=update_data)
     if obj := session.get(models.BoxItem, id):

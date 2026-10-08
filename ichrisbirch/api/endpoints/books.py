@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     ownership: str | None = Query(None),
     progress: str | None = Query(None),
@@ -51,7 +51,7 @@ async def read_many(
 
 
 @router.post('/', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
-async def create(book: schemas.BookCreate, session: DbSession):
+def create(book: schemas.BookCreate, session: DbSession):
     obj = models.Book(**book.model_dump())
     session.add(obj)
     session.commit()
@@ -60,7 +60,7 @@ async def create(book: schemas.BookCreate, session: DbSession):
 
 
 @router.get('/search/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     """Search books by title, author, or tags.
 
     Accepts comma-separated terms (for multi-word phrases) or space-separated
@@ -119,21 +119,21 @@ async def goodreads(request: Request):
 
 
 @router.get('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         return book
     raise NotFoundException('book', id, logger)
 
 
 @router.get('/isbn/{isbn}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def get_book_by_isbn(isbn: str, session: DbSession):
+def get_book_by_isbn(isbn: str, session: DbSession):
     if book := session.scalar(select(models.Book).where(models.Book.isbn == isbn)):
         return book
     raise NotFoundException('book', f'isbn={isbn}', logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         session.delete(book)
         session.commit()
@@ -143,7 +143,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
-async def update(id: int, book_update: schemas.BookUpdate, session: DbSession):
+def update(id: int, book_update: schemas.BookUpdate, session: DbSession):
     update_data = book_update.model_dump(exclude_unset=True)
     logger.debug('book_update', book_id=id, update_data=update_data)
 

@@ -114,7 +114,7 @@ def vocabulary_entries(session: Session, lookup: InstrumentedAttribute, counts: 
 
 
 @router.get('/', response_model=list[schemas.Strain], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     strain_type: str | None = Query(None),
     strain_status: str | None = Query(None, alias='status'),
@@ -163,7 +163,7 @@ async def read_many(
 
 
 @router.post('/', response_model=schemas.Strain, status_code=status.HTTP_201_CREATED)
-async def create(strain: schemas.StrainCreate, session: DbSession):
+def create(strain: schemas.StrainCreate, session: DbSession):
     data = strain.model_dump()
     reject_unknown_vocabulary(session, data, WRITE_VOCABULARIES)
     reject_duplicate_natural_key(session, data['name'], data.get('breeder'))
@@ -194,7 +194,7 @@ def search_clause(q: str):
 
 
 @router.get('/vocabulary/', response_model=schemas.StrainVocabulary, status_code=status.HTTP_200_OK)
-async def vocabulary(session: DbSession):
+def vocabulary(session: DbSession):
     """Every value each vocabulary defines, with how many strains carry it.
 
     Read outward from the lookup tables rather than inward from the strains, so
@@ -210,14 +210,14 @@ async def vocabulary(session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if strain := session.get(models.Strain, id):
         return strain
     raise NotFoundException('strain', id, logger)
 
 
 @router.patch('/{id}/', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
-async def update(id: int, strain_update: schemas.StrainUpdate, session: DbSession):
+def update(id: int, strain_update: schemas.StrainUpdate, session: DbSession):
     strain = session.get(models.Strain, id)
     if strain is None:
         raise NotFoundException('strain', id, logger)
@@ -242,7 +242,7 @@ async def update(id: int, strain_update: schemas.StrainUpdate, session: DbSessio
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if strain := session.get(models.Strain, id):
         session.delete(strain)
         session.commit()

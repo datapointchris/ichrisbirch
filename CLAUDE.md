@@ -254,6 +254,12 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
    response. `test_every_read_that_takes_a_limit_declares_the_shared_one` walks
    the routes and fails on either, and adding the endpoint to `LIMITED_READS` in
    the same file is what gets it the five behavioral cases.
+10. **A handler is `def` unless it awaits something.** FastAPI runs an `async def`
+   handler on the event loop and a `def` one in its threadpool. The session, the
+   docker client and the Redis client are synchronous, so an `async def` handler
+   calling them holds every other request in the worker until it returns.
+   `test_async_handlers_await.py` walks the routes and fails on one that awaits
+   nothing.
 
 ### Adding a Vue Page
 
