@@ -9,10 +9,10 @@ Every route on the admin router sits behind a router-level `get_admin_user` depe
 
 `/admin` shows the server, the `icb-` containers, Postgres, Redis and the disk.
 Beside them it lists the API's recent 4xx and 5xx responses.
-With auto-refresh on, the page rereads both every 30 seconds.
+With auto-refresh on, the page rereads both on a timer.
 
-The recent errors come from a ring buffer in `ichrisbirch/api/middleware.py`.
-It holds the last 200 per API process and empties when the process restarts.
+The recent errors come from the `recent_errors` ring buffer in `ichrisbirch/api/middleware.py`.
+Each API process keeps its own, up to the buffer's `maxlen`, and it empties when the process restarts.
 
 The deploy color is read from `/var/lib/ichrisbirch/bluegreen-state`.
 Outside production that file is absent, so no color is shown.
@@ -23,11 +23,13 @@ The health read is a `def` handler, so FastAPI runs it in its threadpool.
 Every probe in it is blocking I/O.
 On the event loop, one slow probe would hold every other request the worker is serving.
 
-`PROBE_TIMEOUT_SECONDS` in `ichrisbirch/api/endpoints/admin.py` bounds each call a probe makes:
+A probe that gets no answer puts `null` in its section of the response, and the page shows that section as unavailable.
+Zeros would read as a measured, idle dependency, which is a different fact.
+`PROBE_TIMEOUT_SECONDS` in `ichrisbirch/api/endpoints/admin.py` sets every bound:
 
-- **Docker** uses the client's API timeout. An unreachable daemon reads as "Docker status unavailable".
-- **Postgres** sets a `statement_timeout` local to the probe's transaction. A cancelled query reads as empty stats instead of failing the whole read.
-- **Redis** gets its own client with a connect and read timeout and one immediate retry. A refused or silent server reads as `N/A`. redis-py's own default sets no timeout and retries with exponential backoff, which turns a refused AUTH into many seconds of waiting.
+- **Docker** makes several API calls per container. Each call has the client's API timeout, and the whole probe runs on one worker thread under the same deadline.
+- **Postgres** sets a `statement_timeout` local to the probe's transaction, so each of its queries is cancelled at the bound.
+- **Redis** gets its own client with a connect and read timeout. It retries a dropped connection once and never a command that timed out, because that command may already have run. redis-py's own default sets no timeout and retries connection errors and timeouts alike with exponential backoff, which turns a refused AUTH into many seconds of waiting.
 
 The API mounts the Docker socket to read container status.
 CI's compose file drops that mount, so the Docker section always reads as unavailable there.
