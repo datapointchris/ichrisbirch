@@ -20,7 +20,7 @@ import (
 //
 // The two states are named rather than called "closed", because a reader
 // following a word --status does not accept gets a second refusal.
-var projectHints = []string{"Completed and dropped projects are hidden: icb projects list --status all"}
+var projectHints = []string{"Shelved, completed and dropped projects are hidden: icb projects list --status all"}
 
 func newProjectsCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -36,6 +36,7 @@ func newProjectsCommand() *cobra.Command {
 		newProjectsShowCommand(),
 		newProjectsCreateCommand(),
 		newProjectsEditCommand(),
+		newProjectsShelveCommand(),
 		newProjectsCompleteCommand(),
 		newProjectsDropCommand(),
 		newProjectsReopenCommand(),
@@ -57,8 +58,8 @@ func newProjectsListCommand() *cobra.Command {
 		Short: "List the active projects",
 		Long: "The active projects, with the repos their items touch. --repo narrows to the\n" +
 			"projects holding work on one repo — the efforts that span it, however they are\n" +
-			"named. Completed and dropped projects are hidden until you ask for them by\n" +
-			"--status; that is the whole point of closing one.\n" +
+			"named. Shelved, completed and dropped projects are hidden until you ask for\n" +
+			"them by --status; that is the whole point of setting one aside.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first projects in\n" +
 			"position order rather than filtering a capped slice.",
@@ -85,11 +86,15 @@ func newProjectsListCommand() *cobra.Command {
 				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No projects hold work on repo %s.\n", *filter)
 				return nil
 			}
+			if len(projects) == 0 && projectStatus != "" && projectStatus != api.ProjectStatusAll {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "No %s projects.\n", projectStatus)
+				return nil
+			}
 			// The status column earns its width only when the rows can differ in
 			// it, which the flag decides — no second request to find out.
 			printProjectsTable(cmd.OutOrStdout(), projects, projectStatus != "")
 			if projectStatus == "" {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and dropped projects are hidden: icb projects list --status all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nShelved, completed and dropped projects are hidden: icb projects list --status all")
 			}
 			return nil
 		},
@@ -151,11 +156,32 @@ func newProjectsDropCommand() *cobra.Command {
 	return cmd
 }
 
+func newProjectsShelveCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "shelve <project>",
+		Short: "Set a project aside for someday, which hides it",
+		Long: "For a project you still mean to do, just not now. It moves to --status\n" +
+			"someday, out of the active list, and closes nothing: no close is recorded and\n" +
+			"its items are left as they are. It also gives up its name, so a new project\n" +
+			"may take it; bringing this one back is then refused until one is renamed.\n" +
+			"`icb projects reopen` returns it to the active list.",
+		Example: "  icb projects shelve \"Home Building Projects\"",
+		Args:    usageArgs(cobra.ExactArgs(1)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			someday := api.ProjectStatusSomeday
+			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &someday}, asJSON, "Shelved")
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated project as JSON to stdout")
+	return cmd
+}
+
 func newProjectsReopenCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
 		Use:   "reopen <project>",
-		Short: "Return a closed project to the active list",
+		Short: "Return a shelved or closed project to the active list",
 		Long: "Clears the closing reason and timestamp along with the status. Refused if an\n" +
 			"active project has taken the name in the meantime — only one project holds a\n" +
 			"name at a time, and it is the live one.",

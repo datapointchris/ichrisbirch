@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -155,11 +154,11 @@ func newStrainsVocabularyCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			vocabulary, err := client.GetStrainVocabulary(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), vocabulary)
@@ -186,11 +185,11 @@ func newStrainsShowCommand() *cobra.Command {
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			strain, err := client.GetStrain(cmd.Context(), id)
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), strain)
@@ -322,11 +321,11 @@ func newStrainsCreateCommand() *cobra.Command {
 
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			fields, err := strainCreateFields(cmd.Context(), client)
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			answers := flagAnswers(cmd, strainFormKeys...)
 			if err := validateAnswers(answers, fields); err != nil {
@@ -367,18 +366,18 @@ func newStrainsCreateCommand() *cobra.Command {
 				in.Notes = ptr(answers.Get("notes"))
 			}
 
-			in.Breeder = strainStrFlag(f, "breeder", &v.breeder)
-			in.Lineage = strainStrFlag(f, "lineage", &v.lineage)
+			in.Breeder = valuedStrFlag(f, "breeder", &v.breeder)
+			in.Lineage = valuedStrFlag(f, "lineage", &v.lineage)
 			in.THCPercent = floatFlag(f, "thc", &v.thc)
 			in.CBDPercent = floatFlag(f, "cbd", &v.cbd)
-			in.Source = strainStrFlag(f, "source", &v.source)
-			in.Review = strainStrFlag(f, "review", &v.review)
-			in.LastTriedDate = strainStrFlag(f, "last-tried", &v.lastTried)
+			in.Source = valuedStrFlag(f, "source", &v.source)
+			in.Review = valuedStrFlag(f, "review", &v.review)
+			in.LastTriedDate = valuedStrFlag(f, "last-tried", &v.lastTried)
 			in.Tags = listFlag(f, "tag", v.tags)
 
 			strain, err := client.CreateStrain(cmd.Context(), in)
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), strain)
@@ -438,15 +437,15 @@ func newStrainsEditCommand() *cobra.Command {
 			}
 
 			in := api.StrainUpdateInput{}
-			in.Name = strainStrFlag(f, "name", &v.name)
-			in.Breeder = strainStrFlag(f, "breeder", &v.breeder)
-			in.Lineage = strainStrFlag(f, "lineage", &v.lineage)
-			in.StrainType = strainStrFlag(f, "type", &v.strainType)
-			in.Status = strainStrFlag(f, "status", &v.status)
-			in.Source = strainStrFlag(f, "source", &v.source)
-			in.Notes = strainStrFlag(f, "notes", &v.notes)
-			in.Review = strainStrFlag(f, "review", &v.review)
-			in.LastTriedDate = strainStrFlag(f, "last-tried", &v.lastTried)
+			in.Name = valuedStrFlag(f, "name", &v.name)
+			in.Breeder = valuedStrFlag(f, "breeder", &v.breeder)
+			in.Lineage = valuedStrFlag(f, "lineage", &v.lineage)
+			in.StrainType = valuedStrFlag(f, "type", &v.strainType)
+			in.Status = valuedStrFlag(f, "status", &v.status)
+			in.Source = valuedStrFlag(f, "source", &v.source)
+			in.Notes = valuedStrFlag(f, "notes", &v.notes)
+			in.Review = valuedStrFlag(f, "review", &v.review)
+			in.LastTriedDate = valuedStrFlag(f, "last-tried", &v.lastTried)
 			in.THCPercent = floatFlag(f, "thc", &v.thc)
 			in.CBDPercent = floatFlag(f, "cbd", &v.cbd)
 			in.Rating = intFlag(f, "rating", &v.rating)
@@ -461,11 +460,11 @@ func newStrainsEditCommand() *cobra.Command {
 
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			strain, err := client.UpdateStrain(cmd.Context(), id, in, clear)
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), strain)
@@ -493,11 +492,11 @@ func newStrainsDeleteCommand() *cobra.Command {
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			strain, err := client.GetStrain(cmd.Context(), id)
 			if err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if !yes {
 				ok, err := confirm(cmd, fmt.Sprintf("Delete strain %q (id %d)?", strain.Name, strain.ID))
@@ -510,7 +509,7 @@ func newStrainsDeleteCommand() *cobra.Command {
 				}
 			}
 			if err := client.DeleteStrain(cmd.Context(), id); err != nil {
-				return handleStrainAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted strain %q (id %d)\n", strain.Name, id)
 			return nil
@@ -667,9 +666,10 @@ func listFlag(f *pflag.FlagSet, name string, values []string) []string {
 	return values
 }
 
-// strFlag clearing a field is carried by the clear list, not by an empty value
-// in the body, so a clearing flag reads as untouched here.
-func strainStrFlag(f *pflag.FlagSet, name string, v *string) *string {
+// valuedStrFlag is strFlag for a field an empty value clears. Clearing is
+// carried by the clear list, not by an empty value in the body, so a clearing
+// flag reads as untouched here.
+func valuedStrFlag(f *pflag.FlagSet, name string, v *string) *string {
 	if readFlagIntent(f, name) != flagCarriesValues {
 		return nil
 	}
@@ -688,31 +688,17 @@ func isEmptyStrainUpdate(in api.StrainUpdateInput) bool {
 		in.Source == nil && in.Notes == nil && in.Review == nil && in.LastTriedDate == nil
 }
 
-// handleStrainAPIError maps a 422 to a usage error.
-//
-// The API refuses an unknown vocabulary value with a 422 naming the values that
-// would have worked, which is a usage mistake wherever it arrives. Left as a
-// generic failure it exits 1, and a caller that retries on 1 and fixes its
-// arguments on 2 retries a typo forever.
-func handleStrainAPIError(err error) error {
-	var apiErr *api.APIError
-	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity && apiErr.Message != "" {
-		return usageError{errors.New(apiErr.Message)}
-	}
-	return handleAPIError(err)
-}
-
 // ptr returns a pointer to v, for the optional fields the wire omits when nil.
 func ptr[T any](v T) *T { return &v }
 
 func runStrainList(cmd *cobra.Command, asJSON bool, filter api.StrainFilter, fetch func(*api.Client) ([]api.Strain, error)) error {
 	client, err := newAPIClient(cmd.Context())
 	if err != nil {
-		return handleStrainAPIError(err)
+		return handleArgumentAPIError(err)
 	}
 	strains, err := fetch(client)
 	if err != nil {
-		return handleStrainAPIError(err)
+		return handleArgumentAPIError(err)
 	}
 	if asJSON {
 		return encodeJSON(cmd.OutOrStdout(), strains)

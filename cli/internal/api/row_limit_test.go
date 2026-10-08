@@ -69,6 +69,18 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 			_, err := c.ListEvents(ctx, intptr(3))
 			return err
 		},
+		"ListInitiatives": func(c *Client) error {
+			_, err := c.ListInitiatives(ctx, "", intptr(3))
+			return err
+		},
+		"ListIssueComments": func(c *Client) error {
+			_, err := c.ListIssueComments(ctx, "12", intptr(3))
+			return err
+		},
+		"ListIssues": func(c *Client) error {
+			_, err := c.ListIssues(ctx, IssueFilter{}, "", "", "", intptr(3))
+			return err
+		},
 		"ListItems": func(c *Client) error {
 			_, err := c.ListItems(ctx, nil, "", "", "", "", intptr(3))
 			return err
@@ -79,6 +91,10 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 		},
 		"ListProjects": func(c *Client) error {
 			_, err := c.ListProjects(ctx, nil, "", intptr(3))
+			return err
+		},
+		"ListReadyIssues": func(c *Client) error {
+			_, err := c.ListReadyIssues(ctx, ReadyFilter{}, "", intptr(3))
 			return err
 		},
 		"ListRecipes": func(c *Client) error {

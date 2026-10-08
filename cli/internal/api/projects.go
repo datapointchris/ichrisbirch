@@ -147,8 +147,12 @@ func (c *Client) DeleteProject(ctx context.Context, id string) error {
 // `completed` and not `done`: an item stores a `completed` boolean and every
 // reader renders that word, so one concept spelled two ways on a resource and
 // its own children was the mismatch this removed.
+//
+// `someday` is open work set aside: hidden like a closed project, but never
+// closed, so it records no close and holds no name.
 const (
 	ProjectStatusActive    = "active"
+	ProjectStatusSomeday   = "someday"
 	ProjectStatusCompleted = "completed"
 	ProjectStatusDropped   = "dropped"
 	ProjectStatusAll       = "all"
@@ -156,7 +160,9 @@ const (
 
 // ProjectStatuses is what --status accepts: the lifecycle in order, then the
 // escape hatch.
-var ProjectStatuses = []string{ProjectStatusActive, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll}
+var ProjectStatuses = []string{
+	ProjectStatusActive, ProjectStatusSomeday, ProjectStatusCompleted, ProjectStatusDropped, ProjectStatusAll,
+}
 
 // What sort of work a project is. `kind` separates making something new from
 // the work that merely has to happen, which is what lets `items next` weight a

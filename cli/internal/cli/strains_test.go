@@ -257,16 +257,16 @@ func TestListFlag_SeparatesValuesFromClearing(t *testing.T) {
 	}
 }
 
-func TestStrainStrFlag_SeparatesValuesFromClearing(t *testing.T) {
+func TestValuedStrFlag_SeparatesValuesFromClearing(t *testing.T) {
 	value := "Ken"
-	if got := strainStrFlag(strainEditFlags(t), "breeder", &value); got != nil {
+	if got := valuedStrFlag(strainEditFlags(t), "breeder", &value); got != nil {
 		t.Errorf("untouched = %v, want nil", *got)
 	}
 	empty := ""
-	if got := strainStrFlag(strainEditFlags(t, "--breeder", ""), "breeder", &empty); got != nil {
+	if got := valuedStrFlag(strainEditFlags(t, "--breeder", ""), "breeder", &empty); got != nil {
 		t.Errorf("clearing = %q, want nil — the clear list carries it", *got)
 	}
-	if got := strainStrFlag(strainEditFlags(t, "--breeder", "Ken"), "breeder", &value); got == nil || *got != "Ken" {
+	if got := valuedStrFlag(strainEditFlags(t, "--breeder", "Ken"), "breeder", &value); got == nil || *got != "Ken" {
 		t.Errorf("got %v, want Ken", got)
 	}
 }
