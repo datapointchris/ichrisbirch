@@ -141,8 +141,10 @@ library's README carries the mechanism.
 `icb auth status` reports `live`, `rejected` or `unverified` rather than
 predicting a refresh, since a stored token says what this machine holds and not
 what Authelia will honor. A rejected session exits 1. The `--json` output names
-the grant it checked in `mode`, either `login` or `service`. A service stores no
-token, so its status requests one. It exits 1 unless the provider grants it.
+the credential it checked in `type`, `authorized_user` for a person's login or
+`service_account` for a service, as Google's credential files do. A service
+stores no token, so its status requests one. It exits 1 unless the provider
+grants it.
 
 `icb auth token` prints the current access token for scripting:
 

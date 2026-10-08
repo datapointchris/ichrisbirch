@@ -116,11 +116,11 @@ func TestService_StatusAsksTheProvider(t *testing.T) {
 	out, err := runService(t, "auth", "status", "--json")
 	var report struct {
 		LoggedIn bool   `json:"logged_in"`
-		Mode     string `json:"mode"`
+		Type     string `json:"type"`
 		Session  string `json:"session"`
 	}
-	if err != nil || json.Unmarshal([]byte(out), &report) != nil || !report.LoggedIn || report.Mode != "service" || report.Session != "live" {
-		t.Errorf("status with a good secret: err %v, output %s, want logged in, service and live", err, out)
+	if err != nil || json.Unmarshal([]byte(out), &report) != nil || !report.LoggedIn || report.Type != "service_account" || report.Session != "live" {
+		t.Errorf("status with a good secret: err %v, output %s, want logged in, service_account and live", err, out)
 	}
 
 	asService(t, idp.URL, "http://127.0.0.1:9", "wrong-secret")

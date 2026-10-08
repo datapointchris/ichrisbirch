@@ -158,14 +158,15 @@ func newAuthTokenCommand() *cobra.Command {
 	}
 }
 
-// authMode is which grant `auth status` checked.
-type authMode string
+// credentialType is whose credential `auth status` checked, spelled as Google's
+// credential files spell a person's OAuth login and a service's.
+type credentialType string
 
 const (
-	// modeLogin is the device grant a person logged this machine in through.
-	modeLogin authMode = "login"
-	// modeService is the client-credentials grant ICB_CLIENT_SECRET selects.
-	modeService authMode = "service"
+	// authorizedUser is the device-grant login a person made on this machine.
+	authorizedUser credentialType = "authorized_user"
+	// serviceAccount is the client-credentials grant ICB_CLIENT_SECRET selects.
+	serviceAccount credentialType = "service_account"
 )
 
 // statusReport is the stable JSON schema for `auth status --json`. It reports
@@ -177,7 +178,7 @@ const (
 // now. A service stores none, so nothing else says the next command will work.
 type statusReport struct {
 	LoggedIn  bool                    `json:"logged_in"`
-	Mode      authMode                `json:"mode"`
+	Type      credentialType          `json:"type"`
 	ClientID  string                  `json:"client_id"`
 	Issuer    string                  `json:"issuer"`
 	ExpiresAt string                  `json:"expires_at,omitempty"`
@@ -205,9 +206,9 @@ func newAuthStatusCommand() *cobra.Command {
 			if err := cfg.CheckService(); err != nil {
 				return err
 			}
-			report := statusReport{Mode: modeLogin, ClientID: cfg.ClientID, Issuer: cfg.Issuer}
+			report := statusReport{Type: authorizedUser, ClientID: cfg.ClientID, Issuer: cfg.Issuer}
 			if cfg.IsService() {
-				report.Mode = modeService
+				report.Type = serviceAccount
 				serviceStatus(cmd.Context(), cfg, &report)
 			} else if err := loginStatus(cmd.Context(), cfg, &report); err != nil {
 				return err
@@ -308,7 +309,7 @@ func printServiceStatus(out io.Writer, r statusReport) {
 
 func printStatus(cmd *cobra.Command, r statusReport) {
 	out := cmd.OutOrStdout()
-	if r.Mode == modeService {
+	if r.Type == serviceAccount {
 		printServiceStatus(out, r)
 		return
 	}
