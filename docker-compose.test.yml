@@ -96,7 +96,9 @@ services:
         max-file: "3"
         tag: "postgres-test"
 
-  # Test Redis — no persistence
+  # Test Redis — no persistence and no password. secrets.test.enc.env leaves
+  # REDIS_PASSWORD empty to match: redis-py retries a refused AUTH with
+  # backoff, so a password here turns every Redis call into seconds of waiting.
   redis:
     container_name: icb-test-redis
     ports: !override
