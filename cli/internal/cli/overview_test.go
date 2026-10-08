@@ -457,6 +457,14 @@ func TestSystemicOverviewFailure(t *testing.T) {
 		t.Error("a 401 in any section must fail the whole command")
 	}
 
+	// What a service client gets on every section outside its scope.
+	forbidden := []sectionFailure{
+		{Section: sectionTasks, Label: "tasks", Err: &api.APIError{StatusCode: http.StatusForbidden, Status: "403 Forbidden"}},
+	}
+	if err := systemicOverviewFailure(forbidden, 9); err == nil {
+		t.Error("a 403 in any section must fail the whole command")
+	}
+
 	serverErrors := []sectionFailure{
 		{Section: sectionTasks, Label: "tasks", Err: &api.APIError{StatusCode: 500, Status: "500"}},
 		{Section: sectionEvents, Label: "events", Err: &api.APIError{StatusCode: 500, Status: "500"}},

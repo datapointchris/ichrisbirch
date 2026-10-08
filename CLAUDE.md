@@ -48,7 +48,9 @@ Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every
 
 **Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. `api.ichrisbirch.com` bypasses ForwardAuth for every request — that is the Personal API Key path, and it is being retired along with those clients. The `icb` CLI does not use it: the `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the CLI targets `ichrisbirch.com/api` and only bearer requests skip the edge. `cli/internal/config/config.go` sets that as `defaultAPIBase`.
 
-**OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `sub` non-empty, `client_id` starts with `icb-cli-`, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
+**OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `icb-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
+
+**OIDC bearer (a service running the CLI):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
 **Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Config.Login()`, so do not reintroduce an `internal/auth` here.
 
@@ -58,7 +60,7 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 
 **Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
 
-**FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + Personal API Keys + local JWT tokens (access 15min, refresh 7d). Protected routes use `Depends(auth.get_current_user)`.
+**FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + Personal API Keys + local JWT tokens (lifetimes in `AuthSettings`). Protected routes use `Depends(auth.get_current_user)`, and a router with a route in `SCOPE_ROUTES` uses `get_current_user_or_scoped_client`. `tests/conftest.py` overrides each by function identity. An override reaches a `Depends` on that function and not a direct call to it, so `get_current_user_or_scoped_client`, which calls `get_current_user` directly, needs its own line there.
 
 ### Configuration & Secrets
 

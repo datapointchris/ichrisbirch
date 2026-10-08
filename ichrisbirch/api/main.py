@@ -18,6 +18,7 @@ from ichrisbirch.api import endpoints
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
+from ichrisbirch.api.endpoints.auth import get_current_user_or_scoped_client
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
 from ichrisbirch.api.redis_client import get_redis_client
@@ -98,6 +99,8 @@ def create_api(settings: Settings) -> FastAPI:
     logger.info('middleware_added', middleware='CORSMiddleware')
 
     deps = [Depends(get_current_user)]
+    # A route listed in `client_scopes.SCOPE_ROUTES` still answers a scoped client 403 unless its router takes these.
+    scoped_deps = [Depends(get_current_user_or_scoped_client)]
 
     api.include_router(endpoints.home.router, prefix='', include_in_schema=False)
     api.include_router(endpoints.admin.router, prefix='/admin', dependencies=[Depends(get_admin_user)])
@@ -122,9 +125,9 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.issues.router, prefix='/issues', dependencies=deps)
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
     api.include_router(endpoints.personal_api_keys.router, prefix='/api-keys', dependencies=deps)
-    api.include_router(endpoints.projects.router, prefix='/projects', dependencies=deps)
-    api.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=deps)
-    api.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=deps)
+    api.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)
+    api.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=scoped_deps)
+    api.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=scoped_deps)
     api.include_router(endpoints.recipes.router, prefix='/recipes', dependencies=deps)
     api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
     api.include_router(endpoints.strains.router, prefix='/strains', dependencies=deps)

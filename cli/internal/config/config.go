@@ -8,6 +8,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/datapointchris/goclilogin"
@@ -29,10 +30,45 @@ const (
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
+// serviceScope is the scope a service client requests. Authelia grants only the
+// scopes a request names, so a request naming none gets a token the API refuses.
+// ichrisbirch/api/client_scopes.py lists the routes this one reaches.
+const serviceScope = "icb.project-items.read"
+
 type Config struct {
 	Issuer   string
 	ClientID string
 	APIBase  string
+
+	// ClientSecret selects the client-credentials grant. It is set only where a
+	// service runs icb with no person present to approve a device login.
+	ClientSecret string
+
+	// clientIDSet is whether ICB_CLIENT_ID named the client. Unset, ClientID is
+	// the person's per-machine default.
+	clientIDSet bool
+}
+
+// IsService reports whether icb authenticates as a confidential service client
+// rather than as the person who logged in on this machine.
+func (c Config) IsService() bool {
+	return c.ClientSecret != ""
+}
+
+// CheckService refuses a secret set without ICB_CLIENT_ID. The default is the
+// person's `icb-cli-<host>`, so the secret would be sent to Authelia under that
+// client's id.
+func (c Config) CheckService() error {
+	if c.IsService() && !c.clientIDSet {
+		return errors.New("ICB_CLIENT_SECRET is set but ICB_CLIENT_ID is not: set it to the service client the secret belongs to, such as icb-svc-<machine>")
+	}
+	return nil
+}
+
+// Service is the goclilogin view of this config for the client-credentials
+// grant. Nothing it obtains is stored, so it names no keyring or state directory.
+func (c Config) Service() goclilogin.ServiceClient {
+	return goclilogin.ServiceClient{Issuer: c.Issuer, ClientID: c.ClientID, Scopes: []string{serviceScope}}
 }
 
 // Login is the goclilogin view of this config: which provider to authenticate
@@ -55,9 +91,11 @@ func (c Config) Login() goclilogin.Config {
 // A config file layer can slot in below env later without changing callers.
 func Load() Config {
 	return Config{
-		Issuer:   getEnv("ICB_OIDC_ISSUER", defaultIssuer),
-		ClientID: getEnv("ICB_CLIENT_ID", defaultClientID()),
-		APIBase:  getEnv("ICB_API_BASE", defaultAPIBase),
+		Issuer:       getEnv("ICB_OIDC_ISSUER", defaultIssuer),
+		ClientID:     getEnv("ICB_CLIENT_ID", defaultClientID()),
+		APIBase:      getEnv("ICB_API_BASE", defaultAPIBase),
+		ClientSecret: os.Getenv("ICB_CLIENT_SECRET"),
+		clientIDSet:  os.Getenv("ICB_CLIENT_ID") != "",
 	}
 }
 

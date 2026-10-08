@@ -1,8 +1,14 @@
 """Verification of the RFC 9068 JWT access tokens Authelia issues to the `icb` CLI.
 
-The CLI logs in with the OAuth 2.0 device authorization grant, which rules out Authelia's
-`authelia.bearer.authz` scope, so the token is no longer authorized at the Traefik ForwardAuth edge.
-It is a signed JWT and the API verifies it in-process against Authelia's JWKS.
+A person's CLI logs in with the OAuth 2.0 device authorization grant, which rules out Authelia's
+`authelia.bearer.authz` scope, so the Traefik ForwardAuth edge cannot authorize the token. A
+service running the CLI with no person present uses the client-credentials grant instead. Both
+tokens are signed JWTs, and the API verifies them in-process against Authelia's JWKS.
+
+The `client_id` prefix decides which of the two a token is: `icb-cli-` acts as the user, and
+`icb-svc-` is a `ScopedClient` that never resolves to one. A missing `sub` cannot decide it.
+Authelia 4.39 leaves `sub` off a client-credentials token, but RFC 9068 requires it, and a release
+that adds it would make a service token look like a person's.
 
 Key retrieval, caching and rotation are PyJWT's `PyJWKClient`. Nothing here parses a JWT by hand.
 """
@@ -53,10 +59,17 @@ class OIDCProviderUnavailable(Exception):
 
 
 class OIDCIdentity(BaseModel):
-    """What a verified access token establishes about the caller."""
+    """What a verified `icb-cli-` access token establishes about the person calling."""
 
     subject: str
     client_id: str
+
+
+class ScopedClient(BaseModel):
+    """A verified `icb-svc-` access token, which speaks for no person and reaches only the routes its scopes list."""
+
+    client_id: str
+    scopes: frozenset[str]
 
 
 def bearer_token(authorization_header: str) -> str:
@@ -98,19 +111,20 @@ def discover_jwks_uri(issuer: str, timeout: float = DISCOVERY_TIMEOUT_SECONDS) -
 class OIDCTokenVerifier:
     """Checks a token's signature against the issuer's JWKS and its claims against this API."""
 
-    def __init__(self, issuer: str, cli_client_id_prefix: str, jwk_client: jwt.PyJWKClient) -> None:
+    def __init__(self, issuer: str, cli_client_id_prefix: str, service_client_id_prefix: str, jwk_client: jwt.PyJWKClient) -> None:
         self.issuer = issuer
         self.cli_client_id_prefix = cli_client_id_prefix
+        self.service_client_id_prefix = service_client_id_prefix
         self.jwk_client = jwk_client
 
     @classmethod
-    def from_discovery(cls, issuer: str, cli_client_id_prefix: str) -> 'OIDCTokenVerifier':
+    def from_discovery(cls, issuer: str, cli_client_id_prefix: str, service_client_id_prefix: str) -> 'OIDCTokenVerifier':
         jwks_uri = discover_jwks_uri(issuer)
         client = jwt.PyJWKClient(jwks_uri, cache_keys=True, headers={'User-Agent': USER_AGENT})
-        return cls(issuer, cli_client_id_prefix, client)
+        return cls(issuer, cli_client_id_prefix, service_client_id_prefix, client)
 
-    def verify(self, token: str) -> OIDCIdentity:
-        """Verify a token and return the identity it establishes, or raise OIDCVerificationError."""
+    def verify(self, token: str) -> OIDCIdentity | ScopedClient:
+        """Verify a token and return who it establishes, or raise OIDCVerificationError."""
         self._require_access_token_type(token)
 
         try:
@@ -128,22 +142,37 @@ class OIDCTokenVerifier:
                 issuer=self.issuer,
                 # `aud` is empty on every token the device grant produces, so there is nothing to
                 # match and PyJWT would reject a token whose aud it cannot be told to expect.
-                options={'verify_aud': False, 'require': ['exp', 'iss', 'sub']},
+                # `sub` is checked per client kind below, because a service token carries none.
+                options={'verify_aud': False, 'require': ['exp', 'iss']},
             )
         except jwt.PyJWTError as exc:
             raise OIDCVerificationError(f'{type(exc).__name__}: {exc}') from exc
 
-        subject = claims.get('sub') or ''
-        if not subject:
-            raise OIDCVerificationError('token carries no subject')
-
         client_id = claims.get('client_id')
         # A non-string claim would raise AttributeError out of startswith, which is not a rejection
         # and would surface as a 500 rather than the opaque 401 every other failure returns.
-        if not isinstance(client_id, str) or not client_id.startswith(self.cli_client_id_prefix):
-            raise OIDCVerificationError(f'client {client_id!r} is not a {self.cli_client_id_prefix}* client')
+        if not isinstance(client_id, str):
+            raise OIDCVerificationError(f'client_id {client_id!r} is not a string')
+        if client_id.startswith(self.cli_client_id_prefix):
+            return self._person(claims, client_id)
+        if client_id.startswith(self.service_client_id_prefix):
+            return self._scoped_client(claims, client_id)
+        raise OIDCVerificationError(f'client {client_id!r} is neither {self.cli_client_id_prefix}* nor {self.service_client_id_prefix}*')
 
+    @staticmethod
+    def _person(claims: dict, client_id: str) -> OIDCIdentity:
+        subject = claims.get('sub') or ''
+        if not subject:
+            raise OIDCVerificationError('token carries no subject')
         return OIDCIdentity(subject=subject, client_id=client_id)
+
+    @staticmethod
+    def _scoped_client(claims: dict, client_id: str) -> ScopedClient:
+        # Authelia sends `scp` as a list, and `[]` for a request that named no scope.
+        scopes = claims.get('scp')
+        if not isinstance(scopes, list) or not scopes or not all(isinstance(scope, str) for scope in scopes):
+            raise OIDCVerificationError(f'service client {client_id!r} carries no scopes: {scopes!r}')
+        return ScopedClient(client_id=client_id, scopes=frozenset(scopes))
 
     def _require_access_token_type(self, token: str) -> None:
         """Reject anything not typed as an RFC 9068 access token.
@@ -163,18 +192,18 @@ class OIDCTokenVerifier:
 
 
 @functools.cache
-def build_verifier(issuer: str, cli_client_id_prefix: str) -> OIDCTokenVerifier:
+def build_verifier(issuer: str, cli_client_id_prefix: str, service_client_id_prefix: str) -> OIDCTokenVerifier:
     """Return the process-wide verifier for an issuer, resolving discovery on first use.
 
-    Cached on the two strings rather than on Settings so a failed discovery is not memoized —
+    Cached on the strings rather than on Settings so a failed discovery is not memoized —
     `functools.cache` stores results, not exceptions, so Authelia being down at the first request
     does not poison every later one.
     """
-    return OIDCTokenVerifier.from_discovery(issuer, cli_client_id_prefix)
+    return OIDCTokenVerifier.from_discovery(issuer, cli_client_id_prefix, service_client_id_prefix)
 
 
-def get_oidc_identity(request: Request, settings: Settings = Depends(get_settings)) -> OIDCIdentity | None:
-    """FastAPI dependency resolving a verified `icb` CLI access token to its identity.
+def get_oidc_identity(request: Request, settings: Settings = Depends(get_settings)) -> OIDCIdentity | ScopedClient | None:
+    """FastAPI dependency resolving a verified `icb` CLI access token to a person or a scoped client.
 
     Returns None when the request carries no access token, which is how every other caller — the
     browser SPA, an internal service, a Personal API Key client — passes through untouched. A
@@ -186,7 +215,7 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
         return None
 
     try:
-        verifier = build_verifier(settings.oidc.issuer, settings.oidc.cli_client_id_prefix)
+        verifier = build_verifier(settings.oidc.issuer, settings.oidc.cli_client_id_prefix, settings.oidc.service_client_id_prefix)
         identity = verifier.verify(token)
     except (OIDCProviderUnavailable, httpx2.HTTPError) as exc:
         logger.error('oidc_provider_unreachable', error=str(exc), path=request.url.path)
@@ -195,5 +224,8 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
         logger.warning('oidc_bearer_rejected', error=str(exc), path=request.url.path)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=UNAUTHORIZED_DETAIL) from None
 
-    logger.debug('oidc_bearer_verified', subject=identity.subject, client_id=identity.client_id)
+    if isinstance(identity, ScopedClient):
+        logger.debug('oidc_bearer_verified_scoped_client', client_id=identity.client_id, scopes=sorted(identity.scopes))
+    else:
+        logger.debug('oidc_bearer_verified', subject=identity.subject, client_id=identity.client_id)
     return identity

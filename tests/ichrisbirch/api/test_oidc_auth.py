@@ -23,6 +23,7 @@ from jwt.algorithms import RSAAlgorithm
 from ichrisbirch.api import oidc_auth
 from ichrisbirch.api.oidc_auth import OIDCTokenVerifier
 from ichrisbirch.api.oidc_auth import OIDCVerificationError
+from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.oidc_auth import bearer_token
 from ichrisbirch.api.oidc_auth import build_verifier
 from ichrisbirch.api.oidc_auth import discover_jwks_uri
@@ -32,6 +33,9 @@ from ichrisbirch.api.oidc_auth import is_access_token
 KEY_ID = 'main'
 CLI_CLIENT_ID_PREFIX = 'icb-cli-'
 CLI_CLIENT_ID = 'icb-cli-macmini'
+SERVICE_CLIENT_ID_PREFIX = 'icb-svc-'
+SERVICE_CLIENT_ID = 'icb-svc-worker'
+SERVICE_SCOPE = 'icb.project-items.read'
 
 
 class IdentityProviderStub:
@@ -79,6 +83,18 @@ class IdentityProviderStub:
             'exp': now + 3600,
         }
 
+    def service_claims(self) -> dict:
+        """What Authelia 4.39 issues through the client-credentials grant: no `sub`, and `scp` as a list."""
+        now = int(time.time())
+        return {
+            'iss': self.url,
+            'client_id': SERVICE_CLIENT_ID,
+            'scp': [SERVICE_SCOPE],
+            'aud': [],
+            'iat': now,
+            'exp': now + 300,
+        }
+
     def sign(self, claims: dict, token_type: str = 'at+jwt', key: rsa.RSAPrivateKey | None = None) -> str:
         return jwt.encode(claims, key or self.key, algorithm='RS256', headers={'typ': token_type, 'kid': KEY_ID})
 
@@ -115,7 +131,7 @@ def clear_verifier_cache():
 @pytest.fixture
 def verifier(idp) -> OIDCTokenVerifier:
     """Build the verifier through discovery, so the discovery lookup is under test too."""
-    return OIDCTokenVerifier.from_discovery(idp.url, CLI_CLIENT_ID_PREFIX)
+    return OIDCTokenVerifier.from_discovery(idp.url, CLI_CLIENT_ID_PREFIX, SERVICE_CLIENT_ID_PREFIX)
 
 
 def make_request(authorization: str | None = None) -> Request:
@@ -134,7 +150,9 @@ def make_request(authorization: str | None = None) -> Request:
 
 
 def oidc_settings(idp: IdentityProviderStub) -> SimpleNamespace:
-    return SimpleNamespace(oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX))
+    return SimpleNamespace(
+        oidc=SimpleNamespace(issuer=idp.url, cli_client_id_prefix=CLI_CLIENT_ID_PREFIX, service_client_id_prefix=SERVICE_CLIENT_ID_PREFIX)
+    )
 
 
 class TestVerifyAccessToken:
@@ -196,11 +214,40 @@ class TestVerifyAccessToken:
         with pytest.raises(OIDCVerificationError):
             verifier.verify(unsigned)
 
+    @pytest.mark.parametrize('client_id', [7, [CLI_CLIENT_ID]], ids=['a-number', 'a-list'])
+    def test_rejects_a_client_id_that_is_not_a_string(self, idp, verifier, client_id):
+        """Reaching `startswith` would raise AttributeError, which surfaces as a 500 rather than a 401."""
+        with pytest.raises(OIDCVerificationError):
+            verifier.verify(idp.sign(idp.valid_claims() | {'client_id': client_id}))
+
+
+class TestVerifyServiceToken:
+    def test_accepts_a_token_with_no_subject(self, idp, verifier):
+        principal = verifier.verify(idp.sign(idp.service_claims()))
+        assert principal == ScopedClient(client_id=SERVICE_CLIENT_ID, scopes=frozenset({SERVICE_SCOPE}))
+
+    def test_a_subject_does_not_make_it_a_person(self, idp, verifier):
+        """RFC 9068 requires `sub`, so an Authelia release may start sending one on these tokens."""
+        principal = verifier.verify(idp.sign(idp.service_claims() | {'sub': 'authelia-user-uuid'}))
+        assert isinstance(principal, ScopedClient)
+
+    @pytest.mark.parametrize('scopes', [[], SERVICE_SCOPE, [7]], ids=['empty', 'a-string', 'not-strings'])
+    def test_rejects_scopes_that_name_no_scope(self, idp, verifier, scopes):
+        """A string would otherwise become a set of its characters."""
+        with pytest.raises(OIDCVerificationError):
+            verifier.verify(idp.sign(idp.service_claims() | {'scp': scopes}))
+
+    def test_rejects_a_missing_scope_claim(self, idp, verifier):
+        claims = idp.service_claims()
+        del claims['scp']
+        with pytest.raises(OIDCVerificationError):
+            verifier.verify(idp.sign(claims))
+
 
 class TestDiscovery:
     def test_refuses_an_issuer_that_advertises_a_different_issuer(self, idp):
         with pytest.raises(ValueError, match='advertises itself as'):
-            OIDCTokenVerifier.from_discovery(idp.url + '/', CLI_CLIENT_ID_PREFIX)
+            OIDCTokenVerifier.from_discovery(idp.url + '/', CLI_CLIENT_ID_PREFIX, SERVICE_CLIENT_ID_PREFIX)
 
 
 class TestBearerToken:
@@ -236,6 +283,10 @@ class TestGetOIDCIdentity:
         assert identity is not None
         assert identity.client_id == CLI_CLIENT_ID
 
+    def test_returns_a_scoped_client_for_a_service_token(self, idp):
+        request = make_request(f'Bearer {idp.sign(idp.service_claims())}')
+        assert isinstance(get_oidc_identity(request, oidc_settings(idp)), ScopedClient)
+
     @pytest.mark.parametrize(
         'authorization',
         [None, '', 'Basic dXNlcjpwdw==', 'Bearer icb_a_personal_api_key', 'Bearer not-a-jwt'],
@@ -255,6 +306,7 @@ class TestGetOIDCIdentity:
             {'iss': 'https://evil.example.com'},
             {'exp': int(time.time()) - 60},
             {'sub': ''},
+            {'client_id': SERVICE_CLIENT_ID},
         ],
     )
     def test_rejects_a_failed_access_token_rather_than_falling_through(self, idp, claims_override):
@@ -275,6 +327,7 @@ class TestGetOIDCIdentity:
             idp.sign(idp.valid_claims(), key=foreign_key),
             idp.sign(idp.valid_claims() | {'client_id': 'meso-cli-macmini'}),
             idp.sign(claims_without_subject),
+            idp.sign(idp.service_claims() | {'scp': []}),
         ]
         details = set()
         for token in rejected:

@@ -292,6 +292,7 @@ def create_test_api_client(login=False, admin=False):
         user = get_test_user(email)
         api.dependency_overrides[auth.get_current_user] = lambda: user
         api.dependency_overrides[auth.get_current_user_or_none] = lambda: user
+        api.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: user
         # Only override get_admin_user if the user is actually an admin
         if admin:
             api.dependency_overrides[auth.get_admin_user] = lambda: user
@@ -459,6 +460,7 @@ def create_transactional_api_client(login=False, admin=False):
         user = get_test_user(email)
         api.dependency_overrides[auth.get_current_user] = lambda: user
         api.dependency_overrides[auth.get_current_user_or_none] = lambda: user
+        api.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: user
         if admin:
             api.dependency_overrides[auth.get_admin_user] = lambda: user
 
@@ -582,6 +584,7 @@ def create_multi_client_transactional_context():
     api_logged_in.dependency_overrides[get_settings] = get_test_runner_settings
     api_logged_in.dependency_overrides[auth.get_current_user] = lambda: regular_user
     api_logged_in.dependency_overrides[auth.get_current_user_or_none] = lambda: regular_user
+    api_logged_in.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: regular_user
     client_logged_in = TestClient(api_logged_in)
 
     # Set up admin user API
@@ -589,6 +592,7 @@ def create_multi_client_transactional_context():
     api_admin.dependency_overrides[get_settings] = get_test_runner_settings
     api_admin.dependency_overrides[auth.get_current_user] = lambda: admin_user
     api_admin.dependency_overrides[auth.get_current_user_or_none] = lambda: admin_user
+    api_admin.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: admin_user
     api_admin.dependency_overrides[auth.get_admin_user] = lambda: admin_user
     client_admin = TestClient(api_admin)
 

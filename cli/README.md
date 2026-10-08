@@ -118,9 +118,18 @@ header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
 authorizing the token. `cli/internal/config/config.go` sets it as
 `defaultAPIBase`.
 
-Authelia does not carry the audience through the device grant — `aud` comes
-back empty — so cross-product isolation rests on the `client_id` claim, and the
-API requires it to start with `icb-cli-`.
+Authelia leaves `aud` empty on the device grant and the client-credentials grant
+alike, so cross-product isolation rests on the `client_id` claim. The API
+requires it to start with `icb-cli-` or `icb-svc-`.
+
+A service runs icb with no person present to approve a login. It sets
+`ICB_CLIENT_ID` to its confidential client, `icb-svc-<machine>`, and
+`ICB_CLIENT_SECRET` to that client's secret. A secret with no `ICB_CLIENT_ID` is
+refused, because the default is the person's client. icb then requests a token
+through the client-credentials grant on each run, asking for
+`icb.project-items.read`, and stores nothing. `auth login` and `auth logout`
+refuse in that mode. The API never resolves that token to a user, and it answers
+403 on every route outside the reads the `icb projects items` commands make.
 
 The login flow, the keychain store and the refresh are
 [goclilogin](https://github.com/datapointchris/goclilogin), shared with the
@@ -131,7 +140,11 @@ library's README carries the mechanism.
 
 `icb auth status` reports `live`, `rejected` or `unverified` rather than
 predicting a refresh, since a stored token says what this machine holds and not
-what Authelia will honor. A rejected session exits 1.
+what Authelia will honor. A rejected session exits 1. The `--json` output names
+the credential it checked in `type`, `authorized_user` for a person's login or
+`service_account` for a service, as Google's credential files do. A service
+stores no token, so its status requests one. It exits 1 unless the provider
+grants it.
 
 `icb auth token` prints the current access token for scripting:
 
@@ -328,7 +341,8 @@ the wrong package to travel with a copy of that directory.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
-| `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id |
+| `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id; required with `ICB_CLIENT_SECRET` |
+| `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant |
 | `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
 

@@ -45,8 +45,7 @@ Welcome to the iChrisBirch application documentation.
 ## API
 
 - [API Documentation](api/index.md) - Backend API reference
-- [Authentication Architecture](authentication-architecture.md) - Modern API key authentication system
-- [Authentication Strategies](api/authentication_strategies.md) - Auth implementation details
+- [Authentication](authentication-architecture.md) - Which caller each strategy serves, how an access token is verified, and what a service token reaches
 
 ## Frontend
 

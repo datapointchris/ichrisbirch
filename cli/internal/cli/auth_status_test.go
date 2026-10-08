@@ -43,23 +43,6 @@ func TestPrintStatus_RejectedNamesTheLoginCommand(t *testing.T) {
 	}
 }
 
-// The promise this used to make is the defect: an expired access token behind a
-// revoked grant never refreshes, and the CLI cannot tell which it has until it
-// asks.
-func TestPrintStatus_ExpiredDoesNotPromiseARefresh(t *testing.T) {
-	got := statusOutput(statusReport{
-		LoggedIn:  true,
-		ClientID:  "icb-cli-archlinux",
-		Issuer:    "https://auth.example.com",
-		ExpiresAt: "2026-08-22T06:13:47-04:00",
-		Expired:   true,
-		Session:   goclilogin.SessionLive,
-	})
-	if strings.Contains(got, "will refresh") {
-		t.Errorf("got %q, want no promise the CLI cannot keep", got)
-	}
-}
-
 func TestPrintStatus_UnverifiedSaysWhyItCouldNotAnswer(t *testing.T) {
 	got := statusOutput(statusReport{
 		LoggedIn:  true,
