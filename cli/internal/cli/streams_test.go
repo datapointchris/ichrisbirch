@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// TestNoDefaultStdoutWrites guards the machine contract: `forge brief` parses
+// TestNoDefaultStdoutWrites guards the machine contract: other CLIs parse
 // `icb ... --json`, so one stray line on stdout fails the parse as malformed
 // JSON rather than as the diagnostic it actually was.
 //
