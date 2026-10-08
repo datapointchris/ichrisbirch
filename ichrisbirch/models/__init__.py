@@ -22,6 +22,15 @@ from ichrisbirch.models.event import Event
 from ichrisbirch.models.habit import Habit
 from ichrisbirch.models.habitcategory import HabitCategory
 from ichrisbirch.models.habitcompleted import HabitCompleted
+from ichrisbirch.models.issue import Initiative
+from ichrisbirch.models.issue import InitiativeStatus
+from ichrisbirch.models.issue import Issue
+from ichrisbirch.models.issue import IssueComment
+from ichrisbirch.models.issue import IssueDependency
+from ichrisbirch.models.issue import IssueLabel
+from ichrisbirch.models.issue import IssueLabelAssignment
+from ichrisbirch.models.issue import IssueStatus
+from ichrisbirch.models.issue import IssueType
 from ichrisbirch.models.jwt_refresh_token import JWTRefreshToken
 from ichrisbirch.models.money_wasted import MoneyWasted
 from ichrisbirch.models.pattern import Pattern
@@ -77,6 +86,15 @@ __all__ = [
     'Habit',
     'HabitCategory',
     'HabitCompleted',
+    'Initiative',
+    'InitiativeStatus',
+    'Issue',
+    'IssueComment',
+    'IssueDependency',
+    'IssueLabel',
+    'IssueLabelAssignment',
+    'IssueStatus',
+    'IssueType',
     'JWTRefreshToken',
     'MoneyWasted',
     'PersonalAPIKey',

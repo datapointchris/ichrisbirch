@@ -160,12 +160,13 @@ class TestProjectKind:
 
 
 class TestProjectStatus:
-    """`status` — active / done / dropped, from the project_statuses lookup table.
+    """`status` — active / someday / completed / dropped, from the project_statuses lookup table.
 
     A project is a finite effort with a definition of done, so completion IS the
     hide signal and there is no separate archive flag the way items have one. Two
-    terminal states rather than one, because `done` alone forces you to lie about
-    anything you merely stopped caring about.
+    terminal states rather than one, because `completed` alone forces you to lie
+    about anything you merely stopped caring about. `someday` is the third way out
+    of the default list, for a project set aside rather than ended.
     """
 
     @pytest.fixture
@@ -246,6 +247,23 @@ class TestProjectStatus:
         assert reopened['status'] == 'active'
         assert reopened['status_reason'] is None, 'a live project carries no reason for having been closed'
         assert reopened['closed_at'] is None
+
+    def test_someday_hides_the_project_without_closing_it(self, client_with_projects):
+        project = self.create(client_with_projects, name='Set aside')
+
+        parked = self.patch(client_with_projects, project['id'], status='someday').json()
+
+        assert parked['closed_at'] is None
+        assert 'Set aside' not in self.names(client_with_projects)
+        assert 'Set aside' in self.names(client_with_projects, status='someday')
+
+    def test_moving_a_dropped_project_to_someday_clears_the_closure(self, client_with_projects):
+        project = self.create(client_with_projects, name='Second thoughts')
+        self.patch(client_with_projects, project['id'], status='dropped', status_reason='Not now')
+
+        parked = self.patch(client_with_projects, project['id'], status='someday').json()
+
+        assert (parked['closed_at'], parked['status_reason']) == (None, None)
 
     def test_unknown_status_is_rejected_on_create(self, client_with_projects):
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad status', 'status': 'finished'})
@@ -367,6 +385,16 @@ class TestProjectNameOwnership:
         reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{finished["id"]}/', json={'status': 'active'})
 
         assert reopened.status_code == status.HTTP_409_CONFLICT, show_status_and_response(reopened)
+
+    def test_resuming_a_someday_project_into_a_taken_name_is_refused(self, client_with_projects):
+        """A parked project holds no name, so a new effort can take it while it waits."""
+        parked = self.create(client_with_projects, name='clisteno').json()
+        client_with_projects.patch(f'{PROJECTS_ENDPOINT}{parked["id"]}/', json={'status': 'someday'})
+        assert self.create(client_with_projects, name='clisteno').status_code == status.HTTP_201_CREATED
+
+        resumed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{parked["id"]}/', json={'status': 'active'})
+
+        assert resumed.status_code == status.HTTP_409_CONFLICT, show_status_and_response(resumed)
 
     def test_renaming_onto_an_active_name_is_refused(self, client_with_projects):
         self.create(client_with_projects, name='clisteno')

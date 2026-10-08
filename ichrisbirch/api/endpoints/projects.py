@@ -240,7 +240,9 @@ def apply_status_transition(project: models.Project, update_data: dict, session:
     validate_status(new_status, session)
     require_reason_when_dropped(new_status, reason)
 
-    if new_status == 'active':
+    # `someday` is open work set aside, so it clears the stamp the way `active`
+    # does. Only a terminal status records a close.
+    if new_status not in TERMINAL_PROJECT_STATUSES:
         update_data['status_reason'] = None
         update_data['closed_at'] = None
     elif new_status != project.status:

@@ -9,7 +9,6 @@ from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
-from sqlalchemy import Identity
 from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import Text
@@ -21,12 +20,17 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
+from ichrisbirch.models.item_number_sequence import ITEM_NUMBER_SEQUENCE
 
 PROJECT_KINDS = ['build', 'chore', 'life']
 # 'completed' rather than 'done' so one word covers the concept on a project and
 # on its items, which store a `completed` boolean. `complete` is the verb on
 # both, and it wrote a value called `done` until 2026-08-12.
-PROJECT_STATUSES = ['active', 'completed', 'dropped']
+#
+# `someday` is a project not being worked and not given up on: it holds no next
+# action yet. It is neither active nor terminal, so it hides from the default
+# list without stamping `closed_at`.
+PROJECT_STATUSES = ['active', 'someday', 'completed', 'dropped']
 TERMINAL_PROJECT_STATUSES = ['completed', 'dropped']
 
 # An item's status is derived from its two booleans rather than stored, so this
@@ -124,7 +128,9 @@ class ProjectItem(Base):
 
     __tablename__ = 'project_items'
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
-    number: Mapped[int] = mapped_column(BigInteger, Identity(always=False), nullable=False, unique=True)
+    number: Mapped[int] = mapped_column(
+        BigInteger, ITEM_NUMBER_SEQUENCE, server_default=ITEM_NUMBER_SEQUENCE.next_value(), nullable=False, unique=True
+    )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Repo registry name. Nullable: most items are not repo work.

@@ -10,6 +10,7 @@ from tests.test_data import countdowns
 from tests.test_data import durations
 from tests.test_data import events
 from tests.test_data import habitcategories
+from tests.test_data import issues
 from tests.test_data import money_wasted
 from tests.test_data import patterns
 from tests.test_data import projects
@@ -37,6 +38,7 @@ __all__ = [
     'habitcategories',
     # 'habits' - now inserted via HabitCategory.habits relationship
     # 'habitscompleted' - now inserted via HabitCategory.completed_habits relationship
+    'issues',
     'money_wasted',
     'projects',
     'recipes',
