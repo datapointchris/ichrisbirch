@@ -1,6 +1,6 @@
 """Structlog configuration with optional file logging.
 
-All logs go to stderr. Optionally also writes to a file for admin UI and persistence.
+All logs go to stderr. Optionally also writes to a file for persistence.
 Configuration is controlled by environment variables:
 - LOG_FORMAT: 'console' (default) or 'json'
 - LOG_LEVEL: 'DEBUG' (default), 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
@@ -26,7 +26,6 @@ LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
 LOG_FILE = os.environ.get('LOG_FILE', '')
-LOG_DIR = os.environ.get('LOG_DIR', '/var/log/ichrisbirch')
 
 
 def _use_colors() -> bool:

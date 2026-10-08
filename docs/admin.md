@@ -60,9 +60,8 @@ A route with a path parameter or a required query parameter is skipped, because 
 `/admin/design` previews the color themes against the shadow styles and the segmented toggle experiments.
 It is a workbench for the design-style switcher rather than an admin function.
 
-## Log Stream
+## Logs
 
-The API also serves a `/admin/log-stream/` WebSocket that tails every `*.log` file in `LOG_DIR`.
-It authenticates with a `ws_auth` cookie holding an HMAC token signed with `internal_service_key`.
-No current client issues that cookie or opens the socket.
-Service logs are read in Loki, as [Logging Configuration](logging-configuration.md) describes.
+The admin area has no log viewer.
+Service logs are read in Loki, or from a terminal with `./ops/icbops {dev,testing,prod} logs [service]`.
+[Logging Configuration](logging-configuration.md) covers both.

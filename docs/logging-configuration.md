@@ -11,7 +11,6 @@ LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
 LOG_FILE = os.environ.get('LOG_FILE', '')
-LOG_DIR = os.environ.get('LOG_DIR', '/var/log/ichrisbirch')
 ```
 
 ## Environment Variables
@@ -79,21 +78,21 @@ Optional path to a log file for persistence. When set and the directory exists, 
 - Uses `RotatingFileHandler` to prevent unbounded growth
 - Max 25MB per file with 5 backup files (~150MB total per service)
 - Plain text format (no ANSI color codes) for easy parsing
-- Enables the Admin UI live logs feature
 
-### LOG_DIR
-
-Directory where log files are stored (used by admin UI for log aggregation).
-
-| Value | Description |
-| --- | --- |
-| `/var/log/ichrisbirch` (default) | Standard log directory |
-
-**Docker volume mount:**
+The compose files set `LOG_FILE` on the api and the scheduler, and mount the `ichrisbirch_logs` volume where the files land:
 
 ```yaml
-volumes:
-  - ichrisbirch_logs:/var/log/ichrisbirch
+api:
+  environment:
+    - LOG_FILE=/var/log/ichrisbirch/api.log
+  volumes:
+    - ichrisbirch_logs:/var/log/ichrisbirch
+
+scheduler:
+  environment:
+    - LOG_FILE=/var/log/ichrisbirch/scheduler.log
+  volumes:
+    - ichrisbirch_logs:/var/log/ichrisbirch
 ```
 
 ## Request Tracing
@@ -220,7 +219,7 @@ Docker manages log rotation. Configure in Docker daemon settings if needed:
 
 ## Structlog Configuration
 
-**Configuration file**: `ichrisbirch/logger.py:42-75`
+**Configuration**: `configure_structlog` in `ichrisbirch/logger.py`
 
 The structlog configuration includes:
 
@@ -350,29 +349,3 @@ window.__setLogLevel('error')  // Errors only
 4. **Environment flexibility**: Switch between console and JSON with one variable
 5. **No file management**: Docker handles persistence and rotation
 6. **Industry standard**: Follows 12-factor app logging principles
-
-## Log Files
-
-When `LOG_FILE` is set, a service writes its logs to that file as well as to stderr.
-The API's `/admin/log-stream/` WebSocket tails every `*.log` file in `LOG_DIR`.
-No current client opens that socket, as [Admin Dashboard](admin.md) explains.
-
-### Docker Configuration
-
-The compose files enable file logging like this:
-
-```yaml
-api:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/api.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-
-scheduler:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/scheduler.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-```
-
-Both services share the one log volume, so a reader of `LOG_DIR` sees every service's file.
