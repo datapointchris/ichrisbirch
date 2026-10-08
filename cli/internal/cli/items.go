@@ -30,6 +30,7 @@ var (
 	itemHints = []string{
 		"Search items by title or notes: icb projects items search <query>",
 		"Completed and archived items are hidden: icb projects items list --status all",
+		"Issues share item numbers, so the number may name an issue: icb issues show <number>",
 	}
 
 	itemAndProjectHints = append(slices.Clone(itemHints), projectHints...)

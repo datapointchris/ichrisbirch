@@ -20,6 +20,7 @@ import (
 var issueHints = []string{
 	"Search issues by title or description: icb issues search <query>",
 	"Completed and canceled issues are hidden: icb issues list --status all",
+	"Project items share issue numbers, so the number may name an item: icb projects items show <number>",
 }
 
 // defaultNextIssueLimit caps `next`. The head of the queue is the answer, and
