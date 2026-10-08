@@ -20,14 +20,18 @@ import (
 //
 // Each hidden status is named rather than summed up as "closed", because a
 // reader typing a word --status does not accept gets a second refusal.
-var projectHints = []string{"Shelved, completed and dropped projects are hidden: icb projects list --status all"}
+var projectHints = []string{
+	"Shelved, completed and dropped projects are hidden: icb projects list --status all",
+	"A development project is an issue initiative: icb issues list --initiative <name>",
+}
 
 func newProjectsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "projects",
 		Short: "List, inspect, and manage your projects",
-		Long: "Ongoing initiatives, each holding an ordered list of work items. The project\n" +
-			"is the container; the work itself is in `icb projects items`.",
+		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
+			"is the container; the work itself is in `icb projects items`. Development\n" +
+			"work is `icb issues`.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd, projectHints...)
@@ -186,7 +190,7 @@ func newProjectsReopenCommand() *cobra.Command {
 		Long: "Clears the closing reason and timestamp along with the status. Refused if an\n" +
 			"active project has taken the name in the meantime — only one project holds a\n" +
 			"name at a time, and it is the live one.",
-		Example: "  icb projects reopen ifiles",
+		Example: "  icb projects reopen \"Kitchen remodel\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			active := "active"
@@ -221,7 +225,7 @@ func newProjectsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <project>",
 		Short:   "Show a project and its open items",
-		Example: "  icb projects show todoui\n  icb projects show todoui --status all --json",
+		Example: "  icb projects show \"Kitchen remodel\"\n  icb projects show \"Kitchen remodel\" --status all --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
@@ -292,10 +296,10 @@ func newProjectsCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create --name <name> [flags]",
 		Short: "Create a new project",
-		Example: "  icb projects create --name \"Personal OS unification\"\n" +
+		Example: "  icb projects create --name \"Kitchen remodel\"\n" +
 			"  icb projects create --name \"Sell Unused Shite\" --kind chore\n" +
-			"  icb projects create --name ifiles --description \"Go client for files.ichrisbirch.com\"\n" +
-			"  icb projects create --name \"bbkt\" --kind build --description \"$(cat brief.md)\" --json",
+			"  icb projects create --name \"Reading backlog\" --description \"Books to finish this year\"\n" +
+			"  icb projects create --name \"Learn to sail\" --description \"$(cat plan.md)\" --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
@@ -332,7 +336,7 @@ func newProjectsCreateCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Project name (required)")
 	cmd.Flags().StringVar(&description, "description", "", "Project description")
-	cmd.Flags().StringVar(&kind, "kind", "", "What sort of work this is: "+strings.Join(api.ProjectKinds, ", ")+" (default "+api.ProjectKindBuild+")")
+	cmd.Flags().StringVar(&kind, "kind", "", "What sort of work this is: "+strings.Join(api.ProjectKinds, ", ")+" (default "+api.ProjectKindLife+")")
 	cmd.Flags().IntVar(&position, "position", 0, "Sort position among projects")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created project as JSON to stdout")
 	return cmd
@@ -350,8 +354,8 @@ func newProjectsEditCommand() *cobra.Command {
 		Use:   "edit <project> [flags]",
 		Short: "Change fields on an existing project",
 		Long:  "Update only the fields whose flags you pass; everything else is left unchanged.",
-		Example: "  icb projects edit todoui --name \"New name\" --position 2\n" +
-			"  icb projects edit todoui --kind chore",
+		Example: "  icb projects edit \"Kitchen remodel\" --name \"Bathroom remodel\" --position 2\n" +
+			"  icb projects edit \"Kitchen remodel\" --kind chore",
 		Args: usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
@@ -407,7 +411,7 @@ func newProjectsDeleteCommand() *cobra.Command {
 		Long: "Permanently delete a project. Completed items belonging only to this project\n" +
 			"go with it. If incomplete items would be left with no project, the delete is\n" +
 			"refused — move them first. Prompts for confirmation unless --yes.",
-		Example: "  icb projects delete todoui\n  icb projects delete todoui --yes",
+		Example: "  icb projects delete \"Kitchen remodel\"\n  icb projects delete \"Kitchen remodel\" --yes",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]

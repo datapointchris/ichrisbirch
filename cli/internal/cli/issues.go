@@ -20,8 +20,12 @@ import (
 var issueHints = []string{
 	"Search issues by title or description: icb issues search <query>",
 	"Completed and canceled issues are hidden: icb issues list --status all",
-	"Project items share issue numbers, so the number may name an item: icb projects items show <number>",
 }
+
+// issueNumberHints go only on the verbs whose argument is an issue number,
+// because only there can a miss be a number the project items store holds.
+var issueNumberHints = append(slices.Clone(issueHints),
+	"Project items share issue numbers, so the number may name an item: icb projects items show <number>")
 
 // defaultNextIssueLimit caps `next`. The head of the queue is the answer, and
 // the rows after it are context.
@@ -74,7 +78,7 @@ func newIssuesCommand() *cobra.Command {
 	add(issueGroupRead,
 		newIssuesListCommand(),
 		newIssuesSearchCommand(),
-		newIssuesShowCommand(),
+		withNotFoundHints(newIssuesShowCommand(), issueNumberHints...),
 		newIssuesCommentsCommand(),
 		newIssuesTreeCommand(),
 		newIssuesVocabularyCommand(),
@@ -86,16 +90,16 @@ func newIssuesCommand() *cobra.Command {
 	)
 	add(issueGroupFile,
 		withNotFoundHints(newIssuesCreateCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
-		withNotFoundHints(newIssuesEditCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
+		withNotFoundHints(newIssuesEditCommand(), append(slices.Clone(issueNumberHints), initiativeHints...)...),
 		newIssuesAddCommentCommand(),
 		newIssuesRemoveCommentCommand(),
-		newIssuesDeleteCommand(),
+		withNotFoundHints(newIssuesDeleteCommand(), issueNumberHints...),
 	)
 	add(issueGroupLifecycle,
-		newIssuesAcceptCommand(),
-		newIssuesCompleteCommand(),
-		newIssuesCancelCommand(),
-		newIssuesReopenCommand(),
+		withNotFoundHints(newIssuesAcceptCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesCompleteCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesCancelCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesReopenCommand(), issueNumberHints...),
 	)
 	add(issueGroupOrder,
 		newIssuesReorderCommand(),

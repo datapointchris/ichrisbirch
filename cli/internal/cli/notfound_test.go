@@ -125,6 +125,40 @@ func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
 	}
 }
 
+// A miss on a project or an initiative name was never given a number, so a
+// hint naming the other store's `show <number>` there sends the reader after
+// a number they do not have.
+func TestOnlyANumberMissNamesTheOtherStore(t *testing.T) {
+	const itemsShow, issuesShow = "icb projects items show <number>", "icb issues show <number>"
+	cases := []struct {
+		argv []string
+		want string
+	}{
+		{[]string{"projects", "items", "show", "999999"}, issuesShow},
+		{[]string{"issues", "complete", "999999"}, itemsShow},
+		{[]string{"projects", "items", "list", "--project", "no such project"}, ""},
+		{[]string{"issues", "create", "--title", "probe", "--initiative", "no such initiative"}, ""},
+	}
+	for _, c := range cases {
+		got := runWith(t, apiNotFound("not found"), c.argv...).Error()
+		for _, hint := range []string{itemsShow, issuesShow} {
+			if named := strings.Contains(got, hint); named != (hint == c.want) {
+				t.Errorf("%v: names %q = %v, error = %q", c.argv, hint, named, got)
+			}
+		}
+	}
+}
+
+// A project that held development work is an initiative with the same name, so
+// its old name has to lead somewhere other than the project list.
+func TestAProjectMissNamesTheInitiativeList(t *testing.T) {
+	err := runWith(t, apiNotFound("project todoui not found"), "projects", "show", "todoui")
+
+	if !strings.Contains(err.Error(), "icb issues list --initiative <name>") {
+		t.Errorf("error = %q, want it to name the initiative list", err)
+	}
+}
+
 // A verb taking both an item and one of its tasks can 404 on either number, so
 // it names both ways in.
 func TestATaskVerbNamesTheItemAndTheTaskList(t *testing.T) {
