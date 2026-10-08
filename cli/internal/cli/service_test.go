@@ -182,9 +182,9 @@ func TestService_ARouteOutsideTheScopeReportsTheAPIsDetail(t *testing.T) {
 	}
 }
 
-// The fake provider grants whatever scope icb asks for, so a scope the API
-// renamed, or a route `search` calls that the API stopped listing, passes every
-// other test here and answers 403 to every scheduled run.
+// serviceIDP grants the scope this file spells, which is the CLI's own copy. So
+// a scope the API renamed, or a route `search` calls that the API stopped
+// listing, passes every other test here and answers 403 to every scheduled run.
 func TestService_SearchCallsARouteTheRequestedScopeReaches(t *testing.T) {
 	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
 	if err != nil {

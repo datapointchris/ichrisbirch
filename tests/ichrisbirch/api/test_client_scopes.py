@@ -108,10 +108,11 @@ def test_no_credentials_on_a_scoped_router_is_still_401(as_caller):
 
 
 def test_the_document_the_cli_reads_holds_the_scope_table():
-    """The CLI's suite holds the scope it requests against this file, and its fake provider grants any scope.
+    """The CLI's suite holds the scope it requests, and every request it sends, against this file.
 
-    A renamed scope would otherwise pass both suites and answer 403 to every scheduled run. A stale
-    file is rewritten here and the test fails, so the change is committed beside the table.
+    Its fake provider grants the scope the CLI spells, so a scope renamed here would otherwise pass
+    both suites and answer 403 to every scheduled run. A stale file is rewritten here and the test
+    fails, so the change is committed beside the table.
     """
     table = {scope: sorted(f'{method} {template}' for method, template in SCOPE_ROUTES[scope]) for scope in sorted(SCOPE_ROUTES)}
     document = json.dumps(table, indent=2) + '\n'
