@@ -84,6 +84,12 @@ double can split, every rank is renumbered to whole numbers in its current
 order. `number` breaks a rank tie, because it is issued in creation order and
 never repeats.
 
+A move names the issue to sit before or after, and that issue must sort at the
+same effective priority. Ranks are one global sequence, so a move beside an
+issue of another priority would land wherever the other priorities' ranks fall.
+It is refused with a 409 naming both priorities. Changing the priority is what
+moves an issue past another priority's.
+
 ## A claim is one compare-and-set, and it expires
 
 An agent takes an issue with a claim. One conditional `UPDATE` writes

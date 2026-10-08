@@ -686,9 +686,10 @@ func newIssuesReorderCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "reorder <issue> --before <issue> | --after <issue>",
 		Short: "Move an issue directly before or after another in the queue",
-		Long: "Rank orders issues of one priority. Priority still comes first, so moving an\n" +
-			"issue beside one of another priority changes where it sits among its own,\n" +
-			"not past the other's.",
+		Long: "Rank orders issues of one priority, and priority comes first. So the issue\n" +
+			"named by --before or --after must sort at the same effective priority, and\n" +
+			"one of another priority is refused. `edit --priority` is what moves an issue\n" +
+			"past another priority's.",
 		Example: "  icb issues reorder 412 --before 398\n  icb issues reorder 412 --after 420",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {

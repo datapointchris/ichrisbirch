@@ -403,18 +403,30 @@ class TestEdges:
 
 class TestRank:
     def test_moving_before_places_it_directly_ahead(self, client):
-        task = issue(client, 'Ready task without priority')
         bug = issue(client, 'Ready bug with high priority')
-        moved = ok(client.post(f'{ISSUES}{task["number"]}/rank/', json={'before': bug['number']}))
-        ranks = sorted(row['rank'] for row in ok(client.get(ISSUES, params={'status': 'all'})))
-        assert moved['rank'] < bug['rank']
-        assert ranks[0] == moved['rank']
+        later = create(client, title='Filed later at high', priority=2)
+        ok(client.post(f'{ISSUES}{later["number"]}/rank/', json={'before': bug['number']}))
+        assert titles(ok(client.get(ISSUES)))[:2] == ['Filed later at high', 'Ready bug with high priority']
 
     def test_moving_after_lands_between_the_neighbors(self, client):
+        bug = issue(client, 'Ready bug with high priority')
+        create(client, title='Middle', priority=2)
+        last = create(client, title='Last', priority=2)
+        ok(client.post(f'{ISSUES}{last["number"]}/rank/', json={'after': bug['number']}))
+        assert titles(ok(client.get(ISSUES)))[:3] == ['Ready bug with high priority', 'Last', 'Middle']
+
+    def test_a_neighbor_of_another_priority_is_refused_naming_both(self, client):
         task = issue(client, 'Ready task without priority')
         bug = issue(client, 'Ready bug with high priority')
-        moved = ok(client.post(f'{ISSUES}{bug["number"]}/rank/', json={'after': task['number']}))
-        assert task['rank'] < moved['rank'] < issue(client, 'Ready chore with low priority')['rank']
+        detail = refused(client.post(f'{ISSUES}{task["number"]}/rank/', json={'before': bug['number']}), 409)
+        assert 'no priority' in detail
+        assert 'high priority' in detail
+
+    def test_an_inherited_priority_ranks_with_its_band(self, client):
+        bug = issue(client, 'Ready bug with high priority')
+        child = create(client, title='Child at no priority of its own', parent=bug['number'])
+        ok(client.post(f'{ISSUES}{child["number"]}/rank/', json={'before': bug['number']}))
+        assert titles(ok(client.get(ISSUES)))[:2] == ['Child at no priority of its own', 'Ready bug with high priority']
 
     def test_one_neighbor_exactly(self, client):
         bug = issue(client, 'Ready bug with high priority')

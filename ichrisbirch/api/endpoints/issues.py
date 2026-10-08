@@ -633,13 +633,39 @@ async def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
 # --- Rank ---
 
 
+def priority_phrase(priority: int) -> str:
+    return 'no priority' if priority == 0 else f'{ISSUE_PRIORITIES[priority]} priority'
+
+
+def ensure_same_priority(issue: models.Issue, neighbor: models.Issue, readiness: IssueReadiness) -> None:
+    mine, theirs = readiness.effective_priority[issue.id], readiness.effective_priority[neighbor.id]
+    if mine != theirs:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f'#{issue.number} sorts at {priority_phrase(mine)} and #{neighbor.number} at {priority_phrase(theirs)}. '
+                f'Rank orders issues only within one priority. '
+                f'Changing the priority of #{issue.number} is what moves it past #{neighbor.number}.'
+            ),
+        )
+
+
 @router.post('/{id}/rank/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
 async def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSession, zone: RequestZone):
-    """Place this issue directly before or after another in the global order."""
+    """Place this issue directly before or after another of the same effective priority.
+
+    Rank orders issues within one priority. Beside an issue of another priority,
+    the move would report success and land wherever the other priorities' ranks
+    happen to fall, so it is refused.
+    """
     before = resolve_issue(session, move.before) if move.before is not None else None
     after = resolve_issue(session, move.after) if move.after is not None else None
-    if any(neighbor is not None and neighbor.id == issue.id for neighbor in (before, after)):
+    neighbors = [neighbor for neighbor in (before, after) if neighbor is not None]
+    if any(neighbor.id == issue.id for neighbor in neighbors):
         raise unprocessable('An issue cannot be ranked beside itself')
+    readiness = measure_readiness(session, *calendar_now(zone))
+    for neighbor in neighbors:
+        ensure_same_priority(issue, neighbor, readiness)
     move_issue(session, issue, before=before, after=after)
     session.commit()
     return single_view(session, issue, zone)

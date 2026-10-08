@@ -172,7 +172,7 @@ class IssueClaimResult(IssueConfig):
 
 
 class IssueRankMove(IssueConfig):
-    """Place an issue immediately before or after another, in the one global order."""
+    """Place an issue immediately before or after another of the same effective priority."""
 
     before: IssueRef | None = None
     after: IssueRef | None = None
