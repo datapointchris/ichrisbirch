@@ -91,6 +91,8 @@ export type {
   AutoFunUpdate,
   AutoFunPreferences,
   AutoTaskFrequency,
+  AutoTaskAnchor,
+  TaskCategoryWindow,
   BoxSize,
   UserPreferences,
   User,

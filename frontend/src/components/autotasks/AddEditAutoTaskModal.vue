@@ -26,15 +26,24 @@
 
         <div class="add-edit-modal__form-row">
           <div class="add-edit-modal__form-item">
-            <label for="autotask-priority">Priority</label>
+            <label for="autotask-window">Window (days)</label>
             <input
-              id="autotask-priority"
-              v-model="form.priority"
-              data-testid="autotask-priority-input"
+              id="autotask-window"
+              v-model="form.windowDays"
+              data-testid="autotask-window-input"
               type="number"
               min="1"
+              placeholder="Category default"
               class="textbox add-edit-modal__number-input"
-              required
+            />
+          </div>
+          <div class="add-edit-modal__form-item">
+            <label for="autotask-anchor">Next copy counts from</label>
+            <NeuSelect
+              :model-value="form.anchor"
+              :options="anchorOptions"
+              data-testid="autotask-anchor-input"
+              @update:model-value="form.anchor = $event"
             />
           </div>
           <div class="add-edit-modal__form-item">
@@ -92,12 +101,13 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { AutoTask, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
-import { TASK_CATEGORIES, AUTOTASK_FREQUENCIES } from '@/stores/autotasks'
+import type { AutoTask, AutoTaskAnchor, AutoTaskCreate, AutoTaskUpdate, TaskCategory, AutoTaskFrequency } from '@/api/client'
+import { TASK_CATEGORIES, AUTOTASK_FREQUENCIES, AUTOTASK_ANCHORS } from '@/stores/autotasks'
 import NeuSelect from '@/components/NeuSelect.vue'
 
 const categoryOptions = TASK_CATEGORIES.map((c) => ({ value: c, label: c }))
 const frequencyOptions = AUTOTASK_FREQUENCIES.map((f) => ({ value: f, label: f }))
+const anchorOptions = AUTOTASK_ANCHORS
 import AddEditModal from '@/components/AddEditModal.vue'
 
 const props = defineProps<{
@@ -115,7 +125,8 @@ const nameInput = ref<HTMLInputElement | null>(null)
 
 const form = reactive({
   name: '',
-  priority: 1,
+  windowDays: '' as number | '',
+  anchor: 'completion' as AutoTaskAnchor,
   category: 'Chore' as TaskCategory,
   frequency: 'Monthly' as AutoTaskFrequency,
   notes: '',
@@ -126,7 +137,8 @@ watch(
   (val) => {
     if (val && props.editData) {
       form.name = props.editData.name
-      form.priority = props.editData.priority
+      form.windowDays = props.editData.window_days ?? ''
+      form.anchor = props.editData.anchor
       form.category = props.editData.category
       form.frequency = props.editData.frequency
       form.notes = props.editData.notes ?? ''
@@ -136,7 +148,8 @@ watch(
 
 function resetForm() {
   form.name = ''
-  form.priority = 1
+  form.windowDays = ''
+  form.anchor = 'completion'
   form.category = 'Chore'
   form.frequency = 'Monthly'
   form.notes = ''
@@ -149,9 +162,12 @@ function handleModalClose() {
 
 function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim()) return
+  const windowDays = Number(form.windowDays)
   const data = {
     name: form.name.trim(),
-    priority: Number(form.priority),
+    // null clears an edited template back to its category's window
+    window_days: form.windowDays !== '' && windowDays >= 1 ? windowDays : null,
+    anchor: form.anchor,
     category: form.category,
     frequency: form.frequency,
     notes: form.notes.trim() || undefined,

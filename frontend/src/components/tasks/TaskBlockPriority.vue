@@ -1,7 +1,7 @@
 <template>
   <div class="task task--block-layout priority">
     <h3 class="task--block-layout__title">{{ task.name }}</h3>
-    <div class="task--block-layout__priority">Priority: {{ task.priority }}</div>
+    <div class="task--block-layout__pin">{{ task.pinned ? 'Pinned' : '' }}</div>
     <div class="task--block-layout__category">Category: {{ task.category }}</div>
     <div class="task--block-layout__add-date">Add Date: {{ formatDate(task.add_date, 'shortDate') }}</div>
     <div

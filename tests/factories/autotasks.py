@@ -22,7 +22,7 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     name = factory.Sequence(lambda n: f'Test AutoTask {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
     category = 'Chore'
-    priority = factory.Sequence(lambda n: (n + 1) * 5)
+    anchor = 'completion'
     max_concurrent = 2
     frequency = 'Weekly'
     # Due days count from the first run, which a trait moving the last run has

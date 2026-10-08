@@ -17,7 +17,7 @@ func answerCommand(t *testing.T, args ...string) *cobra.Command {
 	cmd := &cobra.Command{Use: "test", RunE: func(*cobra.Command, []string) error { return nil }}
 	cmd.Flags().String("name", "", "")
 	cmd.Flags().String("category", "", "")
-	cmd.Flags().Int("priority", 1, "")
+	cmd.Flags().Int("window-days", 0, "")
 	if err := cmd.ParseFlags(args); err != nil {
 		t.Fatalf("ParseFlags: %v", err)
 	}
@@ -27,7 +27,7 @@ func answerCommand(t *testing.T, args ...string) *cobra.Command {
 func TestFlagAnswers_TakesOnlyWhatWasPassed(t *testing.T) {
 	cmd := answerCommand(t, "--name", "Renew registration")
 
-	answers := flagAnswers(cmd, "name", "category", "priority")
+	answers := flagAnswers(cmd, "name", "category", "window-days")
 
 	if answers.Get("name") != "Renew registration" {
 		t.Errorf("name = %q, want the flag's value", answers.Get("name"))
@@ -35,8 +35,8 @@ func TestFlagAnswers_TakesOnlyWhatWasPassed(t *testing.T) {
 	if answers.Has("category") {
 		t.Error("category was answered by a flag nobody passed")
 	}
-	if answers.Has("priority") {
-		t.Error("priority was answered by its default — an unpassed flag is a question, not an answer")
+	if answers.Has("window-days") {
+		t.Error("window-days was answered by its default — an unpassed flag is a question, not an answer")
 	}
 }
 
@@ -74,7 +74,7 @@ func TestValidateAnswers_RejectionNamesTheFlagAndTheAcceptedValues(t *testing.T)
 }
 
 func TestUnanswered_DropsWhatTheFlagsSupplied(t *testing.T) {
-	fields := unanswered(taskCreateFields(), prompt.Answers{"name": {"Renew"}, "priority": {"3"}})
+	fields := unanswered(taskCreateFields(), prompt.Answers{"name": {"Renew"}, "window-days": {"3"}})
 
 	var keys []string
 	for _, field := range fields {

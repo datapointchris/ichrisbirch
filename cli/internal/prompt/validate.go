@@ -56,3 +56,17 @@ func Int(answer string) (string, error) {
 	}
 	return strconv.Itoa(n), nil
 }
+
+// IntAtLeast accepts a base-10 whole number no smaller than floor.
+func IntAtLeast(floor int) func(string) (string, error) {
+	return func(answer string) (string, error) {
+		n, err := strconv.Atoi(answer)
+		if err != nil {
+			return "", fmt.Errorf("%q is not a whole number", answer)
+		}
+		if n < floor {
+			return "", fmt.Errorf("%d is below the minimum of %d", n, floor)
+		}
+		return strconv.Itoa(n), nil
+	}
+}

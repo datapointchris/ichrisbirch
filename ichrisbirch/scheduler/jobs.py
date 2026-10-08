@@ -31,7 +31,7 @@ from ichrisbirch import models
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
 from ichrisbirch.models.user import CALENDAR_FALLBACK_ZONE
-from ichrisbirch.services.task_priorities import compact_incomplete_task_priorities
+from ichrisbirch.services.task_queue import new_task
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -166,50 +166,53 @@ def make_logs(settings: Settings) -> None:
     logger.error('scheduler_test_error_pause_job_to_stop')
 
 
-@job_logger
-def compact_task_priorities(settings: Settings) -> None:
-    """Dense-rank incomplete tasks to priorities 1..K, tiebreak by add_date."""
-    with create_session(settings) as session:
-        count = compact_incomplete_task_priorities(session)
-        session.commit()
-        logger.info('task_priorities_compacted', count=count)
+def open_copy_limit(autotask: models.AutoTask) -> int:
+    match autotask.anchor:
+        case 'completion':
+            return 1
+        case 'calendar':
+            return autotask.max_concurrent
+        case _:
+            raise ValueError(f'Unknown autotask anchor: {autotask.anchor}')
 
 
 @job_logger
 def check_and_run_autotasks(settings: Settings) -> None:
-    """Check if any autotasks should run today and create tasks if not at max concurrent."""
+    """Add a copy of every autotask that is due today and under its open-copy limit."""
     with create_session(settings) as session:
         # Read on every run, so a zone changed in settings applies from the next one.
         zone = admin_calendar_zone(session)
         today = datetime.now(zone).date()
-        # Open tasks only. Counting completed rows too made max_concurrent a
-        # lifetime cap, and every template stalled once its history reached it.
-        open_tasks_by_name: dict[str, int] = defaultdict(int)
-        for task in session.scalars(select(models.Task).where(models.Task.complete_date.is_(None))).all():
-            open_tasks_by_name[task.name] += 1
+        open_copies: dict[int, int] = defaultdict(int)
+        last_closed_at: dict[int, datetime] = {}
+        copies = session.scalars(select(models.Task).where(models.Task.autotask_id.is_not(None))).all()
+        for task in copies:
+            closed_at = task.complete_date or task.drop_date
+            if closed_at is None:
+                open_copies[task.autotask_id] += 1
+            elif task.autotask_id not in last_closed_at or closed_at > last_closed_at[task.autotask_id]:
+                last_closed_at[task.autotask_id] = closed_at
         for autotask in session.scalars(select(models.AutoTask)).all():
-            if not autotask.is_due_on(today, zone):
+            if not autotask.is_due_on(today, zone, last_closed_at=last_closed_at.get(autotask.id)):
                 continue
-            concurrent = open_tasks_by_name.get(autotask.name, 0)
-            logger.info('autotask_concurrent_count', autotask_name=autotask.name, concurrent=concurrent)
-            if concurrent >= autotask.max_concurrent:
-                logger.info(
-                    'autotask_skipped_max_concurrent',
-                    autotask_name=autotask.name,
-                    concurrent=concurrent,
-                    max_concurrent=autotask.max_concurrent,
+            concurrent = open_copies[autotask.id]
+            limit = open_copy_limit(autotask)
+            if concurrent >= limit:
+                logger.info('autotask_skipped_open_copies', autotask_name=autotask.name, concurrent=concurrent, limit=limit)
+                continue
+            session.add(
+                new_task(
+                    session,
+                    name=autotask.name,
+                    category=autotask.category,
+                    notes=autotask.notes,
+                    window_days=autotask.window_days,
+                    autotask_id=autotask.id,
                 )
-            else:
-                session.add(
-                    models.Task(
-                        name=autotask.name,
-                        category=autotask.category,
-                        priority=autotask.priority,
-                        notes=autotask.notes,
-                    )
-                )
-                autotask.last_run_date = datetime.now(UTC)
-                autotask.run_count += 1
+            )
+            autotask.last_run_date = datetime.now(UTC)
+            autotask.run_count += 1
+            logger.info('autotask_ran', autotask_name=autotask.name, anchor=autotask.anchor)
         session.commit()
 
 
@@ -235,9 +238,9 @@ def check_and_run_autofun(settings: Settings) -> None:
             return
 
         max_concurrent: int = admin_user.get_preference('autofun.max_concurrent')
-        task_priority: int = admin_user.get_preference('autofun.task_priority')
+        task_window_days: int = admin_user.get_preference('autofun.task_window_days')
 
-        # Step 1: clean up completed or deleted tasks
+        # Step 1: clean up completed, dropped or deleted tasks
         active_records = list(session.scalars(select(models.AutoFunActiveTask)).all())
         for record in active_records:
             task = session.get(models.Task, record.task_id)
@@ -245,6 +248,10 @@ def check_and_run_autofun(settings: Settings) -> None:
                 # Task was deleted — free the slot, item stays available
                 session.delete(record)
                 logger.info('autofun_task_deleted', fun_item_id=record.fun_item_id)
+            elif task.drop_date is not None:
+                # Task was dropped — free the slot, item stays available
+                session.delete(record)
+                logger.info('autofun_task_dropped', fun_item_id=record.fun_item_id)
             elif task.complete_date is not None:
                 # Task was completed — mark the fun item done permanently
                 fun_item = session.get(models.AutoFun, record.fun_item_id)
@@ -269,11 +276,12 @@ def check_and_run_autofun(settings: Settings) -> None:
         while active_count < max_concurrent and available:
             chosen = random.choice(available)
             available.remove(chosen)
-            task = models.Task(
+            task = new_task(
+                session,
                 name=chosen.name,
                 notes=chosen.notes,
                 category='Personal',
-                priority=task_priority,
+                window_days=task_window_days,
             )
             session.add(task)
             session.flush()
@@ -339,12 +347,6 @@ def get_jobs_to_add(settings: Settings, zone: ZoneInfo) -> list[JobToAdd]:
             args=(settings,),
             trigger=CronTrigger(hour=1, timezone=zone),
             id='check_and_run_autofun_daily',
-        ),
-        JobToAdd(
-            func=compact_task_priorities,
-            args=(settings,),
-            trigger=CronTrigger(hour=1, minute=15, timezone=zone),
-            id='compact_task_priorities_daily',
         ),
         JobToAdd(
             func=docker_prune,

@@ -33,7 +33,7 @@ AUTOFUN_ITEMS = [
     ('See a show at SFJAZZ', 'Check their lineup for the season'),
 ]
 
-ACTIVE_TASK_PRIORITY = 30
+ACTIVE_TASK_WINDOW_DAYS = 30
 
 
 def clear(session: Session) -> None:
@@ -69,7 +69,8 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             name=fun_item.name,
             notes=fun_item.notes,
             category='Personal',
-            priority=ACTIVE_TASK_PRIORITY,
+            window_days=ACTIVE_TASK_WINDOW_DAYS,
+            rank_at=now + timedelta(days=ACTIVE_TASK_WINDOW_DAYS),
         )
         session.add(task)
         session.flush()

@@ -162,7 +162,7 @@ DEFAULT_USER_PREFERENCES = {
         'interval_days': 7,
         'max_concurrent': 1,
         'is_paused': False,
-        'task_priority': 7,
+        'task_window_days': 30,
     },
     'events': {
         'pages': {

@@ -19,13 +19,20 @@ func newTasksCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tasks",
 		Short: "List, inspect, and manage your tasks",
-		Long: "The flat, priority-ranked maintenance list — chores and one-offs that belong\n" +
-			"to no project. Structured work lives in `icb projects items` instead.",
+		Long: "The flat maintenance list — chores and one-offs that belong to no project.\n" +
+			"Structured work lives in `icb projects items` instead.\n" +
+			"\n" +
+			"Each task has a window in days, its category's unless one is given. A task\n" +
+			"climbs the list as its window runs out, so a short window comes up sooner\n" +
+			"than a long one added earlier. The order is the whole signal: no date is\n" +
+			"shown. `snooze` restarts a task's window, `pin` holds it at the top,\n" +
+			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
+			"completed or dropped one.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd,
 		"Search tasks by name or notes: icb tasks search <query>",
-		"Completed tasks are hidden: icb tasks list --status all",
+		"Completed and dropped tasks are hidden: icb tasks list --status all",
 	)
 	cmd.AddCommand(
 		newTasksListCommand(),
@@ -34,9 +41,13 @@ func newTasksCommand() *cobra.Command {
 		newTasksCreateCommand(),
 		newTasksEditCommand(),
 		newTasksCompleteCommand(),
-		newTasksShiftCommand(),
-		newTasksReorderCommand(),
+		newTasksSnoozeCommand(),
+		newTasksPinCommand(true),
+		newTasksPinCommand(false),
+		newTasksDropCommand(),
+		newTasksReopenCommand(),
 		newTasksDeleteCommand(),
+		newTaskCategoriesCommand(),
 	)
 	return cmd
 }
@@ -52,18 +63,19 @@ func newTasksListCommand() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List open tasks by priority",
-		Long: "Open is the default because completed tasks accumulate without bound.\n" +
+		Short: "List open tasks in the order to do them",
+		Long: "Open is the default because closed tasks accumulate without bound. Open\n" +
+			"tasks come back pinned first, then in the order their windows run out.\n" +
 			"\n" +
-			"--status takes one of: " + strings.Join(api.TaskStatuses, ", ") + ". Completed tasks come\n" +
-			"back most-recently-finished first — priority stopped meaning anything the\n" +
-			"moment they left the queue.\n" +
+			"--status takes one of: " + strings.Join(api.TaskStatuses, ", ") + ". Completed and\n" +
+			"dropped tasks come back most-recently-closed first — a place in the queue\n" +
+			"stops meaning anything once a task leaves it.\n" +
 			"\n" +
-			"--start/--end bound when a task was completed, inclusive on both ends, and\n" +
-			"either works without the other. A bound with no offset is taken in this\n" +
-			"machine's zone. An open task has no completion date, so it falls outside\n" +
-			"every range — pair them with --status completed to read a week's finished\n" +
-			"work.\n" +
+			"--start/--end bound when a task was closed, inclusive on both ends, and\n" +
+			"either works without the other: the drop date for --status dropped, the\n" +
+			"completion date otherwise. A bound with no offset is taken in this machine's\n" +
+			"zone. An open task has no closing date, so it falls outside every range —\n" +
+			"pair them with --status completed to read a week's finished work.\n" +
 			"\n" +
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +
@@ -94,7 +106,7 @@ func newTasksListCommand() *cobra.Command {
 				return err
 			}
 			if !asJSON && !cmd.Flags().Changed("status") {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted tasks are hidden: icb tasks list --status all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and dropped tasks are hidden: icb tasks list --status all")
 			}
 			return nil
 		},
@@ -102,8 +114,8 @@ func newTasksListCommand() *cobra.Command {
 	addLimitFlag(cmd, &limit)
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
-	cmd.Flags().StringVar(&start, "start", "", "Only tasks completed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only tasks completed on or before this ISO 8601 date")
+	cmd.Flags().StringVar(&start, "start", "", "Only tasks closed on or after this ISO 8601 date")
+	cmd.Flags().StringVar(&end, "end", "", "Only tasks closed on or before this ISO 8601 date")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
 	return cmd
 }
@@ -175,15 +187,19 @@ func taskCreateFields() []prompt.Field {
 			Validate: taskCategory,
 		},
 		{
-			Key:      "priority",
-			Label:    "Priority",
-			Hint:     "Priority is a rank — lower comes first.",
-			Default:  "1",
-			Validate: prompt.Int,
+			Key:      "window-days",
+			Label:    "Window in days",
+			Hint:     "How soon it should come up. Blank takes the category's window.",
+			Optional: true,
+			Validate: windowDays,
 		},
 		{Key: "notes", Label: "Notes", Optional: true},
 	}
 }
+
+// windowDays is the floor the API holds a window to, so a zero is refused
+// here with the reason rather than coming back as a 422.
+var windowDays = prompt.IntAtLeast(1)
 
 func newTasksCreateCommand() *cobra.Command {
 	var asJSON bool
@@ -198,11 +214,11 @@ func newTasksCreateCommand() *cobra.Command {
 			"An answer the field rejects comes back for editing and nothing already\n" +
 			"entered is lost. Ctrl-C abandons the task.",
 		Example: "  icb tasks create\n" +
-			"  icb tasks create --name \"Renew registration\" --category chore --priority 3",
+			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fields := taskCreateFields()
-			answers := flagAnswers(cmd, "name", "category", "priority", "notes")
+			answers := flagAnswers(cmd, "name", "category", "window-days", "notes")
 			if err := validateAnswers(answers, fields); err != nil {
 				return usageError{err}
 			}
@@ -229,11 +245,11 @@ func newTasksCreateCommand() *cobra.Command {
 				notes := answers.Get("notes")
 				in.Notes = &notes
 			}
-			if answers.Has("priority") {
-				// Unfailable: pflag parses the flag as an int and prompt.Int
-				// parses the typed answer, so nothing unparsed reaches here.
-				priority, _ := strconv.Atoi(answers.Get("priority"))
-				in.Priority = &priority
+			if answers.Has("window-days") {
+				// Unfailable: validateAnswers and the form both ran windowDays,
+				// so nothing unparsed reaches here.
+				window, _ := strconv.Atoi(answers.Get("window-days"))
+				in.WindowDays = &window
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -246,14 +262,14 @@ func newTasksCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created task %q (id %d, priority %d)\n", task.Name, task.ID, task.Priority)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Created task %q (id %d, %d-day window)\n", task.Name, task.ID, task.WindowDays)
 			return nil
 		},
 	}
 	cmd.Flags().String("name", "", "Task name (asked for when omitted)")
 	cmd.Flags().String("notes", "", "Markdown notes")
 	cmd.Flags().String("category", "", "One of: "+strings.Join(api.TaskCategories, ", ")+" (asked for when omitted)")
-	cmd.Flags().Int("priority", 1, "Priority rank (lower = higher priority)")
+	cmd.Flags().Int("window-days", 0, "Days before it comes up (default the category's window)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created task as JSON to stdout")
 	return cmd
 }
@@ -263,14 +279,16 @@ func newTasksEditCommand() *cobra.Command {
 		name     string
 		notes    string
 		category string
-		priority int
+		window   int
 		asJSON   bool
 	)
 	cmd := &cobra.Command{
-		Use:     "edit <task-id> [flags]",
-		Short:   "Change fields on an existing task",
-		Long:    "Update only the fields whose flags you pass. Use `complete` to finish a task.",
-		Example: "  icb tasks edit 42 --priority 1 --notes \"due friday\"",
+		Use:   "edit <task-id> [flags]",
+		Short: "Change fields on an existing task",
+		Long: "Update only the fields whose flags you pass. A new --window-days applies\n" +
+			"from the next snooze; `snooze` restarts the window now. Use `complete` to\n" +
+			"finish a task and `drop` to let one go.",
+		Example: "  icb tasks edit 42 --window-days 7 --notes \"due friday\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
@@ -292,11 +310,14 @@ func newTasksEditCommand() *cobra.Command {
 				}
 				in.Category = &canonical
 			}
-			if f.Changed("priority") {
-				in.Priority = &priority
+			if f.Changed("window-days") {
+				if _, err := windowDays(strconv.Itoa(window)); err != nil {
+					return usageError{fmt.Errorf("--window-days: %w", err)}
+				}
+				in.WindowDays = &window
 			}
 			if in == (api.TaskUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one of --name/--notes/--category/--priority")}
+				return usageError{fmt.Errorf("nothing to change — pass at least one of --name/--notes/--category/--window-days")}
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -316,7 +337,7 @@ func newTasksEditCommand() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "New task name")
 	cmd.Flags().StringVar(&notes, "notes", "", "New markdown notes")
 	cmd.Flags().StringVar(&category, "category", "", "New category, one of: "+strings.Join(api.TaskCategories, ", "))
-	cmd.Flags().IntVar(&priority, "priority", 1, "New priority rank")
+	cmd.Flags().IntVar(&window, "window-days", 0, "New window in days, at least 1")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated task as JSON to stdout")
 	return cmd
 }
@@ -352,20 +373,18 @@ func newTasksCompleteCommand() *cobra.Command {
 	return cmd
 }
 
-func newTasksShiftCommand() *cobra.Command {
+// taskActionCommand is the shape snooze, pin, unpin, drop and reopen share: one
+// task id, one call, and a one-line confirmation or the task as JSON.
+func taskActionCommand(use, short, long, example, done string, act func(*cobra.Command, *api.Client, int) (api.Task, error)) *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "shift <task-id> <positions>",
-		Short:   "Shift a task's priority rank",
-		Long:    "Move a task by <positions> ranks: positive pushes it down the list (lower\npriority), negative pulls it up. Nightly compaction absorbs any gaps.",
-		Example: "  icb tasks shift 42 -2   # up two\n  icb tasks shift 42 3    # down three",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Use:     use,
+		Short:   short,
+		Long:    long,
+		Example: example,
+		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
-			if err != nil {
-				return err
-			}
-			positions, err := parseIntArg("positions", args[1])
 			if err != nil {
 				return err
 			}
@@ -373,14 +392,14 @@ func newTasksShiftCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			task, err := client.ShiftTask(cmd.Context(), id, positions)
+			task, err := act(cmd, client, id)
 			if err != nil {
 				return handleAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), task)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Shifted task %q to priority %d (id %d)\n", task.Name, task.Priority, task.ID)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s task %q (id %d)\n", done, task.Name, task.ID)
 			return nil
 		},
 	}
@@ -388,26 +407,159 @@ func newTasksShiftCommand() *cobra.Command {
 	return cmd
 }
 
-func newTasksReorderCommand() *cobra.Command {
+func newTasksSnoozeCommand() *cobra.Command {
+	return taskActionCommand(
+		"snooze <task-id>",
+		"Restart a task's window, moving it back down the list",
+		"Not now: the task's window starts again from today, so it comes back up\n"+
+			"after as many days as its window holds. A pinned task is unpinned.",
+		"  icb tasks snooze 42",
+		"Snoozed",
+		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+			return c.SnoozeTask(cmd.Context(), id)
+		},
+	)
+}
+
+func newTasksPinCommand(pinned bool) *cobra.Command {
+	if pinned {
+		return taskActionCommand(
+			"pin <task-id>",
+			"Hold a task at the top of the list",
+			"A pinned task sorts ahead of every unpinned one until it is unpinned,\n"+
+				"snoozed, completed or dropped. A closed task cannot be pinned.",
+			"  icb tasks pin 42",
+			"Pinned",
+			func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+				return c.SetTaskPinned(cmd.Context(), id, true)
+			},
+		)
+	}
+	return taskActionCommand(
+		"unpin <task-id>",
+		"Return a pinned task to its place by window",
+		"",
+		"  icb tasks unpin 42",
+		"Unpinned",
+		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+			return c.SetTaskPinned(cmd.Context(), id, false)
+		},
+	)
+}
+
+func newTasksDropCommand() *cobra.Command {
+	var reason string
+	cmd := taskActionCommand(
+		"drop <task-id> [--reason <why>]",
+		"Let a task go without completing it",
+		"A dropped task leaves the list and stays on record under --status dropped.\n"+
+			"It does not count as completed. --reason is optional and kept with it.\n"+
+			"icb tasks reopen brings it back.",
+		"  icb tasks drop 42 --reason \"bought one instead\"",
+		"Dropped",
+		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+			return c.DropTask(cmd.Context(), id, reason)
+		},
+	)
+	cmd.Flags().StringVar(&reason, "reason", "", "Why it is dropped")
+	return cmd
+}
+
+func newTasksReopenCommand() *cobra.Command {
+	return taskActionCommand(
+		"reopen <task-id>",
+		"Return a completed or dropped task to the open list",
+		"Clears the completion or drop date along with the drop reason. The task\n"+
+			"returns unpinned, at the place its window already gave it.",
+		"  icb tasks reopen 42",
+		"Reopened",
+		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+			return c.ReopenTask(cmd.Context(), id)
+		},
+	)
+}
+
+func newTaskCategoriesCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "reorder",
-		Short:   "Dense-rank incomplete task priorities to 1..K",
-		Long:    "Tidy the priority ranks of all incomplete tasks to a gap-free 1..K sequence — the same operation the nightly scheduler runs.",
-		Example: "  icb tasks reorder",
+		Use:   "categories",
+		Short: "List and tune the categories --category accepts, with each one's window",
+		RunE:  requireSubcommand,
+	}
+	cmd.AddCommand(newTaskCategoriesListCommand(), newTaskCategoriesEditCommand())
+	return cmd
+}
+
+func newTaskCategoriesListCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:     "list",
+		Short:   "List the task categories and the window a new task in each gets",
+		Example: "  icb tasks categories list",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			message, err := client.ReorderTasks(cmd.Context())
+			categories, err := client.ListTaskCategories(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), message)
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), categories)
+			}
+			tw := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 4, 2, ' ', 0)
+			_, _ = fmt.Fprintln(tw, "CATEGORY\tWINDOW (DAYS)")
+			for _, c := range categories {
+				_, _ = fmt.Fprintf(tw, "%s\t%d\n", c.Name, c.WindowDays)
+			}
+			return tw.Flush()
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the categories as JSON to stdout")
+	return cmd
+}
+
+func newTaskCategoriesEditCommand() *cobra.Command {
+	var (
+		window int
+		asJSON bool
+	)
+	cmd := &cobra.Command{
+		Use:   "edit <category> --window-days <days>",
+		Short: "Change the window a new task in a category gets",
+		Long: "Applies to tasks created afterwards. Open tasks keep the window they were\n" +
+			"made with.",
+		Example: "  icb tasks categories edit Home --window-days 45",
+		Args:    usageArgs(cobra.ExactArgs(1)),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name, err := taskCategory(args[0])
+			if err != nil {
+				return usageError{err}
+			}
+			if !cmd.Flags().Changed("window-days") {
+				return usageError{errors.New("--window-days is required")}
+			}
+			if _, err := windowDays(strconv.Itoa(window)); err != nil {
+				return usageError{fmt.Errorf("--window-days: %w", err)}
+			}
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleAPIError(err)
+			}
+			category, err := client.UpdateTaskCategory(cmd.Context(), name, window)
+			if err != nil {
+				return handleAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), category)
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s tasks now get a %d-day window\n", category.Name, category.WindowDays)
 			return nil
 		},
 	}
+	cmd.Flags().IntVar(&window, "window-days", 0, "Window in days, at least 1")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the category as JSON to stdout")
 	return cmd
 }
 
@@ -486,27 +638,57 @@ func printTaskList(out io.Writer, tasks []api.Task) {
 		_, _ = fmt.Fprintln(out, "No tasks.")
 		return
 	}
+	// The row number is the queue position. The sort date behind it is never
+	// printed, so the list reads as an order rather than a set of deadlines.
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tPRI\tSTATUS\tCATEGORY\tNAME")
-	for _, t := range tasks {
-		_, _ = fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\n", t.ID, t.Priority, taskStatus(t), t.Category, t.Name)
+	_, _ = fmt.Fprintln(tw, "#\tID\tPIN\tSTATUS\tCATEGORY\tNAME")
+	for i, t := range tasks {
+		_, _ = fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\t%s\n", i+1, t.ID, pinMark(t), taskStatus(t), t.Category, t.Name)
 	}
 	_ = tw.Flush()
+}
+
+func pinMark(t api.Task) string {
+	if t.Pinned {
+		return "pin"
+	}
+	return ""
 }
 
 func printTaskDetail(out io.Writer, t api.Task) {
 	_, _ = fmt.Fprintf(out, "%s\n", t.Name)
 	_, _ = fmt.Fprintf(out, "  id:        %d\n", t.ID)
 	_, _ = fmt.Fprintf(out, "  category:  %s\n", t.Category)
-	_, _ = fmt.Fprintf(out, "  priority:  %d\n", t.Priority)
+	_, _ = fmt.Fprintf(out, "  window:    %d days\n", t.WindowDays)
+	if t.Pinned {
+		_, _ = fmt.Fprintln(out, "  pinned:    yes")
+	}
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", taskStatus(t))
+	if t.AutoTaskID != nil {
+		_, _ = fmt.Fprintf(out, "  autotask:  %d\n", *t.AutoTaskID)
+	}
 	_, _ = fmt.Fprintf(out, "  added:     %s\n", localDay(t.AddDate))
 	if t.CompleteDate != nil {
 		_, _ = fmt.Fprintf(out, "  completed: %s\n", localDay(*t.CompleteDate))
+	}
+	if t.DropDate != nil {
+		_, _ = fmt.Fprintf(out, "  dropped:   %s\n", localDay(*t.DropDate))
+	}
+	if r := strValue(t.DropReason); r != "" {
+		_, _ = fmt.Fprintf(out, "  reason:    %s\n", r)
 	}
 	if n := strValue(t.Notes); n != "" {
 		_, _ = fmt.Fprintf(out, "  notes:     %s\n", n)
 	}
 }
 
-func taskStatus(t api.Task) string { return itemStatusWord(false, t.Completed()) }
+func taskStatus(t api.Task) string {
+	switch {
+	case t.Dropped():
+		return api.TaskStatusDropped
+	case t.Completed():
+		return api.TaskStatusCompleted
+	default:
+		return api.TaskStatusOpen
+	}
+}

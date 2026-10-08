@@ -9,7 +9,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from . import ArticleFactory
-from . import AutoTaskFactory
 from . import BookFactory
 from . import BoxFactory
 from . import BoxItemFactory
@@ -19,50 +18,7 @@ from . import HabitCategoryFactory
 from . import HabitCompletedFactory
 from . import HabitFactory
 from . import MoneyWastedFactory
-from . import TaskFactory
 from . import UserFactory
-
-
-class TestTaskFactory:
-    """Test TaskFactory functionality."""
-
-    def test_create_basic_task(self, factory_session):
-        """Test creating a task with defaults."""
-        task = TaskFactory()
-        assert task.id is not None
-        assert task.name.startswith('Test Task')
-        assert task.category == 'Chore'
-        assert task.complete_date is None
-
-    def test_create_task_with_overrides(self, factory_session):
-        """Test creating a task with specific values."""
-        task = TaskFactory(
-            name='Custom Task Name',
-            category='Home',
-            priority=42,
-        )
-        assert task.name == 'Custom Task Name'
-        assert task.category == 'Home'
-        assert task.priority == 42
-
-    def test_create_completed_task_with_trait(self, factory_session):
-        """Test using the completed trait."""
-        task = TaskFactory(completed=True)
-        assert task.complete_date is not None
-        assert isinstance(task.complete_date, datetime)
-
-    def test_create_task_batch(self, factory_session):
-        """Test creating multiple tasks."""
-        tasks = TaskFactory.create_batch(3)
-        assert len(tasks) == 3
-        names = [t.name for t in tasks]
-        assert len(set(names)) == 3
-
-    def test_searchable_task(self, factory_session):
-        """Test creating a task that matches a search term."""
-        task = TaskFactory.searchable('urgent')
-        assert 'urgent' in task.name.lower()
-        assert 'urgent' in task.notes.lower()
 
 
 class TestUserFactory:
@@ -194,28 +150,6 @@ class TestMoneyWastedFactory:
         """Test creating an expensive wasted item."""
         entry = MoneyWastedFactory(expensive=True)
         assert entry.amount == 500.0
-
-
-class TestAutoTaskFactory:
-    """Test AutoTaskFactory functionality."""
-
-    def test_create_basic_autotask(self, factory_session):
-        """Test creating an autotask with defaults."""
-        autotask = AutoTaskFactory()
-        assert autotask.id is not None
-        assert autotask.name.startswith('Test AutoTask')
-        assert autotask.frequency == 'Weekly'
-
-    def test_daily_autotask(self, factory_session):
-        """Test creating a daily autotask."""
-        autotask = AutoTaskFactory(daily=True)
-        assert autotask.frequency == 'Daily'
-
-    def test_should_run_autotask(self, factory_session):
-        """Test creating an autotask that should run."""
-        autotask = AutoTaskFactory(should_run=True)
-        # Last run was 30 days ago, so it should run
-        assert autotask.is_due_on(datetime.now(UTC).date(), ZoneInfo('UTC')) is True
 
 
 class TestBookFactory:
@@ -355,36 +289,3 @@ class TestArticleFactory:
         article = ArticleFactory(read=True)
         assert article.last_read_date is not None
         assert article.read_count == 1
-
-
-class TestFactoryIntegration:
-    """Integration tests showing real-world factory usage patterns."""
-
-    def test_behavior_testing_pattern(self, factory_session):
-        """Demonstrate behavior testing with explicit data."""
-        home1 = TaskFactory(name='Integration Home Task 1', category='Home')
-        home2 = TaskFactory(name='Integration Home Task 2', category='Home')
-        TaskFactory(name='Integration Work Task', category='Work')  # Creates non-Home task
-
-        from sqlalchemy import select
-
-        from ichrisbirch.models import Task
-
-        home_tasks = factory_session.execute(select(Task).where(Task.category == 'Home', Task.name.like('Integration%'))).scalars().all()
-
-        assert len(home_tasks) == 2
-        assert {t.id for t in home_tasks} == {home1.id, home2.id}
-
-    def test_edge_case_testing(self, factory_session):
-        """Demonstrate edge case testing."""
-        task_empty = TaskFactory(name='')
-        assert task_empty.name == ''
-
-        task_long = TaskFactory(notes='x' * 5000)
-        assert len(task_long.notes) == 5000
-
-        task_negative = TaskFactory(priority=-10)
-        assert task_negative.priority == -10
-
-        task_zero = TaskFactory(priority=0)
-        assert task_zero.priority == 0

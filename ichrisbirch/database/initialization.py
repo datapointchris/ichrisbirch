@@ -25,6 +25,7 @@ from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
+from ichrisbirch.models.autotask import AUTOTASK_ANCHORS
 from ichrisbirch.models.project import PROJECT_KINDS
 from ichrisbirch.models.project import PROJECT_STATUSES
 from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
@@ -37,6 +38,8 @@ from ichrisbirch.models.strain import STRAIN_FLAVORS
 from ichrisbirch.models.strain import STRAIN_STATUSES
 from ichrisbirch.models.strain import STRAIN_TERPENES
 from ichrisbirch.models.strain import STRAIN_TYPES
+from ichrisbirch.models.task import TASK_CATEGORIES
+from ichrisbirch.models.task import TASK_CATEGORY_WINDOW_DAYS
 from ichrisbirch.util import find_project_root
 
 logger = structlog.get_logger()
@@ -122,20 +125,8 @@ LOOKUP_DATA = {
         'Small',
         'UhaulSmall',
     ],
-    'task_categories': [
-        'Automotive',
-        'Chore',
-        'Computer',
-        'Dingo',
-        'Financial',
-        'Home',
-        'Kitchen',
-        'Learn',
-        'Personal',
-        'Purchase',
-        'Research',
-        'Work',
-    ],
+    'autotask_anchors': AUTOTASK_ANCHORS,
+    'task_categories': TASK_CATEGORIES,
     'project_kinds': PROJECT_KINDS,
     'project_statuses': PROJECT_STATUSES,
     'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
@@ -162,6 +153,11 @@ def insert_lookup_table_data(settings) -> None:
         for table, values in LOOKUP_DATA.items():
             placeholders = ', '.join(f"('{v}')" for v in values)
             conn.execute(text(f'INSERT INTO {table} (name) VALUES {placeholders}'))  # nosec B608
+        for name, window_days in TASK_CATEGORY_WINDOW_DAYS.items():
+            conn.execute(
+                text('UPDATE task_categories SET window_days = :window_days WHERE name = :name'),
+                {'name': name, 'window_days': window_days},
+            )
         conn.commit()
     logger.info('lookup_data_inserted', tables=list(LOOKUP_DATA.keys()))
 

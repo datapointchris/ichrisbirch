@@ -12,7 +12,7 @@ through a REST API, a browser UI and a command-line client.
 | --- | --- | --- |
 | API | FastAPI | REST backend, JWT and Authelia OIDC auth |
 | Vue | Vue 3 + TypeScript | Single-page frontend, every page |
-| Scheduler | APScheduler | Daily jobs — task priorities, autotasks |
+| Scheduler | APScheduler | Daily jobs — autotasks, autofun |
 
 All three share one PostgreSQL database and a Redis cache. Docker Compose runs
 them behind Traefik, which terminates TLS and routes by host.

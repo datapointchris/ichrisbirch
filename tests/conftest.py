@@ -378,7 +378,7 @@ def factory_session(truncate_tables):
     Usage:
         def test_with_factories(factory_session):
             from tests.factories import TaskFactory
-            task = TaskFactory(name='My Task', priority=10)
+            task = TaskFactory(name='My Task', window_days=10)
             assert task.id is not None
             # Data is automatically cleaned up after test via rollback
     """

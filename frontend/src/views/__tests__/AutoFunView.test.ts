@@ -55,7 +55,7 @@ const testPreferences = {
     interval_days: 7,
     max_concurrent: 1,
     is_paused: false,
-    task_priority: 7,
+    task_window_days: 30,
   },
 }
 
@@ -198,7 +198,7 @@ describe('AutoFunView', () => {
 
     const auth = useAuthStore()
     expect(auth.updatePreferences).toHaveBeenCalledWith({
-      autofun: { interval_days: 7, max_concurrent: 1, is_paused: false, task_priority: 7 },
+      autofun: { interval_days: 7, max_concurrent: 1, is_paused: false, task_window_days: 30 },
     })
   })
 

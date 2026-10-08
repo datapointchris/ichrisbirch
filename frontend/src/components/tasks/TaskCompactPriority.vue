@@ -1,7 +1,7 @@
 <template>
   <div class="task task--compact-layout priority">
     <h3 class="task--compact-layout__title">{{ task.name }}</h3>
-    <span>Priority: {{ task.priority }}</span>
+    <span>{{ task.pinned ? 'Pinned' : '' }}</span>
     <span>Category: {{ task.category }}</span>
     <span>
       <ActionButton

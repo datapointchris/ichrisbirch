@@ -301,7 +301,7 @@ Resource clients work seamlessly with Pydantic models:
 task_data = schemas.TaskCreate(
     name='New task',
     category='Chore',
-    priority=5,
+    window_days=5,
 )
 
 # Create using schema data
@@ -317,7 +317,7 @@ task = tasks.get(123)
 # Access typed attributes
 print(task.name)  # str
 print(task.category)  # str, a row in task_categories
-print(task.priority)  # int, lower sorts first
+print(task.rank_at)  # timezone-aware datetime, earlier sorts first among unpinned tasks
 print(task.add_date)  # timezone-aware datetime in UTC
 print(task.complete_date)  # the same, or None while the task is open
 ```

@@ -96,20 +96,30 @@ func printAutotasksTable(out io.Writer, autotasks []api.AutoTask) {
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tPRIORITY\tFREQUENCY\tMAX\tRUNS\tNAME\tCATEGORY")
+	_, _ = fmt.Fprintln(tw, "ID\tFREQUENCY\tANCHOR\tWINDOW\tMAX\tRUNS\tNAME\tCATEGORY")
 	for _, a := range autotasks {
-		_, _ = fmt.Fprintf(tw, "%d\t%d\t%s\t%d\t%d\t%s\t%s\n",
-			a.ID, a.Priority, a.Frequency, a.MaxConcurrent, a.RunCount, a.Name, a.Category)
+		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%d\t%d\t%s\t%s\n",
+			a.ID, a.Frequency, a.Anchor, autotaskWindow(a), a.MaxConcurrent, a.RunCount, a.Name, a.Category)
 	}
 	_ = tw.Flush()
+}
+
+// autotaskWindow names the window a copy gets, which an unset one takes from
+// the category.
+func autotaskWindow(a api.AutoTask) string {
+	if a.WindowDays == nil {
+		return "category default"
+	}
+	return fmt.Sprintf("%d days", *a.WindowDays)
 }
 
 func printAutotaskDetail(out io.Writer, a api.AutoTask) {
 	_, _ = fmt.Fprintf(out, "%s\n", a.Name)
 	_, _ = fmt.Fprintf(out, "  id:          %d\n", a.ID)
 	_, _ = fmt.Fprintf(out, "  category:    %s\n", a.Category)
-	_, _ = fmt.Fprintf(out, "  priority:    %d\n", a.Priority)
 	_, _ = fmt.Fprintf(out, "  frequency:   %s\n", a.Frequency)
+	_, _ = fmt.Fprintf(out, "  anchor:      %s\n", a.Anchor)
+	_, _ = fmt.Fprintf(out, "  window:      %s\n", autotaskWindow(a))
 	_, _ = fmt.Fprintf(out, "  max concur.: %d\n", a.MaxConcurrent)
 	_, _ = fmt.Fprintf(out, "  run count:   %d\n", a.RunCount)
 	_, _ = fmt.Fprintf(out, "  first run:   %s\n", localDay(a.FirstRunDate))

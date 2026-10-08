@@ -4,6 +4,7 @@
   --task-critical-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-critical) calc(l * 0.6) c h / 0.8);
   --task-overdue-box-shadow: inset 0 0 8px 2px oklch(from var(--clr-overdue) calc(l * 0.6) c h / 0.8);
   --task-total-box-shadow: inset 0 0 8px 2px var(--clr-gray-400);
+  --task-dropped-box-shadow: inset 0 0 8px 2px var(--clr-gray-500);
 }
 
 .task-layout {
@@ -24,6 +25,11 @@
     padding-block: var(--space-2xs);
     padding-inline: var(--space-m);
     border-radius: var(--button-border-radius);
+  }
+
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
   }
 }
 
@@ -62,7 +68,7 @@
     &.priority {
       grid-template-areas:
         'title title buttons'
-        'priority notes buttons'
+        'pin notes buttons'
         'category notes buttons'
         'add-date notes buttons';
       grid-template-columns: 1.5fr 1fr 1fr;
@@ -72,7 +78,7 @@
     &.completed {
       grid-template-areas:
         'title title buttons'
-        'priority notes buttons'
+        'pin notes buttons'
         'category notes buttons'
         'add-date notes buttons'
         'complete-date notes buttons'
@@ -81,10 +87,21 @@
       grid-template-rows: repeat(6, auto);
     }
 
+    &.dropped {
+      grid-template-areas:
+        'title title buttons'
+        'category notes buttons'
+        'add-date notes buttons'
+        'drop-date notes buttons'
+        'drop-reason notes buttons';
+      grid-template-columns: 1.5fr 1fr 1fr;
+      grid-template-rows: repeat(5, auto);
+    }
+
     &.todo {
       grid-template-areas:
         'title title title'
-        'priority notes notes'
+        'pin notes notes'
         'category notes notes'
         'add-date notes notes'
         'buttons buttons buttons';
@@ -106,8 +123,8 @@
       text-align: justify;
     }
 
-    &__priority {
-      grid-area: priority;
+    &__pin {
+      grid-area: pin;
       margin-left: var(--space-m);
     }
 
@@ -131,6 +148,16 @@
       margin-left: var(--space-m);
     }
 
+    &__drop-date {
+      grid-area: drop-date;
+      margin-left: var(--space-m);
+    }
+
+    &__drop-reason {
+      grid-area: drop-reason;
+      margin-left: var(--space-m);
+    }
+
     &__buttons {
       grid-area: buttons;
       display: flex;
@@ -151,12 +178,16 @@
 
     $drag-handle: 1fr;
     $name: 6fr;
-    $priority: 2fr;
+    $pin: 2fr;
     $category: 4fr;
     $add-date: 4fr;
     $complete-date: 4fr;
     $time-to-complete: 4fr;
-    $shift: 3fr;
+    $drop-date: 4fr;
+    $drop-reason: 6fr;
+    $reopen: 3fr;
+    $snooze: 3fr;
+    $drop: 3fr;
     $complete-button: 3fr;
     $complete-icon: 1fr;
     $edit-icon: 1fr;
@@ -164,11 +195,15 @@
     $delete-icon: 1fr;
 
     &.priority {
-      grid-template-columns: $name $priority $category $complete-icon $edit-icon $delete-icon;
+      grid-template-columns: $name $pin $category $complete-icon $edit-icon $delete-icon;
     }
 
     &.completed {
       grid-template-columns: $name $category $add-date $complete-date $time-to-complete $edit-icon $delete-icon;
+    }
+
+    &.dropped {
+      grid-template-columns: $name $category $add-date $drop-date $drop-reason $reopen $delete-icon;
     }
 
     &.completed-narrow {
@@ -176,7 +211,7 @@
     }
 
     &.todo {
-      grid-template-columns: $drag-handle $name $priority $category $add-date $complete-button $shift $edit-icon $delete-icon;
+      grid-template-columns: $drag-handle $name $pin $category $add-date $complete-button $snooze $drop $edit-icon $delete-icon;
     }
 
     &__title {
@@ -204,6 +239,10 @@
 
   &--complete {
     @include task-state-styles(completed);
+  }
+
+  &--dropped {
+    @include task-state-styles(dropped);
   }
 
   &--soon {

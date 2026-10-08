@@ -37,8 +37,14 @@
               <span class="item-details__item-content">{{ autotask.category }}</span>
             </div>
             <div class="item-details__item">
-              <strong>Priority</strong>
-              <span class="item-details__item-content">{{ autotask.priority }}</span>
+              <strong>Window</strong>
+              <span class="item-details__item-content">{{
+                autotask.window_days ? `${autotask.window_days} days` : 'Category default'
+              }}</span>
+            </div>
+            <div class="item-details__item">
+              <strong>Counts From</strong>
+              <span class="item-details__item-content">{{ autotask.anchor === 'completion' ? 'Last completion' : 'Calendar' }}</span>
             </div>
             <div class="item-details__item">
               <strong>Frequency</strong>

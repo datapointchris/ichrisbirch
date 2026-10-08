@@ -1,10 +1,14 @@
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import AwareDatetime
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import Field
 
 from ichrisbirch.schemas.not_null import NotNull
+
+WindowDays = Annotated[int, Field(ge=1)]
 
 
 class TaskConfig(BaseModel):
@@ -15,7 +19,8 @@ class TaskCreate(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    priority: int = 1
+    window_days: WindowDays | None = Field(None, description="Days until the task sorts as due. The category's window when omitted.")
+    pinned: bool = False
 
 
 class Task(TaskConfig):
@@ -23,18 +28,31 @@ class Task(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    priority: int
+    rank_at: datetime
+    window_days: int
+    pinned: bool
+    autotask_id: int | None = None
     add_date: datetime
     complete_date: datetime | None = None
+    drop_date: datetime | None = None
+    drop_reason: str | None = None
 
 
 class TaskUpdate(TaskConfig):
     name: NotNull[str] = None
     notes: str | None = None
     category: NotNull[str] = None
-    priority: NotNull[int] = None
+    rank_at: NotNull[AwareDatetime] = None
+    window_days: NotNull[WindowDays] = None
+    pinned: NotNull[bool] = None
     add_date: NotNull[AwareDatetime] = None
     complete_date: AwareDatetime | None = None
+    drop_date: AwareDatetime | None = None
+    drop_reason: str | None = None
+
+
+class TaskDrop(TaskConfig):
+    reason: str | None = None
 
 
 class TaskCompleted(TaskConfig):
@@ -42,7 +60,8 @@ class TaskCompleted(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    priority: int
+    window_days: int
+    autotask_id: int | None = None
     add_date: datetime
     complete_date: datetime
 
@@ -54,3 +73,12 @@ class TaskCompleted(TaskConfig):
     def time_to_complete(self) -> str:
         weeks, days = divmod(self.days_to_complete, 7)
         return f'{weeks} weeks, {days} days'
+
+
+class TaskCategory(TaskConfig):
+    name: str
+    window_days: int
+
+
+class TaskCategoryUpdate(TaskConfig):
+    window_days: NotNull[WindowDays] = None
