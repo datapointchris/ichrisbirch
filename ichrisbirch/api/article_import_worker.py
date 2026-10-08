@@ -41,6 +41,9 @@ BATCH_KEY_PREFIX = 'article_import:batch:'
 PAUSE_KEY = 'article_import:paused_until'
 BATCH_TTL = 86400  # 24 hours
 MAX_ATTEMPTS = 2
+QUEUE_WAIT_SECONDS = 5
+# BLPOP leaves the socket silent for up to QUEUE_WAIT_SECONDS, so the read timeout sits above it.
+QUEUE_READ_TIMEOUT_SECONDS = QUEUE_WAIT_SECONDS * 2
 # How long to hold the queue when the usage limit gives no reset time.
 USAGE_LIMIT_RECHECK = dt.timedelta(minutes=15)
 
@@ -148,7 +151,7 @@ class ArticleImportWorker:
                 if (pause_seconds := self.redis_client.ttl(PAUSE_KEY)) > 0:
                     self._stop_event.wait(timeout=pause_seconds)
                     continue
-                result = self.redis_client.blpop(QUEUE_KEY, timeout=5)
+                result = self.redis_client.blpop(QUEUE_KEY, timeout=QUEUE_WAIT_SECONDS)
                 if result is None:
                     continue
                 _, item_json = result

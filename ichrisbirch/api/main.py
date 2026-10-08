@@ -15,12 +15,14 @@ from fastapi.responses import JSONResponse
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.api import endpoints
+from ichrisbirch.api.article_import_worker import QUEUE_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.endpoints.auth import get_current_user_or_scoped_client
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
+from ichrisbirch.api.redis_client import REQUEST_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
 from ichrisbirch.util import log_caller
@@ -69,15 +71,17 @@ async def api_exception_handler(request, exc):
 def create_api(settings: Settings) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        redis_client = get_redis_client(settings)
-        worker = ArticleImportWorker(redis_client, settings)
+        request_redis = get_redis_client(settings, read_timeout=REQUEST_READ_TIMEOUT_SECONDS)
+        worker_redis = get_redis_client(settings, read_timeout=QUEUE_READ_TIMEOUT_SECONDS)
+        worker = ArticleImportWorker(worker_redis, settings)
         worker.start()
         app.state.settings = settings
-        app.state.redis_client = redis_client
+        app.state.redis_client = request_redis
         app.state.article_import_worker = worker
         yield
         worker.stop()
-        redis_client.close()
+        worker_redis.close()
+        request_redis.close()
 
     api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description, lifespan=lifespan)
     logger.info('api_initializing')

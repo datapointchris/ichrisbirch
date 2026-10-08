@@ -5,6 +5,7 @@ import re
 import shutil
 import time
 from collections.abc import Iterable
+from contextlib import closing
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,7 @@ from fastapi import status
 from pygtail import Pygtail
 from sqlalchemy import select
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -279,21 +281,28 @@ async def run_smoke_tests_endpoint(
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
 
+# Bounds each call a probe makes, so a dependency that stops answering reads as unavailable.
+PROBE_TIMEOUT_SECONDS = 2
+
+TABLE_ROW_COUNTS_SQL = text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')
+DATABASE_SIZE_SQL = text('SELECT pg_database_size(current_database())')
+CONNECTION_COUNT_SQL = text('SELECT count(*) FROM pg_stat_activity')
+
 
 def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
     """Get status of Docker containers, gracefully handling unavailability."""
     try:
-        client = docker.from_env()
-        containers = client.containers.list(all=True, filters={'name': 'icb-'})
-        return [
-            schemas.admin.DockerContainerStatus(
-                name=c.name,
-                status=c.status,
-                started_at=c.attrs.get('State', {}).get('StartedAt'),
-                image=','.join(c.image.tags) if c.image.tags else c.image.short_id,
-            )
-            for c in sorted(containers, key=lambda c: c.name)
-        ]
+        with closing(docker.from_env(timeout=PROBE_TIMEOUT_SECONDS)) as client:
+            containers = client.containers.list(all=True, filters={'name': 'icb-'})
+            return [
+                schemas.admin.DockerContainerStatus(
+                    name=c.name,
+                    status=c.status,
+                    started_at=c.attrs.get('State', {}).get('StartedAt'),
+                    image=','.join(c.image.tags) if c.image.tags else c.image.short_id,
+                )
+                for c in sorted(containers, key=lambda c: c.name)
+            ]
     except Exception as e:
         logger.warning('docker_status_unavailable', error=str(e))
         return []
@@ -301,22 +310,29 @@ def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
 
 def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats:
     """Get database statistics via raw SQL."""
-    rows = session.execute(text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')).fetchall()
+    try:
+        session.execute(
+            text("SELECT set_config('statement_timeout', :timeout_ms, true)"),
+            {'timeout_ms': str(round(PROBE_TIMEOUT_SECONDS * 1000))},
+        )
+        rows = session.execute(TABLE_ROW_COUNTS_SQL).fetchall()
+        size_result = session.execute(DATABASE_SIZE_SQL).scalar()
+        conn_result = session.execute(CONNECTION_COUNT_SQL).scalar()
+    except OperationalError as e:
+        session.rollback()
+        logger.warning('database_stats_unavailable', error=str(e))
+        return schemas.admin.DatabaseStats(tables=[], total_size_mb=0, active_connections=0)
+
     tables = [schemas.admin.TableRowCount(schema_name=r[0], table_name=r[1], row_count=r[2]) for r in rows]
-
-    size_result = session.execute(text('SELECT pg_database_size(current_database())')).scalar()
     total_size_mb = round((size_result or 0) / (1024 * 1024), 2)
-
-    conn_result = session.execute(text('SELECT count(*) FROM pg_stat_activity')).scalar()
-
     return schemas.admin.DatabaseStats(tables=tables, total_size_mb=total_size_mb, active_connections=conn_result or 0)
 
 
 def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
     """Get Redis server statistics."""
     try:
-        client = get_redis_client(settings)
-        info = client.info()
+        with get_redis_client(settings, read_timeout=PROBE_TIMEOUT_SECONDS) as client:
+            info = client.info()
         db_info = info.get(f'db{settings.redis.db}', {})
         key_count = db_info.get('keys', 0) if isinstance(db_info, dict) else 0
         return schemas.admin.RedisStats(
@@ -366,7 +382,7 @@ def _serialize_settings_section(section: object) -> dict:
 
 
 @router.get('/system/health/', response_model=schemas.admin.SystemHealth)
-async def get_system_health(
+def get_system_health(
     session: DbSession,
     settings: Settings = Depends(get_settings),
 ):
