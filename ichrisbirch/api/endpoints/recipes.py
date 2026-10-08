@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import case
 from sqlalchemy import cast
 from sqlalchemy import func
@@ -351,7 +352,7 @@ async def import_from_url(
         )
 
     try:
-        content = url_ingest.extract_content_for_classifier(url)
+        content = await run_in_threadpool(url_ingest.extract_content_for_classifier, url)
     except (PageFetchError, PageStatusError, PageUnreadable) as e:
         logger.error('url_content_fetch_failed', url=url, error=str(e))
         raise HTTPException(

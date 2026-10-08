@@ -256,10 +256,11 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
    the same file is what gets it the five behavioral cases.
 10. **A handler is `def` unless it awaits something.** FastAPI runs an `async def`
    handler on the event loop and a `def` one in its threadpool. The session, the
-   docker client and the Redis client are synchronous, so an `async def` handler
-   calling them holds every other request in the worker until it returns.
-   `test_async_handlers_await.py` walks the routes and fails on one that awaits
-   nothing.
+   docker client, the Redis client and `get_page` are synchronous, so an `async
+   def` handler calling them holds every other request in the worker until they
+   return. One that must await the assistant passes a page fetch to
+   `run_in_threadpool`. `test_blocking_calls_stay_off_the_event_loop.py` fails on
+   a handler that awaits nothing and on an async function that fetches a page.
 
 ### Adding a Vue Page
 

@@ -1,11 +1,11 @@
 from copy import deepcopy
+from typing import Any
 
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Header
 from fastapi import HTTPException
-from fastapi import Request
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -167,9 +167,8 @@ def _update_user_preferences_helper(db_user: models.User, update_data: dict, ses
 
 
 @router.patch('/me/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def update_my_preferences(request: Request, user: CurrentUser, session: DbSession):
+def update_my_preferences(update_data: dict[str, Any], user: CurrentUser, session: DbSession):
     """Update the current user's preferences."""
-    update_data = await request.json()
     logger.debug('user_preferences_update', update_data=update_data)
 
     # The session attached to the CurrentUser has gone out of scope, must re-attach to the new session
@@ -178,9 +177,9 @@ async def update_my_preferences(request: Request, user: CurrentUser, session: Db
 
 
 @router.patch('/{id}/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
-async def update_user_preferences(
+def update_user_preferences(
     id: int,
-    request: Request,
+    update_data: dict[str, Any],
     user: CurrentUser,
     session: DbSession,
 ):
@@ -189,8 +188,6 @@ async def update_user_preferences(
     Users can only update their own preferences unless they are admin.
     """
     require_own_data_or_admin(user, target_user_id=id, operation='update your own preferences')
-
-    update_data = await request.json()
     logger.debug('user_preferences_update', user_id=id, update_data=update_data)
 
     if not (db_user := session.get(models.User, id)):

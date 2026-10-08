@@ -2,7 +2,6 @@ import structlog
 from bs4 import BeautifulSoup
 from fastapi import APIRouter
 from fastapi import Query
-from fastapi import Request
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import cast
@@ -88,11 +87,10 @@ def search(q: str, session: DbSession):
 
 
 @router.post('/goodreads/', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
-async def goodreads(request: Request):
+def goodreads(lookup: schemas.BookGoodreadsLookup):
     """Get book information from Goodreads using the ISBN."""
-    request_data = await request.json()
-    logger.debug('goodreads_request', data=request_data)
-    isbn = request_data.get('isbn')
+    isbn = lookup.isbn
+    logger.debug('goodreads_request', isbn=isbn)
     url = f'https://www.goodreads.com/search?q={isbn}'
     response = get_page(url).raise_for_status()
     logger.debug('goodreads_retrieved', isbn=isbn)
