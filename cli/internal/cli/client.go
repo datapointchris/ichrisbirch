@@ -36,6 +36,9 @@ func newAPIClient(ctx context.Context) (*api.Client, error) {
 // tokenSource is the client-credentials grant when ICB_CLIENT_SECRET is set,
 // and otherwise the token this machine logged in for.
 func tokenSource(ctx context.Context, cfg config.Config) (oauth2.TokenSource, error) {
+	if err := cfg.CheckService(); err != nil {
+		return nil, err
+	}
 	if cfg.IsService() {
 		return goclilogin.ClientCredentialsTokenSource(ctx, cfg.Service(), cfg.ClientSecret)
 	}
@@ -70,6 +73,11 @@ func handleAPIError(err error) error {
 			return fmt.Errorf("the API rejected the token issued to service client %s", cfg.ClientID)
 		}
 		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
+	}
+	if errors.As(err, &apiErr) && apiErr.Forbidden() {
+		if cfg := config.Load(); cfg.IsService() {
+			return fmt.Errorf("service client %s may not reach that route: its scope covers the `icb projects items` reads", cfg.ClientID)
+		}
 	}
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {
 		return refusal{apiErr}

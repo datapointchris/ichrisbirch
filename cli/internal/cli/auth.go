@@ -101,6 +101,9 @@ func newAuthLogoutCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
+			if cfg.IsService() {
+				return fmt.Errorf("ICB_CLIENT_SECRET is set, so icb authenticates as service client %s and stores no token to remove; unset it to log out as a person", cfg.ClientID)
+			}
 			store := goclilogin.NewTokenStore(cfg.Login())
 
 			if err := store.Delete(cfg.ClientID); err != nil {
@@ -149,12 +152,26 @@ func newAuthTokenCommand() *cobra.Command {
 	}
 }
 
+// authMode is which grant `auth status` checked.
+type authMode string
+
+const (
+	// modeLogin is the token a person logged this machine in for.
+	modeLogin authMode = "login"
+	// modeService is the client-credentials grant ICB_CLIENT_SECRET selects.
+	modeService authMode = "service"
+)
+
 // statusReport is the stable JSON schema for `auth status --json`. It reports
 // what this machine holds, not what the token asserts: the claims are the API's
 // to verify against Authelia's JWKS, and a local reading of them would only say
 // what an unverified token claims about itself.
+//
+// For a service, logged_in is true only when the provider granted a token just
+// now. A service stores none, so nothing else says the next command will work.
 type statusReport struct {
 	LoggedIn  bool                    `json:"logged_in"`
+	Mode      authMode                `json:"mode"`
 	ClientID  string                  `json:"client_id"`
 	Issuer    string                  `json:"issuer"`
 	ExpiresAt string                  `json:"expires_at,omitempty"`
@@ -168,10 +185,6 @@ type statusReport struct {
 	// KeyringNote carries the keyring's own failure when there is no token and
 	// the keyring is the reason, rather than simply holding no entry.
 	KeyringNote string `json:"keyring_note,omitempty"`
-
-	// service is set when ICB_CLIENT_SECRET is, so the text names the secret
-	// rather than a login. JSON readers tell the two apart by client_id.
-	service bool
 }
 
 func newAuthStatusCommand() *cobra.Command {
@@ -183,8 +196,12 @@ func newAuthStatusCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			report := statusReport{ClientID: cfg.ClientID, Issuer: cfg.Issuer, service: cfg.IsService()}
+			if err := cfg.CheckService(); err != nil {
+				return err
+			}
+			report := statusReport{Mode: modeLogin, ClientID: cfg.ClientID, Issuer: cfg.Issuer}
 			if cfg.IsService() {
+				report.Mode = modeService
 				serviceStatus(cmd.Context(), cfg, &report)
 			} else if err := loginStatus(cmd.Context(), cfg, &report); err != nil {
 				return err
@@ -202,7 +219,8 @@ func newAuthStatusCommand() *cobra.Command {
 
 			// A rejected session exits non-zero for the same reason being logged
 			// out does: nothing the caller runs next will work until they log in.
-			// An unverified one exits zero, because nothing established it is bad.
+			// An unverified login exits zero, because its stored token may still
+			// work. A service stores none, so for it logged_in is already false.
 			if !report.LoggedIn || report.Session == goclilogin.SessionRejected {
 				return exitCode(1)
 			}
@@ -251,22 +269,42 @@ func loginStatus(ctx context.Context, cfg config.Config, report *statusReport) e
 }
 
 // serviceStatus requests a token, because a service stores none that could say
-// whether its credentials still work. LoggedIn reports that they are configured.
+// whether its credentials still work.
 func serviceStatus(ctx context.Context, cfg config.Config, report *statusReport) {
-	report.LoggedIn = true
 	source, err := goclilogin.ClientCredentialsTokenSource(ctx, cfg.Service(), cfg.ClientSecret)
 	var token *oauth2.Token
 	if err == nil {
 		token, err = source.Token()
 	}
 	report.Session, token = goclilogin.ClassifySession(token, err)
+	report.LoggedIn = report.Session == goclilogin.SessionLive
 	if token != nil && !token.Expiry.IsZero() {
 		report.ExpiresAt = token.Expiry.Format(time.RFC3339)
 	}
 }
 
+func printServiceStatus(out io.Writer, r statusReport) {
+	switch r.Session {
+	case goclilogin.SessionRejected:
+		_, _ = fmt.Fprintf(out, "Service client refused by %s.\nCheck ICB_CLIENT_ID and ICB_CLIENT_SECRET.\n", r.Issuer)
+	case goclilogin.SessionUnverified:
+		_, _ = fmt.Fprintf(out, "Service client configured; %s could not be reached.\n", r.Issuer)
+	default:
+		_, _ = fmt.Fprintf(out, "Service client (client credentials)\n")
+	}
+	_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
+	_, _ = fmt.Fprintf(out, "  issuer:   %s\n", r.Issuer)
+	if r.ExpiresAt != "" {
+		_, _ = fmt.Fprintf(out, "  token:    granted, expires %s\n", r.ExpiresAt)
+	}
+}
+
 func printStatus(cmd *cobra.Command, r statusReport) {
 	out := cmd.OutOrStdout()
+	if r.Mode == modeService {
+		printServiceStatus(out, r)
+		return
+	}
 	if !r.LoggedIn {
 		_, _ = fmt.Fprintf(out, "Not logged in as %s.\nRun `icb auth login` to authenticate.\n", r.ClientID)
 		if r.KeyringNote != "" {
@@ -274,21 +312,12 @@ func printStatus(cmd *cobra.Command, r statusReport) {
 		}
 		return
 	}
-	if r.Session == goclilogin.SessionRejected && r.service {
-		_, _ = fmt.Fprintf(out, "Service client refused by %s.\nCheck ICB_CLIENT_ID and ICB_CLIENT_SECRET.\n", r.Issuer)
-		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
-		return
-	}
 	if r.Session == goclilogin.SessionRejected {
 		_, _ = fmt.Fprintf(out, "Session rejected by %s.\nRun `icb auth login` to authenticate.\n", r.Issuer)
 		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 		return
 	}
-	if r.service {
-		_, _ = fmt.Fprintf(out, "Authenticated as a service (client credentials)\n")
-	} else {
-		_, _ = fmt.Fprintf(out, "Logged in\n")
-	}
+	_, _ = fmt.Fprintf(out, "Logged in\n")
 	_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 	_, _ = fmt.Fprintf(out, "  issuer:   %s\n", r.Issuer)
 	if r.ExpiresAt != "" {

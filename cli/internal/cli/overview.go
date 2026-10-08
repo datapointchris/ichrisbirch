@@ -317,12 +317,14 @@ func fetchOverview(ctx context.Context, client *api.Client) overviewData {
 }
 
 // systemicOverviewFailure reports the failures that make the whole snapshot
-// untrustworthy rather than merely partial: a rejected session, or every fetch
-// failing. Returning a partial payload in those cases would be a lie.
+// untrustworthy rather than merely partial: a rejected session, a caller the
+// API forbids a section, or every fetch failing. Returning a partial payload in
+// those cases would be a lie. A service client is refused every section outside
+// its scope, so its overview would print each of them as empty.
 func systemicOverviewFailure(failures []sectionFailure, total int) error {
 	for _, failure := range failures {
 		var apiErr *api.APIError
-		if errors.As(failure.Err, &apiErr) && apiErr.Unauthorized() {
+		if errors.As(failure.Err, &apiErr) && (apiErr.Unauthorized() || apiErr.Forbidden()) {
 			return failure.Err
 		}
 	}

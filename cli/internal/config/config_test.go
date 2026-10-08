@@ -51,16 +51,6 @@ func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
 	}
 }
 
-// The client id spells the machine into it, so one machine's token is revocable
-// without touching another's.
-func TestDefaultClientIDIsPerMachine(t *testing.T) {
-	t.Setenv("ICB_CLIENT_ID", "")
-	got := Load().ClientID
-	if !strings.HasPrefix(got, "icb-cli-") {
-		t.Errorf("ClientID = %q, want an icb-cli-<host> spelling", got)
-	}
-}
-
 // An env var set to the empty string must fall through to the default, not blank
 // the field — getEnv treats "" as unset.
 func TestLoad_EmptyEnvFallsThroughToDefault(t *testing.T) {
@@ -77,21 +67,40 @@ func TestLoad_EmptyEnvFallsThroughToDefault(t *testing.T) {
 	}
 }
 
-// Without ICB_CLIENT_ID, the client id is derived from the short hostname and
-// always carries the icb-cli- prefix (the per-machine × app naming).
+// Without ICB_CLIENT_ID, the client id is derived from the short hostname. The
+// API admits a person's token by the exact `icb-cli-` prefix, hyphen included.
 func TestLoad_DefaultClientIDIsPerMachine(t *testing.T) {
 	t.Setenv("ICB_CLIENT_ID", "")
 
 	cfg := Load()
 
-	if !strings.HasPrefix(cfg.ClientID, "icb-cli") {
-		t.Errorf("ClientID = %q, want an icb-cli* value", cfg.ClientID)
+	if !strings.HasPrefix(cfg.ClientID, "icb-cli-") {
+		t.Errorf("ClientID = %q, want an icb-cli-<host> value", cfg.ClientID)
 	}
 	if strings.ContainsAny(cfg.ClientID, ". ") {
 		t.Errorf("ClientID = %q should be lowercased short hostname without domain/space", cfg.ClientID)
 	}
 	if cfg.ClientID != strings.ToLower(cfg.ClientID) {
 		t.Errorf("ClientID = %q should be lowercase", cfg.ClientID)
+	}
+}
+
+func TestASecretNeedsTheClientItBelongsTo(t *testing.T) {
+	cases := []struct {
+		name, secret, clientID string
+		refused                bool
+	}{
+		{"a person", "", "", false},
+		{"a service naming its client", "s3cret", "icb-svc-worker", false},
+		{"a secret with the person's default", "s3cret", "", true},
+	}
+	for _, c := range cases {
+		t.Setenv("ICB_CLIENT_SECRET", c.secret)
+		t.Setenv("ICB_CLIENT_ID", c.clientID)
+		err := Load().CheckService()
+		if refused := err != nil; refused != c.refused || (refused && !strings.Contains(err.Error(), "ICB_CLIENT_ID")) {
+			t.Errorf("%s: CheckService = %v, want refused %v naming ICB_CLIENT_ID", c.name, err, c.refused)
+		}
 	}
 }
 

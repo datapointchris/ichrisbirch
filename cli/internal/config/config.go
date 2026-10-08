@@ -8,6 +8,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/datapointchris/goclilogin"
@@ -42,12 +43,26 @@ type Config struct {
 	// ClientSecret selects the client-credentials grant. It is set only where a
 	// service runs icb with no person present to approve a device login.
 	ClientSecret string
+
+	// clientIDSet is whether ICB_CLIENT_ID named the client, rather than the
+	// per-machine default for a person's CLI supplying it.
+	clientIDSet bool
 }
 
 // IsService reports whether icb authenticates as a confidential service client
 // rather than as the person who logged in on this machine.
 func (c Config) IsService() bool {
 	return c.ClientSecret != ""
+}
+
+// CheckService refuses a secret set without ICB_CLIENT_ID. The default is the
+// person's `icb-cli-<host>`, so the secret would be sent as that client, and
+// `auth logout` would reach that person's stored token.
+func (c Config) CheckService() error {
+	if c.IsService() && !c.clientIDSet {
+		return errors.New("ICB_CLIENT_SECRET is set but ICB_CLIENT_ID is not: set it to the service client the secret belongs to, such as icb-svc-<machine>")
+	}
+	return nil
 }
 
 // Service is the goclilogin view of this config for the client-credentials
@@ -80,6 +95,7 @@ func Load() Config {
 		ClientID:     getEnv("ICB_CLIENT_ID", defaultClientID()),
 		APIBase:      getEnv("ICB_API_BASE", defaultAPIBase),
 		ClientSecret: os.Getenv("ICB_CLIENT_SECRET"),
+		clientIDSet:  os.Getenv("ICB_CLIENT_ID") != "",
 	}
 }
 

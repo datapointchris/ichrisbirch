@@ -112,10 +112,11 @@ func TestService_StatusAsksTheProvider(t *testing.T) {
 	out, err := runService(t, "auth", "status", "--json")
 	var report struct {
 		LoggedIn bool   `json:"logged_in"`
+		Mode     string `json:"mode"`
 		Session  string `json:"session"`
 	}
-	if err != nil || json.Unmarshal([]byte(out), &report) != nil || !report.LoggedIn || report.Session != "live" {
-		t.Errorf("status with a good secret: err %v, output %s, want logged in and live", err, out)
+	if err != nil || json.Unmarshal([]byte(out), &report) != nil || !report.LoggedIn || report.Mode != "service" || report.Session != "live" {
+		t.Errorf("status with a good secret: err %v, output %s, want logged in, service and live", err, out)
 	}
 
 	asService(t, idp.URL, "http://127.0.0.1:9", "wrong-secret")
@@ -125,10 +126,53 @@ func TestService_StatusAsksTheProvider(t *testing.T) {
 	}
 }
 
-func TestService_LoginIsRefused(t *testing.T) {
+// A service stores no token, so a provider it cannot reach means the next
+// command fails, and a job gating on status has to see that.
+func TestService_StatusWithTheProviderDownExitsOne(t *testing.T) {
+	asService(t, "http://127.0.0.1:9", "http://127.0.0.1:9", serviceSecret)
+	out, err := runService(t, "auth", "status", "--json")
+	var report struct {
+		LoggedIn bool   `json:"logged_in"`
+		Session  string `json:"session"`
+	}
+	if exitCodeFor(err) != 1 || json.Unmarshal([]byte(out), &report) != nil || report.LoggedIn || report.Session != "unverified" {
+		t.Errorf("status with the provider down: exit %d, output %s, want 1, not logged in, unverified", exitCodeFor(err), out)
+	}
+}
+
+func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 	asService(t, serviceIDP(t).URL, "http://127.0.0.1:9", serviceSecret)
-	_, err := runService(t, "auth", "login")
-	if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_SECRET") {
-		t.Errorf("got %v, want login refused with the secret named", err)
+	for _, verb := range []string{"login", "logout"} {
+		_, err := runService(t, "auth", verb)
+		if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_SECRET") {
+			t.Errorf("auth %s: got %v, want it refused with the secret named", verb, err)
+		}
+	}
+}
+
+// Without ICB_CLIENT_ID the client would be the person's icb-cli-<host>.
+func TestService_ASecretWithoutItsClientIsRefused(t *testing.T) {
+	asService(t, serviceIDP(t).URL, "http://127.0.0.1:9", serviceSecret)
+	t.Setenv("ICB_CLIENT_ID", "")
+	for _, args := range [][]string{{"projects", "items", "search", "sync"}, {"auth", "status"}, {"auth", "token"}} {
+		_, err := runService(t, args...)
+		if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_ID") {
+			t.Errorf("%v: got %v, want it refused naming ICB_CLIENT_ID", args, err)
+		}
+	}
+}
+
+func TestService_ARouteOutsideTheScopeNamesTheScope(t *testing.T) {
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"detail":"Route is outside this client's scopes"}`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+
+	_, err := runService(t, "projects", "items", "search", "sync")
+	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), "icb projects items") {
+		t.Errorf("got %v, want the client and what its scope covers named", err)
 	}
 }
