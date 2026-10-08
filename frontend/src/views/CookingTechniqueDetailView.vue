@@ -197,14 +197,14 @@ async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]
 .cooking-technique-detail {
   max-width: 900px;
   margin: 0 auto;
-  padding: var(--space-md);
+  padding: var(--space-m);
 }
 
 .cooking-technique-detail__header {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
+  gap: var(--space-m);
+  margin-bottom: var(--space-m);
 }
 
 .cooking-technique-detail__title {
@@ -219,9 +219,9 @@ async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]
 
 .cooking-technique-detail__meta {
   display: flex;
-  gap: var(--space-md);
+  gap: var(--space-m);
   flex-wrap: wrap;
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-s);
   font-size: var(--fs-300);
 }
 
@@ -229,7 +229,7 @@ async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]
   display: flex;
   gap: var(--space-xs);
   flex-wrap: wrap;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-m);
 }
 
 .cooking-technique-detail__tag {
@@ -242,13 +242,13 @@ async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]
 .cooking-technique-detail__summary {
   font-style: italic;
   font-size: var(--fs-400);
-  margin-bottom: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-m);
+  padding: var(--space-s) var(--space-m);
   border-left: 3px solid var(--clr-accent);
 }
 
 .cooking-technique-detail__section {
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-l);
 }
 
 .cooking-technique-detail__section h2 {
@@ -258,60 +258,7 @@ async function handleUpdate(id: number, data: Parameters<typeof store.update>[1]
 .cooking-technique-detail__empty {
   color: var(--clr-gray-500);
   font-style: italic;
-  padding: var(--space-lg);
+  padding: var(--space-l);
   text-align: center;
-}
-</style>
-
-<style>
-/* Global markdown styling — not scoped so v-html content picks it up */
-.markdown-body h2 {
-  margin-top: var(--space-md);
-  margin-bottom: var(--space-xs);
-}
-
-.markdown-body h3 {
-  margin-top: var(--space-sm);
-  margin-bottom: var(--space-3xs);
-}
-
-.markdown-body p {
-  margin-bottom: var(--space-sm);
-  line-height: 1.6;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  margin-bottom: var(--space-sm);
-  padding-left: var(--space-lg);
-}
-
-.markdown-body li {
-  margin-bottom: var(--space-3xs);
-  line-height: 1.6;
-}
-
-.markdown-body code {
-  font-family: var(--ff-mono, monospace);
-  font-size: 0.9em;
-  padding: 2px 4px;
-  border-radius: 3px;
-  background: var(--clr-gray-200);
-}
-
-.markdown-body pre {
-  padding: var(--space-sm);
-  border-radius: var(--border-radius);
-  background: var(--clr-gray-100);
-  overflow-x: auto;
-}
-
-.markdown-body strong {
-  font-weight: 600;
-}
-
-.markdown-body a {
-  color: var(--clr-accent);
-  text-decoration: underline;
 }
 </style>
