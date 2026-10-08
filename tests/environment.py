@@ -11,6 +11,7 @@ import os
 import socket
 import subprocess
 import time
+from pathlib import Path
 
 import httpx2
 import pytest
@@ -19,6 +20,23 @@ from ichrisbirch.config import Settings
 from ichrisbirch.database.initialization import full_initialization
 
 logger = logging.getLogger(__name__)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+WORKING_DIR_FORMAT = '{{.Label "com.docker.compose.project.working_dir"}}'
+
+
+def checkouts_that_started_the_test_stack() -> set[Path]:
+    """The checkouts compose labelled the icb-test containers with, empty when there are none."""
+    try:
+        result = subprocess.run(
+            ['docker', 'ps', '--all', '--filter', 'label=com.docker.compose.project=icb-test', '--format', WORKING_DIR_FORMAT],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except FileNotFoundError:
+        return set()
+    return {Path(line.strip()).resolve() for line in result.stdout.splitlines() if line.strip()}
 
 
 class DockerComposeTestEnvironment:
@@ -68,6 +86,7 @@ class DockerComposeTestEnvironment:
         Then bring the database to the current schema.
         """
         try:
+            self.require_test_stack_here()
             if self.is_ci:
                 logger.info('Running in CI environment - containers should be pre-started by workflow')
                 if not self.docker_test_services_already_running():
@@ -94,6 +113,18 @@ class DockerComposeTestEnvironment:
         except Exception as e:
             logger.error(f'Error during setup: {e}')
             pytest.exit(f'Exiting due to setup failure: {e}', returncode=1)
+
+    def require_test_stack_here(self) -> None:
+        """Every checkout drives the one icb-test project, and `truncate_tables` empties
+        whichever database it reaches. `ops/icbops` refuses the same stack before it runs
+        pytest, and this covers pytest run without it, as the pre-commit hook does."""
+        others = sorted(str(path) for path in checkouts_that_started_the_test_stack() - {REPO_ROOT})
+        if others:
+            raise RuntimeError(
+                f'the test stack was started from {", ".join(others)}, not from {REPO_ROOT}. '
+                'Its database may hold a run from there, and this session truncates every table. '
+                f'Once nothing there is using it, take the stack over: {REPO_ROOT}/ops/icbops testing stop'
+            )
 
     def teardown(self) -> None:
         """Leave containers running for fast iteration."""
