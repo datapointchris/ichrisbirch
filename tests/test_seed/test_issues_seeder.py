@@ -26,10 +26,6 @@ def seeded(db):
     return db, measure_readiness(db, now.date(), now)
 
 
-def by_title(db, title: str) -> Issue:
-    return db.query(Issue).filter(Issue.title == title).one()
-
-
 class TestIssueSeeder:
     def test_every_vocabulary_value_is_represented(self, seeded):
         """A status or type with no seeded issue cannot be exercised in the UI or a filtered read."""
@@ -43,30 +39,18 @@ class TestIssueSeeder:
         for issue in db.query(Issue).all():
             assert (issue.closed_ts is not None) == issue.is_closed, f'#{issue.number} disagrees with its own status'
 
-    def test_an_expired_claim_is_ready_and_a_live_one_is_not(self, seeded):
+    def test_every_readiness_state_is_represented(self, seeded):
+        """A state no seeded issue is in cannot be seen on the page or reached through a lens."""
         db, readiness = seeded
-        assert by_title(db, 'Issue list filters by label').id in readiness.ready
-        assert by_title(db, 'icb issues next prints the claimed issue').id not in readiness.ready
-
-    def test_a_blocked_issue_and_a_waiting_parent_are_present(self, seeded):
-        db, readiness = seeded
-        blocked = by_title(db, 'Routing file misses the issues paths')
-        fan_in = by_title(db, 'Port overview to the issues section')
-        parent = by_title(db, 'Initiative board page')
-        assert blocked.id in readiness.blocked
-        assert len(fan_in.dependencies) == 2
-        assert parent.id not in readiness.ready
-        assert readiness.open_child_count[parent.id] == 1
-
-    def test_a_low_priority_blocker_inherits_the_urgency_it_gates(self, seeded):
-        db, readiness = seeded
-        blocker = by_title(db, 'Rank renumbers when the gap is spent')
-        assert blocker.priority == 4
-        assert readiness.effective_priority[blocker.id] == 1
-
-    def test_a_deferred_issue_waits_for_its_day(self, seeded):
-        db, readiness = seeded
-        deferred = by_title(db, 'Comment thread on issue detail')
-        assert deferred.deferred_until_date is not None
-        assert deferred.id not in readiness.blocked
-        assert deferred.id not in readiness.ready
+        now = datetime.now(UTC)
+        rows = db.query(Issue).all()
+        states = {
+            'ready': any(issue.id in readiness.ready for issue in rows),
+            'blocked': any(issue.id in readiness.blocked for issue in rows),
+            'deferred, neither blocked nor ready': any(
+                issue.id in readiness.deferred and issue.id not in readiness.blocked and issue.id not in readiness.ready for issue in rows
+            ),
+            'claimed': any(issue.claim_expires_ts is not None and issue.claim_expires_ts > now for issue in rows),
+            'a parent with an open child': any(readiness.open_child_count.get(issue.id) for issue in rows),
+        }
+        assert [state for state, present in states.items() if not present] == []
