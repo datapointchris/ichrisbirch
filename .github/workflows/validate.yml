@@ -604,8 +604,11 @@ jobs:
       - run: npx playwright test
         working-directory: frontend
 
+      # This and the upload run on a pass too. A test that fails and then passes
+      # on retry leaves the job green, and its retry trace is the only record of
+      # what the first attempt waited on.
       - name: Save the stack's logs
-        if: failure()
+        if: always()
         run: |
           mkdir -p frontend/test-results
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
@@ -616,7 +619,7 @@ jobs:
       # stack's logs) and the JSON report.
       - name: Upload Playwright evidence
         uses: actions/upload-artifact@v7
-        if: failure()
+        if: always()
         with:
           name: playwright-evidence
           path: |
