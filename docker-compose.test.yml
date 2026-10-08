@@ -1,5 +1,9 @@
 # Test overrides — only what differs from base (docker-compose.yml)
 # Verify merged result: icbops testing docker config
+#
+# `on-failure:3` stops a service after three failed starts, so a removed
+# checkout or a corrupt volume cannot restart-loop. Docker never restarts
+# these when the daemon starts, and `icbops test run` starts them as needed.
 
 x-app-build: &app-build
   image: ichrisbirch:testing
@@ -35,7 +39,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./deploy-containers/traefik/dynamic/test:/etc/traefik/dynamic:ro
       - ./deploy-containers/traefik/certs:/etc/ssl/certs:ro
-    restart: unless-stopped
+    restart: on-failure:3
     labels:
       - "traefik.environment=testing"
       - "traefik.enable=true"
@@ -84,7 +88,7 @@ services:
       -c checkpoint_completion_target=0.9
       -c log_destination=stderr
       -c logging_collector=off
-    restart: unless-stopped
+    restart: on-failure:3
     logging:
       driver: "json-file"
       options:
@@ -104,7 +108,7 @@ services:
       --loglevel warning
     environment: !override []
     volumes: !override []
-    restart: unless-stopped
+    restart: on-failure:3
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -142,7 +146,7 @@ services:
       - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
+    restart: on-failure:3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -174,7 +178,7 @@ services:
       - .:/app
       - /app/.venv
       - ichrisbirch_logs:/var/log/ichrisbirch
-    restart: unless-stopped
+    restart: on-failure:3
     depends_on:
       api:
         condition: service_started
@@ -201,7 +205,7 @@ services:
       - VITE_API_URL=https://api.test.localhost:8443
     ports: !override
       - "5174:5173"
-    restart: unless-stopped
+    restart: on-failure:3
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
       interval: 30s

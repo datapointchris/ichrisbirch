@@ -325,7 +325,7 @@ services:
 
 ### Container Crash Loop That Crashes `dockerd`
 
-**Problem:** A container with `restart: unless-stopped` hits a deterministic error (e.g., npm install ENOTEMPTY from partial volume state), restart policy keeps retrying, eventually the daemon dies. `sudo systemctl status docker` may show `inactive (dead)` with `Job: ####` queued.
+**Problem:** A container whose restart policy has no retry limit hits a deterministic error (e.g., npm install ENOTEMPTY from partial volume state), restart policy keeps retrying, eventually the daemon dies. `sudo systemctl status docker` may show `inactive (dead)` with `Job: ####` queued.
 
 **Why it's self-inflicted:** Each restart involves creating and tearing down network namespaces, veth pairs, iptables rules, and DNS entries. At ~1 restart/second for extended periods, this can exhaust file descriptors, trigger kernel locking contention, or otherwise destabilize `dockerd`.
 
@@ -346,7 +346,7 @@ docker volume rm icb-test-vue-node-modules 2>/dev/null
 ./ops/icbops testing rebuild --all --volumes
 ```
 
-**Prevention:** Consider `restart: on-failure:3` instead of `restart: unless-stopped` for dev-mode containers where a bad volume could trigger a crash loop. Caps retries at 3 so the daemon can't be DOS'd by a deterministic failure.
+**Prevention:** Every dev and test service uses `restart: on-failure:3`, so Docker gives up after three failed starts. A checkout removed from under a running stack fails the same way: its bind mount is gone, so every start finds no `/app`. The cost is that Docker never restarts an `on-failure` container when the daemon starts, so after a reboot the dev stack stays down until `icbops dev start`.
 
 ## Service Orchestration Issues
 
