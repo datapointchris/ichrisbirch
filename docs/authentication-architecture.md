@@ -1,6 +1,6 @@
 # Authentication
 
-Every API request resolves to a user, to a service, or to a refusal. The
+Every API request resolves to a user, to a scoped client, or to a refusal. The
 dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 
 ## Each caller enters through its own door
@@ -38,37 +38,38 @@ A token that fails any check answers one opaque 401 and never falls through to
 a weaker strategy. Otherwise a caller could pair a junk token with a forged
 `Remote-User` header and have the token quietly ignored.
 
-## The client_id prefix decides whether a token is a person or a service
+## The client_id prefix decides whether a token is a person or a scoped client
 
 `icb-cli-<machine>` is a person. The token must carry a non-empty `sub`, and it
 resolves to the user `OIDC_CLI_USER_EMAIL` names.
 
-`icb-svc-<machine>` is a service. The token must carry a non-empty `scp` list,
-and it becomes a `ServicePrincipal` that never resolves to any user.
+`icb-svc-<machine>` is a service running the CLI. The token must carry a
+non-empty `scp` list, and it becomes a `ScopedClient` that never resolves to
+any user.
 
 A missing `sub` cannot decide this. Authelia 4.39 leaves `sub` off a
 client-credentials token, but RFC 9068 requires one. A release that adds it
 would make a service token look like a person's, and every person's token here
 acts as the account owner.
 
-## A service reaches only the routes its scopes list
+## A scoped client reaches only the routes its scopes list
 
-`ichrisbirch/api/service_scopes.py` maps each scope to the
+`ichrisbirch/api/client_scopes.py` maps each scope to the
 `(method, route template)` pairs it reaches. A template includes the router
 prefix, so `/project-items/{id}/` covers every item.
 
-The projects, project-items and project-item-tasks routers take
-`get_current_user_or_service`. It admits a service only on a listed route, and
-resolves everyone else exactly as `get_current_user` does. Every other
-dependency that resolves a user answers a service 403. That holds when the
-service also sends a `Remote-User` header, which the header strategy would
+A router with a route in `SCOPE_ROUTES` takes
+`get_current_user_or_scoped_client`. Every other router takes
+`get_current_user`. The first admits a scoped client only on a listed route,
+and resolves everyone else exactly as `get_current_user` does. Every other
+dependency that resolves a user answers a scoped client 403. That holds when
+the request also sends a `Remote-User` header, which the header strategy would
 otherwise resolve to that account.
 
-A handler that resolves the user through its own dependency refuses a service
-too. `RequestZone` takes `get_current_user_or_service` for that reason, and a
-service that names no `timezone` gets UTC.
+A handler that resolves the user through its own dependency refuses a scoped
+client too. `RequestZone` takes `get_current_user_or_scoped_client` for that
+reason, and a scoped client that names no `timezone` gets UTC.
 
-One table, rather than a scope check on each route, can be tested against the
-app's real routes. `tests/ichrisbirch/api/test_service_scopes.py` fails when a
-listed template stops matching a route, which a renamed path parameter would
-cause.
+`permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
+requests every listed route as a scoped client and requires 200, so a renamed
+path parameter fails it with 403.

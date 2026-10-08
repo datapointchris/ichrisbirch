@@ -6,7 +6,7 @@ A service running the CLI with no person present uses the client-credentials gra
 tokens are signed JWTs, and the API verifies them in-process against Authelia's JWKS.
 
 The `client_id` prefix decides which of the two a token is: `icb-cli-` acts as the user, and
-`icb-svc-` is a `ServicePrincipal` that never resolves to one. A missing `sub` cannot decide it.
+`icb-svc-` is a `ScopedClient` that never resolves to one. A missing `sub` cannot decide it.
 Authelia 4.39 leaves `sub` off a client-credentials token, but RFC 9068 requires it, and a release
 that restores it would make a service token look like a person's.
 
@@ -65,8 +65,8 @@ class OIDCIdentity(BaseModel):
     client_id: str
 
 
-class ServicePrincipal(BaseModel):
-    """A verified `icb-svc-` access token: a service, limited to the routes its scopes list."""
+class ScopedClient(BaseModel):
+    """A verified `icb-svc-` access token, which speaks for no person and reaches only the routes its scopes list."""
 
     client_id: str
     scopes: frozenset[str]
@@ -123,7 +123,7 @@ class OIDCTokenVerifier:
         client = jwt.PyJWKClient(jwks_uri, cache_keys=True, headers={'User-Agent': USER_AGENT})
         return cls(issuer, cli_client_id_prefix, service_client_id_prefix, client)
 
-    def verify(self, token: str) -> OIDCIdentity | ServicePrincipal:
+    def verify(self, token: str) -> OIDCIdentity | ScopedClient:
         """Verify a token and return who it establishes, or raise OIDCVerificationError."""
         self._require_access_token_type(token)
 
@@ -156,7 +156,7 @@ class OIDCTokenVerifier:
         if client_id.startswith(self.cli_client_id_prefix):
             return self._person(claims, client_id)
         if client_id.startswith(self.service_client_id_prefix):
-            return self._service(claims, client_id)
+            return self._scoped_client(claims, client_id)
         raise OIDCVerificationError(f'client {client_id!r} is neither {self.cli_client_id_prefix}* nor {self.service_client_id_prefix}*')
 
     @staticmethod
@@ -167,12 +167,12 @@ class OIDCTokenVerifier:
         return OIDCIdentity(subject=subject, client_id=client_id)
 
     @staticmethod
-    def _service(claims: dict, client_id: str) -> ServicePrincipal:
+    def _scoped_client(claims: dict, client_id: str) -> ScopedClient:
         # Authelia sends `scp` as a list, and `[]` for a request that named no scope.
         scopes = claims.get('scp')
         if not isinstance(scopes, list) or not scopes or not all(isinstance(scope, str) for scope in scopes):
             raise OIDCVerificationError(f'service client {client_id!r} carries no scopes: {scopes!r}')
-        return ServicePrincipal(client_id=client_id, scopes=frozenset(scopes))
+        return ScopedClient(client_id=client_id, scopes=frozenset(scopes))
 
     def _require_access_token_type(self, token: str) -> None:
         """Reject anything not typed as an RFC 9068 access token.
@@ -202,8 +202,8 @@ def build_verifier(issuer: str, cli_client_id_prefix: str, service_client_id_pre
     return OIDCTokenVerifier.from_discovery(issuer, cli_client_id_prefix, service_client_id_prefix)
 
 
-def get_oidc_identity(request: Request, settings: Settings = Depends(get_settings)) -> OIDCIdentity | ServicePrincipal | None:
-    """FastAPI dependency resolving a verified `icb` CLI access token to a person or a service.
+def get_oidc_identity(request: Request, settings: Settings = Depends(get_settings)) -> OIDCIdentity | ScopedClient | None:
+    """FastAPI dependency resolving a verified `icb` CLI access token to a person or a scoped client.
 
     Returns None when the request carries no access token, which is how every other caller — the
     browser SPA, an internal service, a Personal API Key client — passes through untouched. A
@@ -224,8 +224,8 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
         logger.warning('oidc_bearer_rejected', error=str(exc), path=request.url.path)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=UNAUTHORIZED_DETAIL) from None
 
-    if isinstance(identity, ServicePrincipal):
-        logger.debug('oidc_bearer_verified_service', client_id=identity.client_id, scopes=sorted(identity.scopes))
+    if isinstance(identity, ScopedClient):
+        logger.debug('oidc_bearer_verified_scoped_client', client_id=identity.client_id, scopes=sorted(identity.scopes))
     else:
         logger.debug('oidc_bearer_verified', subject=identity.subject, client_id=identity.client_id)
     return identity

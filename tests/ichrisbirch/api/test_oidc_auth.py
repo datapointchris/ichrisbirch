@@ -23,7 +23,7 @@ from jwt.algorithms import RSAAlgorithm
 from ichrisbirch.api import oidc_auth
 from ichrisbirch.api.oidc_auth import OIDCTokenVerifier
 from ichrisbirch.api.oidc_auth import OIDCVerificationError
-from ichrisbirch.api.oidc_auth import ServicePrincipal
+from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.oidc_auth import bearer_token
 from ichrisbirch.api.oidc_auth import build_verifier
 from ichrisbirch.api.oidc_auth import discover_jwks_uri
@@ -224,12 +224,12 @@ class TestVerifyAccessToken:
 class TestVerifyServiceToken:
     def test_accepts_a_token_with_no_subject(self, idp, verifier):
         principal = verifier.verify(idp.sign(idp.service_claims()))
-        assert principal == ServicePrincipal(client_id=SERVICE_CLIENT_ID, scopes=frozenset({SERVICE_SCOPE}))
+        assert principal == ScopedClient(client_id=SERVICE_CLIENT_ID, scopes=frozenset({SERVICE_SCOPE}))
 
     def test_a_subject_does_not_make_it_a_person(self, idp, verifier):
         """RFC 9068 requires `sub`, so an Authelia release may start sending one on these tokens."""
         principal = verifier.verify(idp.sign(idp.service_claims() | {'sub': 'authelia-user-uuid'}))
-        assert isinstance(principal, ServicePrincipal)
+        assert isinstance(principal, ScopedClient)
 
     @pytest.mark.parametrize('scopes', [[], SERVICE_SCOPE, [7]], ids=['empty', 'a-string', 'not-strings'])
     def test_rejects_scopes_that_name_no_scope(self, idp, verifier, scopes):
@@ -283,9 +283,9 @@ class TestGetOIDCIdentity:
         assert identity is not None
         assert identity.client_id == CLI_CLIENT_ID
 
-    def test_returns_a_service_principal_for_a_service_token(self, idp):
+    def test_returns_a_scoped_client_for_a_service_token(self, idp):
         request = make_request(f'Bearer {idp.sign(idp.service_claims())}')
-        assert isinstance(get_oidc_identity(request, oidc_settings(idp)), ServicePrincipal)
+        assert isinstance(get_oidc_identity(request, oidc_settings(idp)), ScopedClient)
 
     @pytest.mark.parametrize(
         'authorization',

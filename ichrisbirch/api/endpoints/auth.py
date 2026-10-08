@@ -17,15 +17,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.api.client_scopes import permits
 from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.api.oidc_auth import UNAUTHORIZED_DETAIL
 from ichrisbirch.api.oidc_auth import OIDCIdentity
-from ichrisbirch.api.oidc_auth import ServicePrincipal
+from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.oidc_auth import get_oidc_identity
-from ichrisbirch.api.service_scopes import permits
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
@@ -112,15 +112,15 @@ def get_token_handler(settings: Settings = Depends(get_settings), session: Sessi
 # =============================================================================
 
 
-def get_service_principal(
-    identity: Annotated[OIDCIdentity | ServicePrincipal | None, Depends(get_oidc_identity)],
-) -> ServicePrincipal | None:
+def get_scoped_client(
+    identity: Annotated[OIDCIdentity | ScopedClient | None, Depends(get_oidc_identity)],
+) -> ScopedClient | None:
     """The verified `icb-svc-` caller, or None for any other request."""
-    return identity if isinstance(identity, ServicePrincipal) else None
+    return identity if isinstance(identity, ScopedClient) else None
 
 
 def authenticate_with_oidc_bearer(
-    identity: Annotated[OIDCIdentity | ServicePrincipal | None, Depends(get_oidc_identity)],
+    identity: Annotated[OIDCIdentity | ScopedClient | None, Depends(get_oidc_identity)],
     session: Session = Depends(get_sqlalchemy_session),
     settings: Settings = Depends(get_settings),
 ) -> str | None:
@@ -130,7 +130,7 @@ def authenticate_with_oidc_bearer(
     Authelia's JWKS, or raised 401 — a token that reaches here is trusted. The access token carries
     no email, so the local user comes from settings rather than from the wire.
 
-    A `ServicePrincipal` returns None here and is refused by each user dependency below.
+    A `ScopedClient` returns None here and is refused by each user dependency below.
 
     Returns the user's alternative_id (as string) if valid, None otherwise.
     """
@@ -321,26 +321,26 @@ def authenticated_user(
     return validate_user_id(user_id, session)
 
 
-def refuse_service(service: ServicePrincipal | None) -> None:
-    """Raise 403 for a service token on a route that resolves a user.
+def refuse_scoped_client(client: ScopedClient | None) -> None:
+    """Raise 403 for a scoped client's token on a route that resolves a user.
 
-    A service token presented beside a forged Remote-User header would otherwise reach the header
+    The token presented beside a forged Remote-User header would otherwise reach the header
     strategy, and the request would run as that user.
     """
-    if service is not None:
-        logger.warning('service_outside_scope', client_id=service.client_id)
-        raise ForbiddenException(Refusal.OUTSIDE_SERVICE_SCOPE, logger)
+    if client is not None:
+        logger.warning('scoped_client_outside_scopes', client_id=client.client_id)
+        raise ForbiddenException(Refusal.OUTSIDE_CLIENT_SCOPES, logger)
 
 
 def get_current_user(
-    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    client: Annotated[ScopedClient | None, Depends(get_scoped_client)],
     user: Annotated[models.User | None, Depends(authenticated_user)],
 ) -> models.User:
     """Main authentication dependency: the user any strategy established, or 401.
 
-    A service token answers 403, because no route that resolves a user is in any service scope.
+    A scoped client's token answers 403, because no scope lists a route that resolves a user.
     """
-    refuse_service(service)
+    refuse_scoped_client(client)
 
     if user is None:
         raise UnauthorizedException(Refusal.INVALID_CREDENTIALS, logger)
@@ -349,21 +349,20 @@ def get_current_user(
     return user
 
 
-def get_current_user_or_service(
+def get_current_user_or_scoped_client(
     request: Request,
-    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    client: Annotated[ScopedClient | None, Depends(get_scoped_client)],
     user: Annotated[models.User | None, Depends(authenticated_user)],
-) -> models.User | ServicePrincipal:
-    """`get_current_user` for a router some service scope reaches.
+) -> models.User | ScopedClient:
+    """`get_current_user` for a router with a route in `client_scopes.SCOPE_ROUTES`.
 
-    A service token gets through only on a route `service_scopes.SCOPE_ROUTES` lists for one of its
-    scopes, and answers 403 everywhere else. Every other caller resolves exactly as through
-    `get_current_user`.
+    A scoped client gets through only on a route that table lists for one of its scopes, and
+    answers 403 everywhere else. Every other caller resolves exactly as through `get_current_user`.
     """
-    if service is not None and permits(service.scopes, request.method, request.scope.get('route')):
-        logger.debug('auth_method_service', client_id=service.client_id, path=request.url.path)
-        return service
-    return get_current_user(service, user)
+    if client is not None and permits(client.scopes, request.method, request.scope.get('route')):
+        logger.debug('auth_method_scoped_client', client_id=client.client_id, path=request.url.path)
+        return client
+    return get_current_user(client, user)
 
 
 def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> models.User:
@@ -377,18 +376,18 @@ def get_admin_user(user: Annotated[models.User, Depends(get_current_user)]) -> m
 
 
 def get_current_user_or_none(
-    service: Annotated[ServicePrincipal | None, Depends(get_service_principal)],
+    client: Annotated[ScopedClient | None, Depends(get_scoped_client)],
     user: Annotated[models.User | None, Depends(authenticated_user)],
 ) -> models.User | None:
     """Same as get_current_user but returns None instead of raising exception.
 
     Two cases still raise. `get_oidc_identity` rejects a presented-but-invalid access token before
-    this runs, and a service token answers 403 here. In both, a caller would otherwise pair the
-    token with another strategy's credentials and have the token quietly ignored.
+    this runs, and a scoped client's token answers 403 here. In both, a caller would otherwise pair
+    the token with another strategy's credentials and have the token quietly ignored.
 
     Used for dependencies that support multiple auth methods.
     """
-    refuse_service(service)
+    refuse_scoped_client(client)
     return user
 
 

@@ -74,7 +74,7 @@ class OIDCSettings:
 
     `service_client_id_prefix` names the clients a service authenticates as through the
     client-credentials grant (`icb-svc-worker`). Their tokens reach only the routes their
-    scopes list in `api/service_scopes.py`, and never resolve to a user.
+    scopes list in `api/client_scopes.py`, and never resolve to a user.
 
     `cli_user_email` is the local user a verified CLI token resolves to. The access token
     carries only `sub`, `client_id` and the standard registered claims — no claims policy is

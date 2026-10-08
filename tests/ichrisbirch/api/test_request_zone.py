@@ -6,7 +6,7 @@ carrying one costs a constructor rather than a login.
 """
 
 from ichrisbirch import models
-from ichrisbirch.api.oidc_auth import ServicePrincipal
+from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.request_zone import request_zone
 
 
@@ -24,7 +24,7 @@ def test_the_users_calendar_zone_answers_when_no_zone_is_named():
     assert request_zone(user_in(None), timezone=None) == 'UTC'
 
 
-def test_a_service_reads_utc_unless_it_names_a_zone():
-    service = ServicePrincipal(client_id='icb-svc-worker', scopes=frozenset({'icb.project-items.read'}))
-    assert request_zone(service, timezone=None) == 'UTC'
-    assert request_zone(service, timezone='Asia/Tokyo') == 'Asia/Tokyo'
+def test_a_scoped_client_reads_utc_unless_it_names_a_zone():
+    client = ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.project-items.read'}))
+    assert request_zone(client, timezone=None) == 'UTC'
+    assert request_zone(client, timezone='Asia/Tokyo') == 'Asia/Tokyo'

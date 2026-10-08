@@ -1,14 +1,14 @@
-"""The routes each service scope reaches, as (method, route template) pairs.
+"""The routes each client scope reaches, as (method, route template) pairs.
 
-A `ServicePrincipal` reaches a route only when one of its scopes lists it here. Every other route
-answers 403. A template is FastAPI's with the router prefix included, so `/project-items/{id}/`
-covers every item.
+A `ScopedClient` reaches a route only when one of its scopes lists it here. Every other route that
+resolves a user answers 403. A template is FastAPI's with the router prefix included, so
+`/project-items/{id}/` covers every item.
 """
 
 from starlette.routing import BaseRoute
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
-    # What `icb projects items list`, `show`, `search`, `blocked` and `blockers` call.
+    # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
         {
             ('GET', '/project-items/'),
