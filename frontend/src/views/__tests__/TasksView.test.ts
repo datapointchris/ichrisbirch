@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import TasksView from '../TasksView.vue'
 import { useTasksStore } from '@/stores/tasks'
@@ -88,6 +88,14 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
         TaskCompactTodo: true,
         TaskBlockCompleted: true,
         TaskCompactCompleted: true,
+        TaskBlockDropped: {
+          template:
+            '<div data-testid="task-dropped-item"><button data-testid="task-reopen-button" @click="$emit(\'reopen\', task.id)">Reopen</button></div>',
+          props: ['task'],
+          emits: ['reopen', 'delete'],
+        },
+        TaskCompactDropped: true,
+        DropTaskModal: true,
         CompletedChart: true,
         NeuToggleGroup: true,
       },
@@ -131,7 +139,6 @@ describe('TasksView', () => {
 
   it.each([
     ['task-snooze-button', 'snooze', [1]],
-    ['task-drop-button', 'drop', [1]],
     ['task-pin-button', 'setPinned', [1, true]],
   ] as const)('%s calls store.%s', async (testId, action, args) => {
     vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
@@ -146,6 +153,56 @@ describe('TasksView', () => {
     await wrapper.find(`[data-testid="${testId}"]`).trigger('click')
 
     expect(store[action]).toHaveBeenCalledWith(...args)
+  })
+
+  it('Drop asks for a reason first and sends the one given', async () => {
+    vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
+      name: 'tasks-todo',
+      fullPath: '/tasks/todo',
+      query: {},
+    }) as ReturnType<typeof vi.fn>
+
+    const wrapper = createWrapper({ tasks: testTasks })
+    const store = useTasksStore()
+    const modal = wrapper.findComponent({ name: 'DropTaskModal' })
+    expect(modal.props('visible')).toBe(false)
+
+    await wrapper.find('[data-testid="task-drop-button"]').trigger('click')
+
+    expect(store.drop).not.toHaveBeenCalled()
+    expect(modal.props('visible')).toBe(true)
+    expect(modal.props('taskName')).toBe('Fix broken test')
+
+    modal.vm.$emit('drop', 'Moved away')
+    await wrapper.vm.$nextTick()
+
+    expect(store.drop).toHaveBeenCalledWith(1, 'Moved away')
+  })
+
+  it('the Dropped toggle on the completed page loads dropped tasks, and Reopen reopens one', async () => {
+    vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
+      name: 'tasks-completed',
+      fullPath: '/tasks/completed',
+      query: {},
+    }) as ReturnType<typeof vi.fn>
+
+    const dropped = { ...testTasks[1]!, drop_date: '2026-03-20T00:00:00Z', drop_reason: 'meh' }
+    const wrapper = createWrapper({ droppedTasks: [dropped] })
+    const store = useTasksStore()
+    await flushPromises()
+    expect(store.fetchCompleted).toHaveBeenCalledOnce()
+    expect(wrapper.find('[data-testid="task-dropped-item"]').exists()).toBe(false)
+
+    const toggle = wrapper.findAllComponents({ name: 'NeuToggleGroup' }).find((c) => c.props('dataTestid') === 'tasks-closed-view')!
+    toggle.vm.$emit('update:modelValue', 'dropped')
+    await wrapper.vm.$nextTick()
+
+    expect(store.fetchDropped).toHaveBeenCalledOnce()
+    expect(wrapper.text()).toContain('Dropped Tasks')
+
+    await wrapper.find('[data-testid="task-reopen-button"]').trigger('click')
+
+    expect(store.reopen).toHaveBeenCalledWith(2)
   })
 
   it('a drag sends the dropped task a rank_at between its new neighbors', async () => {

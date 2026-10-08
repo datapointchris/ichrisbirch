@@ -107,8 +107,7 @@ def test_a_template_that_ran_today_is_not_due_again_today():
     assert not autotask.is_due_on(date(2026, 8, 20), NEW_YORK, last_closed_at=None)
 
 
-def completion_template(frequency: str = 'Weekly') -> AutoTask:
-    ran = datetime(2026, 8, 20, 14, tzinfo=UTC)
+def completion_template(frequency: str = 'Weekly', ran: datetime = datetime(2026, 8, 20, 14, tzinfo=UTC)) -> AutoTask:
     return AutoTask(name='Trim nails', category='Dingo', anchor='completion', frequency=frequency, first_run_date=ran, last_run_date=ran)
 
 
@@ -132,14 +131,16 @@ def test_the_close_is_a_day_on_the_zones_calendar():
 
 
 def test_a_completion_template_steps_in_calendar_months():
+    ran = datetime(2026, 1, 2, 12, tzinfo=UTC)
     closed = datetime(2026, 1, 31, 12, tzinfo=UTC)
 
-    assert completion_template('Monthly').next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 2, 28)
+    assert completion_template('Monthly', ran).next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 2, 28)
 
 
-def test_an_unknown_anchor_is_refused():
-    autotask = completion_template()
-    autotask.anchor = 'weekly'
+def test_a_deleted_copy_holds_the_next_one_a_step_from_when_it_was_made():
+    """The copy made Sep 1 was deleted, so the last close is still Aug 1's."""
+    autotask = completion_template('Monthly', datetime(2026, 9, 1, 12, tzinfo=UTC))
+    closed = datetime(2026, 8, 1, 12, tzinfo=UTC)
 
-    with pytest.raises(ValueError, match='Unknown autotask anchor'):
-        autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None)
+    assert not autotask.is_due_on(date(2026, 9, 6), ZoneInfo('UTC'), last_closed_at=closed)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 10, 1)

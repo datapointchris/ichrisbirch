@@ -14,9 +14,9 @@ from sqlalchemy.orm import mapped_column
 
 from ichrisbirch.database.base import Base
 
-# Days a new task in the category gets before it sorts as due. A per-category
-# default the user tunes over time; the migration that added the column seeded
-# the same numbers into the deployed table.
+# Days a new task in the category gets before it sorts as due. Seeds
+# `task_categories.window_days` for a new database. The deployed values are
+# tuned through the API.
 TASK_CATEGORY_WINDOW_DAYS = {
     'Automotive': 45,
     'Chore': 30,
@@ -42,7 +42,7 @@ class TaskCategory(Base):
     name: Mapped[str] = mapped_column(Text, primary_key=True)
     window_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('60'))
 
-    __table_args__ = (CheckConstraint('window_days >= 1', name='ck_task_categories_window_days_positive'),)
+    __table_args__ = (CheckConstraint('window_days >= 1', name='window_days_positive'),)
 
 
 class Task(Base):
@@ -52,11 +52,12 @@ class Task(Base):
     `rank_at` is when the task should reach the top, set to creation plus
     `window_days` and moved by snooze and drag. It is never shown as a due date.
 
-    `priority` is the positional rank the list used before `rank_at`. Nothing
-    writes it, and rows keep the value they had.
+    `priority` is a positional rank that nothing reads or writes. Rows keep the
+    value they hold.
 
     A task is open, completed (`complete_date`) or dropped (`drop_date`), never
-    both closed states at once.
+    both closed states at once. Only an open task is pinned, and only a dropped
+    task has a `drop_reason`.
     """
 
     __tablename__ = 'tasks'
@@ -77,8 +78,10 @@ class Task(Base):
     drop_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (
-        CheckConstraint('window_days >= 1', name='ck_tasks_window_days_positive'),
-        CheckConstraint('complete_date IS NULL OR drop_date IS NULL', name='ck_tasks_one_closed_state'),
+        CheckConstraint('window_days >= 1', name='window_days_positive'),
+        CheckConstraint('complete_date IS NULL OR drop_date IS NULL', name='one_closed_state'),
+        CheckConstraint('NOT pinned OR (complete_date IS NULL AND drop_date IS NULL)', name='pinned_only_open'),
+        CheckConstraint('drop_reason IS NULL OR drop_date IS NOT NULL', name='drop_reason_needs_drop_date'),
     )
 
     def __repr__(self):

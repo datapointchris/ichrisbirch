@@ -55,19 +55,21 @@ month added to a stdlib `date` is 30 days.
 
 | Anchor | Next copy is due | Open copies |
 | --- | --- | --- |
-| `completion` | one step after the last copy was completed or dropped, or after the last run when none has closed | one at a time |
+| `completion` | one step after the later of the last copy's close and the last run | one at a time |
 | `calendar` | on the first run's day plus whole steps | up to `max_concurrent` |
 
 A `completion` template suits upkeep that grows from the last time it was
 done. Nails trimmed four days late are next due two weeks after that trim,
-not ten days later. Copies are found through `tasks.autotask_id`.
+not ten days later. Copies are found through `tasks.autotask_id`. The last run
+counts as well as the last close, because a copy deleted while open never
+closes. Without it the next night would make a new copy.
 
 A `calendar` template keeps fixed dates. A monthly one first run on January 31
 is due on February 28 and then on March 31, and one first run on the 15th
 stays on the 15th. A run held back at `max_concurrent` does not move the ones
 after it.
 
-## The task list needs no nightly job
+## The task list is ordered at read time
 
 Open tasks read in `pinned DESC, rank_at ASC, add_date ASC` order. A task's
 `rank_at` is its creation plus its window, and snooze and drag move it, so

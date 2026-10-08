@@ -110,7 +110,15 @@
           v-model:view-type="viewType"
           :total-count="store.totalCount"
         />
-        <h2 class="task-layout__title">Completed Tasks</h2>
+        <div class="task-layout__filters">
+          <NeuToggleGroup
+            :model-value="closedView"
+            :options="closedViewOptions"
+            data-testid="tasks-closed-view"
+            @update:model-value="onClosedViewChange"
+          />
+        </div>
+        <h2 class="task-layout__title">{{ closedView === 'dropped' ? 'Dropped Tasks' : 'Completed Tasks' }}</h2>
         <div class="task-layout__filters">
           <NeuToggleGroup
             :model-value="selectedFilter"
@@ -127,7 +135,47 @@
         </div>
       </div>
 
-      <template v-if="store.completedTasks.length > 0">
+      <template v-if="closedView === 'dropped'">
+        <div
+          v-if="filteredDroppedTasks.length > 0"
+          class="grid grid--one-column grid--tight"
+        >
+          <h3 class="task-layout__title">Total Tasks Dropped: {{ filteredDroppedTasks.length }}</h3>
+          <div :class="gridClass">
+            <template v-if="viewType === 'block'">
+              <TaskBlockDropped
+                v-for="task in filteredDroppedTasks"
+                :key="task.id"
+                :task="task"
+                @reopen="onReopen"
+                @delete="onDelete"
+              />
+            </template>
+            <template v-else>
+              <TaskCompactDropped
+                v-for="task in filteredDroppedTasks"
+                :key="task.id"
+                :task="task"
+                @reopen="onReopen"
+                @delete="onDelete"
+              />
+            </template>
+          </div>
+        </div>
+        <div
+          v-else
+          class="grid grid--one-column-wide grid--tight"
+        >
+          <p
+            class="task-layout__empty"
+            data-testid="tasks-dropped-empty"
+          >
+            No dropped tasks for time period: {{ dateFilterLabel(selectedFilter) }}
+          </p>
+        </div>
+      </template>
+
+      <template v-else-if="store.completedTasks.length > 0">
         <div class="grid grid--two-columns-wide grid--tight">
           <h3 class="task-layout__title">Total Tasks Completed: {{ filteredCompletedTasks.length }}</h3>
           <h3 class="task-layout__title">Average Completion Time: {{ avgCompletion }}</h3>
@@ -206,12 +254,44 @@
           />
         </template>
       </div>
+      <template v-if="store.droppedTasks.length > 0">
+        <div class="grid grid--one-column grid--tight">
+          <h3 class="task-layout__title">Dropped</h3>
+        </div>
+        <div :class="gridClass">
+          <template v-if="viewType === 'block'">
+            <TaskBlockDropped
+              v-for="task in store.droppedTasks"
+              :key="task.id"
+              :task="task"
+              @reopen="onReopen"
+              @delete="onDelete"
+            />
+          </template>
+          <template v-else>
+            <TaskCompactDropped
+              v-for="task in store.droppedTasks"
+              :key="task.id"
+              :task="task"
+              @reopen="onReopen"
+              @delete="onDelete"
+            />
+          </template>
+        </div>
+      </template>
     </template>
 
     <AddEditTaskModal
       :visible="showAddTask"
       @close="showAddTask = false"
       @create="onCreate"
+    />
+
+    <DropTaskModal
+      :visible="dropTarget !== null"
+      :task-name="dropTarget?.name ?? ''"
+      @close="dropTarget = null"
+      @drop="onConfirmDrop"
     />
   </div>
 </template>
@@ -222,6 +302,9 @@ import { useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
 import { useTasksStore, TASK_CATEGORIES } from '@/stores/tasks'
 import type { CompletedTask } from '@/stores/tasks'
+import DropTaskModal from '@/components/tasks/DropTaskModal.vue'
+import TaskBlockDropped from '@/components/tasks/TaskBlockDropped.vue'
+import TaskCompactDropped from '@/components/tasks/TaskCompactDropped.vue'
 import type { Task } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
 import TasksSubnav from '@/components/tasks/TasksSubnav.vue'
@@ -250,6 +333,14 @@ const selectedFilter = ref<DateFilterKey>('this_week')
 const selectedCategory = ref<string>('')
 const completedToday = ref<CompletedTask[]>([])
 const showAddTask = ref(false)
+const dropTarget = ref<Task | null>(null)
+
+type ClosedView = 'completed' | 'dropped'
+const closedView = ref<ClosedView>('completed')
+const closedViewOptions: NeuToggleGroupOption<ClosedView>[] = [
+  { value: 'completed', label: 'Completed' },
+  { value: 'dropped', label: 'Dropped' },
+]
 
 const categoryOptions = [{ value: '', label: 'All Categories' }, ...TASK_CATEGORIES.map((c) => ({ value: c, label: c }))]
 
@@ -271,6 +362,11 @@ watch(() => [store.sortedTasks, selectedCategory.value], syncFilteredTodoTasks, 
 const filteredCompletedTasks = computed(() => {
   if (!selectedCategory.value) return store.completedTasks
   return store.completedTasks.filter((t) => t.category === selectedCategory.value)
+})
+
+const filteredDroppedTasks = computed(() => {
+  if (!selectedCategory.value) return store.droppedTasks
+  return store.droppedTasks.filter((t) => t.category === selectedCategory.value)
 })
 
 const activePage = computed<'priority' | 'todo' | 'completed' | 'search'>(() => {
@@ -314,8 +410,7 @@ async function loadData() {
       await store.fetchTodo()
     } else if (activePage.value === 'completed') {
       await store.fetchTodo()
-      const range = dateFilterRange(selectedFilter.value)
-      await store.fetchCompleted(range.start, range.end)
+      await fetchClosed()
     } else if (activePage.value === 'search') {
       const q = route.query.q as string
       if (q) {
@@ -351,13 +446,28 @@ async function onSnooze(id: number) {
   }
 }
 
-async function onDrop(id: number) {
-  const name = taskName(id)
+function onDrop(id: number) {
+  dropTarget.value = store.tasks.find((t) => t.id === id) ?? null
+}
+
+async function onConfirmDrop(reason: string | undefined) {
+  const target = dropTarget.value
+  if (!target) return
   try {
-    await store.drop(id)
-    show(`${name} dropped`, 'success')
+    await store.drop(target.id, reason)
+    show(`${target.name} dropped`, 'success')
   } catch {
     show('Failed to drop task', 'error')
+  }
+}
+
+async function onReopen(id: number) {
+  const name = store.droppedTasks.find((t) => t.id === id)?.name ?? 'Task'
+  try {
+    await store.reopen(id)
+    show(`${name} reopened`, 'success')
+  } catch {
+    show('Failed to reopen task', 'error')
   }
 }
 
@@ -409,10 +519,27 @@ async function onDragEnd(evt: { oldIndex: number; newIndex: number }) {
   }
 }
 
-function onFilterChange(filter: DateFilterKey) {
+function fetchClosed() {
+  const range = dateFilterRange(selectedFilter.value)
+  return closedView.value === 'dropped' ? store.fetchDropped(range.start, range.end) : store.fetchCompleted(range.start, range.end)
+}
+
+async function onFilterChange(filter: DateFilterKey) {
   selectedFilter.value = filter
-  const range = dateFilterRange(filter)
-  store.fetchCompleted(range.start, range.end)
+  try {
+    await fetchClosed()
+  } catch {
+    show('Failed to load tasks', 'error')
+  }
+}
+
+async function onClosedViewChange(view: ClosedView) {
+  closedView.value = view
+  try {
+    await fetchClosed()
+  } catch {
+    show('Failed to load tasks', 'error')
+  }
 }
 
 watch(

@@ -25,7 +25,7 @@ The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
 takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
 — `articles current` and `articles read`, `habits complete` and `habits today`,
-`tasks snooze`, `pin`, `unpin` and `drop` with `tasks categories` for each
+`tasks snooze`, `pin`, `unpin`, `drop` and `reopen` with `tasks categories` for each
 category's window, the recipe suggest/import flows, `strains vocabulary`.
 
 The open task list is ordered by a sort date the CLI never prints: a task's

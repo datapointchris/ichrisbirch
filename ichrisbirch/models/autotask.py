@@ -66,8 +66,8 @@ class AutoTask(Base):
     """A template that adds a task on a cadence.
 
     `window_days` is the window each copy gets, and falls back to the category's
-    when unset. `priority` is the rank copies entered at before windows. Nothing
-    writes it, and rows keep the value they had. `max_concurrent` caps open copies
+    when unset. `priority` is a positional rank that nothing reads or writes.
+    Rows keep the value they hold. `max_concurrent` caps open copies
     for a `calendar` template; a `completion` template never has more than one.
     """
 
@@ -87,7 +87,7 @@ class AutoTask(Base):
     last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    __table_args__ = (CheckConstraint('window_days IS NULL OR window_days >= 1', name='ck_autotasks_window_days_positive'),)
+    __table_args__ = (CheckConstraint('window_days IS NULL OR window_days >= 1', name='window_days_positive'),)
 
     def __repr__(self):
         return f"""AutoTask(name = {self.name}, category = {self.category}, anchor = {self.anchor},
@@ -110,12 +110,15 @@ class AutoTask(Base):
                 raise ValueError(f'Unknown autotask anchor: {self.anchor}')
 
     def next_completion_day(self, zone: ZoneInfo, *, last_closed_at: datetime | None) -> date:
-        """One step after the last copy closed, or after the last run when none has.
+        """One step after the later of the last close and the last run.
 
         A copy finished late moves every later one, which is the point: nails
-        grow from the last trim, not from the calendar.
+        grow from the last trim, not from the calendar. The last run counts too,
+        because a copy deleted while open never closes. Counting from the close
+        before it would make a new copy the next night.
         """
-        base = (last_closed_at or self.last_run_date).astimezone(zone).date()
+        latest = self.last_run_date if last_closed_at is None else max(last_closed_at, self.last_run_date)
+        base = latest.astimezone(zone).date()
         return pendulum.Date(base.year, base.month, base.day) + frequency_to_duration(self.frequency)
 
     def next_calendar_day(self, zone: ZoneInfo) -> date:

@@ -19,7 +19,9 @@ from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.task_queue import in_queue_order
+from ichrisbirch.services.task_queue import is_closed
 from ichrisbirch.services.task_queue import is_open
+from ichrisbirch.services.task_queue import match_fields_to_state
 from ichrisbirch.services.task_queue import new_task
 from ichrisbirch.services.task_queue import restart_window
 
@@ -207,6 +209,17 @@ async def update(id: int, update: schemas.TaskUpdate, session: DbSession):
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f'Task {id} cannot be both completed and dropped. Clear one date to set the other.',
             )
+        if update_data.get('pinned') and is_closed(task):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f'Task {id} is closed, so it cannot be pinned. Reopen it first.',
+            )
+        if update_data.get('drop_reason') is not None and task.drop_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f'Task {id} is not dropped, so it cannot have a drop reason.',
+            )
+        match_fields_to_state(task)
         session.commit()
         session.refresh(task)
         return task
@@ -219,7 +232,7 @@ def open_task(session: DbSession, task_id: int, verb: str) -> models.Task:
     task = session.get(models.Task, task_id)
     if task is None:
         raise NotFoundException('task', task_id, logger)
-    if task.complete_date is not None or task.drop_date is not None:
+    if is_closed(task):
         state = 'completed' if task.complete_date is not None else 'dropped'
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -232,6 +245,7 @@ def open_task(session: DbSession, task_id: int, verb: str) -> models.Task:
 async def complete(task_id: int, session: DbSession):
     task = open_task(session, task_id, 'completed')
     task.complete_date = datetime.now(UTC)
+    match_fields_to_state(task)
     session.commit()
     session.refresh(task)
     return task
@@ -243,9 +257,30 @@ async def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None =
     task = open_task(session, task_id, 'dropped')
     task.drop_date = datetime.now(UTC)
     task.drop_reason = body.reason if body else None
+    match_fields_to_state(task)
     session.commit()
     session.refresh(task)
     logger.info('task_dropped', task_id=task_id)
+    return task
+
+
+@router.patch('/{task_id}/reopen/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
+async def reopen(task_id: int, session: DbSession):
+    """Put a completed or dropped task back on the list at the `rank_at` it had."""
+    task = session.get(models.Task, task_id)
+    if task is None:
+        raise NotFoundException('task', task_id, logger)
+    if not is_closed(task):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'Task {task_id} is already open, so it cannot be reopened.',
+        )
+    task.complete_date = None
+    task.drop_date = None
+    match_fields_to_state(task)
+    session.commit()
+    session.refresh(task)
+    logger.info('task_reopened', task_id=task_id)
     return task
 
 

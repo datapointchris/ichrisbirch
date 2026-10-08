@@ -44,6 +44,7 @@ func newTasksCommand() *cobra.Command {
 		newTasksPinCommand(true),
 		newTasksPinCommand(false),
 		newTasksDropCommand(),
+		newTasksReopenCommand(),
 		newTasksDeleteCommand(),
 		newTaskCategoriesCommand(),
 	)
@@ -425,7 +426,7 @@ func newTasksPinCommand(pinned bool) *cobra.Command {
 			"pin <task-id>",
 			"Hold a task at the top of the list",
 			"A pinned task sorts ahead of every unpinned one until it is unpinned,\n"+
-				"snoozed, or closed.",
+				"snoozed, completed or dropped. A closed task cannot be pinned.",
 			"  icb tasks pin 42",
 			"Pinned",
 			func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
@@ -460,6 +461,20 @@ func newTasksDropCommand() *cobra.Command {
 	)
 	cmd.Flags().StringVar(&reason, "reason", "", "Why it is dropped")
 	return cmd
+}
+
+func newTasksReopenCommand() *cobra.Command {
+	return taskActionCommand(
+		"reopen <task-id>",
+		"Return a completed or dropped task to the open list",
+		"Clears the completion or drop date along with the drop reason. The task\n"+
+			"returns unpinned, at the place its window already gave it.",
+		"  icb tasks reopen 42",
+		"Reopened",
+		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
+			return c.ReopenTask(cmd.Context(), id)
+		},
+	)
 }
 
 func newTaskCategoriesCommand() *cobra.Command {

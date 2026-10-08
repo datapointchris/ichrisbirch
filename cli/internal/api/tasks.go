@@ -201,6 +201,13 @@ func (c *Client) DropTask(ctx context.Context, id int, reason string) (Task, err
 	return c.taskAction(ctx, id, "drop", body)
 }
 
+// ReopenTask returns a completed or dropped task to the open list
+// (PATCH /tasks/{id}/reopen/), clearing its closing date and drop reason
+// together. A task already open answers 409.
+func (c *Client) ReopenTask(ctx context.Context, id int) (Task, error) {
+	return c.taskAction(ctx, id, "reopen", nil)
+}
+
 func (c *Client) taskAction(ctx context.Context, id int, action string, body any) (Task, error) {
 	var task Task
 	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d/%s/", id, action), body, &task); err != nil {

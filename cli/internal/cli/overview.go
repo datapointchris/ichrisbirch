@@ -26,7 +26,10 @@ const (
 	// v2 split the old `reading` section into `books` and `articles`. They are
 	// separate apps, and one section spanning two of them meant neither of its
 	// counts described the pile it sat above.
-	overviewSchemaVersion = 2
+	//
+	// v3 removed `priority` from task rows. A task row's position in its list
+	// is its rank.
+	overviewSchemaVersion = 3
 
 	// defaultOverviewLimit caps each section so the payload stays a glance. Every
 	// section reports its pre-cap total, so a capped list never lies about size.

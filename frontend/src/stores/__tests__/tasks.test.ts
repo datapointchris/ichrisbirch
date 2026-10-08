@@ -148,6 +148,18 @@ describe('useTasksStore', () => {
     expect(store.completedTasks[0]!.id).toBe(10)
   })
 
+  it('search puts a dropped task in its own list, never among the to-dos', async () => {
+    const dropped = { ...testTasks[1]!, drop_date: '2026-03-19T00:00:00Z', drop_reason: 'Sold the car' }
+    mockApi.get.mockResolvedValue({ data: [testTasks[0], dropped, testCompletedTasks[0]] })
+    const store = useTasksStore()
+
+    await store.search('car')
+
+    expect(store.tasks.map((t) => t.id)).toEqual([1])
+    expect(store.completedTasks.map((t) => t.id)).toEqual([10])
+    expect(store.droppedTasks.map((t) => t.id)).toEqual([2])
+  })
+
   it('sets error on search failure', async () => {
     const apiError = new ApiError({ message: 'API 500', detail: 'Search failed', status: 500 })
     mockApi.get.mockRejectedValue(apiError)
@@ -262,6 +274,47 @@ describe('useTasksStore', () => {
 
     await expect(store.drop(2)).rejects.toThrow(ApiError)
     expect(store.tasks).toHaveLength(5)
+  })
+
+  // --- dropped ---
+
+  it('fetches dropped tasks within a date range', async () => {
+    const dropped = { ...testTasks[1]!, drop_date: '2026-03-19T00:00:00Z' }
+    mockApi.get.mockResolvedValue({ data: [dropped] })
+    const store = useTasksStore()
+
+    await store.fetchDropped('2026-03-01', '2026-03-31')
+
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/', {
+      params: { status: 'dropped', start_date: '2026-03-01', end_date: '2026-03-31' },
+    })
+    expect(store.droppedTasks).toEqual([dropped])
+  })
+
+  it('reopens a dropped task and moves it back to the to-do list', async () => {
+    const dropped = { ...testTasks[1]!, drop_date: '2026-03-19T00:00:00Z', drop_reason: 'meh' }
+    mockApi.patch.mockResolvedValue({ data: testTasks[1] })
+    const store = useTasksStore()
+    store.droppedTasks = [dropped]
+
+    const result = await store.reopen(2)
+
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/reopen/')
+    expect(result).toEqual(testTasks[1])
+    expect(store.droppedTasks).toEqual([])
+    expect(store.tasks.map((t) => t.id)).toEqual([2])
+  })
+
+  it('keeps the dropped task on reopen failure', async () => {
+    const dropped = { ...testTasks[1]!, drop_date: '2026-03-19T00:00:00Z' }
+    const apiError = new ApiError({ message: 'API 409', detail: 'Task 2 is already open', status: 409 })
+    mockApi.patch.mockRejectedValue(apiError)
+    const store = useTasksStore()
+    store.droppedTasks = [dropped]
+
+    await expect(store.reopen(2)).rejects.toThrow(ApiError)
+    expect(store.error).toBe(apiError)
+    expect(store.droppedTasks).toHaveLength(1)
   })
 
   // --- remove ---

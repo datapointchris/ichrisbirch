@@ -163,6 +163,14 @@ class TestQueueOrder:
 
         assert todo_ids(client) == [pinned['id'], soon['id']]
 
+    def test_pinning_through_an_update_changes_nothing_else(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Keep me', window_days=12)
+
+        pinned = client.patch(f'{ENDPOINT}{task["id"]}/', json={'pinned': True}).json()
+        assert pinned['pinned'] is True
+        assert (pinned['name'], pinned['window_days'], pinned['rank_at']) == (task['name'], task['window_days'], task['rank_at'])
+
     def test_moving_rank_at_reorders_the_list(self, txn_api_logged_in):
         """What a drag in the web app sends: a rank_at between two neighbors."""
         client, _ = txn_api_logged_in
@@ -268,14 +276,82 @@ class TestDrop:
         response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'complete_date': '2026-10-01T12:00:00+00:00'})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
-    def test_clearing_the_drop_date_reopens_the_task(self, txn_api_logged_in):
+
+class TestReopen:
+    @pytest.mark.parametrize('verb', ['drop', 'complete'])
+    def test_a_closed_task_returns_to_the_list_at_its_rank(self, txn_api_logged_in, verb):
         client, _ = txn_api_logged_in
         task = create(client, name='Back again')
-        client.patch(f'{ENDPOINT}{task["id"]}/drop/')
+        client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/reopen/')
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['complete_date'] is None
+        assert response.json()['drop_date'] is None
+        assert response.json()['rank_at'] == task['rank_at']
+        assert task['id'] in todo_ids(client)
+
+    def test_reopening_a_dropped_task_clears_its_reason(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Meh')
+        client.patch(f'{ENDPOINT}{task["id"]}/drop/', json={'reason': 'meh'})
+
+        assert client.patch(f'{ENDPOINT}{task["id"]}/reopen/').json()['drop_reason'] is None
+
+    def test_an_open_task_cannot_be_reopened(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Open')
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/reopen/')
+        assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+        assert 'already open' in response.json()['detail']
+
+
+class TestClosedState:
+    """Only an open task is pinned, and only a dropped task has a reason, by every route."""
+
+    @pytest.mark.parametrize('verb', ['drop', 'complete'])
+    def test_closing_a_pinned_task_unpins_it(self, txn_api_logged_in, verb):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Pinned', pinned=True)
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+        assert response.json()['pinned'] is False
+
+    def test_closing_through_an_update_unpins(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Pinned', pinned=True)
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'complete_date': '2026-10-01T12:00:00+00:00'})
+        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['pinned'] is False
+
+    @pytest.mark.parametrize('verb', ['drop', 'complete'])
+    def test_a_closed_task_cannot_be_pinned(self, txn_api_logged_in, verb):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Closed')
+        client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'pinned': True})
+        assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+        assert client.get(f'{ENDPOINT}{task["id"]}/').json()['pinned'] is False
+
+    def test_clearing_the_drop_date_clears_the_reason(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Back again')
+        client.patch(f'{ENDPOINT}{task["id"]}/drop/', json={'reason': 'meh'})
 
         response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'drop_date': None})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+        assert response.json()['drop_reason'] is None
         assert task['id'] in todo_ids(client)
+
+    def test_an_open_task_cannot_be_given_a_drop_reason(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        task = create(client, name='Open')
+
+        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'drop_reason': 'meh'})
+        assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
 
 class TestCategoryWindows:

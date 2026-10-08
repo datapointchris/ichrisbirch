@@ -56,6 +56,18 @@ def restart_window(task: models.Task, *, now: datetime | None = None) -> None:
     task.pinned = False
 
 
+def is_closed(task: models.Task) -> bool:
+    return task.complete_date is not None or task.drop_date is not None
+
+
+def match_fields_to_state(task: models.Task) -> None:
+    """Unpin a closed task and clear the reason of one that is not dropped, as the table's checks require."""
+    if is_closed(task):
+        task.pinned = False
+    if task.drop_date is None:
+        task.drop_reason = None
+
+
 def is_open(query: Select) -> Select:
     return query.filter(models.Task.complete_date.is_(None), models.Task.drop_date.is_(None))
 

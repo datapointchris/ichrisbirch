@@ -55,7 +55,7 @@ def upgrade() -> None:
                 name=name, window_days=window_days
             )
         )
-    op.create_check_constraint('ck_task_categories_window_days_positive', 'task_categories', 'window_days >= 1')
+    op.create_check_constraint('window_days_positive', 'task_categories', 'window_days >= 1')
 
     op.alter_column('autotasks', 'priority', existing_type=sa.Integer(), nullable=True)
     op.add_column('autotasks', sa.Column('window_days', sa.Integer(), nullable=True))
@@ -63,7 +63,7 @@ def upgrade() -> None:
         'autotasks',
         sa.Column('anchor', sa.Text(), sa.ForeignKey('autotask_anchors.name'), nullable=False, server_default='completion'),
     )
-    op.create_check_constraint('ck_autotasks_window_days_positive', 'autotasks', 'window_days IS NULL OR window_days >= 1')
+    op.create_check_constraint('window_days_positive', 'autotasks', 'window_days IS NULL OR window_days >= 1')
 
     op.alter_column('tasks', 'priority', existing_type=sa.Integer(), nullable=True)
     op.add_column(
@@ -78,8 +78,8 @@ def upgrade() -> None:
     )
     op.add_column('tasks', sa.Column('drop_date', sa.DateTime(timezone=True), nullable=True))
     op.add_column('tasks', sa.Column('drop_reason', sa.Text(), nullable=True))
-    op.create_check_constraint('ck_tasks_window_days_positive', 'tasks', 'window_days >= 1')
-    op.create_check_constraint('ck_tasks_one_closed_state', 'tasks', 'complete_date IS NULL OR drop_date IS NULL')
+    op.create_check_constraint('window_days_positive', 'tasks', 'window_days >= 1')
+    op.create_check_constraint('one_closed_state', 'tasks', 'complete_date IS NULL OR drop_date IS NULL')
 
     op.execute(
         """
@@ -99,22 +99,26 @@ def upgrade() -> None:
         WHERE tasks.category = task_categories.name
         """
     )
+    op.create_check_constraint('pinned_only_open', 'tasks', 'NOT pinned OR (complete_date IS NULL AND drop_date IS NULL)')
+    op.create_check_constraint('drop_reason_needs_drop_date', 'tasks', 'drop_reason IS NULL OR drop_date IS NOT NULL')
 
 
 def downgrade() -> None:
     op.execute('UPDATE tasks SET priority = 1 WHERE priority IS NULL')
-    op.drop_constraint('ck_tasks_one_closed_state', 'tasks', type_='check')
-    op.drop_constraint('ck_tasks_window_days_positive', 'tasks', type_='check')
+    op.drop_constraint('drop_reason_needs_drop_date', 'tasks', type_='check')
+    op.drop_constraint('pinned_only_open', 'tasks', type_='check')
+    op.drop_constraint('one_closed_state', 'tasks', type_='check')
+    op.drop_constraint('window_days_positive', 'tasks', type_='check')
     for column in ('drop_reason', 'drop_date', 'autotask_id', 'pinned', 'window_days', 'rank_at'):
         op.drop_column('tasks', column)
     op.alter_column('tasks', 'priority', existing_type=sa.Integer(), nullable=False)
 
     op.execute('UPDATE autotasks SET priority = 1 WHERE priority IS NULL')
-    op.drop_constraint('ck_autotasks_window_days_positive', 'autotasks', type_='check')
+    op.drop_constraint('window_days_positive', 'autotasks', type_='check')
     op.drop_column('autotasks', 'anchor')
     op.drop_column('autotasks', 'window_days')
     op.alter_column('autotasks', 'priority', existing_type=sa.Integer(), nullable=False)
 
-    op.drop_constraint('ck_task_categories_window_days_positive', 'task_categories', type_='check')
+    op.drop_constraint('window_days_positive', 'task_categories', type_='check')
     op.drop_column('task_categories', 'window_days')
     op.drop_table('autotask_anchors')

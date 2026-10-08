@@ -6,12 +6,12 @@ const ERROR = '.flash-messages__message--error'
 /** Helper: open the add task modal, fill in fields, and submit */
 async function createTask(page: import('@playwright/test').Page, name: string, windowDays = '15') {
   await page.getByTestId('task-add-button').click()
-  await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId('task-name-input')).toBeVisible({ timeout: 5000 })
   await page.getByTestId('task-name-input').fill(name)
   await page.getByTestId('task-category-tile-Chore').click()
   await page.getByTestId('task-window-input').fill(windowDays)
   await page.getByTestId('task-window-input').press('Enter')
-  await expect(page.getByTestId('add-edit-modal')).not.toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId('task-name-input')).not.toBeVisible({ timeout: 5000 })
   await expect(page.locator(SUCCESS).first()).toBeVisible({ timeout: 5000 })
 }
 

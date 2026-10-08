@@ -98,6 +98,16 @@ func TestTask_DecodesTheRankingFields(t *testing.T) {
 	}
 }
 
+func TestReopenTask_PatchesTheReopenPath(t *testing.T) {
+	client, method, path, _ := recordRequest(t, openTaskJSON)
+	if _, err := client.ReopenTask(context.Background(), 42); err != nil {
+		t.Fatalf("ReopenTask: %v", err)
+	}
+	if *method != http.MethodPatch || *path != "/tasks/42/reopen/" {
+		t.Errorf("%s %s, want PATCH /tasks/42/reopen/", *method, *path)
+	}
+}
+
 func TestSnoozeTask_PatchesTheSnoozePath(t *testing.T) {
 	client, method, path, _ := recordRequest(t, openTaskJSON)
 	if _, err := client.SnoozeTask(context.Background(), 42); err != nil {
