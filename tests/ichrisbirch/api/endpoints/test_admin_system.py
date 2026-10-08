@@ -12,7 +12,6 @@ import pytest
 from fastapi import status
 from sqlalchemy import text
 
-from ichrisbirch import schemas
 from ichrisbirch.api.endpoints import admin
 from ichrisbirch.database.session import create_session
 from tests.util import show_status_and_response
@@ -23,6 +22,7 @@ ERRORS_ENDPOINT = '/admin/system/errors/'
 CONFIG_ENDPOINT = '/admin/config/'
 
 SLOW_PROBE_SECONDS = 2
+SLOW_LISTING_SECONDS = 1
 SHORT_PROBE_TIMEOUT_SECONDS = 0.2
 PROBE_DEADLINE_SECONDS = 2
 
@@ -108,7 +108,6 @@ class TestSystemHealthProbes:
             started_at.append(time.monotonic())
             probe_started.set()
             time.sleep(SLOW_PROBE_SECONDS)
-            return schemas.admin.RedisStats(key_count=0, memory_used_human='N/A', connected_clients=0, uptime_seconds=0)
 
         # TestClient gives each request its own event loop, so one loop is driven here the way uvicorn drives it.
         transport = httpx2.ASGITransport(app=test_api_logged_in_admin.app)
@@ -125,6 +124,7 @@ class TestSystemHealthProbes:
 
         assert errors.status_code == status.HTTP_200_OK, show_status_and_response(errors)
         assert health_response.status_code == status.HTTP_200_OK, show_status_and_response(health_response)
+        assert health_response.json()['redis'] is None
         assert answered_after < SLOW_PROBE_SECONDS / 2
 
     def test_a_redis_that_refuses_auth_reads_as_unavailable_before_the_probe_timeout(self):
@@ -134,7 +134,7 @@ class TestSystemHealthProbes:
         started = time.monotonic()
         stats = admin._get_redis_stats(settings)
 
-        assert stats.memory_used_human == 'N/A'
+        assert stats is None
         assert time.monotonic() - started < admin.PROBE_TIMEOUT_SECONDS
 
     def test_a_redis_that_never_answers_reads_as_unavailable(self):
@@ -145,7 +145,7 @@ class TestSystemHealthProbes:
             with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
                 stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_redis_stats(settings))
 
-        assert stats.memory_used_human == 'N/A'
+        assert stats is None
 
     def test_a_docker_daemon_that_never_answers_reads_as_unavailable(self, monkeypatch):
         with socket.create_server(('127.0.0.1', 0)) as silent:
@@ -155,7 +155,20 @@ class TestSystemHealthProbes:
             with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
                 containers = finish_within(PROBE_DEADLINE_SECONDS, admin._get_docker_containers)
 
-        assert containers == []
+        assert containers is None
+
+    def test_a_docker_probe_past_its_deadline_reads_as_unavailable(self):
+        def slow_listing():
+            time.sleep(SLOW_LISTING_SECONDS)
+            return []
+
+        with (
+            patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS),
+            patch.object(admin, '_list_docker_containers', slow_listing),
+        ):
+            containers = finish_within(SLOW_LISTING_SECONDS / 2, admin._get_docker_containers)
+
+        assert containers is None
 
     def test_a_database_query_past_the_probe_timeout_reads_as_unavailable(self):
         with (
@@ -165,7 +178,7 @@ class TestSystemHealthProbes:
         ):
             stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_database_stats(session))
 
-        assert stats == schemas.admin.DatabaseStats(tables=[], total_size_mb=0, active_connections=0)
+        assert stats is None
 
 
 class TestRecentErrors:

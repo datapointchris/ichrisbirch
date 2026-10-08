@@ -50,9 +50,10 @@ class ServerInfo(AdminConfig):
 
 class SystemHealth(AdminConfig):
     server: ServerInfo
-    docker: list[DockerContainerStatus]
-    database: DatabaseStats
-    redis: RedisStats
+    # None means the probe got no answer, which is not the same reading as an empty or idle dependency.
+    docker: list[DockerContainerStatus] | None
+    database: DatabaseStats | None
+    redis: RedisStats | None
     disk: DiskUsage
 
 

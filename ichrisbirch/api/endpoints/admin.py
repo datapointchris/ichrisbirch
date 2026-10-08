@@ -5,6 +5,7 @@ import re
 import shutil
 import time
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
 from typing import Any
@@ -281,34 +282,48 @@ async def run_smoke_tests_endpoint(
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
 
-# Bounds each call a probe makes, so a dependency that stops answering reads as unavailable.
+# The longest one probe call may take, and the whole Docker probe's deadline.
 PROBE_TIMEOUT_SECONDS = 2
 
 TABLE_ROW_COUNTS_SQL = text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')
 DATABASE_SIZE_SQL = text('SELECT pg_database_size(current_database())')
 CONNECTION_COUNT_SQL = text('SELECT count(*) FROM pg_stat_activity')
 
+# One worker, so a daemon that answers slowly holds one thread however often the page refreshes.
+_docker_probe_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='docker-probe')
 
-def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
-    """Get status of Docker containers, gracefully handling unavailability."""
-    try:
-        with closing(docker.from_env(timeout=PROBE_TIMEOUT_SECONDS)) as client:
-            containers = client.containers.list(all=True, filters={'name': 'icb-'})
-            return [
+
+def _list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
+    with closing(docker.from_env(timeout=PROBE_TIMEOUT_SECONDS)) as client:
+        statuses = []
+        for container in sorted(client.containers.list(all=True, filters={'name': 'icb-'}), key=lambda c: c.name):
+            image = container.image
+            statuses.append(
                 schemas.admin.DockerContainerStatus(
-                    name=c.name,
-                    status=c.status,
-                    started_at=c.attrs.get('State', {}).get('StartedAt'),
-                    image=','.join(c.image.tags) if c.image.tags else c.image.short_id,
+                    name=container.name,
+                    status=container.status,
+                    started_at=container.attrs.get('State', {}).get('StartedAt'),
+                    image=','.join(image.tags) if image.tags else image.short_id,
                 )
-                for c in sorted(containers, key=lambda c: c.name)
-            ]
+            )
+        return statuses
+
+
+def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None:
+    """Get status of Docker containers, or None when the daemon cannot be read in time."""
+    probe = _docker_probe_executor.submit(_list_docker_containers)
+    try:
+        return probe.result(timeout=PROBE_TIMEOUT_SECONDS)
+    except TimeoutError:
+        probe.cancel()
+        logger.warning('docker_status_unavailable', error=f'no answer within {PROBE_TIMEOUT_SECONDS}s')
+        return None
     except Exception as e:
         logger.warning('docker_status_unavailable', error=str(e))
-        return []
+        return None
 
 
-def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats:
+def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats | None:
     """Get database statistics via raw SQL."""
     try:
         session.execute(
@@ -321,14 +336,14 @@ def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats:
     except OperationalError as e:
         session.rollback()
         logger.warning('database_stats_unavailable', error=str(e))
-        return schemas.admin.DatabaseStats(tables=[], total_size_mb=0, active_connections=0)
+        return None
 
     tables = [schemas.admin.TableRowCount(schema_name=r[0], table_name=r[1], row_count=r[2]) for r in rows]
     total_size_mb = round((size_result or 0) / (1024 * 1024), 2)
     return schemas.admin.DatabaseStats(tables=tables, total_size_mb=total_size_mb, active_connections=conn_result or 0)
 
 
-def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
+def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats | None:
     """Get Redis server statistics."""
     try:
         with get_redis_client(settings, read_timeout=PROBE_TIMEOUT_SECONDS) as client:
@@ -343,7 +358,7 @@ def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats:
         )
     except Exception as e:
         logger.warning('redis_stats_unavailable', error=str(e))
-        return schemas.admin.RedisStats(key_count=0, memory_used_human='N/A', connected_clients=0, uptime_seconds=0)
+        return None
 
 
 def _get_disk_usage() -> schemas.admin.DiskUsage:

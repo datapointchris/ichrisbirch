@@ -875,9 +875,9 @@ export interface ServerInfo {
 
 export interface SystemHealth {
   server: ServerInfo
-  docker: DockerContainerStatus[]
-  database: DatabaseStats
-  redis: RedisStats
+  docker: DockerContainerStatus[] | null
+  database: DatabaseStats | null
+  redis: RedisStats | null
   disk: DiskUsage
 }
 
