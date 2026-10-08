@@ -52,8 +52,8 @@ func tokenSource(ctx context.Context, cfg config.Config) (oauth2.TokenSource, er
 // handleAPIError maps an error from a resource command to a message and exit
 // code: not-logged-in, a token endpoint that refused the refresh, and 401 all
 // point at `icb auth login` (exit 1); everything else is a runtime error (exit 1
-// via Execute). A service client is pointed at its id and secret instead,
-// because no login exists for it. Returns the error to return from RunE.
+// via Execute). A service client is never pointed at a login, because none
+// exists for it. Returns the error to return from RunE.
 func handleAPIError(err error) error {
 	if errors.Is(err, errNeedsLogin) {
 		return fmt.Errorf("not logged in — run `icb auth login`")

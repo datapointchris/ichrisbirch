@@ -24,6 +24,5 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
 
 
 def permits(scopes: frozenset[str], method: str, route: BaseRoute | None) -> bool:
-    """Report whether any of `scopes` lists `route` for `method`."""
     template = getattr(route, 'path', None)
     return any((method, template) in SCOPE_ROUTES.get(scope, frozenset()) for scope in scopes)

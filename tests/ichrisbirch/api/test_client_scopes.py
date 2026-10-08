@@ -35,7 +35,7 @@ SCOPED_URLS = {
 
 @pytest.fixture
 def as_caller(txn_api):
-    """Seed one item in one project, and return a function that sets who the token says is calling."""
+    """Seed one item in one project. `caller(identity)` sets who the token says is calling and returns the client."""
     client, session = txn_api
     project = models.Project(name='scheduler project')
     item = models.ProjectItem(title='scheduler item')

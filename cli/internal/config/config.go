@@ -30,9 +30,9 @@ const (
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
-// serviceScope is what a service client asks for. Authelia grants only the
-// scopes a request names, and the API admits this one to the routes the
-// project-item reads call.
+// serviceScope is the scope a service client requests. Authelia grants only the
+// scopes a request names, so a request naming none gets a token the API refuses.
+// ichrisbirch/api/client_scopes.py lists the routes this one reaches.
 const serviceScope = "icb.project-items.read"
 
 type Config struct {
@@ -44,8 +44,8 @@ type Config struct {
 	// service runs icb with no person present to approve a device login.
 	ClientSecret string
 
-	// clientIDSet is whether ICB_CLIENT_ID named the client, rather than the
-	// per-machine default for a person's CLI supplying it.
+	// clientIDSet is whether ICB_CLIENT_ID named the client. Unset, ClientID is
+	// the person's per-machine default.
 	clientIDSet bool
 }
 
@@ -56,8 +56,8 @@ func (c Config) IsService() bool {
 }
 
 // CheckService refuses a secret set without ICB_CLIENT_ID. The default is the
-// person's `icb-cli-<host>`, so the secret would be sent as that client, and
-// `auth logout` would reach that person's stored token.
+// person's `icb-cli-<host>`, so the secret would be sent to Authelia under that
+// client's id.
 func (c Config) CheckService() error {
 	if c.IsService() && !c.clientIDSet {
 		return errors.New("ICB_CLIENT_SECRET is set but ICB_CLIENT_ID is not: set it to the service client the secret belongs to, such as icb-svc-<machine>")

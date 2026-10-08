@@ -130,7 +130,7 @@ def authenticate_with_oidc_bearer(
     Authelia's JWKS, or raised 401 — a token that reaches here is trusted. The access token carries
     no email, so the local user comes from settings rather than from the wire.
 
-    A `ScopedClient` returns None here and is refused by each user dependency below.
+    A `ScopedClient` returns None here, and `refuse_scoped_client` answers it 403.
 
     Returns the user's alternative_id (as string) if valid, None otherwise.
     """
@@ -324,8 +324,8 @@ def authenticated_user(
 def refuse_scoped_client(client: ScopedClient | None) -> None:
     """Raise 403 for a scoped client's token on a route that resolves a user.
 
-    The token presented beside a forged Remote-User header would otherwise reach the header
-    strategy, and the request would run as that user.
+    Without it, a request sending this token and a forged `Remote-User` header resolves through the
+    header strategy and runs as that user.
     """
     if client is not None:
         logger.warning('scoped_client_outside_scopes', client_id=client.client_id)
@@ -356,8 +356,8 @@ def get_current_user_or_scoped_client(
 ) -> models.User | ScopedClient:
     """`get_current_user` for a router with a route in `client_scopes.SCOPE_ROUTES`.
 
-    A scoped client gets through only on a route that table lists for one of its scopes, and
-    answers 403 everywhere else. Every other caller resolves exactly as through `get_current_user`.
+    A scoped client gets through only on a route that table lists for one of its scopes, and gets
+    403 everywhere else. Every other caller resolves exactly as through `get_current_user`.
     """
     if client is not None and permits(client.scopes, request.method, request.scope.get('route')):
         logger.debug('auth_method_scoped_client', client_id=client.client_id, path=request.url.path)
@@ -382,8 +382,9 @@ def get_current_user_or_none(
     """Same as get_current_user but returns None instead of raising exception.
 
     Two cases still raise. `get_oidc_identity` rejects a presented-but-invalid access token before
-    this runs, and a scoped client's token answers 403 here. In both, a caller would otherwise pair
-    the token with another strategy's credentials and have the token quietly ignored.
+    this runs, and `refuse_scoped_client` answers a scoped client's token 403. Without either, that
+    token sent beside another strategy's credentials would be ignored, and the request would run as
+    the user those credentials name.
 
     Used for dependencies that support multiple auth methods.
     """

@@ -12,7 +12,7 @@ dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 | The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/...` on the same origin |
 | This app's own services | `X-Service-Key`, with `X-Internal-Service` or with `X-Application-ID` and `X-User-ID` | Internal network |
 | A personal API key | `icb_` bearer token | `api.ichrisbirch.com`, which skips ForwardAuth; this path is being retired |
-| A local session | HS256 JWT from `/auth/token/` | `Authorization: Bearer` |
+| A local session | JWT this API signs, from `/auth/token/` | `Authorization: Bearer` |
 
 `authenticated_user` runs every user strategy and takes the first match. The
 order is the OIDC access token, the Authelia headers, the application headers, a
@@ -35,8 +35,8 @@ Authelia leaves `aud` empty on both grants, so the `client_id` prefix is what
 keeps another product's token out.
 
 A token that fails any check answers one opaque 401 and never falls through to
-a weaker strategy. Otherwise a caller could pair a junk token with a forged
-`Remote-User` header and have the token quietly ignored.
+a weaker strategy. Otherwise a junk token sent beside a forged `Remote-User`
+header would be ignored, and the request would run as that header's user.
 
 ## The client_id prefix decides whether a token is a person or a scoped client
 
@@ -59,12 +59,13 @@ acts as the account owner.
 prefix, so `/project-items/{id}/` covers every item.
 
 A router with a route in `SCOPE_ROUTES` takes
-`get_current_user_or_scoped_client`. Every other router takes
-`get_current_user`. The first admits a scoped client only on a listed route,
-and resolves everyone else exactly as `get_current_user` does. Every other
-dependency that resolves a user answers a scoped client 403. That holds when
-the request also sends a `Remote-User` header, which the header strategy would
-otherwise resolve to that account.
+`get_current_user_or_scoped_client`. It admits a scoped client only on a listed
+route, and resolves everyone else exactly as `get_current_user` does. The other
+routers that authenticate at the router take `get_current_user`, or
+`get_admin_user`, which depends on it. Every other dependency that resolves a
+user refuses a scoped client with 403. That holds when the request also sends a
+`Remote-User` header, which the header strategy would otherwise resolve to that
+account.
 
 A handler that resolves the user through its own dependency refuses a scoped
 client too. `RequestZone` takes `get_current_user_or_scoped_client` for that

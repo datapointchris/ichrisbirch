@@ -1,14 +1,14 @@
 """Verification of the RFC 9068 JWT access tokens Authelia issues to the `icb` CLI.
 
 A person's CLI logs in with the OAuth 2.0 device authorization grant, which rules out Authelia's
-`authelia.bearer.authz` scope, so the token is no longer authorized at the Traefik ForwardAuth edge.
-A service running the CLI with no person present uses the client-credentials grant instead. Both
+`authelia.bearer.authz` scope, so the Traefik ForwardAuth edge cannot authorize the token. A
+service running the CLI with no person present uses the client-credentials grant instead. Both
 tokens are signed JWTs, and the API verifies them in-process against Authelia's JWKS.
 
 The `client_id` prefix decides which of the two a token is: `icb-cli-` acts as the user, and
 `icb-svc-` is a `ScopedClient` that never resolves to one. A missing `sub` cannot decide it.
 Authelia 4.39 leaves `sub` off a client-credentials token, but RFC 9068 requires it, and a release
-that restores it would make a service token look like a person's.
+that adds it would make a service token look like a person's.
 
 Key retrieval, caching and rotation are PyJWT's `PyJWKClient`. Nothing here parses a JWT by hand.
 """

@@ -53,8 +53,7 @@ func (e *APIError) Error() string {
 // a "run `icb auth login`" hint rather than a raw API error.
 func (e *APIError) Unauthorized() bool { return e.StatusCode == http.StatusUnauthorized }
 
-// Forbidden reports whether the error is a 403: the caller is known and may not
-// reach the route, which no retry changes.
+// Forbidden reports whether the error is a 403.
 func (e *APIError) Forbidden() bool { return e.StatusCode == http.StatusForbidden }
 
 // NotFound reports whether the error is a 404.

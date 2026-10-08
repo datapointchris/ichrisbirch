@@ -29,9 +29,9 @@ func newAuthCommand() *cobra.Command {
 			"authorization grant. The CLI prints a code and a URL; approve it in any\n" +
 			"browser on any device, including from a different machine over SSH. The\n" +
 			"resulting token is stored in the OS keychain, never on disk.\n\n" +
-			"With ICB_CLIENT_SECRET set, icb is a service: it authenticates as the\n" +
-			"confidential client ICB_CLIENT_ID names through the client-credentials\n" +
-			"grant, requests a token per run, and stores nothing. There is no login.",
+			"With ICB_CLIENT_SECRET set, icb authenticates as the service client\n" +
+			"ICB_CLIENT_ID names, through the client-credentials grant. It requests a\n" +
+			"token per run and stores nothing, so login and logout refuse.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(newAuthLoginCommand(), newAuthLogoutCommand(), newAuthStatusCommand(), newAuthTokenCommand())
@@ -156,7 +156,7 @@ func newAuthTokenCommand() *cobra.Command {
 type authMode string
 
 const (
-	// modeLogin is the token a person logged this machine in for.
+	// modeLogin is the device grant a person logged this machine in through.
 	modeLogin authMode = "login"
 	// modeService is the client-credentials grant ICB_CLIENT_SECRET selects.
 	modeService authMode = "service"
@@ -220,7 +220,8 @@ func newAuthStatusCommand() *cobra.Command {
 			// A rejected session exits non-zero for the same reason being logged
 			// out does: nothing the caller runs next will work until they log in.
 			// An unverified login exits zero, because its stored token may still
-			// work. A service stores none, so for it logged_in is already false.
+			// work. An unverified service exits 1 through logged_in, which
+			// serviceStatus sets only for a live session.
 			if !report.LoggedIn || report.Session == goclilogin.SessionRejected {
 				return exitCode(1)
 			}

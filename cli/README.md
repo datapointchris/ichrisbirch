@@ -118,9 +118,9 @@ header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
 authorizing the token. `cli/internal/config/config.go` sets it as
 `defaultAPIBase`.
 
-Authelia does not carry the audience through the device grant — `aud` comes
-back empty — so cross-product isolation rests on the `client_id` claim, and the
-API requires it to start with `icb-cli-` or `icb-svc-`.
+Authelia leaves `aud` empty on the device grant and the client-credentials grant
+alike, so cross-product isolation rests on the `client_id` claim. The API
+requires it to start with `icb-cli-` or `icb-svc-`.
 
 A service runs icb with no person present to approve a login. It sets
 `ICB_CLIENT_ID` to its confidential client, `icb-svc-<machine>`, and
@@ -129,7 +129,7 @@ refused, because the default is the person's client. icb then requests a token
 through the client-credentials grant on each run, asking for
 `icb.project-items.read`, and stores nothing. `auth login` and `auth logout`
 refuse in that mode. The API never resolves that token to a user, and it answers
-403 on every route outside the project-item reads.
+403 on every route outside the reads the `icb projects items` commands make.
 
 The login flow, the keychain store and the refresh are
 [goclilogin](https://github.com/datapointchris/goclilogin), shared with the
@@ -140,9 +140,9 @@ library's README carries the mechanism.
 
 `icb auth status` reports `live`, `rejected` or `unverified` rather than
 predicting a refresh, since a stored token says what this machine holds and not
-what Authelia will honor. A rejected session exits 1. `--json` names the grant it
-checked in `mode`, `login` or `service`. A service stores no token, so its status
-requests one, and exits 1 unless the provider grants it.
+what Authelia will honor. A rejected session exits 1. The `--json` output names
+the grant it checked in `mode`, either `login` or `service`. A service stores no
+token, so its status requests one. It exits 1 unless the provider grants it.
 
 `icb auth token` prints the current access token for scripting:
 

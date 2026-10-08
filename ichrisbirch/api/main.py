@@ -99,7 +99,7 @@ def create_api(settings: Settings) -> FastAPI:
     logger.info('middleware_added', middleware='CORSMiddleware')
 
     deps = [Depends(get_current_user)]
-    # A router with a route in `client_scopes.SCOPE_ROUTES` takes these. Every other router takes `deps`.
+    # A route listed in `client_scopes.SCOPE_ROUTES` still answers a scoped client 403 unless its router takes these.
     scoped_deps = [Depends(get_current_user_or_scoped_client)]
 
     api.include_router(endpoints.home.router, prefix='', include_in_schema=False)

@@ -126,8 +126,8 @@ func TestService_StatusAsksTheProvider(t *testing.T) {
 	}
 }
 
-// A service stores no token, so a provider it cannot reach means the next
-// command fails, and a job gating on status has to see that.
+// A service stores no token, so with the provider down its next command fails
+// too. A job gating on status has to see that.
 func TestService_StatusWithTheProviderDownExitsOne(t *testing.T) {
 	asService(t, "http://127.0.0.1:9", "http://127.0.0.1:9", serviceSecret)
 	out, err := runService(t, "auth", "status", "--json")
