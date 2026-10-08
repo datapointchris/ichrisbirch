@@ -105,8 +105,8 @@ table.
 
 `port already allocated` on a stack that looks correct means a `ports` list
 appended instead of replacing. Compose appends `ports` and `volumes` across
-files unless the override carries `!override`. `icbops testing docker config`
-prints the resolved result, which is where a doubled mapping shows up.
+files unless the override carries `!override`. `icbops testing docker` prints
+the resolved result, which is where a doubled mapping shows up.
 
 ## E2E tests
 
@@ -169,7 +169,7 @@ themselves.
 Docker socket, so anything touching container status behaves differently. Vue's
 health check waits longer, because `npm install` runs from scratch.
 
-Read `icbops testing docker config` before blaming a line in the CI file. Most
+Read `icbops testing docker` before blaming a line in the CI file. Most
 of what it declares is already set by `docker-compose.test.yml`, so a field
 that looks like CI's doing is not.
 

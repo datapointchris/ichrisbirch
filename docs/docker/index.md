@@ -37,7 +37,7 @@ standalone.
 | `docker-compose.infra.yml` | Production Traefik, Postgres and Redis             |
 | `docker-compose.app.yml`   | Production api, vue and scheduler, one color       |
 
-`icbops {dev,testing,prod} docker config [service]` prints the merged result for
+`icbops {dev,testing,prod} docker [service]` prints the merged result for
 an environment. No single file shows that, because each one carries only its
 own overrides.
 

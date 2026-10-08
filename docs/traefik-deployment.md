@@ -205,8 +205,8 @@ icbops ssl-manager validate dev    # Validate certificates
 icbops routing generate
 
 # See fully merged Docker Compose output (debug overrides)
-icbops dev docker config [service]
-icbops testing docker config [service]
+icbops dev docker [service]
+icbops testing docker [service]
 ```
 
 ## SSL certificate management

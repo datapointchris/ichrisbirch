@@ -60,7 +60,7 @@ So `!override` belongs on `ports` and `volumes` and nowhere else. Putting it on
 override did not name is gone. Those merge per key already, so there was
 nothing to suppress.
 
-`icbops {dev,testing,prod} docker config [service]` prints the resolved result.
+`icbops {dev,testing,prod} docker [service]` prints the resolved result.
 Read that rather than reasoning from the override file, because a field the
 base already set looks like the override's doing.
 

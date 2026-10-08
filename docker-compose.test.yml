@@ -1,5 +1,5 @@
 # Test overrides — only what differs from base (docker-compose.yml)
-# Verify merged result: icbops testing docker config
+# Verify merged result: icbops testing docker
 #
 # `on-failure:3` stops a service after three failed starts, so a removed
 # checkout or a corrupt volume cannot restart-loop. Docker never restarts
