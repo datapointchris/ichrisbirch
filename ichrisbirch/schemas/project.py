@@ -19,7 +19,7 @@ class ProjectCreate(ProjectConfig):
     id: UUID | None = None
     name: str
     description: str | None = None
-    kind: str = 'build'
+    kind: str = 'life'
     status: str = 'active'
     status_reason: str | None = None
     position: int = 0

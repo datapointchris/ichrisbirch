@@ -20,10 +20,10 @@ from scripts.seed.base import SeedResult
 
 # (name, description, kind, status, status_reason)
 PROJECT_DATA = [
-    ('Home Renovation', 'Kitchen and bathroom remodel planning', 'build', 'active', None),
+    ('Home Renovation', 'Kitchen and bathroom remodel planning', 'life', 'active', None),
     ('Learn Kubernetes', 'Self-study track for container orchestration', 'life', 'active', None),
     ('Career Development', 'Skills growth and networking goals', 'life', 'active', None),
-    ('Side Project: Budget CLI', 'Command-line tool for personal finance tracking', 'build', 'active', None),
+    ('Kitchen Garden', 'Raised beds and a watering schedule', 'build', 'active', None),
     ('Fitness Goals 2026', 'Strength training and running milestones', 'life', 'active', None),
     ('Portland Trip Planning', 'Research neighborhoods, flights, and activities', 'chore', 'active', None),
     ('Garage Shelving', 'Build out storage along the back wall', 'build', 'completed', None),
@@ -31,7 +31,7 @@ PROJECT_DATA = [
     # Deliberately reuses an active project's name: only active projects hold a
     # name, so a seeded database exercises the partial unique index and the
     # resolution rule rather than passing because nothing ever collides.
-    ('Home Renovation', 'The 2024 attempt, abandoned', 'build', 'dropped', 'Quoted at twice the budget'),
+    ('Home Renovation', 'The 2024 attempt, abandoned', 'life', 'dropped', 'Quoted at twice the budget'),
 ]
 
 ITEM_TITLES = [

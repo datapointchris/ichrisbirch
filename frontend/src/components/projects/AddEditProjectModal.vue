@@ -93,7 +93,7 @@ const kindOptions = [
   { value: 'life', label: 'Life — everything that is neither' },
 ]
 
-const DEFAULT_KIND: ProjectKind = 'build'
+const DEFAULT_KIND: ProjectKind = 'life'
 
 const form = reactive({
   name: '',
