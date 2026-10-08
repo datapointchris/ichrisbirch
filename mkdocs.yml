@@ -116,7 +116,6 @@ nav:
   - Developer Setup: developer_setup.md
   - API:
       - Overview: api/index.md
-      - Authentication Strategies: api/authentication_strategies.md
       - Client:
           - Overview: api/client/index.md
           - Authentication: api/client/auth.md
