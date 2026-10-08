@@ -604,12 +604,24 @@ jobs:
       - run: npx playwright test
         working-directory: frontend
 
-      - name: Upload Playwright report
+      - name: Save the stack's logs
+        if: failure()
+        run: |
+          mkdir -p frontend/test-results
+          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
+            --project-name icb-test logs --no-color --timestamps > frontend/test-results/stack.log
+
+      # The reporters are list and JSON, so no HTML report exists. The evidence
+      # is test-results/ (first-retry traces, screenshots, page snapshots, the
+      # stack's logs) and the JSON report.
+      - name: Upload Playwright evidence
         uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-report
-          path: frontend/playwright-report/
+          name: playwright-evidence
+          path: |
+            frontend/test-results/
+            /tmp/ichrisbirch-playwright-report.json
           retention-days: 7
 
       - name: Stop test stack
