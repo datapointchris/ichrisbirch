@@ -75,8 +75,8 @@ func handleAPIError(err error) error {
 		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
 	}
 	if errors.As(err, &apiErr) && apiErr.Forbidden() {
-		if cfg := config.Load(); cfg.IsService() {
-			return fmt.Errorf("service client %s may not reach that route: its scope covers the `icb projects items` reads", cfg.ClientID)
+		if cfg := config.Load(); cfg.IsService() && apiErr.Message != "" {
+			return fmt.Errorf("service client %s: %s", cfg.ClientID, apiErr.Message)
 		}
 	}
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {

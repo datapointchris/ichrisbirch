@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.client_scopes import permits
+from ichrisbirch.api.client_scopes import reachable
 from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
@@ -329,7 +330,7 @@ def refuse_scoped_client(client: ScopedClient | None) -> None:
     """
     if client is not None:
         logger.warning('scoped_client_outside_scopes', client_id=client.client_id)
-        raise ForbiddenException(Refusal.OUTSIDE_CLIENT_SCOPES, logger)
+        raise ForbiddenException(f'{Refusal.OUTSIDE_CLIENT_SCOPES}; {reachable(client.scopes)}', logger)
 
 
 def get_current_user(

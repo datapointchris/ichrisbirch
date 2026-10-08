@@ -6,8 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"regexp"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
 const (
@@ -162,17 +166,69 @@ func TestService_ASecretWithoutItsClientIsRefused(t *testing.T) {
 	}
 }
 
-func TestService_ARouteOutsideTheScopeNamesTheScope(t *testing.T) {
+func TestService_ARouteOutsideTheScopeReportsTheAPIsDetail(t *testing.T) {
+	detail := "Access denied: Route is outside this client's scopes; they reach only GET /project-items/"
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
-		_, _ = w.Write([]byte(`{"detail":"Route is outside this client's scopes"}`))
+		_ = json.NewEncoder(w).Encode(map[string]string{"detail": detail})
 	}))
 	t.Cleanup(api.Close)
 	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
 
 	_, err := runService(t, "projects", "items", "search", "sync")
-	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), "icb projects items") {
-		t.Errorf("got %v, want the client and what its scope covers named", err)
+	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), detail) || strings.Contains(err.Error(), "auth login") {
+		t.Errorf("got %v, want the client and the API's detail whole, and no login suggested", err)
+	}
+}
+
+// The fake provider grants whatever scope icb asks for, so a scope the API
+// renamed, or a route `search` calls that the API stopped listing, passes every
+// other test here and answers 403 to every scheduled run.
+func TestService_SearchCallsARouteTheRequestedScopeReaches(t *testing.T) {
+	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
+	if err != nil {
+		t.Fatalf("read the API's scope table — run tests/ichrisbirch/api/test_client_scopes.py to write it: %v", err)
+	}
+	var reaches map[string][]string
+	if err := json.Unmarshal(raw, &reaches); err != nil {
+		t.Fatalf("decode the API's scope table: %v", err)
+	}
+
+	var sent []string
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sent = append(sent, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
+		t.Fatalf("search as a service: %v", err)
+	}
+
+	// Every {name} in these templates is a UUID. Matched as any segment,
+	// /project-items/{id}/ would also take /project-items/search/, which FastAPI
+	// routes to search.
+	uuid := `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`
+	wildcard := regexp.MustCompile(`\{[^}]*\}`)
+	scopes := config.Load().Service().Scopes
+	var listed []*regexp.Regexp
+	for _, scope := range scopes {
+		for _, pattern := range reaches[scope] {
+			literals := wildcard.Split(pattern, -1)
+			for i, literal := range literals {
+				literals[i] = regexp.QuoteMeta(literal)
+			}
+			listed = append(listed, regexp.MustCompile("^"+strings.Join(literals, uuid)+"$"))
+		}
+	}
+	if len(sent) == 0 {
+		t.Fatal("search sent nothing to hold against the scopes")
+	}
+	for _, request := range sent {
+		if !slices.ContainsFunc(listed, func(re *regexp.Regexp) bool { return re.MatchString(request) }) {
+			t.Errorf("search sent %s, which the API lists for none of %v", request, scopes)
+		}
 	}
 }

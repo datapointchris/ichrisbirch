@@ -26,3 +26,9 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
 def permits(scopes: frozenset[str], method: str, route: BaseRoute | None) -> bool:
     template = getattr(route, 'path', None)
     return any((method, template) in SCOPE_ROUTES.get(scope, frozenset()) for scope in scopes)
+
+
+def reachable(scopes: frozenset[str]) -> str:
+    """What `scopes` reach, so a refused client reads what it may call from the table that refused it."""
+    routes = sorted({f'{method} {template}' for scope in scopes for method, template in SCOPE_ROUTES.get(scope, frozenset())})
+    return f'they reach only {", ".join(routes)}' if routes else 'they reach no route'

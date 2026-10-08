@@ -74,3 +74,8 @@ reason, and a scoped client that names no `timezone` gets UTC.
 `permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
 requests every listed route as a scoped client and requires 200, so a renamed
 path parameter fails it with 403.
+
+A refused scoped client's 403 detail names the routes its scopes reach. The same
+test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`,
+and the CLI's suite requires every request `icb projects items search` sends as a
+service to match a route listed there for the scope the CLI requests.

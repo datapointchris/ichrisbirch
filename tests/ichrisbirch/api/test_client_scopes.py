@@ -4,6 +4,8 @@
 covered in `test_oidc_auth.py`.
 """
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -20,6 +22,7 @@ from tests.util import show_status_and_response
 SCOPE = 'icb.project-items.read'
 CLIENT = ScopedClient(client_id='icb-svc-worker', scopes=frozenset({SCOPE}))
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
+SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 
 # One request per route `SCOPE` lists, keyed by its template.
 SCOPED_URLS = {
@@ -75,6 +78,7 @@ def test_a_scoped_client_is_refused_off_its_scopes(as_caller, method, url):
     response = as_caller.caller(CLIENT).request(method, url, json={'title': 'written by a scoped client'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
     assert Refusal.OUTSIDE_CLIENT_SCOPES in response.json()['detail']
+    assert 'they reach only GET /project-items/, ' in response.json()['detail']
 
 
 @pytest.mark.parametrize(('method', 'url'), [('GET', '/tasks/'), ('PATCH', '/project-items/{item}/')])
@@ -89,6 +93,7 @@ def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):
     client = as_caller.caller(ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.unknown'})))
     response = client.get('/project-items/')
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
+    assert 'they reach no route' in response.json()['detail']
 
 
 def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):
@@ -100,3 +105,17 @@ def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):
 def test_no_credentials_on_a_scoped_router_is_still_401(as_caller):
     response = as_caller.caller(None).get('/project-items/')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, show_status_and_response(response)
+
+
+def test_the_document_the_cli_reads_holds_the_scope_table():
+    """The CLI's suite holds the scope it requests against this file, and its fake provider grants any scope.
+
+    A renamed scope would otherwise pass both suites and answer 403 to every scheduled run. A stale
+    file is rewritten here and the test fails, so the change is committed beside the table.
+    """
+    table = {scope: sorted(f'{method} {template}' for method, template in SCOPE_ROUTES[scope]) for scope in sorted(SCOPE_ROUTES)}
+    document = json.dumps(table, indent=2) + '\n'
+    if not SCOPES_DOCUMENT.exists() or SCOPES_DOCUMENT.read_text() != document:
+        SCOPES_DOCUMENT.parent.mkdir(exist_ok=True)
+        SCOPES_DOCUMENT.write_text(document)
+        pytest.fail(f'{SCOPES_DOCUMENT} did not hold SCOPE_ROUTES and has been rewritten; commit it')

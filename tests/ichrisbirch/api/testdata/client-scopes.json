@@ -1,0 +1,11 @@
+{
+  "icb.project-items.read": [
+    "GET /project-items/",
+    "GET /project-items/blocked/",
+    "GET /project-items/search/",
+    "GET /project-items/{id}/",
+    "GET /project-items/{id}/blockers/",
+    "GET /project-items/{item_id}/tasks/",
+    "GET /projects/{id}/items/"
+  ]
+}
