@@ -225,8 +225,8 @@ async def require_update_access(
     settings: Settings = Depends(get_settings),
 ) -> bool:
     """
-    Custom dependency for user update access:
-    - Users can update their own data
+    Custom dependency for user update access, returning whether the caller may change `is_admin`:
+    - Users can update their own data, except `is_admin`
     - Admin users can update any user data
     - Internal services can update any user data
     """
@@ -242,7 +242,7 @@ async def require_update_access(
     if current_user:
         # Check if user can update this specific user data
         require_own_data_or_admin(current_user, target_user_id=id, operation='update your own user data')
-        return True
+        return current_user.is_admin
 
     # No valid authentication found
     raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
@@ -253,13 +253,16 @@ async def update(
     id: int,
     update: schemas.UserUpdate,
     session: DbSession,
-    _: bool = Depends(require_update_access),
+    may_change_is_admin: bool = Depends(require_update_access),
 ):
     """Update a user.
 
     Users can only update their own data unless they are admin or internal service.
+    Only an admin or an internal service may send `is_admin`.
     """
     update_data = update.model_dump(exclude_unset=True)
+    if 'is_admin' in update_data and not may_change_is_admin:
+        raise ForbiddenException(Refusal.ADMIN_OR_INTERNAL_REQUIRED, logger)
     logger.debug('user_update', user_id=id, update_data=update_data)
 
     if db_user := session.get(models.User, id):
