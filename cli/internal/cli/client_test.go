@@ -51,6 +51,18 @@ func TestHandleAPIError_UnauthorizedPointsAtLogin(t *testing.T) {
 	}
 }
 
+func TestHandleAPIError_AConflictIsTheAPIsSentence(t *testing.T) {
+	conflict := &api.APIError{StatusCode: http.StatusConflict, Status: "409 Conflict", Message: "#906 is claimed by session-one"}
+	got := handleAPIError(conflict)
+	if got.Error() != conflict.Message {
+		t.Errorf("got %q, want the API's sentence alone", got)
+	}
+	var apiErr *api.APIError
+	if !errors.As(got, &apiErr) || apiErr.StatusCode != http.StatusConflict {
+		t.Errorf("got %#v, want the status still reachable", got)
+	}
+}
+
 func TestHandleAPIError_PassesOtherErrorsThrough(t *testing.T) {
 	original := errors.New("the network is on fire")
 	if got := handleAPIError(original); !errors.Is(got, original) {

@@ -55,8 +55,19 @@ func handleAPIError(err error) error {
 	if errors.As(err, &apiErr) && apiErr.Unauthorized() {
 		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
 	}
+	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {
+		return refusal{apiErr}
+	}
 	return err
 }
+
+// refusal is a 409 the API explained: it understood the request and declined
+// it, so its sentence is the whole error and the status prefix is transport.
+type refusal struct{ *api.APIError }
+
+func (r refusal) Error() string { return r.Message }
+
+func (r refusal) Unwrap() error { return r.APIError }
 
 // handleArgumentAPIError is handleAPIError for a resource whose arguments the
 // API validates, so its 422 is a usage error.
