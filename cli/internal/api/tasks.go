@@ -50,7 +50,7 @@ type TaskCreateInput struct {
 }
 
 // TaskUpdateInput is a partial update (PATCH /tasks/{id}/): only changed fields
-// are sent. Completing, dropping and snoozing have dedicated calls.
+// are sent. Completing, dropping, reopening and snoozing have dedicated calls.
 type TaskUpdateInput struct {
 	Name       *string `json:"name,omitempty"`
 	Notes      *string `json:"notes,omitempty"`
@@ -167,7 +167,7 @@ func (c *Client) UpdateTask(ctx context.Context, id int, in TaskUpdateInput) (Ta
 }
 
 // SetTaskPinned pins or unpins a task. A pinned task sorts ahead of every
-// unpinned one.
+// unpinned one. Pinning a closed task answers 409.
 func (c *Client) SetTaskPinned(ctx context.Context, id int, pinned bool) (Task, error) {
 	return c.UpdateTask(ctx, id, TaskUpdateInput{Pinned: &pinned})
 }

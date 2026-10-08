@@ -8,8 +8,12 @@ completed. A copy made by an autotask records which template made it.
 `tasks.priority` and `autotasks.priority` stay, nullable, holding the ranks
 they had. Nothing writes them after this.
 
-Every new NOT NULL column has a constant server default, because the release
-serving while this runs inserts tasks without them.
+Every new NOT NULL column has a server default, because the release serving
+while this runs inserts tasks without them.
+
+Only an open task may be pinned, and only a dropped one may carry a reason.
+The release serving while this runs knows neither rule, so its complete
+endpoint on a task the backfill pinned answers 500 until traffic switches.
 
 Existing copies are linked to their template by exact name, which is the only
 link the schema had. A one-off task sharing a template's name is linked too.

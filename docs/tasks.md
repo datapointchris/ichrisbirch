@@ -28,7 +28,7 @@ still reaches the top once its 180 days run out. Both sit on one scale, so
 they compare without a second "importance" field. Something more important is
 something that should be done sooner, which a shorter window already says.
 
-## Moving a task
+## Every action on a task writes a column, never a position
 
 | Action | What it writes |
 | --- | --- |
@@ -36,6 +36,7 @@ something that should be done sooner, which a shorter window already says.
 | Pin | `pinned` = true. Pinned tasks sort ahead of every other. |
 | Drag | a `rank_at` between the two neighbors it lands between |
 | Drop | `drop_date` and an optional `drop_reason` |
+| Reopen | clears `complete_date`, `drop_date` and `drop_reason`, and keeps `rank_at` |
 
 `rank_at` is a timestamp rather than a day, so there is always a moment
 between two neighbors to drag into.
@@ -67,11 +68,11 @@ An autotask copy is created on the day it is due. Its window is the template's
 `window_days`, or its category's when the template sets none. The copy records
 its template in `tasks.autotask_id`.
 
-Most templates are `completion` anchored. The next copy counts from when the
-last one was completed or dropped, and only one copy is open at a time.
+Most templates are `completion` anchored. The next copy counts from the later
+of the last copy's close and the last run, and only one copy is open at a time.
 `docs/scheduler.md` describes both anchors.
 
-## Rejected designs
+## A positional rank, buckets, read-time aging and an oldest-task slot were rejected
 
 *Rejected:* a positional rank that a new task joins at the top. Each arrival
 pushes every open task down one place, and nothing moves a task back up.

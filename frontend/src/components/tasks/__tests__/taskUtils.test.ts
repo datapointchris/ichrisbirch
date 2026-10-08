@@ -17,11 +17,11 @@ describe('placementBetween', () => {
     expect(placement).toEqual({ rankAt: '2026-03-02T00:00:00.000Z', pinned: false })
   })
 
-  it('lands a day ahead of the first task when dropped at the top', () => {
+  it('lands a day ahead of the first task when dragged to the top', () => {
     expect(placementBetween(undefined, ranked('2026-03-03T00:00:00Z')).rankAt).toBe('2026-03-02T00:00:00.000Z')
   })
 
-  it('lands a day behind the last task when dropped at the bottom', () => {
+  it('lands a day behind the last task when dragged to the bottom', () => {
     expect(placementBetween(ranked('2026-03-03T00:00:00Z'), undefined).rankAt).toBe('2026-03-04T00:00:00.000Z')
   })
 
@@ -30,12 +30,12 @@ describe('placementBetween', () => {
     expect(placementBetween(ranked('2026-09-01T00:00:00Z', true), ranked('2026-03-03T00:00:00Z')).pinned).toBe(false)
   })
 
-  it('ignores a pinned neighbor above as a bound for an unpinned drop', () => {
+  it('ignores a pinned neighbor above as a bound for an unpinned task', () => {
     const placement = placementBetween(ranked('2027-01-01T00:00:00Z', true), ranked('2026-03-03T00:00:00Z'))
     expect(placement.rankAt).toBe('2026-03-02T00:00:00.000Z')
   })
 
-  it('stays pinned when dropped at the bottom of the pinned group with nothing below', () => {
+  it('stays pinned when dragged to the bottom of the pinned group with nothing below', () => {
     expect(placementBetween(ranked('2026-03-03T00:00:00Z', true), undefined)).toEqual({
       rankAt: '2026-03-04T00:00:00.000Z',
       pinned: true,

@@ -12,8 +12,8 @@ import (
 // run bookkeeping (first_run_date/last_run_date/run_count). notes is nullable.
 //
 // WindowDays is the window each copy gets, nil meaning the category's. Anchor is
-// "completion" (the next copy counts from when the last closed) or "calendar"
-// (fixed steps from the first run).
+// "completion" (the next copy counts from the later of the last close and the
+// last run) or "calendar" (fixed steps from the first run).
 type AutoTask struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`

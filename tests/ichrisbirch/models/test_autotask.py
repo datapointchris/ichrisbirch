@@ -112,7 +112,6 @@ def completion_template(frequency: str = 'Weekly', ran: datetime = datetime(2026
 
 
 def test_a_completion_template_counts_from_the_last_close():
-    """A copy finished late moves the next one: nails grow from the last trim."""
     autotask = completion_template()
 
     closed = datetime(2026, 9, 2, 18, tzinfo=UTC)

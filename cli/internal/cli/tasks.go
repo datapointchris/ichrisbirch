@@ -25,8 +25,9 @@ func newTasksCommand() *cobra.Command {
 			"Each task has a window in days, its category's unless one is given. A task\n" +
 			"climbs the list as its window runs out, so a short window comes up sooner\n" +
 			"than a long one added earlier. The order is the whole signal: no date is\n" +
-			"shown. `snooze` restarts a task's window, `pin` holds it at the top, and\n" +
-			"`drop` lets it go while keeping it on record.",
+			"shown. `snooze` restarts a task's window, `pin` holds it at the top,\n" +
+			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
+			"completed or dropped one.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd,
@@ -372,8 +373,8 @@ func newTasksCompleteCommand() *cobra.Command {
 	return cmd
 }
 
-// taskActionCommand is the shape snooze, pin, unpin and drop share: one task id,
-// one call, and a one-line confirmation or the task as JSON.
+// taskActionCommand is the shape snooze, pin, unpin, drop and reopen share: one
+// task id, one call, and a one-line confirmation or the task as JSON.
 func taskActionCommand(use, short, long, example, done string, act func(*cobra.Command, *api.Client, int) (api.Task, error)) *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
@@ -452,7 +453,8 @@ func newTasksDropCommand() *cobra.Command {
 		"drop <task-id> [--reason <why>]",
 		"Let a task go without completing it",
 		"A dropped task leaves the list and stays on record under --status dropped.\n"+
-			"It does not count as completed. --reason is optional and kept with it.",
+			"It does not count as completed. --reason is optional and kept with it.\n"+
+			"icb tasks reopen brings it back.",
 		"  icb tasks drop 42 --reason \"bought one instead\"",
 		"Dropped",
 		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {

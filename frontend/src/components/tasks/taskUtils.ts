@@ -22,10 +22,10 @@ export interface DropPlacement {
   pinned: boolean
 }
 
-// Where a task dropped between `above` and `below` sorts. It takes the pinned
-// state of the task below it, so a drop just under the pinned group stays out
-// of it. A pinned neighbor never bounds an unpinned task, since pinned tasks
-// sort first whatever their rank.
+// Where a task dragged between `above` and `below` sorts. It takes the pinned
+// state of the task below it, so a task placed just under the pinned group
+// stays out of it. A pinned neighbor never bounds an unpinned task, since
+// pinned tasks sort first whatever their rank.
 export function placementBetween(above: Task | undefined, below: Task | undefined): DropPlacement {
   const pinned = below ? below.pinned : (above?.pinned ?? false)
   const lower = above && above.pinned === pinned ? new Date(above.rank_at).getTime() : undefined

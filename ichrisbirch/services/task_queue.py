@@ -1,9 +1,10 @@
 """Where a task sits in the open list.
 
 Open tasks read in `(pinned DESC, rank_at ASC, add_date ASC)` order. A task's
-`rank_at` is when it should reach the top: creation, or the last snooze, plus
-its window. Every path that makes a task goes through `new_task`, so the window
-falls back the same way whether the API, an autotask or autofun made it.
+`rank_at` is when it should reach the top: creation or the last snooze plus its
+window, or wherever a drag put it. The API, the autotask run endpoint and the
+scheduler's autotask and autofun jobs all make tasks through `new_task`, so the
+window falls back to the category's the same way in each.
 """
 
 from datetime import UTC

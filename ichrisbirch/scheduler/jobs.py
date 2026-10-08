@@ -249,7 +249,7 @@ def check_and_run_autofun(settings: Settings) -> None:
                 session.delete(record)
                 logger.info('autofun_task_deleted', fun_item_id=record.fun_item_id)
             elif task.drop_date is not None:
-                # Dropped is a pass on this one for now — free the slot, item stays available
+                # Task was dropped — free the slot, item stays available
                 session.delete(record)
                 logger.info('autofun_task_dropped', fun_item_id=record.fun_item_id)
             elif task.complete_date is not None:

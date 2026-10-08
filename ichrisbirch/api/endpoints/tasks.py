@@ -52,7 +52,7 @@ async def read_many(
     start_date: str | None = None,
     end_date: str | None = None,
 ):
-    """List open tasks in queue order: pinned first, then by `rank_at`.
+    """List tasks of one status, open by default. Open tasks come pinned first, then by `rank_at`.
 
     The default narrows because closed tasks accumulate without bound, per
     `cli-design.md` § "A default narrows only where the hidden class grows
@@ -66,10 +66,11 @@ async def read_many(
     every status rather than one per path.
 
     The date bounds narrow on `drop_date` for dropped tasks and on
-    `complete_date` otherwise, so an open task is outside every range. They live here rather than only on `/completed/` for the same reason
-    `status` does: this is the read the CLI makes, and it has to be able to
-    express the whole question rather than sending the caller to another path
-    that answers a different response model and ignores `limit`.
+    `complete_date` otherwise, so an open task is outside every range. They
+    live here rather than only on `/completed/` for the same reason `status`
+    does: this is the read the CLI makes, and it has to be able to express the
+    whole question rather than sending the caller to another path that answers
+    a different response model and ignores `limit`.
 
     `category` narrows here rather than in the caller, per `cli-design.md`
     § "Filtering is server-side" — a client filtering after the fact has to pull

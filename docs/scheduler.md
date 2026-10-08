@@ -47,7 +47,7 @@ every run:
   run. An autotask's first and last runs are instants, and the zone turns
   each into a day on the admin's calendar.
 
-## An autotask counts from its last copy's close or from its first run
+## An autotask counts from its last close and run, or from its first run
 
 Each template has an `anchor`, and the anchor decides the day its next copy is
 due. Both count in calendar units, which needs a pendulum `Date`: a pendulum

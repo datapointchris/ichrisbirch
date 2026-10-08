@@ -17,7 +17,9 @@ class AutoTaskCreate(AutoTaskConfig):
     notes: str | None = None
     category: str
     frequency: str
-    window_days: WindowDays | None = Field(None, description="Days each copy gets before it sorts as due. Omitted, the category's window.")
+    window_days: WindowDays | None = Field(
+        None, description="Days each copy gets before it sorts as due. The category's window when omitted."
+    )
     anchor: str = 'completion'
     max_concurrent: int | None = None
 

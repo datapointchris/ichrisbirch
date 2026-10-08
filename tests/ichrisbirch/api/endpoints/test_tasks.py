@@ -148,7 +148,7 @@ class TestQueueOrder:
         assert 'Hobby' in response.json()['detail']
 
     def test_a_shorter_window_sorts_ahead_of_an_older_longer_one(self, txn_api_logged_in):
-        """The point of the redesign: a new task does not land on top just for being new."""
+        """Research is made first and still sorts last, so a new task does not land on top for being new."""
         client, _ = txn_api_logged_in
         research = create(client, name='Projection mapping', category='Research')
         nails = create(client, name='Trim nails', category='Dingo')
@@ -511,7 +511,6 @@ class TestTaskStatusFilter:
         assert not ids['open'] & ids['completed'], 'a task cannot be both'
 
     def test_completed_orders_by_when_it_was_finished(self, task_crud_tester):
-        """A place in the queue stops meaning anything once the task leaves it."""
         client, _ = task_crud_tester
         tasks = self.names(client, {'status': 'completed'})
         dates = [t['complete_date'] for t in tasks]

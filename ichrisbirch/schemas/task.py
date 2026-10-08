@@ -19,7 +19,7 @@ class TaskCreate(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    window_days: WindowDays | None = Field(None, description="Days until the task sorts as due. Omitted, the category's window.")
+    window_days: WindowDays | None = Field(None, description="Days until the task sorts as due. The category's window when omitted.")
     pinned: bool = False
 
 

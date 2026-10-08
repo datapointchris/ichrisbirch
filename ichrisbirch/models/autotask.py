@@ -15,8 +15,8 @@ from sqlalchemy.orm import mapped_column
 
 from ichrisbirch.database.base import Base
 
-# `completion` counts the next copy from when the last one was completed or
-# dropped. `calendar` counts it from the first run's day in fixed steps.
+# `completion` counts the next copy from the later of the last copy's close and
+# the last run. `calendar` counts it from the first run's day in fixed steps.
 AUTOTASK_ANCHORS = ['calendar', 'completion']
 
 AUTOTASK_FREQUENCIES = [
@@ -67,8 +67,8 @@ class AutoTask(Base):
 
     `window_days` is the window each copy gets, and falls back to the category's
     when unset. `priority` is a positional rank that nothing reads or writes.
-    Rows keep the value they hold. `max_concurrent` caps open copies
-    for a `calendar` template; a `completion` template never has more than one.
+    Rows keep the value they hold. `max_concurrent` caps open copies for a
+    `calendar` template; a `completion` template never has more than one.
     """
 
     __tablename__ = 'autotasks'
@@ -112,10 +112,10 @@ class AutoTask(Base):
     def next_completion_day(self, zone: ZoneInfo, *, last_closed_at: datetime | None) -> date:
         """One step after the later of the last close and the last run.
 
-        A copy finished late moves every later one, which is the point: nails
-        grow from the last trim, not from the calendar. The last run counts too,
-        because a copy deleted while open never closes. Counting from the close
-        before it would make a new copy the next night.
+        A copy finished late moves every later one: nails grow from the last
+        trim, not from the calendar. The last run counts too, because a copy
+        deleted while open never closes. Counting from the close before it would
+        make a new copy the next night.
         """
         latest = self.last_run_date if last_closed_at is None else max(last_closed_at, self.last_run_date)
         base = latest.astimezone(zone).date()

@@ -24,7 +24,7 @@ export const TASK_CATEGORIES: TaskCategory[] = [
 
 export const AUTOTASK_FREQUENCIES: AutoTaskFrequency[] = ['Daily', 'Weekly', 'Biweekly', 'Monthly', 'Quarterly', 'Semiannually', 'Yearly']
 
-// `completion` counts the next copy from when the last one closed; `calendar` keeps fixed dates.
+// `completion` counts the next copy from the later of the last close and the last run; `calendar` keeps fixed dates.
 export const AUTOTASK_ANCHORS: { value: AutoTaskAnchor; label: string }[] = [
   { value: 'completion', label: 'Completion' },
   { value: 'calendar', label: 'Calendar' },
