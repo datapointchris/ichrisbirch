@@ -566,9 +566,10 @@ func newIssuesClaimCommand() *cobra.Command {
 			"shows what it would take. --repo, --type, --label and --initiative narrow\n" +
 			"that queue, and decisions are left out unless --type decision asks.\n" +
 			"\n" +
-			"Naming an issue takes that one. It is refused while someone else holds it,\n" +
-			"while it is in triage or closed, and while it waits on an open dependency.\n" +
-			"Claiming one you already hold extends the claim.\n" +
+			"Naming an issue takes that one, on the conditions the queue applies. It is\n" +
+			"refused while someone else holds it, while it is in triage or closed, while\n" +
+			"it waits on an open dependency or an open child, and before its deferral day.\n" +
+			"The refusal names which. Claiming one you already hold extends the claim.\n" +
 			"\n" +
 			"A claim lasts --minutes, or the API's default without it. One that runs out\n" +
 			"returns the issue to the queue, and `release` returns it sooner. --claimant\n" +

@@ -149,9 +149,33 @@ def set_labels(session: Session, issue: models.Issue, slugs: list[str]) -> None:
     issue.label_assignments = kept + [models.IssueLabelAssignment(label_id=label_id) for label_id in sorted(wanted - held)]
 
 
+def ensure_parent_open(parent: models.Issue) -> None:
+    """A closed issue takes no unclosed children: a completed one would be finished with work still open."""
+    if parent.is_closed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f'#{parent.number} is {parent.status}. Reopen it before filing work under it.',
+        )
+
+
+def reopen_completed_ancestors(issue: models.Issue, now: datetime) -> None:
+    """Return each completed ancestor to open, since a parent is finished only by its children."""
+    parent = issue.parent
+    while parent is not None and parent.status == 'completed':
+        parent.status = 'open'
+        parent.closed_ts = None
+        parent.updated_ts = now
+        logger.info('issue_reopened_by_child', number=parent.number, child=issue.number)
+        parent = parent.parent
+
+
 def clear_claim(issue: models.Issue) -> None:
     issue.claimed_by = None
     issue.claim_expires_ts = None
+
+
+def numbered(issues: list[models.Issue]) -> str:
+    return ', '.join(f'#{issue.number}' for issue in sorted(issues, key=lambda issue: issue.number))
 
 
 def unprocessable(detail: str) -> HTTPException:
@@ -187,9 +211,10 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
     """Validate a status change and apply everything it implies, in one place.
 
     Closing stamps `closed_ts` and drops the claim. Reopening clears the stamp,
-    the reason and any duplicate link. Leaving `in_progress` for anything but a
-    close releases the claim. The CHECK constraints refuse each of these states
-    too; this exists so a caller gets a 4xx naming the problem.
+    the reason and any duplicate link, and reopens a completed parent. Leaving
+    `in_progress` for anything but a close releases the claim. The CHECK
+    constraints refuse each of these states too; this exists so a caller gets a
+    4xx naming the problem.
     """
     new_status = update_data.pop('status', None)
     if new_status is not None:
@@ -204,10 +229,9 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
     if target == 'completed' and issue.status != 'completed':
         open_children = [child for child in issue.children if not child.is_closed]
         if open_children:
-            numbers = ', '.join(f'#{child.number}' for child in open_children)
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f'#{issue.number} still has open children: {numbers}. Close them first.',
+                detail=f'#{issue.number} still has open children: {numbered(open_children)}. Close them first.',
             )
 
     if target in CLOSED_ISSUE_STATUSES:
@@ -215,6 +239,8 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
             issue.closed_ts = now
         clear_claim(issue)
     else:
+        if issue.is_closed:
+            reopen_completed_ancestors(issue, now)
         issue.closed_ts = None
         if target != 'in_progress':
             clear_claim(issue)
@@ -447,7 +473,9 @@ async def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZo
         ensure_initiative_open(initiative)
         db_issue.initiative_id = initiative.id
     if issue.parent is not None:
-        db_issue.parent_id = resolve_issue(session, issue.parent).id
+        parent = resolve_issue(session, issue.parent)
+        ensure_parent_open(parent)
+        db_issue.parent_id = parent.id
     if issue.discovered_from is not None:
         db_issue.discovered_from_id = resolve_issue(session, issue.discovered_from).id
     depends_on = [resolve_issue(session, ref) for ref in dict.fromkeys(issue.depends_on)]
@@ -489,13 +517,17 @@ async def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbS
             issue.initiative_id = initiative.id
     if 'parent' in update_data:
         ref = update_data.pop('parent')
+        # The relationship, not the column, so a reopen in this same update walks
+        # up from the new parent rather than the one still loaded.
         if ref is None:
-            issue.parent_id = None
+            issue.parent = None
         else:
             parent = resolve_issue(session, ref)
             if parent.id != issue.parent_id:
+                if update_data.get('status', issue.status) not in CLOSED_ISSUE_STATUSES:
+                    ensure_parent_open(parent)
                 ensure_no_wait_cycle(session, parent, issue)
-            issue.parent_id = parent.id
+            issue.parent = parent
     if 'discovered_from' in update_data:
         ref = update_data.pop('discovered_from')
         issue.discovered_from_id = None if ref is None else resolve_issue(session, ref).id
@@ -530,25 +562,43 @@ def claim_conflict(issue: models.Issue) -> str:
     return f'#{issue.number} is claimed by {issue.claimed_by} until {until:%Y-%m-%d %H:%M} UTC'
 
 
+def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]:
+    """Why the ready queue leaves the issue out, a sentence for each reason that holds.
+
+    An issue meeting every condition here and still left out is held: in
+    progress under a live claim, or by a person. That reason is `claim_conflict`.
+    """
+    if issue.is_closed:
+        return [f'#{issue.number} is {issue.status}.']
+    if issue.status == 'triage':
+        return [f'#{issue.number} is in triage. Accept it as open before claiming it.']
+    reasons = []
+    if issue.id in readiness.blocked:
+        blockers = [edge.depends_on for edge in issue.dependencies if not edge.depends_on.is_closed]
+        reasons.append(f'#{issue.number} is blocked by {numbered(blockers)}.')
+    if readiness.open_child_count.get(issue.id):
+        children = [child for child in issue.children if not child.is_closed]
+        reasons.append(f'#{issue.number} is finished by its open children: {numbered(children)}.')
+    if issue.id in readiness.deferred:
+        reasons.append(f'#{issue.number} is deferred until {issue.deferred_until_date}.')
+    return reasons
+
+
 @router.post('/{id}/claim/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
 async def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
     """Take this issue, or extend the claim already held under the same name.
 
-    A blocked issue is refused: its blockers are what to take instead.
+    A named claim meets the conditions the ready queue does, so an agent never
+    holds work it could not finish. Only extending a claim skips them.
     """
-    if issue.is_closed:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'#{issue.number} is {issue.status}')
-    if issue.status == 'triage':
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f'#{issue.number} is in triage. Accept it as open before claiming it.',
-        )
-    blockers = [edge.depends_on for edge in issue.dependencies if not edge.depends_on.is_closed]
-    if blockers:
-        numbers = ', '.join(f'#{b.number}' for b in sorted(blockers, key=lambda b: b.number))
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'#{issue.number} is blocked by {numbers}')
+    extending = issue.status == 'in_progress' and issue.claimed_by == request.claimant
+    today, now = calendar_now(zone)
+    if not extending:
+        readiness = measure_readiness(session, today, now)
+        if issue.id not in readiness.ready:
+            detail = ' '.join(unready_reasons(issue, readiness)) or claim_conflict(issue)
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
-    now = datetime.now(UTC)
     taken = session.execute(
         sql_update(models.Issue)
         .where(models.Issue.id == issue.id, claimable(now, request.claimant))

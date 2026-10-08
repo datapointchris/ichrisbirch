@@ -270,6 +270,20 @@ class TestClaim:
         detail = refused(client.post(f'{ISSUES}{blocked["number"]}/claim/', json={'claimant': 'agent'}), 409)
         assert f'#{bug["number"]}' in detail
 
+    def test_a_parent_with_an_open_child_names_the_child(self, client):
+        """`complete` refuses the parent while the child is open, so a claim on it could never finish."""
+        bug = issue(client, 'Ready bug with high priority')
+        child = create(client, parent=bug['number'])
+        detail = refused(client.post(f'{ISSUES}{bug["number"]}/claim/', json={'claimant': 'agent'}), 409)
+        assert f'#{child["number"]}' in detail
+
+    def test_a_deferred_issue_is_refused_until_its_day(self, client):
+        task = issue(client, 'Ready task without priority')
+        day = (datetime.now(UTC) + timedelta(days=30)).date().isoformat()
+        ok(patch(client, task['number'], deferred_until_date=day))
+        detail = refused(client.post(f'{ISSUES}{task["number"]}/claim/', json={'claimant': 'agent'}), 409)
+        assert day in detail
+
     def test_release_puts_the_issue_back_in_the_queue(self, client):
         bug = issue(client, 'Ready bug with high priority')
         ok(client.post(f'{ISSUES}{bug["number"]}/claim/', json={'claimant': 'agent'}))
@@ -314,6 +328,30 @@ class TestStatusTransitions:
         detail = refused(patch(client, bug['number'], status='completed'), 409)
         assert f'#{child["number"]}' in detail
 
+    def test_reopening_a_child_reopens_each_completed_ancestor(self, client):
+        top = issue(client, 'Ready bug with high priority')
+        middle = create(client, title='Middle', parent=top['number'])
+        bottom = create(client, title='Bottom', parent=middle['number'])
+        for finished in (bottom, middle, top):
+            ok(patch(client, finished['number'], status='completed'))
+
+        ok(patch(client, bottom['number'], status='open'))
+
+        for reopened in (middle, top):
+            row = ok(client.get(f'{ISSUES}{reopened["number"]}/'))
+            assert (row['status'], row['closed_ts']) == ('open', None)
+
+    def test_a_reopen_that_moves_the_child_leaves_the_old_parent_completed(self, client):
+        old = create(client, title='Old parent')
+        new = create(client, title='New parent')
+        child = create(client, title='Moving child', parent=old['number'])
+        ok(patch(client, child['number'], status='completed'))
+        ok(patch(client, old['number'], status='completed'))
+
+        ok(patch(client, child['number'], status='open', parent=new['number']))
+
+        assert ok(client.get(f'{ISSUES}{old["number"]}/'))['status'] == 'completed'
+
 
 class TestEdges:
     def test_a_dependency_cycle_is_refused_with_its_path(self, client):
@@ -327,6 +365,12 @@ class TestEdges:
         bug = issue(client, 'Ready bug with high priority')
         child = create(client, parent=bug['number'])
         refused(patch(client, bug['number'], parent=child['number']), 409)
+
+    def test_a_closed_issue_takes_no_new_open_child(self, client):
+        completed = issue(client, 'Completed feature')
+        task = issue(client, 'Ready task without priority')
+        assert 'completed' in refused(client.post(ISSUES, json={'title': 'x', 'parent': completed['number']}), 409)
+        assert 'completed' in refused(patch(client, task['number'], parent=completed['number']), 409)
 
     def test_a_dependency_is_added_once(self, client):
         bug = issue(client, 'Ready bug with high priority')

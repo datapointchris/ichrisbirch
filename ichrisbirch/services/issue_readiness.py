@@ -49,6 +49,7 @@ def priority_of(urgency_value: int) -> int:
 class IssueReadiness:
     effective_priority: dict[UUID, int]
     blocked: frozenset[UUID]
+    deferred: frozenset[UUID]
     ready: frozenset[UUID]
     child_count: dict[UUID, int]
     open_child_count: dict[UUID, int]
@@ -129,19 +130,23 @@ def measure_readiness(session: Session, today: date, now: datetime) -> IssueRead
         issue_id: priority_of(effective_urgency(issue_id)) if issue_id in unclosed else row.priority for issue_id, row in rows.items()
     }
 
+    deferred = {
+        issue_id for issue_id in unclosed if rows[issue_id].deferred_until_date is not None and rows[issue_id].deferred_until_date > today
+    }
+
     ready = set()
     for issue_id in unclosed:
         row = rows[issue_id]
         takeable = row.status == 'open' or (
             row.status == 'in_progress' and row.claim_expires_ts is not None and row.claim_expires_ts <= now
         )
-        arrived = row.deferred_until_date is None or row.deferred_until_date <= today
-        if takeable and arrived and issue_id not in blocked and not open_child_count.get(issue_id):
+        if takeable and issue_id not in deferred and issue_id not in blocked and not open_child_count.get(issue_id):
             ready.add(issue_id)
 
     return IssueReadiness(
         effective_priority=effective_priority,
         blocked=frozenset(blocked),
+        deferred=frozenset(deferred),
         ready=frozenset(ready),
         child_count=child_count,
         open_child_count=open_child_count,

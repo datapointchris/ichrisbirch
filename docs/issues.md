@@ -103,8 +103,13 @@ claim and never expires, because a person working on something does not
 vanish the way a process does. `DELETE /issues/{n}/claim/` returns either kind
 to `open`.
 
-A refused claim answers 409 naming who holds the issue and until when, so the
-refused agent can tell whether to wait or move on.
+Claiming a named issue applies the ready queue's conditions. An issue the
+queue leaves out is refused, so an agent never holds work it could not finish.
+Only extending a claim already held skips them.
+
+A refused claim answers 409 naming why. A held issue names who holds it and
+until when, so the refused agent can tell whether to wait or move on. Otherwise
+the refusal names the open dependencies, the open children or the deferral day.
 
 ## Nothing closes an issue for its age
 
@@ -121,6 +126,10 @@ Closing is deliberate in both directions:
   always says why.
 - **Reopen** returns an issue to `open`, and clears when it closed, the reason
   and the duplicate link.
+
+A completed parent never holds open children. A closed issue takes no new open
+child, whether filed under it or moved there. Reopening a child returns each
+completed ancestor to `open` in the same write.
 
 ## Labels are a closed vocabulary with exclusive groups
 
