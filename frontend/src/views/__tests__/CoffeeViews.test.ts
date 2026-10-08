@@ -1,5 +1,5 @@
 // Component integration tests for CoffeeShopsView and CoffeeBeansView.
-// E2E counterpart: tests/e2e/coffee.spec.ts (smoke only — CRUD roundtrip)
+// E2E counterpart: e2e/coffee.spec.ts (smoke only — CRUD roundtrip)
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
