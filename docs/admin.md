@@ -41,7 +41,8 @@ The page also shows the run history the scheduler records in the database.
 
 ## Users
 
-`/admin/users` lists every user account.
+`/admin/users` lists every user account, and grants or revokes admin through `PATCH /users/{id}/`.
+That route answers 403 to `is_admin` from anyone but an admin or the internal service, so a user cannot promote themselves.
 
 ## Config
 

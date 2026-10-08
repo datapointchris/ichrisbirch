@@ -2,11 +2,11 @@
 # Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
 
 services:
-  # CI strips the docker.sock bind-mount that test.yml's api uses for the
-  # docker_prune scheduled job. The anonymous /app/.venv volume is inherited
-  # unchanged from test.yml via !override's full list replacement — do NOT
-  # reintroduce named venv/uv-cache volumes here; that was the root cause of
-  # the stale-venv test hangs (see feedback memory).
+  # CI drops the docker.sock bind-mount that test.yml's api uses for the
+  # docker_prune scheduled job. `!override` replaces the whole list, so this
+  # one repeats `.:/app` and the anonymous `/app/.venv`. Never make the venv
+  # or the uv cache a named volume here. A named one keeps a stale venv across
+  # rebuilds, and the api then sits in "health: starting" while uv resyncs.
   api:
     volumes: !override
       - .:/app

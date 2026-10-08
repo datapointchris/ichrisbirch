@@ -40,7 +40,7 @@ def _use_colors() -> bool:
 
 
 def configure_structlog():
-    """Configure structlog to render through the stdlib root logger to stderr."""
+    """Render structlog and stdlib records through one root handler on stderr."""
     # Shared processors for both stdlib and structlog
     shared_processors = [
         structlog.contextvars.merge_contextvars,
