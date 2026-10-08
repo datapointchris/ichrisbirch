@@ -246,15 +246,14 @@ def search(q: str, session: DbSession):
 
 
 @router.post('/summarize/', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
-async def summarize(request: Request, settings: Settings = Depends(get_settings)):
+async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video summary. If article,
     use html content for summary. Claude produces the summary and the tags.
     """
-    request_data = await request.json()
-    logger.debug('article_summarize_request', data=request_data)
-    url = clean_url(request_data.get('url'))
+    logger.debug('article_summarize_request', url=body.url)
+    url = clean_url(body.url)
     page = await run_in_threadpool(_read_page_for_request, url)
     logger.debug('article_title_retrieved', title=page.title)
 
@@ -268,15 +267,14 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
-async def insights(request: Request, settings: Settings = Depends(get_settings)):
+async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If article, use html content
     for summary. Claude produces the insights.
     """
-    request_data = await request.json()
-    logger.debug('article_insights_request', data=request_data)
-    url = clean_url(request_data.get('url'))
+    logger.debug('article_insights_request', url=body.url)
+    url = clean_url(body.url)
     logger.debug('article_insights_processing', url=url)
     try:
         page = await run_in_threadpool(read_article_page, url)

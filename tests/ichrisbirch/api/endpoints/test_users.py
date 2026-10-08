@@ -381,6 +381,13 @@ def test_update_user_preferences_invalid_value(users_logged_in_context):
     assert 'detail' in error_data
 
 
+def test_preferences_that_are_not_an_object_answer_422(users_logged_in_context):
+    client, _, _ = users_logged_in_context
+    response = client.patch('/users/me/preferences/', json=['theme_color'])
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert response.json()['detail'][0]['loc'] == ['body']
+
+
 def test_list_users_requires_admin_or_internal_service(users_test_context, test_regular_user_2):
     """Test that regular users cannot list all users."""
     client, _, _ = users_test_context

@@ -7,6 +7,7 @@ from ichrisbirch.schemas.article import ArticleFailedImport
 from ichrisbirch.schemas.article import ArticleSummary
 from ichrisbirch.schemas.article import ArticleSummaryAndTags
 from ichrisbirch.schemas.article import ArticleUpdate
+from ichrisbirch.schemas.article import ArticleUrl
 from ichrisbirch.schemas.autofun import AutoFun
 from ichrisbirch.schemas.autofun import AutoFunCreate
 from ichrisbirch.schemas.autofun import AutoFunUpdate
@@ -149,6 +150,7 @@ __all__ = [
     'ArticleSummary',
     'ArticleSummaryAndTags',
     'ArticleUpdate',
+    'ArticleUrl',
     'ArticleFailedImport',
     'AutoFun',
     'AutoFunCreate',

@@ -30,6 +30,10 @@ class ArticleCreateFromUrl(ArticleConfig):
     notes: str | None = None
 
 
+class ArticleUrl(ArticleConfig):
+    url: str
+
+
 class ArticleBulkImport(ArticleConfig):
     urls: list[str] = []
     notes: dict[str, str] = {}

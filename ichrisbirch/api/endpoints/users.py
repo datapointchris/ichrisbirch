@@ -58,7 +58,7 @@ def require_own_data_or_admin(
         raise ForbiddenException(f'can only {operation}', logger)
 
 
-async def require_admin_or_internal_service(
+def require_admin_or_internal_service(
     access_granted: bool = Depends(get_admin_or_internal_service_access),
 ):
     """Custom dependency that allows admin users OR internal services."""
@@ -75,7 +75,7 @@ def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_se
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-async def require_user_access_or_admin_or_internal_service(
+def require_user_access_or_admin_or_internal_service(
     id: int,
     current_user: models.User | None = Depends(get_current_user_or_none),
     x_internal_service: str | None = Header(None),
@@ -214,7 +214,7 @@ def delete(id: int, session: DbSession, admin_user: models.User = Depends(get_ad
     raise NotFoundException('user', id, logger)
 
 
-async def require_update_access(
+def require_update_access(
     id: int,
     current_user: models.User | None = Depends(get_current_user_or_none),
     x_internal_service: str | None = Header(None),

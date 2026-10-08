@@ -217,6 +217,15 @@ def test_goodreads_info(mock_get, book_crud_tester):
     mock_get.assert_called_once()
 
 
+@pytest.mark.parametrize('payload', [{}, {'isbn': None}])
+@patch('ichrisbirch.api.endpoints.books.get_page')
+def test_goodreads_without_an_isbn_never_searches(mock_get, book_crud_tester, payload):
+    client, _ = book_crud_tester
+    response = client.post('/books/goodreads/', json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+    mock_get.assert_not_called()
+
+
 class TestBookWithoutISBN:
     """Test creating and managing books without ISBN."""
 

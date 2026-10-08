@@ -417,6 +417,15 @@ def test_create_article_without_save_date_returns_422(txn_api_logged_in):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
+@pytest.mark.parametrize('route', ['summarize/', 'insights/'])
+@pytest.mark.parametrize('payload', [{}, {'link': 'https://a.example'}])
+def test_a_page_request_without_a_url_names_the_field(txn_api_logged_in, route, payload):
+    client, _ = txn_api_logged_in
+    response = client.post(f'{ENDPOINT}{route}', json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+    assert response.json()['detail'][0]['loc'] == ['body', 'url']
+
+
 # ---------------------------------------------------------------------------
 # create-from-url endpoint tests
 # ---------------------------------------------------------------------------
