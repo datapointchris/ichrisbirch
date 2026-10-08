@@ -51,9 +51,11 @@ Masking goes by the name alone, so a secret stored under any other name is shown
 
 ## Smoke Tests
 
-`/admin/smoke` calls every GET route in the API's own route table and reports each status.
+`/admin/smoke` calls the GET routes that `discover_get_endpoints` in `ichrisbirch/api/smoke_tests.py` selects, and reports each status.
 It runs in-process through `httpx2.ASGITransport`, as the requesting admin.
 A route with a path parameter or a required query parameter is skipped, because there is no value to call it with.
+The `/auth/` routes and the route names in `SKIP_NAMES` are skipped too.
+A green report says nothing about a skipped route.
 
 ## Design
 
