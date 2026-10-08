@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from typing import Annotated
 
 from pydantic import AwareDatetime
@@ -28,13 +28,13 @@ class Task(TaskConfig):
     name: str
     notes: str | None = None
     category: str
-    rank_at: datetime
+    rank_at: dt.datetime
     window_days: int
     pinned: bool
     autotask_id: int | None = None
-    add_date: datetime
-    complete_date: datetime | None = None
-    drop_date: datetime | None = None
+    add_date: dt.datetime
+    complete_date: dt.datetime | None = None
+    drop_date: dt.datetime | None = None
     drop_reason: str | None = None
 
 
@@ -62,8 +62,8 @@ class TaskCompleted(TaskConfig):
     category: str
     window_days: int
     autotask_id: int | None = None
-    add_date: datetime
-    complete_date: datetime
+    add_date: dt.datetime
+    complete_date: dt.datetime
 
     @property
     def days_to_complete(self) -> int:

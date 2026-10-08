@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -185,8 +184,8 @@ def _insert_daily_template_run_on_the_20th() -> None:
                 name=DAILY_NAME,
                 category='Chore',
                 frequency='Daily',
-                first_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
-                last_run_date=datetime(2026, 8, 20, 14, tzinfo=UTC),
+                first_run_date=dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC),
+                last_run_date=dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC),
             )
         )
         session.commit()
@@ -200,7 +199,7 @@ def test_an_autotask_is_due_by_the_admins_calendar(test_api_logged_in, admin_in_
     """02:00 UTC on the 21st is 22:00 on the 20th in New York, the day the template last ran."""
     _insert_daily_template_run_on_the_20th()
 
-    with freeze_time(datetime(2026, 8, 21, 2, tzinfo=UTC)):
+    with freeze_time(dt.datetime(2026, 8, 21, 2, tzinfo=dt.UTC)):
         jobs.check_and_run_autotasks(test_settings)
 
     assert _spawned_from_daily_template(test_api_logged_in) == []
@@ -209,7 +208,7 @@ def test_an_autotask_is_due_by_the_admins_calendar(test_api_logged_in, admin_in_
 def test_an_autotask_is_due_by_utc_before_the_admin_has_a_zone(test_api_logged_in):
     _insert_daily_template_run_on_the_20th()
 
-    with freeze_time(datetime(2026, 8, 21, 2, tzinfo=UTC)):
+    with freeze_time(dt.datetime(2026, 8, 21, 2, tzinfo=dt.UTC)):
         jobs.check_and_run_autotasks(test_settings)
 
     assert len(_spawned_from_daily_template(test_api_logged_in)) == 1

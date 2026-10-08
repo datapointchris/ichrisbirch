@@ -1,7 +1,4 @@
-from datetime import UTC
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -9,7 +6,7 @@ from pydantic import field_validator
 
 from ichrisbirch.schemas.habitcategory import HabitCategory
 
-EASTERNMOST_UTC_OFFSET = timedelta(hours=14)
+EASTERNMOST_UTC_OFFSET = dt.timedelta(hours=14)
 
 
 class HabitConfig(BaseModel):
@@ -22,7 +19,7 @@ class HabitCompleted(HabitConfig):
     name: str
     category_id: int
     category: HabitCategory
-    complete_date: date
+    complete_date: dt.date
 
 
 class HabitCompletedCreate(HabitConfig):
@@ -32,17 +29,17 @@ class HabitCompletedCreate(HabitConfig):
     habit_id: int | None = None
     name: str
     category_id: int
-    complete_date: date
+    complete_date: dt.date
 
     @field_validator('complete_date')
     @classmethod
-    def complete_date_has_started_somewhere(cls, v: date) -> date:
+    def complete_date_has_started_somewhere(cls, v: dt.date) -> dt.date:
         """A habit cannot be recorded for a day that has not begun yet.
 
         A schema validator has no user to read a zone from, so the bound is the
         latest today anywhere: UTC+14, in the Line Islands. A later day has not
         started for anyone, and an earlier one has started for someone.
         """
-        if v > (datetime.now(UTC) + EASTERNMOST_UTC_OFFSET).date():
+        if v > (dt.datetime.now(dt.UTC) + EASTERNMOST_UTC_OFFSET).date():
             raise ValueError('complete_date is in the future')
         return v

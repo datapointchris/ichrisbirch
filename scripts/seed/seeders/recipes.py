@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.recipe import RECIPE_CUISINES
@@ -311,22 +311,22 @@ RECIPE_BLUEPRINTS: list[dict] = [
 
 def _ensure_lookup_seeded(session: Session) -> None:
     """Safety net: if Alembic's seed path didn't run, populate the lookup tables."""
-    existing_units = {row[0] for row in session.execute(sqlalchemy.text('SELECT name FROM recipe_units')).all()}
+    existing_units = {row[0] for row in session.execute(sa.text('SELECT name FROM recipe_units')).all()}
     for unit in RECIPE_UNITS:
         if unit not in existing_units:
             session.add(RecipeUnit(name=unit))
 
-    existing_diff = {row[0] for row in session.execute(sqlalchemy.text('SELECT name FROM recipe_difficulty')).all()}
+    existing_diff = {row[0] for row in session.execute(sa.text('SELECT name FROM recipe_difficulty')).all()}
     for d in RECIPE_DIFFICULTIES:
         if d not in existing_diff:
             session.add(RecipeDifficulty(name=d))
 
-    existing_cuisine = {row[0] for row in session.execute(sqlalchemy.text('SELECT name FROM recipe_cuisine')).all()}
+    existing_cuisine = {row[0] for row in session.execute(sa.text('SELECT name FROM recipe_cuisine')).all()}
     for c in RECIPE_CUISINES:
         if c not in existing_cuisine:
             session.add(RecipeCuisine(name=c))
 
-    existing_meal = {row[0] for row in session.execute(sqlalchemy.text('SELECT name FROM recipe_meal_type')).all()}
+    existing_meal = {row[0] for row in session.execute(sa.text('SELECT name FROM recipe_meal_type')).all()}
     for m in RECIPE_MEAL_TYPES:
         if m not in existing_meal:
             session.add(RecipeMealType(name=m))
@@ -335,8 +335,8 @@ def _ensure_lookup_seeded(session: Session) -> None:
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM recipe_ingredients'))
-    session.execute(sqlalchemy.text('DELETE FROM recipes'))
+    session.execute(sa.text('DELETE FROM recipe_ingredients'))
+    session.execute(sa.text('DELETE FROM recipes'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

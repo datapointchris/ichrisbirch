@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -13,17 +13,17 @@ class CountdownConfig(BaseModel):
 class CountdownCreate(CountdownConfig):
     name: str
     notes: str | None = None
-    due_date: date
+    due_date: dt.date
 
 
 class Countdown(CountdownConfig):
     id: int
     name: str
     notes: str | None = None
-    due_date: date
+    due_date: dt.date
 
 
 class CountdownUpdate(CountdownConfig):
     name: NotNull[str] = None
     notes: str | None = None
-    due_date: NotNull[date] = None
+    due_date: NotNull[dt.date] = None

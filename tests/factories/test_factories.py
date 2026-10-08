@@ -3,9 +3,7 @@
 These tests verify that the factories work correctly and demonstrate usage patterns.
 """
 
-from datetime import UTC
-from datetime import date
-from datetime import datetime
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 from . import ArticleFactory
@@ -123,17 +121,17 @@ class TestCountdownFactory:
         countdown = CountdownFactory()
         assert countdown.id is not None
         assert countdown.name.startswith('Test Countdown')
-        assert countdown.due_date > date.today()
+        assert countdown.due_date > dt.date.today()
 
     def test_past_due_countdown(self, factory_session):
         """Test creating a past due countdown."""
         countdown = CountdownFactory(past_due=True)
-        assert countdown.due_date < date.today()
+        assert countdown.due_date < dt.date.today()
 
     def test_due_today_countdown(self, factory_session):
         """Test creating a countdown due today."""
         countdown = CountdownFactory(due_today=True)
-        assert countdown.due_date == date.today()
+        assert countdown.due_date == dt.date.today()
 
 
 class TestMoneyWastedFactory:
@@ -196,7 +194,7 @@ class TestEventFactory:
         # date is a reading on a clock at the venue, so it carries no offset and has
         # to be resolved against its own zone before it means an instant.
         assert event.date.tzinfo is None
-        assert event.date.replace(tzinfo=ZoneInfo(event.timezone)) > datetime.now(UTC)
+        assert event.date.replace(tzinfo=ZoneInfo(event.timezone)) > dt.datetime.now(dt.UTC)
 
     def test_not_attending_event(self, factory_session):
         """Test creating an event not attending."""
@@ -211,7 +209,7 @@ class TestEventFactory:
     def test_past_event(self, factory_session):
         """Test creating a past event."""
         event = EventFactory(past=True)
-        assert event.date < datetime.now(UTC)
+        assert event.date < dt.datetime.now(dt.UTC)
 
 
 class TestBoxFactory:

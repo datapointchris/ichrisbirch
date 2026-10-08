@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import AwareDatetime
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ class SchedulerJob(SchedulerConfig):
     id: str
     name: str
     trigger: str
-    next_run_time: datetime | None = None
+    next_run_time: dt.datetime | None = None
     time_until_next_run: str
     is_paused: bool
 
@@ -35,8 +35,8 @@ class SchedulerJobRun(SchedulerConfig):
     id: int
     job_id: str
     job_run_id: str | None = None
-    started_at: datetime
-    finished_at: datetime
+    started_at: dt.datetime
+    finished_at: dt.datetime
     duration_seconds: float
     success: bool
     error_type: str | None = None

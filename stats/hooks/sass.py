@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import filecmp
 import re
 import subprocess  # nosec B404
 import tempfile
 import time
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.schemas.hooks.sass import SassError
@@ -37,7 +36,7 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
     # Flask SCSS removed — only Vue frontend SCSS remains (handled by Vite, not sass CLI)
     if not scss_files or not Path(SASS_SOURCE).exists():
         return SassHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -86,7 +85,7 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
     failed = result.returncode != 0 or css_stale
 
     return SassHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='failed' if failed else 'passed',

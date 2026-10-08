@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime as dt
 from uuid import UUID
 from uuid import uuid7
 
@@ -92,9 +92,9 @@ class Project(Base):
     # When the project reached a terminal state. `created_at` orders by when work
     # started, which is the wrong axis for a list of finished things, and
     # `position` stops being meaningful once a project is out of the running.
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
     memberships: Mapped[list[ProjectItemMembership]] = relationship(
         'ProjectItemMembership', back_populates='project', cascade='all, delete-orphan'
@@ -142,10 +142,10 @@ class ProjectItem(Base):
     # Null means the time is unknown: either the item was never finished, or it
     # was finished by a write that recorded none. Inferring one from `updated_at`
     # would manufacture it, so every reader handles the null instead.
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
     # Ordered by project id so every response lists an item's memberships the same
     # way. A membership names its project, so a reader pairs it with `projects` by
@@ -241,9 +241,9 @@ class ProjectItemTask(Base):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Same reason as the item's, and null under the same two conditions.
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default='now()')
 
     item: Mapped[ProjectItem] = relationship('ProjectItem', back_populates='tasks')
 

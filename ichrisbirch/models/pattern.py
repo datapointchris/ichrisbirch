@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import DateTime
 from sqlalchemy import Identity
@@ -15,7 +15,7 @@ class Pattern(Base):
     __tablename__ = 'patterns'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    recorded_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     def __repr__(self):
         return f'Pattern(message={self.message}, recorded_at={self.recorded_at})'

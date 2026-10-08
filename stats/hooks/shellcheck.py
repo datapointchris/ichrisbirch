@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.shellcheck import ShellcheckComment
 from stats.schemas.hooks.shellcheck import ShellcheckFix
@@ -32,7 +31,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ShellcheckHookEve
 
     if not shell_files:
         return ShellcheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -61,7 +60,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ShellcheckHookEve
     comments = [_parse_comment(c) for c in raw_output.get('comments', [])]
 
     return ShellcheckHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

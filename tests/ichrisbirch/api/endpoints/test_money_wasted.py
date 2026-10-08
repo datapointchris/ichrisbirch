@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 import pytest
 from fastapi import status
@@ -12,7 +12,7 @@ from .crud_test import ApiCrudTester
 NEW_OBJ = schemas.MoneyWastedCreate(
     item='Money Wasted on Junk Food',
     amount=12.34,
-    date_wasted=date(2040, 1, 20),
+    date_wasted=dt.date(2040, 1, 20),
 )
 
 ENDPOINT = '/money-wasted/'

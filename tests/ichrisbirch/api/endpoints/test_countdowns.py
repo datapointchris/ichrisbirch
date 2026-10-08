@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 import pytest
 from fastapi import status
@@ -13,7 +13,7 @@ ENDPOINT = '/countdowns/'
 NEW_OBJ = schemas.CountdownCreate(
     name='Countdown 4 Computer with notes priority 3',
     notes='Notes Countdown 4',
-    due_date=date(2040, 1, 20),
+    due_date=dt.date(2040, 1, 20),
 )
 
 

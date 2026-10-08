@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
@@ -68,13 +67,13 @@ class Task(Base):
     priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # The server defaults exist for the release serving while the migration
     # runs, which inserts without these columns. This code always sets them.
-    rank_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now() + interval '30 days'"))
+    rank_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now() + interval '30 days'"))
     window_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text('30'))
     pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text('false'))
     autotask_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('autotasks.id', ondelete='SET NULL'), nullable=True)
-    add_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    complete_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    drop_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    add_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
+    complete_date: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    drop_date: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     drop_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (

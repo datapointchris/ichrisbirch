@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 import pytest
 from fastapi import status
@@ -12,7 +12,7 @@ from .crud_test import ApiCrudTester
 ENDPOINT = '/durations/'
 NEW_OBJ = schemas.DurationCreate(
     name='Duration 4 New Feature',
-    start_date=date(2025, 1, 1),
+    start_date=dt.date(2025, 1, 1),
     end_date=None,
     notes='Test duration',
     color='#00FF00',

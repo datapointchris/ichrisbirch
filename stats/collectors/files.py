@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import time
 from collections import defaultdict
-from datetime import UTC
-from datetime import datetime
 
 from stats.collectors.walk import iter_files
 from stats.schemas.collectors.files import FilesCollectEvent
@@ -52,7 +51,7 @@ def run(branch: str, project: str, root_path: str = '.') -> FilesCollectEvent:
     ]
 
     return FilesCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         file_types=file_types,

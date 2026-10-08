@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 
 class TestBaseEvent:
@@ -13,7 +12,7 @@ class TestBaseEvent:
         from stats.schemas.base import BaseEvent
 
         event = BaseEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
         )
@@ -26,7 +25,7 @@ class TestBaseEvent:
         from stats.schemas.base import BaseEvent
 
         event = BaseEvent(
-            timestamp=datetime(2025, 12, 31, 7, 36, 12, tzinfo=UTC),
+            timestamp=dt.datetime(2025, 12, 31, 7, 36, 12, tzinfo=dt.UTC),
             project='ichrisbirch',
             branch='master',
         )

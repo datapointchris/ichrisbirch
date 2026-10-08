@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
@@ -204,7 +204,7 @@ COOKING_TECHNIQUE_BLUEPRINTS: list[dict] = [
 
 def _ensure_lookup_seeded(session: Session) -> None:
     """Safety net: if Alembic's seed path didn't run, populate the category lookup table."""
-    existing = {row[0] for row in session.execute(sqlalchemy.text('SELECT name FROM cooking_technique_categories')).all()}
+    existing = {row[0] for row in session.execute(sa.text('SELECT name FROM cooking_technique_categories')).all()}
     for name in COOKING_TECHNIQUE_CATEGORIES:
         if name not in existing:
             session.add(CookingTechniqueCategory(name=name))
@@ -212,7 +212,7 @@ def _ensure_lookup_seeded(session: Session) -> None:
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM cooking_techniques'))
+    session.execute(sa.text('DELETE FROM cooking_techniques'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

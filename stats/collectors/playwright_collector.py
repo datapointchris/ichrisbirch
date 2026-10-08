@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.schemas.collectors.playwright_collector import PlaywrightCollectEvent
@@ -55,7 +54,7 @@ def run(branch: str, project: str, json_path: str) -> PlaywrightCollectEvent | N
     duration_seconds = sum(t.duration for t in tests)
 
     return PlaywrightCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         summary=summary,

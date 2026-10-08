@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.task import TASK_CATEGORY_WINDOW_DAYS
@@ -150,15 +148,15 @@ DROP_REASONS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM autofun_active_tasks'))
-    session.execute(sqlalchemy.text('DELETE FROM tasks'))
+    session.execute(sa.text('DELETE FROM autofun_active_tasks'))
+    session.execute(sa.text('DELETE FROM tasks'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     tasks = []
     completed_count = 0
     dropped_count = 0
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
 
     for category, names in TASKS_BY_CATEGORY.items():
         for rep in range(scale):
@@ -168,7 +166,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
 
                 # Spread add_date across the last 18 months for realistic history
                 days_ago = random.randint(1, 540)
-                add_date = now - timedelta(days=days_ago)
+                add_date = now - dt.timedelta(days=days_ago)
                 window_days = TASK_CATEGORY_WINDOW_DAYS[category]
 
                 task = Task(
@@ -177,7 +175,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     notes=notes,
                     add_date=add_date,
                     window_days=window_days,
-                    rank_at=add_date + timedelta(days=window_days),
+                    rank_at=add_date + dt.timedelta(days=window_days),
                     pinned=random.random() < 0.03,
                 )
 
@@ -195,14 +193,14 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     else:
                         completion_days = random.randint(1, 45)
 
-                    complete_date = add_date + timedelta(days=completion_days)
+                    complete_date = add_date + dt.timedelta(days=completion_days)
                     # Don't complete tasks in the future
                     if complete_date <= now:
                         task.complete_date = complete_date
                         task.pinned = False
                         completed_count += 1
                 elif random.random() < 0.1:
-                    task.drop_date = add_date + timedelta(days=random.randint(30, 200))
+                    task.drop_date = add_date + dt.timedelta(days=random.randint(30, 200))
                     if task.drop_date <= now:
                         task.drop_reason = random.choice(DROP_REASONS)
                         task.pinned = False

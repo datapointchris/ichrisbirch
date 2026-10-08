@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -45,7 +44,7 @@ class TestBanditSchema:
         issues = [BanditIssue.model_validate(i) for i in data.get('results', [])]
 
         event = BanditHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -66,7 +65,7 @@ class TestBanditSchema:
         from stats.schemas.hooks.bandit import BanditMetrics
 
         event = BanditHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

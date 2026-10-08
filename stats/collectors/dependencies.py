@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.collectors.dependencies import DependenciesCollectEvent
 from stats.schemas.collectors.dependencies import Dependency
@@ -45,7 +44,7 @@ def run(branch: str, project: str) -> DependenciesCollectEvent:
             )
 
     return DependenciesCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         dependencies=dependencies,

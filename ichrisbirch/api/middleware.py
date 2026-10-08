@@ -1,8 +1,7 @@
+import datetime as dt
 import time
 import uuid
 from collections import deque
-from datetime import UTC
-from datetime import datetime
 
 import structlog
 from fastapi import Request
@@ -52,7 +51,7 @@ class ResponseLoggerMiddleware(BaseHTTPMiddleware):
         if response.status_code >= 400:
             recent_errors.append(
                 {
-                    'timestamp': datetime.now(UTC).isoformat(),
+                    'timestamp': dt.datetime.now(dt.UTC).isoformat(),
                     'method': request.method,
                     'path': request.url.path,
                     'status': response.status_code,

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.project import CodeSyncHookEvent
 
@@ -27,7 +26,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodeSyncHookEvent
     duration = time.perf_counter() - start_time
 
     return CodeSyncHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

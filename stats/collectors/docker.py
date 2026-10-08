@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.collectors.docker import DockerCollectEvent
 from stats.schemas.collectors.docker import DockerContainer
@@ -30,7 +29,7 @@ def run(branch: str, project: str) -> DockerCollectEvent:
     duration = time.perf_counter() - start_time
 
     return DockerCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         images=images,

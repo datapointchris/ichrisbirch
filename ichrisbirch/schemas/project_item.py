@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -90,9 +90,9 @@ class ProjectItem(ProjectItemStatusFields):
     repo: str | None = None
     # Null where the completion time is unknown: never finished, or finished by a
     # write that recorded none. Every reader handles it.
-    completed_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    completed_at: dt.datetime | None = None
+    created_at: dt.datetime
+    updated_at: dt.datetime
     projects: list[Project] = []
     memberships: list[ProjectItemMembership] = []
     dependency_ids: list[UUID] = []
@@ -115,9 +115,9 @@ class ProjectItemDetail(ProjectItemStatusFields):
     title: str
     notes: str | None = None
     repo: str | None = None
-    completed_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    completed_at: dt.datetime | None = None
+    created_at: dt.datetime
+    updated_at: dt.datetime
     projects: list[Project]
     memberships: list[ProjectItemMembership]
     dependency_ids: list[UUID]
@@ -131,9 +131,9 @@ class ProjectItemInProject(ProjectItemStatusFields):
     title: str
     notes: str | None = None
     repo: str | None = None
-    completed_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    completed_at: dt.datetime | None = None
+    created_at: dt.datetime
+    updated_at: dt.datetime
     position: int
 
 

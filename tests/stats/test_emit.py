@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import tempfile
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 
@@ -19,7 +18,7 @@ class TestEmitEvent:
             events_path = Path(tmpdir) / 'events.jsonl'
 
             event = BaseEvent(
-                timestamp=datetime.now(UTC),
+                timestamp=dt.datetime.now(dt.UTC),
                 project='ichrisbirch',
                 branch='master',
             )
@@ -39,7 +38,7 @@ class TestEmitEvent:
             events_path = Path(tmpdir) / 'nested' / 'dir' / 'events.jsonl'
 
             event = BaseEvent(
-                timestamp=datetime.now(UTC),
+                timestamp=dt.datetime.now(dt.UTC),
                 project='ichrisbirch',
                 branch='master',
             )
@@ -57,7 +56,7 @@ class TestEmitEvent:
 
             for i in range(3):
                 event = BaseEvent(
-                    timestamp=datetime.now(UTC),
+                    timestamp=dt.datetime.now(dt.UTC),
                     project='ichrisbirch',
                     branch=f'branch-{i}',
                 )
@@ -76,7 +75,7 @@ class TestEmitEvent:
             events_path = Path(tmpdir) / 'events.jsonl'
 
             event = BaseEvent(
-                timestamp=datetime.now(UTC),
+                timestamp=dt.datetime.now(dt.UTC),
                 project='ichrisbirch',
                 branch='master',
             )

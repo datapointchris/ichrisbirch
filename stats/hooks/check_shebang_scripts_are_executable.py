@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
 
@@ -25,7 +24,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckShebangExecu
 
     if not staged_files:
         return CheckShebangExecutableHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -45,7 +44,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckShebangExecu
     files_not_executable = _parse_output(result.stdout + result.stderr)
 
     return CheckShebangExecutableHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

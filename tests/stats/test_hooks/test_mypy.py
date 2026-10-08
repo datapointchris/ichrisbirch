@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -38,7 +37,7 @@ class TestMypySchema:
         from stats.schemas.hooks.mypy import MypyHookEvent
 
         event = MypyHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -65,7 +64,7 @@ class TestMypySchema:
         from stats.schemas.hooks.mypy import MypyHookEvent
 
         event = MypyHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

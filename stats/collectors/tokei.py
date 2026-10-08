@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.collectors.tokei import TokeiCollectEvent
 from stats.schemas.collectors.tokei import TokeiFile
@@ -55,7 +54,7 @@ def run(branch: str, project: str) -> TokeiCollectEvent:
     languages, totals = _parse_tokei_output(raw_output)
 
     return TokeiCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         languages=languages,

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import tempfile
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -199,7 +198,7 @@ class TestMain:
                 }
                 mock_staged.return_value = []
                 mock_tokei_run.return_value = TokeiCollectEvent(
-                    timestamp=datetime.now(UTC),
+                    timestamp=dt.datetime.now(dt.UTC),
                     project='ichrisbirch',
                     branch='master',
                     total_files=100,

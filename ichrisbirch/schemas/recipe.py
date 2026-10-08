@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from typing import Literal
 
 from pydantic import BaseModel
@@ -65,9 +65,9 @@ class RecipeCreate(RecipeBase):
 class Recipe(RecipeBase):
     id: int
     times_made: int
-    last_made_date: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
+    last_made_date: dt.datetime | None = None
+    created_at: dt.datetime
+    updated_at: dt.datetime
     ingredients: list[RecipeIngredient] = Field(default_factory=list)
 
 
@@ -185,8 +185,8 @@ class CookingTechniqueCreate(CookingTechniqueBase):
 class CookingTechnique(CookingTechniqueBase):
     id: int
     slug: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
 
 class CookingTechniqueUpdate(RecipeConfig):

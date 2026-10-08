@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.personal_api_key import PersonalAPIKey
@@ -15,7 +15,7 @@ DEV_API_KEY_HASH = hash_api_key(DEV_API_KEY)
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text("DELETE FROM personal_api_keys WHERE name = 'todoui-dev'"))
+    session.execute(sa.text("DELETE FROM personal_api_keys WHERE name = 'todoui-dev'"))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

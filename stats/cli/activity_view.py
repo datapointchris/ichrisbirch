@@ -9,10 +9,8 @@ Usage from bash dispatch:
 
 from __future__ import annotations
 
+import datetime as dt
 import sys
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
 from rich.console import Console
 from rich.table import Table
@@ -38,8 +36,8 @@ def render(events_path: str, days: int = 7, *, console: Console | None = None) -
 
     # Single scan of events file, filtered to commits
     # Local time: event timestamps use git author dates in local timezone
-    local_now = datetime.now(UTC).astimezone()
-    since_date = (local_now - timedelta(days=days)).strftime('%Y-%m-%d')
+    local_now = dt.datetime.now(dt.UTC).astimezone()
+    since_date = (local_now - dt.timedelta(days=days)).strftime('%Y-%m-%d')
     commits = load_events(events_path, event_type='commit', since=since_date)
     by_date = events_by_date(commits)
 
@@ -51,9 +49,9 @@ def render(events_path: str, days: int = 7, *, console: Console | None = None) -
     today = local_now.date()
     day_data: list[tuple[str, str, int]] = []
     for i in range(days):
-        dt = today - timedelta(days=i)
-        date_str = dt.strftime('%Y-%m-%d')
-        day_name = dt.strftime('%a')
+        day = today - dt.timedelta(days=i)
+        date_str = day.strftime('%Y-%m-%d')
+        day_name = day.strftime('%a')
         count = len(by_date.get(date_str, []))
         day_data.append((date_str, day_name, count))
 

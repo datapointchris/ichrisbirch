@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -36,7 +35,7 @@ class TestVueEslintSchema:
                 )
 
         event = VueEslintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -61,7 +60,7 @@ class TestVueEslintSchema:
         from stats.schemas.hooks.vue import VueEslintHookEvent
 
         event = VueEslintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -145,7 +144,7 @@ class TestVuePrettierSchema:
         from stats.schemas.hooks.vue import VuePrettierHookEvent
 
         event = VuePrettierHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -164,7 +163,7 @@ class TestVuePrettierSchema:
         from stats.schemas.hooks.vue import VuePrettierHookEvent
 
         event = VuePrettierHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -238,7 +237,7 @@ class TestVueTypecheckSchema:
         from stats.schemas.hooks.vue import VueTypecheckHookEvent
 
         event = VueTypecheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -273,7 +272,7 @@ class TestVueTypecheckSchema:
         from stats.schemas.hooks.vue import VueTypecheckHookEvent
 
         event = VueTypecheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

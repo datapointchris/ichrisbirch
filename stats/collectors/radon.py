@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
 from contextlib import suppress
-from datetime import UTC
-from datetime import datetime
 
 from stats.collectors.walk import iter_files
 from stats.schemas.collectors.radon import FileComplexity
@@ -112,7 +111,7 @@ def run(branch: str, project: str, root_path: str = '.') -> RadonCollectEvent | 
     avg_maintainability = round(total_mi / len(files), 2) if files else 0
 
     return RadonCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         files=files,

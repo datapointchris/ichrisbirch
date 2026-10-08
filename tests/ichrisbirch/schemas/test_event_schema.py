@@ -3,7 +3,7 @@
 Tests that the Event, EventCreate, and EventUpdate schemas properly validate data.
 """
 
-import datetime
+import datetime as dt
 
 import pytest
 from pydantic import ValidationError
@@ -18,7 +18,7 @@ class TestEventSchema:
         """Test creating a valid EventCreate model."""
         event_data = {
             'name': 'Concert',
-            'date': datetime.datetime(2023, 6, 15, 20, 0, 0),
+            'date': dt.datetime(2023, 6, 15, 20, 0, 0),
             'venue': 'Stadium',
             'url': 'https://example.com/concert',
             'cost': 75.50,
@@ -27,7 +27,7 @@ class TestEventSchema:
         }
         event = EventCreate(**event_data)
         assert event.name == 'Concert'
-        assert isinstance(event.date, datetime.datetime)
+        assert isinstance(event.date, dt.datetime)
         assert event.venue == 'Stadium'
         assert event.url == 'https://example.com/concert'
         assert event.cost == 75.50
@@ -38,7 +38,7 @@ class TestEventSchema:
         """Test creating an event with only required fields."""
         event_data = {
             'name': 'Concert',
-            'date': datetime.datetime(2023, 6, 15, 20, 0, 0),
+            'date': dt.datetime(2023, 6, 15, 20, 0, 0),
             'venue': 'Stadium',
             'cost': 75.50,
             'attending': False,
@@ -53,7 +53,7 @@ class TestEventSchema:
         """Test creating an event with a string date that gets converted."""
         event_data = {'name': 'Concert', 'date': '2023-06-15T20:00:00', 'venue': 'Stadium', 'cost': 75.50, 'attending': True}
         event = EventCreate(**event_data)
-        assert isinstance(event.date, datetime.datetime)
+        assert isinstance(event.date, dt.datetime)
         assert event.date.year == 2023
         assert event.date.month == 6
         assert event.date.day == 15
@@ -106,7 +106,7 @@ class TestEventSchema:
 
     def test_event_model_valid(self):
         """Test creating a valid Event model."""
-        now = datetime.datetime.now()
+        now = dt.datetime.now()
         event_data = {
             'id': 1,
             'name': 'Concert',

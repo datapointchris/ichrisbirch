@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -20,7 +19,7 @@ class TestCheckYamlSchema:
         from stats.schemas.hooks.file_format import FileFormatIssue
 
         event = CheckYamlHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -46,7 +45,7 @@ class TestCheckYamlSchema:
         from stats.schemas.hooks.file_format import CheckYamlHookEvent
 
         event = CheckYamlHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -127,7 +126,7 @@ class TestCheckTomlSchema:
         from stats.schemas.hooks.file_format import FileFormatIssue
 
         event = CheckTomlHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -195,7 +194,7 @@ class TestCheckJsonSchema:
         from stats.schemas.hooks.file_format import FileFormatIssue
 
         event = CheckJsonHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -262,7 +261,7 @@ class TestCheckExecutablesShebangsSchema:
         from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
 
         event = CheckExecutablesShebangsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -281,7 +280,7 @@ class TestCheckExecutablesShebangsSchema:
         from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
 
         event = CheckExecutablesShebangsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -358,7 +357,7 @@ class TestCheckShebangExecutableSchema:
         from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
 
         event = CheckShebangExecutableHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -377,7 +376,7 @@ class TestCheckShebangExecutableSchema:
         from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
 
         event = CheckShebangExecutableHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

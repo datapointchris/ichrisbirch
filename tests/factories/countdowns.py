@@ -1,7 +1,6 @@
 """Countdown factory for generating test Countdown objects."""
 
-from datetime import date
-from datetime import timedelta
+import datetime as dt
 
 import factory
 
@@ -20,10 +19,10 @@ class CountdownFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     name = factory.Sequence(lambda n: f'Test Countdown {n + 1}')
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
-    due_date = factory.LazyFunction(lambda: date.today() + timedelta(days=30))
+    due_date = factory.LazyFunction(lambda: dt.date.today() + dt.timedelta(days=30))
 
     class Params:
         # Usage: CountdownFactory(past_due=True)
-        past_due = factory.Trait(due_date=factory.LazyFunction(lambda: date.today() - timedelta(days=1)))
+        past_due = factory.Trait(due_date=factory.LazyFunction(lambda: dt.date.today() - dt.timedelta(days=1)))
         # Usage: CountdownFactory(due_today=True)
-        due_today = factory.Trait(due_date=factory.LazyFunction(date.today))
+        due_today = factory.Trait(due_date=factory.LazyFunction(dt.date.today))

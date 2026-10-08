@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import time
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.schemas.collectors.npm_dependencies import NpmDependenciesCollectEvent
@@ -37,7 +36,7 @@ def run(branch: str, project: str) -> NpmDependenciesCollectEvent | None:
     duration = time.perf_counter() - start_time
 
     return NpmDependenciesCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         production_count=len(production_deps),

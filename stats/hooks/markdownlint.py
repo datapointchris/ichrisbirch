@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
 from contextlib import suppress
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
 from stats.schemas.hooks.markdownlint import MarkdownlintIssue
@@ -28,7 +27,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MarkdownlintHookE
 
     if not staged_files:
         return MarkdownlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -43,7 +42,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MarkdownlintHookE
 
     if not markdown_files:
         return MarkdownlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -65,7 +64,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MarkdownlintHookE
     issues = _parse_markdownlint_output(result.stdout)
 
     return MarkdownlintHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import tempfile
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -111,7 +110,7 @@ class TestMain:
                 mock_staged.return_value = ['test.py']
                 mock_branch.return_value = 'master'
                 mock_ruff_run.return_value = RuffCheckHookEvent(
-                    timestamp=datetime.now(UTC),
+                    timestamp=dt.datetime.now(dt.UTC),
                     project='ichrisbirch',
                     branch='master',
                     status='passed',
@@ -172,7 +171,7 @@ class TestMain:
                 mock_staged.return_value = ['test.py']
                 mock_branch.return_value = 'master'
                 mock_ruff_run.return_value = RuffCheckHookEvent(
-                    timestamp=datetime.now(UTC),
+                    timestamp=dt.datetime.now(dt.UTC),
                     project='ichrisbirch',
                     branch='master',
                     status='passed',
@@ -182,7 +181,7 @@ class TestMain:
                     duration_seconds=0.5,
                 )
                 mock_mypy_run.return_value = MypyHookEvent(
-                    timestamp=datetime.now(UTC),
+                    timestamp=dt.datetime.now(dt.UTC),
                     project='ichrisbirch',
                     branch='master',
                     status='passed',
@@ -221,7 +220,7 @@ class TestMain:
                 # Simulate a hook returning multiple events (list)
                 mock_ruff_run.return_value = [
                     RuffCheckHookEvent(
-                        timestamp=datetime.now(UTC),
+                        timestamp=dt.datetime.now(dt.UTC),
                         project='ichrisbirch',
                         branch='master',
                         status='passed',
@@ -231,7 +230,7 @@ class TestMain:
                         duration_seconds=0.5,
                     ),
                     RuffCheckHookEvent(
-                        timestamp=datetime.now(UTC),
+                        timestamp=dt.datetime.now(dt.UTC),
                         project='ichrisbirch',
                         branch='master',
                         status='passed',

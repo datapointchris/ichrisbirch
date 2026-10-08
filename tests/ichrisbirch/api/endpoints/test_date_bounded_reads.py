@@ -15,9 +15,7 @@ asserts that for its own column, because the two types take different branches
 and only one of them ever worked.
 """
 
-from datetime import UTC
-from datetime import date
-from datetime import datetime
+import datetime as dt
 
 import pytest
 import sqlalchemy as sa
@@ -54,7 +52,7 @@ class TestArticleReadDateBounds:
                     url=f'http://example.com/{title}',
                     tags=[],
                     summary=f'{title} summary',
-                    save_date=datetime(2026, 1, 1),
+                    save_date=dt.datetime(2026, 1, 1),
                     last_read_date=last_read,
                     read_count=1 if last_read else 0,
                     is_favorite=False,
@@ -62,9 +60,9 @@ class TestArticleReadDateBounds:
                     is_archived=False,
                 )
                 for title, last_read in (
-                    ('read in june', datetime(2026, 6, 15, 12)),
-                    ('read in july', datetime(2026, 7, 15, 12)),
-                    ('read in august', datetime(2026, 8, 15, 12)),
+                    ('read in june', dt.datetime(2026, 6, 15, 12)),
+                    ('read in july', dt.datetime(2026, 7, 15, 12)),
+                    ('read in august', dt.datetime(2026, 8, 15, 12)),
                     ('never read', None),
                 )
             ]
@@ -144,8 +142,8 @@ class TestBookFinishDateBounds:
                 models.Book(title=title, author='A. Writer', tags=[], priority=index, read_finish_date=finished)
                 for index, (title, finished) in enumerate(
                     (
-                        ('finished in june', datetime(2026, 6, 15, 12)),
-                        ('finished in august', datetime(2026, 8, 15, 12)),
+                        ('finished in june', dt.datetime(2026, 6, 15, 12)),
+                        ('finished in august', dt.datetime(2026, 8, 15, 12)),
                         ('still reading', None),
                     )
                 )
@@ -201,13 +199,13 @@ class TestTaskCompleteDateBounds:
                     name=name,
                     category='Chore',
                     priority=index + 1,
-                    add_date=datetime(2026, 1, 1),
+                    add_date=dt.datetime(2026, 1, 1),
                     complete_date=completed,
                 )
                 for index, (name, completed) in enumerate(
                     (
-                        ('done in june', datetime(2026, 6, 15, 12)),
-                        ('done in august', datetime(2026, 8, 15, 12)),
+                        ('done in june', dt.datetime(2026, 6, 15, 12)),
+                        ('done in august', dt.datetime(2026, 8, 15, 12)),
                         ('still open', None),
                     )
                 )
@@ -270,8 +268,8 @@ class TestTheRequestZoneDecidesTheDay:
                 name='done in the evening',
                 category='Chore',
                 priority=1,
-                add_date=datetime(2026, 8, 1, tzinfo=UTC),
-                complete_date=datetime(2026, 8, 21, 1, tzinfo=UTC),
+                add_date=dt.datetime(2026, 8, 1, tzinfo=dt.UTC),
+                complete_date=dt.datetime(2026, 8, 21, 1, tzinfo=dt.UTC),
             )
         )
         session.flush()
@@ -347,7 +345,7 @@ class TestProjectItemCompletedAtBounds:
         answered with nothing whenever the work happened after midnight.
         """
         client, _ = seeded
-        today = datetime.now(UTC).date().isoformat()
+        today = dt.datetime.now(dt.UTC).date().isoformat()
         response = client.get(
             PROJECT_ITEMS_ENDPOINT,
             params={'status': 'completed', 'start_date': today, 'end_date': today},
@@ -393,8 +391,8 @@ class TestHabitCompleteDateBounds:
             [
                 models.HabitCompleted(name=name, category_id=category.id, complete_date=done)
                 for name, done in (
-                    ('done in june', date(2026, 6, 15)),
-                    ('done in august', date(2026, 8, 15)),
+                    ('done in june', dt.date(2026, 6, 15)),
+                    ('done in august', dt.date(2026, 8, 15)),
                 )
             ]
         )
@@ -452,8 +450,8 @@ class TestTheBoundsAreAdditive:
                 url='http://example.com/a',
                 tags=[],
                 summary='s',
-                save_date=datetime(2026, 1, 1),
-                last_read_date=datetime(2026, 6, 1),
+                save_date=dt.datetime(2026, 1, 1),
+                last_read_date=dt.datetime(2026, 6, 1),
                 read_count=1,
                 is_favorite=False,
                 is_current=False,
@@ -461,7 +459,7 @@ class TestTheBoundsAreAdditive:
             )
         )
         session.add(models.Book(title='a book', author='A. Writer', tags=[], priority=1))
-        session.add(models.Task(name='a task', category='Chore', add_date=datetime(2026, 1, 1)))
+        session.add(models.Task(name='a task', category='Chore', add_date=dt.datetime(2026, 1, 1)))
         session.flush()
         return client
 

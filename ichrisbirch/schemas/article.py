@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import AwareDatetime
 from pydantic import BaseModel
@@ -37,8 +37,8 @@ class Article(ArticleConfig):
     tags: list[str]
     summary: str
     notes: str | None = None
-    save_date: datetime
-    last_read_date: datetime | None = None
+    save_date: dt.datetime
+    last_read_date: dt.datetime | None = None
     read_count: int
     is_favorite: bool
     is_current: bool
@@ -77,4 +77,4 @@ class ArticleFailedImport(ArticleConfig):
     url: str
     batch_id: str | None
     error_message: str
-    failed_at: datetime
+    failed_at: dt.datetime

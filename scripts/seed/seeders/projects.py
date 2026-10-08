@@ -6,11 +6,9 @@ the right pattern (explicit, coordinated multi-table insertion).
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.project import Project
@@ -89,16 +87,16 @@ STATE_CYCLE = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM project_item_tasks'))
-    session.execute(sqlalchemy.text('DELETE FROM project_item_dependencies'))
-    session.execute(sqlalchemy.text('DELETE FROM project_item_memberships'))
-    session.execute(sqlalchemy.text('DELETE FROM project_items'))
-    session.execute(sqlalchemy.text('DELETE FROM projects'))
+    session.execute(sa.text('DELETE FROM project_item_tasks'))
+    session.execute(sa.text('DELETE FROM project_item_dependencies'))
+    session.execute(sa.text('DELETE FROM project_item_memberships'))
+    session.execute(sa.text('DELETE FROM project_items'))
+    session.execute(sa.text('DELETE FROM projects'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     # Create projects
-    closed_at = datetime.now(UTC) - timedelta(days=30)
+    closed_at = dt.datetime.now(dt.UTC) - dt.timedelta(days=30)
     projects = []
     for rep in range(scale):
         for i, (name, description, kind, project_status, reason) in enumerate(PROJECT_DATA):
@@ -134,7 +132,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
         # Spread across the last few months so a date-bounded read has something
         # to narrow. Seeded rows are generated, not history, so stamping them
         # invents nothing.
-        finished_at = datetime.now(UTC) - timedelta(days=idx % 90) if completed else None
+        finished_at = dt.datetime.now(dt.UTC) - dt.timedelta(days=idx % 90) if completed else None
         items.append(ProjectItem(title=title, notes=notes, completed=completed, completed_at=finished_at, archived=archived))
 
     session.add_all(items)
@@ -199,7 +197,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                         item_id=item.id,
                         title=TASK_TITLES[t % len(TASK_TITLES)],
                         completed=task_completed,
-                        completed_at=datetime.now(UTC) - timedelta(days=i % 90) if task_completed else None,
+                        completed_at=dt.datetime.now(dt.UTC) - dt.timedelta(days=i % 90) if task_completed else None,
                         position=t,
                     )
                 )

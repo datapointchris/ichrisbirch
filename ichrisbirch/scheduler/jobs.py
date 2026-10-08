@@ -6,6 +6,7 @@ since the session is not serializable and cannot be passed in as a parameter.
 by the yield in `get_sqlalchemy_session` cannot be used as a context manager.
 """
 
+import datetime as dt
 import functools
 import random
 import subprocess  # nosec B404
@@ -14,8 +15,6 @@ from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import asdict
 from dataclasses import dataclass
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -75,8 +74,8 @@ def _persist_job_run(
     settings: Settings,
     job_id: str,
     job_run_id: str,
-    started_at: datetime,
-    finished_at: datetime,
+    started_at: dt.datetime,
+    finished_at: dt.datetime,
     duration_seconds: float,
     success: bool,
     error_type: str | None = None,
@@ -182,9 +181,9 @@ def check_and_run_autotasks(settings: Settings) -> None:
     with create_session(settings) as session:
         # Read on every run, so a zone changed in settings applies from the next one.
         zone = admin_calendar_zone(session)
-        today = datetime.now(zone).date()
+        today = dt.datetime.now(zone).date()
         open_copies: dict[int, int] = defaultdict(int)
-        last_closed_at: dict[int, datetime] = {}
+        last_closed_at: dict[int, dt.datetime] = {}
         copies = session.scalars(select(models.Task).where(models.Task.autotask_id.is_not(None))).all()
         for task in copies:
             closed_at = task.complete_date or task.drop_date
@@ -210,7 +209,7 @@ def check_and_run_autotasks(settings: Settings) -> None:
                     autotask_id=autotask.id,
                 )
             )
-            autotask.last_run_date = datetime.now(UTC)
+            autotask.last_run_date = dt.datetime.now(dt.UTC)
             autotask.run_count += 1
             logger.info('autotask_ran', autotask_name=autotask.name, anchor=autotask.anchor)
         session.commit()
@@ -257,7 +256,7 @@ def check_and_run_autofun(settings: Settings) -> None:
                 fun_item = session.get(models.AutoFun, record.fun_item_id)
                 if fun_item:
                     fun_item.is_completed = True
-                    fun_item.completed_date = datetime.now(UTC)
+                    fun_item.completed_date = dt.datetime.now(dt.UTC)
                 session.delete(record)
                 logger.info('autofun_item_completed', fun_item_id=record.fun_item_id)
 

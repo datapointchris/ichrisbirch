@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import AwareDatetime
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ class PatternCreate(PatternConfig):
 class Pattern(PatternConfig):
     id: int
     message: str
-    recorded_at: datetime
+    recorded_at: dt.datetime
 
 
 class PatternUpdate(PatternConfig):

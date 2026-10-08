@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.detect_private_key import DetectedPrivateKey
 from stats.schemas.hooks.detect_private_key import DetectPrivateKeyHookEvent
@@ -26,7 +25,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DetectPrivateKeyH
 
     if not staged_files:
         return DetectPrivateKeyHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -46,7 +45,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DetectPrivateKeyH
     issues = _parse_output(result.stdout + result.stderr)
 
     return DetectPrivateKeyHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

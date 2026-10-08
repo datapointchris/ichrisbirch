@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -18,7 +17,7 @@ class TestCodeSyncSchema:
         from stats.schemas.hooks.project import CodeSyncHookEvent
 
         event = CodeSyncHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -35,7 +34,7 @@ class TestCodeSyncSchema:
         from stats.schemas.hooks.project import CodeSyncHookEvent
 
         event = CodeSyncHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -89,7 +88,7 @@ class TestGenerateFixtureDiagramsSchema:
         from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
 
         event = GenerateFixtureDiagramsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -105,7 +104,7 @@ class TestGenerateFixtureDiagramsSchema:
         from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
 
         event = GenerateFixtureDiagramsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -174,7 +173,7 @@ class TestValidateHtmlSchema:
         from stats.schemas.hooks.project import ValidateHtmlHookEvent
 
         event = ValidateHtmlHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -199,7 +198,7 @@ class TestValidateHtmlSchema:
         from stats.schemas.hooks.project import ValidateHtmlHookEvent
 
         event = ValidateHtmlHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

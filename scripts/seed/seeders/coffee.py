@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import random
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.coffee import CoffeeBean
@@ -234,8 +234,8 @@ BEANS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM coffee.coffee_beans'))
-    session.execute(sqlalchemy.text('DELETE FROM coffee.coffee_shops'))
+    session.execute(sa.text('DELETE FROM coffee.coffee_beans'))
+    session.execute(sa.text('DELETE FROM coffee.coffee_shops'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.schemas.collectors.pytest_collector import PytestCollectEvent
@@ -35,7 +34,7 @@ def run(branch: str, project: str, json_path: str) -> PytestCollectEvent | None:
     tests = [_parse_test(t) for t in raw_data.get('tests', [])]
 
     return PytestCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         summary=summary,

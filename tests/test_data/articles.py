@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 from ichrisbirch.models import Article
 
@@ -12,7 +11,7 @@ BASE_DATA: list[Article] = [
         is_current=True,
         is_favorite=False,
         is_archived=False,
-        save_date=datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC),
+        save_date=dt.datetime(2023, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
         read_count=0,
         review_days=30,
     ),
@@ -24,7 +23,7 @@ BASE_DATA: list[Article] = [
         is_current=False,
         is_favorite=True,
         is_archived=False,
-        save_date=datetime(2023, 2, 1, 12, 0, 0, tzinfo=UTC),
+        save_date=dt.datetime(2023, 2, 1, 12, 0, 0, tzinfo=dt.UTC),
         read_count=0,
     ),
     Article(
@@ -35,7 +34,7 @@ BASE_DATA: list[Article] = [
         is_current=False,
         is_favorite=False,
         is_archived=True,
-        save_date=datetime(2023, 3, 1, 12, 0, 0, tzinfo=UTC),
+        save_date=dt.datetime(2023, 3, 1, 12, 0, 0, tzinfo=dt.UTC),
         read_count=0,
     ),
 ]

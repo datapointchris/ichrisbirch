@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import tempfile
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
@@ -31,7 +30,7 @@ class TestNpmDependenciesSchema:
         from stats.schemas.collectors.npm_dependencies import NpmDependency
 
         event = NpmDependenciesCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             production_count=2,

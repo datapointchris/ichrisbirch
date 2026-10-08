@@ -1,5 +1,4 @@
-from datetime import date
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -23,7 +22,7 @@ class CoffeeShopCreate(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: date | None = None
+    date_visited: dt.date | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -45,8 +44,8 @@ class CoffeeShop(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: date | None = None
-    created_at: datetime
+    date_visited: dt.date | None = None
+    created_at: dt.datetime
 
 
 class CoffeeShopUpdate(CoffeeShopConfig):
@@ -60,7 +59,7 @@ class CoffeeShopUpdate(CoffeeShopConfig):
     rating: float | None = None
     notes: str | None = None
     review: str | None = None
-    date_visited: date | None = None
+    date_visited: dt.date | None = None
 
     @model_validator(mode='before')
     @classmethod
@@ -86,7 +85,7 @@ class CoffeeBeanCreate(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: date | None = None
+    purchase_date: dt.date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None
@@ -112,11 +111,11 @@ class CoffeeBean(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: date | None = None
+    purchase_date: dt.date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None
-    created_at: datetime
+    created_at: dt.datetime
 
 
 class CoffeeBeanUpdate(CoffeeBeanConfig):
@@ -131,7 +130,7 @@ class CoffeeBeanUpdate(CoffeeBeanConfig):
     review: str | None = None
     notes: str | None = None
     price: float | None = None
-    purchase_date: date | None = None
+    purchase_date: dt.date | None = None
     coffee_shop_id: int | None = None
     purchase_source: str | None = None
     purchase_url: str | None = None

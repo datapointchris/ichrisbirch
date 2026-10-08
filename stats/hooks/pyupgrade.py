@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
 
@@ -30,7 +29,7 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
 
     if not staged_files:
         return PyupgradeHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -45,7 +44,7 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
 
     if not python_files:
         return PyupgradeHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -67,7 +66,7 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
     rewritten_files = _parse_pyupgrade_output(result.stdout + result.stderr)
 
     return PyupgradeHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

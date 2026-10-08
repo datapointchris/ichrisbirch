@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.pattern import Pattern
@@ -27,18 +25,18 @@ MESSAGES = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM patterns'))
+    session.execute(sa.text('DELETE FROM patterns'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
     patterns = []
     for rep in range(scale):
         for i, message in enumerate(MESSAGES):
             text = message if scale == 1 else f'{message} (#{rep + 1})'
             # Spread backwards over roughly two months so correlation over time
             # has something to work with.
-            recorded_at = now - timedelta(days=i * 6 + rep * 2, hours=random.randint(0, 23))
+            recorded_at = now - dt.timedelta(days=i * 6 + rep * 2, hours=random.randint(0, 23))
             patterns.append(Pattern(message=text, recorded_at=recorded_at))
 
     session.add_all(patterns)

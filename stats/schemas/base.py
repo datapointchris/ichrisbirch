@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 
@@ -16,6 +16,6 @@ class BaseEvent(BaseModel):
     - branch: Git branch name
     """
 
-    timestamp: datetime
+    timestamp: dt.datetime
     project: str
     branch: str

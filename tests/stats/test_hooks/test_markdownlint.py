@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -40,7 +39,7 @@ class TestMarkdownlintSchema:
         from stats.schemas.hooks.markdownlint import MarkdownlintIssue
 
         event = MarkdownlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -69,7 +68,7 @@ class TestMarkdownlintSchema:
         from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
 
         event = MarkdownlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

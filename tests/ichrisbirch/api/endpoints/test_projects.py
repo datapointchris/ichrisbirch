@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 import pytest
 from fastapi import status
@@ -1321,7 +1321,7 @@ class TestProjectItemCompletedAt:
         response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed_at'] is not None, 'completing must record when'
-        datetime.fromisoformat(response.json()['completed_at'])
+        dt.datetime.fromisoformat(response.json()['completed_at'])
 
     def test_reopening_clears_it(self, project_id):
         client, pid = project_id

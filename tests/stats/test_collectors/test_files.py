@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import tempfile
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 
@@ -29,7 +28,7 @@ class TestFilesSchema:
         from stats.schemas.collectors.files import FilesCollectEvent
 
         event = FilesCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             file_types=[],

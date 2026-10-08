@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Date
@@ -34,7 +34,7 @@ class HabitCompleted(Base):
     category: Mapped[HabitCategory] = relationship('HabitCategory', back_populates='completed_habits')
     # `complete_date` is the API's field name. Giving the column the same name is a
     # rename, which takes two deploys (docs/blue-green-deployment.md).
-    complete_date: Mapped[date] = mapped_column('completion_date', Date, nullable=False)
+    complete_date: Mapped[dt.date] = mapped_column('completion_date', Date, nullable=False)
 
     def __repr__(self):
         return f'HabitCompleted(habit_id={self.habit_id!r}, name={self.name!r}, complete_date={self.complete_date!r})'

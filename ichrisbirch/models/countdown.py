@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 from sqlalchemy import Date
 from sqlalchemy import Identity
@@ -15,7 +15,7 @@ class Countdown(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    due_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
 
     def __repr__(self):
         return f'Countdown(name={self.name}, notes={self.notes}, due_date={self.due_date}'

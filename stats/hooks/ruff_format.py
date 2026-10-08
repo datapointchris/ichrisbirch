@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.ruff_check import RuffFormatHookEvent
 
@@ -27,7 +26,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffFormatHookEve
 
     if not python_files:
         return RuffFormatHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -47,7 +46,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffFormatHookEve
     files_reformatted = _parse_format_output(result.stdout + result.stderr)
 
     return RuffFormatHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

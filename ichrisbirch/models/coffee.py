@@ -1,5 +1,4 @@
-from datetime import date
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import Date
 from sqlalchemy import DateTime
@@ -49,8 +48,8 @@ class CoffeeShop(Base):
     rating: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
-    date_visited: Mapped[date | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    date_visited: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     beans: Mapped[list['CoffeeBean']] = relationship('CoffeeBean', back_populates='coffee_shop')
 
     def __repr__(self) -> str:
@@ -73,12 +72,12 @@ class CoffeeBean(Base):
     review: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    purchase_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     # Either a known shop or a free-text source (e.g. "Trade Coffee subscription") — mutually exclusive
     coffee_shop_id: Mapped[int | None] = mapped_column(Integer, ForeignKey('coffee.coffee_shops.id', ondelete='SET NULL'), nullable=True)
     purchase_source: Mapped[str | None] = mapped_column(Text, nullable=True)
     purchase_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     coffee_shop: Mapped['CoffeeShop | None'] = relationship('CoffeeShop', back_populates='beans')
 
     def __repr__(self) -> str:

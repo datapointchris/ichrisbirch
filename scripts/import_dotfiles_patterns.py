@@ -18,10 +18,10 @@ skipped, because the store has no ids to deduplicate on.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 DEFAULT_STORE = Path.home() / '.local' / 'share' / 'patterns' / 'entries.jsonl'
@@ -44,20 +44,20 @@ def read_entries(store: Path) -> list[dict]:
 
 def normalize_timestamp(raw: str) -> str:
     """The store writes %z without a colon ('-0500'); RFC3339 wants one."""
-    return datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z').isoformat()
+    return dt.datetime.strptime(raw, '%Y-%m-%dT%H:%M:%S%z').isoformat()
 
 
-def instant(raw: str) -> datetime:
+def instant(raw: str) -> dt.datetime:
     """A timestamp as a comparable instant.
 
     The API answers in UTC while the store records a local offset, so comparing
     the strings makes every entry look new and a second run duplicates all of
     them. Parsing both to aware datetimes is what makes re-running safe.
     """
-    return datetime.fromisoformat(raw.replace('Z', '+00:00')).replace(microsecond=0)
+    return dt.datetime.fromisoformat(raw.replace('Z', '+00:00')).replace(microsecond=0)
 
 
-def existing_keys() -> set[tuple[str, datetime]]:
+def existing_keys() -> set[tuple[str, dt.datetime]]:
     result = subprocess.run(['icb', 'patterns', 'list', '--json'], capture_output=True, text=True, check=True)
     return {(p['message'], instant(p['recorded_at'])) for p in json.loads(result.stdout or '[]')}
 

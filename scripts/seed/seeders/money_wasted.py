@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import date
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.money_wasted import MoneyWasted
@@ -24,7 +23,7 @@ ITEMS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM money_wasted'))
+    session.execute(sa.text('DELETE FROM money_wasted'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -32,8 +31,8 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, (item, amount, notes) in enumerate(ITEMS):
             name = item if scale == 1 else f'{item} #{rep + 1}'
-            wasted = date.today() - timedelta(days=random.randint(1, 180))
-            purchased = wasted - timedelta(days=random.randint(1, 30)) if i % 2 == 0 else None
+            wasted = dt.date.today() - dt.timedelta(days=random.randint(1, 180))
+            purchased = wasted - dt.timedelta(days=random.randint(1, 30)) if i % 2 == 0 else None
             entries.append(
                 MoneyWasted(
                     item=name,

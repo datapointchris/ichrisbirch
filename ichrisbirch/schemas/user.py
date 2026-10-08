@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from typing import Any
 
 from pydantic import AwareDatetime
@@ -32,8 +32,8 @@ class User(UserConfig):
     name: str
     email: str
     is_admin: bool
-    created_on: datetime
-    last_login: datetime | None
+    created_on: dt.datetime
+    last_login: dt.datetime | None
     preferences: Any
 
 

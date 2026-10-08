@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.article import Article
@@ -41,13 +39,13 @@ SUMMARIES = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM articles'))
+    session.execute(sa.text('DELETE FROM articles'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     articles = []
     current_count = 0
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
 
     # review_days values for favorites: exercises the "due for review" API filter
     REVIEW_DAYS_BY_INDEX = {0: 7, 2: 14, 4: 30, 6: 90}
@@ -56,7 +54,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
         for i, (title, url, tags) in enumerate(ARTICLES):
             article_title = title if scale == 1 else f'{title} #{rep + 1}'
             article_url = url if scale == 1 else f'{url}-{rep + 1}'
-            save_date = now - timedelta(days=random.randint(1, 365))
+            save_date = now - dt.timedelta(days=random.randint(1, 365))
 
             # Decouple is_current from is_favorite — index 1 is current, not a favorite
             is_current = i == 1
@@ -75,12 +73,12 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             if read_count > 0 and review_days is not None:
                 if i == 0:
                     # Due for review: last read longer ago than review_days
-                    last_read = now - timedelta(days=review_days + random.randint(5, 30))
+                    last_read = now - dt.timedelta(days=review_days + random.randint(5, 30))
                 else:
                     # Not yet due: last read recently (within review_days)
-                    last_read = now - timedelta(days=max(1, review_days - random.randint(3, 10)))
+                    last_read = now - dt.timedelta(days=max(1, review_days - random.randint(3, 10)))
             elif read_count > 0:
-                last_read = save_date + timedelta(days=random.randint(1, 30))
+                last_read = save_date + dt.timedelta(days=random.randint(1, 30))
             else:
                 last_read = None
 

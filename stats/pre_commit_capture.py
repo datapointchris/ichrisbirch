@@ -3,13 +3,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +45,7 @@ def write_timing(hook_name: str, duration: float, total_duration: float | None =
     """Append timing entry to capture timing log."""
     TIMING_DIR.mkdir(parents=True, exist_ok=True)
     log_file = TIMING_DIR / 'capture.log'
-    timestamp = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M:%S')
 
     with log_file.open('a') as f:
         if total_duration is not None:

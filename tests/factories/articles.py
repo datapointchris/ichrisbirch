@@ -1,7 +1,6 @@
 """Article factory for generating test Article objects."""
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import factory
 
@@ -22,7 +21,7 @@ class ArticleFactory(factory.alchemy.SQLAlchemyModelFactory):
     tags = factory.LazyFunction(lambda: ['test', 'article'])
     summary = factory.LazyAttribute(lambda obj: f'Summary of {obj.title}')
     url = factory.Sequence(lambda n: f'https://example.com/article/{n + 1}')
-    save_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    save_date = factory.LazyFunction(lambda: dt.datetime.now(dt.UTC))
     last_read_date = None
     read_count = 0
     is_favorite = False
@@ -37,6 +36,6 @@ class ArticleFactory(factory.alchemy.SQLAlchemyModelFactory):
         # Usage: ArticleFactory(archived=True)
         archived = factory.Trait(is_archived=True, is_current=False)
         # Usage: ArticleFactory(read=True)
-        read = factory.Trait(last_read_date=factory.LazyFunction(lambda: datetime.now(UTC)), read_count=1)
+        read = factory.Trait(last_read_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC)), read_count=1)
         # Usage: ArticleFactory(heavily_read=True)
-        heavily_read = factory.Trait(last_read_date=factory.LazyFunction(lambda: datetime.now(UTC)), read_count=10, is_favorite=True)
+        heavily_read = factory.Trait(last_read_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC)), read_count=10, is_favorite=True)

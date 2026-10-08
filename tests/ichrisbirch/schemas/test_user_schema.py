@@ -3,7 +3,7 @@
 Tests that the User, UserCreate, and UserUpdate schemas properly validate data.
 """
 
-import datetime
+import datetime as dt
 
 import pytest
 from pydantic import ValidationError
@@ -40,7 +40,7 @@ class TestUserSchema:
 
     def test_user_model_valid(self):
         """Test creating a valid User model."""
-        now = datetime.datetime.now(datetime.UTC)
+        now = dt.datetime.now(dt.UTC)
         user_data = {
             'id': 1,
             'alternative_id': 12345,
@@ -61,7 +61,7 @@ class TestUserSchema:
 
     def test_user_model_missing_fields(self):
         """Test User model fails with missing required fields."""
-        now = datetime.datetime.now(datetime.UTC)
+        now = dt.datetime.now(dt.UTC)
         incomplete_data = {
             'id': 1,
             'name': 'Test User',
@@ -76,7 +76,7 @@ class TestUserSchema:
 
     def test_user_update_valid(self):
         """Test creating a valid UserUpdate model."""
-        now = datetime.datetime.now(datetime.UTC)
+        now = dt.datetime.now(dt.UTC)
         update_data = {'name': 'Updated Name', 'last_login': now, 'preferences': {'theme': 'light'}}
         user_update = UserUpdate(**update_data)
         assert user_update.name == 'Updated Name'

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.schemas.collectors.vitest_collector import VitestCollectEvent
@@ -41,7 +40,7 @@ def run(branch: str, project: str, json_path: str) -> VitestCollectEvent | None:
     duration_seconds = sum(t.duration for t in tests)
 
     return VitestCollectEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         summary=summary,

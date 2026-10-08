@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -26,7 +26,7 @@ class EventCreate(EventConfig):
 class Event(EventConfig):
     id: int
     name: str
-    date: datetime
+    date: dt.datetime
     timezone: str
     venue: str
     url: str | None = None

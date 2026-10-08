@@ -1,8 +1,6 @@
 """Event factory for generating test Event objects."""
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 import factory
 
@@ -13,7 +11,7 @@ from .base import get_factory_session
 
 def now_utc():
     """Return current UTC datetime (timezone-aware)."""
-    return datetime.now(UTC)
+    return dt.datetime.now(dt.UTC)
 
 
 class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -27,7 +25,7 @@ class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
     name = factory.Sequence(lambda n: f'Test Event {n + 1}')
     # The column is a wall clock at the venue, so the offset comes off. The zone
     # cycles so a suite never sees only one.
-    date = factory.LazyFunction(lambda: (now_utc() + timedelta(days=14)).replace(tzinfo=None))
+    date = factory.LazyFunction(lambda: (now_utc() + dt.timedelta(days=14)).replace(tzinfo=None))
     timezone = factory.Iterator(['America/New_York', 'Asia/Tokyo', 'Europe/Berlin', 'UTC'])
     venue = factory.Sequence(lambda n: f'Venue {n + 1}')
     url = factory.Sequence(lambda n: f'https://events.com/event/{n + 1}')
@@ -41,6 +39,6 @@ class EventFactory(factory.alchemy.SQLAlchemyModelFactory):
         # Usage: EventFactory(free=True)
         free = factory.Trait(cost=0.0)
         # Usage: EventFactory(past=True)
-        past = factory.Trait(date=factory.LazyFunction(lambda: now_utc() - timedelta(days=7)))
+        past = factory.Trait(date=factory.LazyFunction(lambda: now_utc() - dt.timedelta(days=7)))
         # Usage: EventFactory(today=True)
         today = factory.Trait(date=factory.LazyFunction(now_utc))

@@ -18,7 +18,7 @@ Examples:
     completed = HabitCompletedFactory()
 """
 
-from datetime import date
+import datetime as dt
 
 import factory
 
@@ -84,7 +84,7 @@ class HabitCompletedFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session_persistence = 'flush'
 
     name = factory.Sequence(lambda n: f'Completed Habit {n + 1}')
-    complete_date = factory.LazyFunction(date.today)
+    complete_date = factory.LazyFunction(dt.date.today)
 
     # SubFactory creates a category automatically
     category = factory.SubFactory(HabitCategoryFactory)

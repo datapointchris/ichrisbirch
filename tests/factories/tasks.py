@@ -18,9 +18,7 @@ Examples:
     TaskFactory(notes='x' * 10000)
 """
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 import factory
 
@@ -42,16 +40,16 @@ class TaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     notes = factory.LazyAttribute(lambda obj: f'Notes for {obj.name}')
     category = 'Chore'
     window_days = 30
-    add_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    add_date = factory.LazyFunction(lambda: dt.datetime.now(dt.UTC))
     # Each task ranks a day after the one before, so creation order is queue order.
-    rank_at = factory.Sequence(lambda n: datetime.now(UTC) + timedelta(days=n + 1))
+    rank_at = factory.Sequence(lambda n: dt.datetime.now(dt.UTC) + dt.timedelta(days=n + 1))
     pinned = False
     complete_date = None
 
     class Params:
         # Usage: TaskFactory(completed=True)
-        completed = factory.Trait(complete_date=factory.LazyFunction(lambda: datetime.now(UTC)))
-        dropped = factory.Trait(drop_date=factory.LazyFunction(lambda: datetime.now(UTC)))
+        completed = factory.Trait(complete_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC)))
+        dropped = factory.Trait(drop_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC)))
 
     @classmethod
     def completed_task(cls, **kwargs):

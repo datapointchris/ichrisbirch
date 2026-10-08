@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -56,7 +55,7 @@ class TestRadonSchema:
         from stats.schemas.collectors.radon import RadonCollectEvent
 
         event = RadonCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             files=[

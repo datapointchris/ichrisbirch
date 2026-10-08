@@ -10,11 +10,9 @@ Usage from bash dispatch:
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404 — only used for git commands with list args
 import sys
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
 from rich.console import Console
 
@@ -194,14 +192,14 @@ def _render_hot_files(con: Console) -> None:
 
 def _render_daily_commits(con: Console) -> None:
     """30-day daily commit chart using vertical bars."""
-    today = datetime.now(UTC).astimezone().date()  # local date to match git --since/--until
+    today = dt.datetime.now(dt.UTC).astimezone().date()  # local date to match git --since/--until
     labels = []
     values = []
 
     for i in range(29, -1, -1):
-        dt = today - timedelta(days=i)
-        date_str = dt.strftime('%Y-%m-%d')
-        dow = dt.strftime('%a')[0]
+        day = today - dt.timedelta(days=i)
+        date_str = day.strftime('%Y-%m-%d')
+        dow = day.strftime('%a')[0]
         count = _count_lines(_git(['log', '--oneline', f'--since={date_str} 00:00:00', f'--until={date_str} 23:59:59']))
         labels.append(dow)
         values.append(float(count))

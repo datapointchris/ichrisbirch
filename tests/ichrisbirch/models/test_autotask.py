@@ -1,6 +1,4 @@
-from datetime import UTC
-from datetime import date
-from datetime import datetime
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -12,7 +10,7 @@ from ichrisbirch.models.autotask import frequency_to_duration
 NEW_YORK = ZoneInfo('America/New_York')
 
 
-def last_ran(at: datetime, frequency: str = 'Daily', first_ran: datetime | None = None) -> AutoTask:
+def last_ran(at: dt.datetime, frequency: str = 'Daily', first_ran: dt.datetime | None = None) -> AutoTask:
     return AutoTask(
         name='Water plants',
         category='Chore',
@@ -36,18 +34,18 @@ def test_an_unknown_frequency_is_refused():
 @pytest.mark.parametrize(
     ('frequency', 'next_day'),
     [
-        ('Daily', date(2026, 2, 1)),
-        ('Weekly', date(2026, 2, 7)),
-        ('Biweekly', date(2026, 2, 14)),
-        ('Monthly', date(2026, 2, 28)),
-        ('Quarterly', date(2026, 4, 30)),
-        ('Semiannually', date(2026, 7, 31)),
-        ('Yearly', date(2027, 1, 31)),
+        ('Daily', dt.date(2026, 2, 1)),
+        ('Weekly', dt.date(2026, 2, 7)),
+        ('Biweekly', dt.date(2026, 2, 14)),
+        ('Monthly', dt.date(2026, 2, 28)),
+        ('Quarterly', dt.date(2026, 4, 30)),
+        ('Semiannually', dt.date(2026, 7, 31)),
+        ('Yearly', dt.date(2027, 1, 31)),
     ],
 )
 def test_the_next_run_is_counted_in_calendar_units(frequency, next_day):
     """A month is a calendar month, clamped to the shorter month's last day, not 30 days."""
-    autotask = last_ran(datetime(2026, 1, 31, 12, tzinfo=UTC), frequency)
+    autotask = last_ran(dt.datetime(2026, 1, 31, 12, tzinfo=dt.UTC), frequency)
 
     assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == next_day
 
@@ -55,9 +53,9 @@ def test_the_next_run_is_counted_in_calendar_units(frequency, next_day):
 @pytest.mark.parametrize(
     ('frequency', 'first_ran', 'last_ran_on', 'next_day'),
     [
-        ('Monthly', datetime(2026, 1, 31, 12, tzinfo=UTC), datetime(2026, 2, 28, 12, tzinfo=UTC), date(2026, 3, 31)),
-        ('Quarterly', datetime(2025, 11, 30, 12, tzinfo=UTC), datetime(2026, 2, 28, 12, tzinfo=UTC), date(2026, 5, 30)),
-        ('Yearly', datetime(2024, 2, 29, 12, tzinfo=UTC), datetime(2027, 2, 28, 12, tzinfo=UTC), date(2028, 2, 29)),
+        ('Monthly', dt.datetime(2026, 1, 31, 12, tzinfo=dt.UTC), dt.datetime(2026, 2, 28, 12, tzinfo=dt.UTC), dt.date(2026, 3, 31)),
+        ('Quarterly', dt.datetime(2025, 11, 30, 12, tzinfo=dt.UTC), dt.datetime(2026, 2, 28, 12, tzinfo=dt.UTC), dt.date(2026, 5, 30)),
+        ('Yearly', dt.datetime(2024, 2, 29, 12, tzinfo=dt.UTC), dt.datetime(2027, 2, 28, 12, tzinfo=dt.UTC), dt.date(2028, 2, 29)),
     ],
 )
 def test_a_day_clamped_short_comes_back_the_next_step(frequency, first_ran, last_ran_on, next_day):
@@ -73,73 +71,73 @@ def test_a_run_held_back_does_not_move_the_runs_after_it():
     `max_concurrent` holds a due run back until a slot opens, and the run is
     stamped on the day it finally happens.
     """
-    autotask = last_ran(datetime(2026, 8, 29, 14, tzinfo=UTC), 'Weekly', first_ran=datetime(2026, 8, 20, 14, tzinfo=UTC))
+    autotask = last_ran(dt.datetime(2026, 8, 29, 14, tzinfo=dt.UTC), 'Weekly', first_ran=dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC))
 
-    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == date(2026, 9, 3)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == dt.date(2026, 9, 3)
 
 
 def test_a_monthly_template_keeps_its_day_of_the_month():
     """Thirty days from January 15 is February 14, and the template would creep earlier every month."""
-    autotask = last_ran(datetime(2026, 1, 15, 12, tzinfo=UTC), 'Monthly')
+    autotask = last_ran(dt.datetime(2026, 1, 15, 12, tzinfo=dt.UTC), 'Monthly')
 
-    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == date(2026, 2, 15)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == dt.date(2026, 2, 15)
 
 
 def test_the_last_run_is_a_day_on_the_zones_calendar():
     """01:00 UTC on the 21st is 21:00 on the 20th in New York, so a daily template is next due on the 21st there."""
-    autotask = last_ran(datetime(2026, 8, 21, 1, tzinfo=UTC))
+    autotask = last_ran(dt.datetime(2026, 8, 21, 1, tzinfo=dt.UTC))
 
-    assert autotask.next_run_day(NEW_YORK, last_closed_at=None) == date(2026, 8, 21)
-    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == date(2026, 8, 22)
+    assert autotask.next_run_day(NEW_YORK, last_closed_at=None) == dt.date(2026, 8, 21)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=None) == dt.date(2026, 8, 22)
 
 
 def test_a_template_is_due_on_its_next_run_day_and_after():
-    autotask = last_ran(datetime(2026, 8, 20, 14, tzinfo=UTC), 'Weekly')
+    autotask = last_ran(dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC), 'Weekly')
 
-    assert not autotask.is_due_on(date(2026, 8, 26), NEW_YORK, last_closed_at=None)
-    assert autotask.is_due_on(date(2026, 8, 27), NEW_YORK, last_closed_at=None)
-    assert autotask.is_due_on(date(2026, 9, 3), NEW_YORK, last_closed_at=None)
+    assert not autotask.is_due_on(dt.date(2026, 8, 26), NEW_YORK, last_closed_at=None)
+    assert autotask.is_due_on(dt.date(2026, 8, 27), NEW_YORK, last_closed_at=None)
+    assert autotask.is_due_on(dt.date(2026, 9, 3), NEW_YORK, last_closed_at=None)
 
 
 def test_a_template_that_ran_today_is_not_due_again_today():
-    autotask = last_ran(datetime(2026, 8, 20, 14, tzinfo=UTC))
+    autotask = last_ran(dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC))
 
-    assert not autotask.is_due_on(date(2026, 8, 20), NEW_YORK, last_closed_at=None)
+    assert not autotask.is_due_on(dt.date(2026, 8, 20), NEW_YORK, last_closed_at=None)
 
 
-def completion_template(frequency: str = 'Weekly', ran: datetime = datetime(2026, 8, 20, 14, tzinfo=UTC)) -> AutoTask:
+def completion_template(frequency: str = 'Weekly', ran: dt.datetime = dt.datetime(2026, 8, 20, 14, tzinfo=dt.UTC)) -> AutoTask:
     return AutoTask(name='Trim nails', category='Dingo', anchor='completion', frequency=frequency, first_run_date=ran, last_run_date=ran)
 
 
 def test_a_completion_template_counts_from_the_last_close():
     autotask = completion_template()
 
-    closed = datetime(2026, 9, 2, 18, tzinfo=UTC)
-    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 9, 9)
+    closed = dt.datetime(2026, 9, 2, 18, tzinfo=dt.UTC)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == dt.date(2026, 9, 9)
 
 
 def test_a_completion_template_with_no_closed_copy_counts_from_the_last_run():
-    assert completion_template().next_run_day(ZoneInfo('UTC'), last_closed_at=None) == date(2026, 8, 27)
+    assert completion_template().next_run_day(ZoneInfo('UTC'), last_closed_at=None) == dt.date(2026, 8, 27)
 
 
 def test_the_close_is_a_day_on_the_zones_calendar():
     """01:00 UTC on September 3 is still September 2 in New York."""
-    closed = datetime(2026, 9, 3, 1, tzinfo=UTC)
+    closed = dt.datetime(2026, 9, 3, 1, tzinfo=dt.UTC)
 
-    assert completion_template().next_run_day(NEW_YORK, last_closed_at=closed) == date(2026, 9, 9)
+    assert completion_template().next_run_day(NEW_YORK, last_closed_at=closed) == dt.date(2026, 9, 9)
 
 
 def test_a_completion_template_steps_in_calendar_months():
-    ran = datetime(2026, 1, 2, 12, tzinfo=UTC)
-    closed = datetime(2026, 1, 31, 12, tzinfo=UTC)
+    ran = dt.datetime(2026, 1, 2, 12, tzinfo=dt.UTC)
+    closed = dt.datetime(2026, 1, 31, 12, tzinfo=dt.UTC)
 
-    assert completion_template('Monthly', ran).next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 2, 28)
+    assert completion_template('Monthly', ran).next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == dt.date(2026, 2, 28)
 
 
 def test_a_deleted_copy_holds_the_next_one_a_step_from_when_it_was_made():
     """The copy made Sep 1 was deleted, so the last close is still Aug 1's."""
-    autotask = completion_template('Monthly', datetime(2026, 9, 1, 12, tzinfo=UTC))
-    closed = datetime(2026, 8, 1, 12, tzinfo=UTC)
+    autotask = completion_template('Monthly', dt.datetime(2026, 9, 1, 12, tzinfo=dt.UTC))
+    closed = dt.datetime(2026, 8, 1, 12, tzinfo=dt.UTC)
 
-    assert not autotask.is_due_on(date(2026, 9, 6), ZoneInfo('UTC'), last_closed_at=closed)
-    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == date(2026, 10, 1)
+    assert not autotask.is_due_on(dt.date(2026, 9, 6), ZoneInfo('UTC'), last_closed_at=closed)
+    assert autotask.next_run_day(ZoneInfo('UTC'), last_closed_at=closed) == dt.date(2026, 10, 1)

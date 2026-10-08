@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
@@ -19,7 +19,7 @@ class Event(Base):
     # An event is a wall clock at a place, not an instant. Doors at 19:00 stay 19:00
     # whoever is reading and whatever a government later does to the offset, so the
     # local reading is stored and the zone is stored beside it to resolve one.
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=False), nullable=False)
     timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default='UTC')
     venue: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=True)

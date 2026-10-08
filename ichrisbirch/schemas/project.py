@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -32,9 +32,9 @@ class Project(ProjectConfig):
     kind: str
     status: str
     status_reason: str | None = None
-    closed_at: datetime | None = None
+    closed_at: dt.datetime | None = None
     position: int
-    created_at: datetime
+    created_at: dt.datetime
 
 
 class ProjectUpdate(ProjectConfig):
@@ -69,9 +69,9 @@ class ProjectWithItemCount(ProjectConfig):
     kind: str
     status: str
     status_reason: str | None = None
-    closed_at: datetime | None = None
+    closed_at: dt.datetime | None = None
     position: int
-    created_at: datetime
+    created_at: dt.datetime
     item_count: int
     open_count: int
     completed_count: int

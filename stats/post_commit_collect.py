@@ -3,11 +3,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import sys
 import time
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 from stats.collectors import discover_collectors
@@ -25,7 +24,7 @@ def write_timing(collector_name: str, duration: float, total_duration: float | N
     """Append timing entry to collect timing log."""
     TIMING_DIR.mkdir(parents=True, exist_ok=True)
     log_file = TIMING_DIR / 'collect.log'
-    timestamp = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M:%S')
 
     with log_file.open('a') as f:
         if total_duration is not None:
@@ -142,7 +141,7 @@ def main() -> int:
     branch = get_branch()
     commit_info = get_commit_info()
 
-    commit_timestamp = datetime.fromisoformat(commit_info['timestamp'])
+    commit_timestamp = dt.datetime.fromisoformat(commit_info['timestamp'])
 
     staged_files = get_staged_files_from_commit()
 

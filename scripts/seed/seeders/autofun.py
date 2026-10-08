@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.autofun import AutoFun
@@ -37,21 +35,21 @@ ACTIVE_TASK_WINDOW_DAYS = 30
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM autofun_active_tasks'))
-    session.execute(sqlalchemy.text('DELETE FROM autofun'))
+    session.execute(sa.text('DELETE FROM autofun_active_tasks'))
+    session.execute(sa.text('DELETE FROM autofun'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     items = []
     # Mark first 5 items as completed with dates spread across recent months
     completed_indices = set(range(5))
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
 
     for rep in range(scale):
         for idx, (name, notes) in enumerate(AUTOFUN_ITEMS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
             if idx in completed_indices:
-                completed_date = now - timedelta(days=random.randint(7, 150))
+                completed_date = now - dt.timedelta(days=random.randint(7, 150))
                 items.append(AutoFun(name=title, notes=notes, is_completed=True, completed_date=completed_date))
             else:
                 items.append(AutoFun(name=title, notes=notes))
@@ -70,7 +68,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             notes=fun_item.notes,
             category='Personal',
             window_days=ACTIVE_TASK_WINDOW_DAYS,
-            rank_at=now + timedelta(days=ACTIVE_TASK_WINDOW_DAYS),
+            rank_at=now + dt.timedelta(days=ACTIVE_TASK_WINDOW_DAYS),
         )
         session.add(task)
         session.flush()

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import tempfile
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas import Event
 from stats.schemas import parse_event
@@ -258,7 +257,7 @@ class TestTokeiSchema:
     def test_tokei_total_lines_optional(self) -> None:
         """Test TokeiCollectEvent can be created without total_lines."""
         event = TokeiCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             total_files=100,

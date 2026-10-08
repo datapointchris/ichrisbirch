@@ -6,8 +6,7 @@ an item whose `completed` says true and whose `completed_at` says nothing is a
 row no reader can interpret.
 """
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemTask
@@ -26,4 +25,4 @@ def stamp_completion(row: ProjectItem | ProjectItemTask, was_completed: bool, up
     completed = update_data['completed']
     if completed == was_completed:
         return
-    row.completed_at = datetime.now(UTC) if completed else None
+    row.completed_at = dt.datetime.now(dt.UTC) if completed else None

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.codespell import CodespellHookEvent
 from stats.schemas.hooks.codespell import CodespellIssue
@@ -31,7 +30,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodespellHookEven
 
     if not staged_files:
         return CodespellHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -53,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodespellHookEven
     issues = _parse_codespell_output(result.stdout + result.stderr)
 
     return CodespellHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

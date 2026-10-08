@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.box import Box
@@ -69,8 +69,8 @@ ITEMS_PER_BOX = [5, 2, 7, 1, 0, 3, 8, 1, 4]
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM box_packing.items'))
-    session.execute(sqlalchemy.text('DELETE FROM box_packing.boxes'))
+    session.execute(sa.text('DELETE FROM box_packing.items'))
+    session.execute(sa.text('DELETE FROM box_packing.boxes'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:

@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -33,8 +33,8 @@ class AutoTask(AutoTaskConfig):
     window_days: int | None = None
     anchor: str
     max_concurrent: int
-    first_run_date: datetime
-    last_run_date: datetime
+    first_run_date: dt.datetime
+    last_run_date: dt.datetime
     run_count: int
 
 

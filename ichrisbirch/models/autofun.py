@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
@@ -19,8 +19,8 @@ class AutoFun(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
     is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    completed_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    added_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    added_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self):
         return f'AutoFun(name={self.name}, is_completed={self.is_completed})'

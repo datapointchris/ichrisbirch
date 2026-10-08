@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 from sqlalchemy import Date
 from sqlalchemy import Float
@@ -16,8 +16,8 @@ class MoneyWasted(Base):
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     item: Mapped[str] = mapped_column(Text, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
-    date_purchased: Mapped[date] = mapped_column(Date, nullable=True)
-    date_wasted: Mapped[date] = mapped_column(Date, nullable=False)
+    date_purchased: Mapped[dt.date] = mapped_column(Date, nullable=True)
+    date_wasted: Mapped[dt.date] = mapped_column(Date, nullable=False)
     notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     def __repr__(self):

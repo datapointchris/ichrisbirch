@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -42,7 +41,7 @@ class TestShellcheckSchema:
         comments = [ShellcheckComment.model_validate(c) for c in data.get('comments', [])]
 
         event = ShellcheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -61,7 +60,7 @@ class TestShellcheckSchema:
         from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
 
         event = ShellcheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

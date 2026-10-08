@@ -1,7 +1,6 @@
+import datetime as dt
 import hashlib
 import secrets
-from datetime import UTC
-from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
@@ -35,9 +34,9 @@ class PersonalAPIKey(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     key_prefix: Mapped[str] = mapped_column(Text, nullable=False)
     hashed_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
+    last_used_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self):
         return f'PersonalAPIKey(name={self.name}, key_prefix={self.key_prefix}, user_id={self.user_id})'

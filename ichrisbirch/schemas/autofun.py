@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -20,8 +20,8 @@ class AutoFun(AutoFunConfig):
     name: str
     notes: str | None = None
     is_completed: bool
-    completed_date: datetime | None = None
-    added_date: datetime
+    completed_date: dt.datetime | None = None
+    added_date: dt.datetime
 
 
 class AutoFunUpdate(AutoFunConfig):

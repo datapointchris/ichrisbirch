@@ -2,7 +2,7 @@ import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pytest
-import sqlalchemy
+import sqlalchemy as sa
 from fastapi import status
 
 from ichrisbirch import schemas
@@ -240,7 +240,7 @@ class TestHabitCategories:
         endpoint = f'{self.ENDPOINT}{category_id}/'
         category = client.get(endpoint)
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
-        with pytest.raises(sqlalchemy.exc.PendingRollbackError):
+        with pytest.raises(sa.exc.PendingRollbackError):
             client.delete(endpoint)
 
 

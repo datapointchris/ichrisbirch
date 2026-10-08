@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import date
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.countdown import Countdown
@@ -26,7 +25,7 @@ COUNTDOWNS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM countdowns'))
+    session.execute(sa.text('DELETE FROM countdowns'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -37,18 +36,18 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             # Spread due dates: some overdue, some near, some far
             if i >= 7:
                 # Last 2 items are overdue (past due dates)
-                due = date.today() - timedelta(days=random.randint(3, 30))
+                due = dt.date.today() - dt.timedelta(days=random.randint(3, 30))
             elif i % 2 == 0:
-                due = date.today() + timedelta(days=random.randint(7, 30))
+                due = dt.date.today() + dt.timedelta(days=random.randint(7, 30))
             else:
-                due = date.today() + timedelta(days=random.randint(60, 365))
+                due = dt.date.today() + dt.timedelta(days=random.randint(60, 365))
             countdowns.append(Countdown(name=title, notes=notes, due_date=due))
 
     session.add_all(countdowns)
     session.flush()
 
-    overdue = sum(1 for c in countdowns if c.due_date < date.today())
-    near = sum(1 for c in countdowns if 0 <= (c.due_date - date.today()).days <= 30)
+    overdue = sum(1 for c in countdowns if c.due_date < dt.date.today())
+    near = sum(1 for c in countdowns if 0 <= (c.due_date - dt.date.today()).days <= 30)
     far = len(countdowns) - overdue - near
     return SeedResult(
         model='Countdown',

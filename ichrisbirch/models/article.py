@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
@@ -19,8 +19,8 @@ class Article(Base):
     tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, unique=True, nullable=True)
-    save_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    last_read_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    save_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_read_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     read_count: Mapped[int] = mapped_column(Integer, nullable=False)
     is_favorite: Mapped[bool] = mapped_column(Boolean, nullable=False)
     is_current: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -50,7 +50,7 @@ class ArticleFailedImport(Base):
     url: Mapped[str] = mapped_column(Text, nullable=False)
     batch_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
-    failed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    failed_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self):
         return f'ArticleFailedImport(url={self.url!r}, batch_id={self.batch_id!r})'

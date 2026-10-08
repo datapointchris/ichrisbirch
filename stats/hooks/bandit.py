@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.bandit import BanditCWE
 from stats.schemas.hooks.bandit import BanditHookEvent
@@ -32,7 +31,7 @@ def run(staged_files: list[str], branch: str, project: str) -> BanditHookEvent:
 
     if not python_files:
         return BanditHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -63,7 +62,7 @@ def run(staged_files: list[str], branch: str, project: str) -> BanditHookEvent:
     metrics = _parse_metrics(raw_output.get('metrics', {}).get('_totals', {}))
 
     return BanditHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -19,7 +18,7 @@ class TestSassSchema:
     def test_sass_hook_event_with_errors(self) -> None:
         """Test SassHookEvent with compilation errors."""
         event = SassHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -36,7 +35,7 @@ class TestSassSchema:
     def test_sass_hook_event_clean(self) -> None:
         """Test SassHookEvent with no issues."""
         event = SassHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -53,7 +52,7 @@ class TestSassSchema:
     def test_sass_hook_event_serializes_to_json(self) -> None:
         """Test SassHookEvent can be serialized to JSON."""
         event = SassHookEvent(
-            timestamp=datetime(2025, 12, 31, 7, 36, 12, tzinfo=UTC),
+            timestamp=dt.datetime(2025, 12, 31, 7, 36, 12, tzinfo=dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

@@ -1,5 +1,5 @@
+import datetime as dt
 import hashlib
-from datetime import timedelta
 
 import jwt
 import pendulum
@@ -29,8 +29,8 @@ class JWTTokenHandler:
         self,
         settings: Settings,
         session: Session,
-        access_token_expire_delta: timedelta | None = None,
-        refresh_token_expire_delta: timedelta | None = None,
+        access_token_expire_delta: dt.timedelta | None = None,
+        refresh_token_expire_delta: dt.timedelta | None = None,
         secret_key: str | None = None,
         algorithm: str | None = None,
     ):
@@ -41,7 +41,7 @@ class JWTTokenHandler:
         self.access_token_expire_delta = access_token_expire_delta or self.settings.auth.access_token_expire
         self.refresh_token_expire_delta = refresh_token_expire_delta or self.settings.auth.refresh_token_expire
 
-    def _generate_jwt(self, user_id: str, expires_delta: timedelta):
+    def _generate_jwt(self, user_id: str, expires_delta: dt.timedelta):
         payload = {'sub': user_id, 'iat': pendulum.now(), 'exp': pendulum.now() + expires_delta}
         token = jwt.encode(payload=payload, key=self.secret_key, algorithm=self.algorithm)
         return token

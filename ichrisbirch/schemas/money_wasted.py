@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -14,8 +14,8 @@ class MoneyWastedConfig(BaseModel):
 class MoneyWastedCreate(MoneyWastedConfig):
     item: str
     amount: float
-    date_purchased: date | None = None
-    date_wasted: date
+    date_purchased: dt.date | None = None
+    date_wasted: dt.date
     notes: str | None = None
 
     @field_validator('date_purchased', mode='before')
@@ -30,16 +30,16 @@ class MoneyWasted(MoneyWastedConfig):
     id: int
     item: str
     amount: float
-    date_purchased: date | None
-    date_wasted: date
+    date_purchased: dt.date | None
+    date_wasted: dt.date
     notes: str | None
 
 
 class MoneyWastedUpdate(MoneyWastedConfig):
     item: NotNull[str] = None
     amount: NotNull[float] = None
-    date_purchased: date | None = None
-    date_wasted: NotNull[date] = None
+    date_purchased: dt.date | None = None
+    date_wasted: NotNull[dt.date] = None
     notes: str | None = None
 
     @field_validator('date_purchased')

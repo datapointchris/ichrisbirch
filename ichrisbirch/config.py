@@ -1,7 +1,7 @@
+import datetime as dt
 import functools
 import os
 import sys
-from datetime import timedelta
 from pathlib import Path
 
 import dotenv
@@ -57,8 +57,8 @@ class AuthSettings:
     def __init__(self) -> None:
         self.jwt_secret_key: str = os.environ['AUTH_JWT_SECRET_KEY']
         self.jwt_signing_algorithm: str = os.environ['AUTH_JWT_SIGNING_ALGORITHM']
-        self.refresh_token_expire = timedelta(days=30)
-        self.access_token_expire = timedelta(minutes=30)
+        self.refresh_token_expire = dt.timedelta(days=30)
+        self.access_token_expire = dt.timedelta(minutes=30)
         self.accepting_new_signups: bool = env_bool('AUTH_ACCEPTING_NEW_SIGNUPS')
         self.no_new_signups_message = 'New signups for VIP users only.'
         self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']

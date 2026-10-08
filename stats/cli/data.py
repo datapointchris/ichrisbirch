@@ -7,9 +7,8 @@ and load snapshot JSON files for the dashboard views.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 
 
@@ -210,10 +209,8 @@ def date_range(days: int) -> str:
     Uses local time because event timestamps come from git author dates
     which are stored in the committer's local timezone.
     """
-    from datetime import timedelta
-
-    dt = datetime.now(UTC).astimezone() - timedelta(days=days)
-    return dt.strftime('%Y-%m-%d')
+    cutoff = dt.datetime.now(dt.UTC).astimezone() - dt.timedelta(days=days)
+    return cutoff.strftime('%Y-%m-%d')
 
 
 # ── Hook quality aggregation ────────────────────────────────────────

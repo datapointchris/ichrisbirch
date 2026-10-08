@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import date
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.duration import Duration
@@ -33,8 +32,8 @@ NOTE_CONTENT = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM duration_notes'))
-    session.execute(sqlalchemy.text('DELETE FROM durations'))
+    session.execute(sa.text('DELETE FROM duration_notes'))
+    session.execute(sa.text('DELETE FROM durations'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -44,13 +43,13 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for rep in range(scale):
         for i, (name, notes, color) in enumerate(DURATIONS):
             title = name if scale == 1 else f'{name} #{rep + 1}'
-            start = date.today() - timedelta(days=random.randint(60, 730))
+            start = dt.date.today() - dt.timedelta(days=random.randint(60, 730))
 
             # ~50% completed (have end_date), ~50% active
             if i % 2 == 0:
-                end = start + timedelta(days=random.randint(30, 365))
-                if end > date.today():
-                    end = date.today() - timedelta(days=random.randint(1, 10))
+                end = start + dt.timedelta(days=random.randint(30, 365))
+                if end > dt.date.today():
+                    end = dt.date.today() - dt.timedelta(days=random.randint(1, 10))
             else:
                 end = None
 
@@ -70,7 +69,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
     for duration in durations:
         num_notes = random.randint(0, 3)
         for j in range(num_notes):
-            note_date = duration.start_date + timedelta(days=random.randint(1, 60))
+            note_date = duration.start_date + dt.timedelta(days=random.randint(1, 60))
             if duration.end_date and note_date > duration.end_date:
                 note_date = duration.end_date
             session.add(

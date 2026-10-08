@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -36,7 +35,7 @@ class TestCodespellSchema:
         from stats.schemas.hooks.codespell import CodespellIssue
 
         event = CodespellHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -62,7 +61,7 @@ class TestCodespellSchema:
         from stats.schemas.hooks.codespell import CodespellHookEvent
 
         event = CodespellHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

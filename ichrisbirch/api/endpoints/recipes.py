@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import structlog
 from fastapi import APIRouter
@@ -588,6 +587,6 @@ async def mark_made(id: int, session: DbSession):
     if recipe is None:
         raise NotFoundException('recipe', id, logger)
     recipe.times_made = (recipe.times_made or 0) + 1
-    recipe.last_made_date = datetime.now(UTC)
+    recipe.last_made_date = dt.datetime.now(dt.UTC)
     session.commit()
     return _load_recipe(session, id)

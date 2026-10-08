@@ -1,6 +1,6 @@
 """Book factory for generating test Book objects."""
 
-from datetime import date
+import datetime as dt
 
 import factory
 
@@ -39,21 +39,21 @@ class BookFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Params:
         # Usage: BookFactory(reading=True)
         reading = factory.Trait(
-            read_start_date=factory.LazyFunction(date.today),
+            read_start_date=factory.LazyFunction(dt.date.today),
             read_finish_date=None,
             progress='reading',
         )
         # Usage: BookFactory(finished=True)
         finished = factory.Trait(
-            read_start_date=factory.LazyFunction(date.today),
-            read_finish_date=factory.LazyFunction(date.today),
+            read_start_date=factory.LazyFunction(dt.date.today),
+            read_finish_date=factory.LazyFunction(dt.date.today),
             rating=4,
             progress='read',
         )
         # Usage: BookFactory(abandoned_book=True)
         abandoned_book = factory.Trait(
-            read_start_date=factory.LazyFunction(date.today),
+            read_start_date=factory.LazyFunction(dt.date.today),
             progress='abandoned',
         )
         # Usage: BookFactory(purchased=True)
-        purchased = factory.Trait(purchase_date=factory.LazyFunction(date.today), purchase_price=15.99)
+        purchased = factory.Trait(purchase_date=factory.LazyFunction(dt.date.today), purchase_price=15.99)

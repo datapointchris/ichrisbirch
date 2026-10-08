@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import subprocess  # nosec B404
 import time
 from contextlib import suppress
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.actionlint import ActionlintHookEvent
 from stats.schemas.hooks.actionlint import ActionlintIssue
@@ -28,7 +27,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ActionlintHookEve
 
     if not staged_files:
         return ActionlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -43,7 +42,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ActionlintHookEve
 
     if not workflow_files:
         return ActionlintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -65,7 +64,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ActionlintHookEve
     issues = _parse_actionlint_output(result.stdout)
 
     return ActionlintHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

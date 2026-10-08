@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import structlog
 from fastapi import APIRouter
@@ -245,7 +244,7 @@ def open_task(session: DbSession, task_id: int, verb: str) -> models.Task:
 @router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
 async def complete(task_id: int, session: DbSession):
     task = open_task(session, task_id, 'completed')
-    task.complete_date = datetime.now(UTC)
+    task.complete_date = dt.datetime.now(dt.UTC)
     match_fields_to_state(task)
     session.commit()
     session.refresh(task)
@@ -256,7 +255,7 @@ async def complete(task_id: int, session: DbSession):
 async def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None = None):
     """Close a task you are letting go of. It stays on record and does not count as completed."""
     task = open_task(session, task_id, 'dropped')
-    task.drop_date = datetime.now(UTC)
+    task.drop_date = dt.datetime.now(dt.UTC)
     task.drop_reason = body.reason if body else None
     match_fields_to_state(task)
     session.commit()

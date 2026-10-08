@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -12,7 +12,7 @@ from .crud_test import ApiCrudTester
 
 NEW_OBJ = schemas.EventCreate(
     name='Event 4',
-    date=datetime(2022, 10, 4, 20),
+    date=dt.datetime(2022, 10, 4, 20),
     venue='Venue 4',
     url='https://example.com/event4',
     cost=40.0,
@@ -63,9 +63,9 @@ def test_lifecycle(event_crud_tester):
 @pytest.mark.parametrize(
     ['event_date', 'output'],
     [
-        (datetime(2022, 10, 4), '2022-10-04T00:00:00'),
-        (datetime(2022, 10, 4, 12), '2022-10-04T12:00:00'),
-        (datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T12:00:00'),
+        (dt.datetime(2022, 10, 4), '2022-10-04T00:00:00'),
+        (dt.datetime(2022, 10, 4, 12), '2022-10-04T12:00:00'),
+        (dt.datetime(2022, 10, 4, 12, tzinfo=ZoneInfo('America/Chicago')), '2022-10-04T12:00:00'),
         ('2022-10-04', '2022-10-04T00:00:00'),
         ('2022-10-04T12:00:00', '2022-10-04T12:00:00'),
         ('2022-10-04T12:00:00-05:00', '2022-10-04T12:00:00'),

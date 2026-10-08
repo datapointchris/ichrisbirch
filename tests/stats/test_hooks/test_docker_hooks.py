@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -20,7 +19,7 @@ class TestDockerComposeValidateSchema:
         from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
 
         event = DockerComposeValidateHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -39,7 +38,7 @@ class TestDockerComposeValidateSchema:
         from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
 
         event = DockerComposeValidateHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -111,7 +110,7 @@ class TestHadolintSchema:
         issues = [HadolintIssue.model_validate(i) for i in raw_issues]
 
         event = HadolintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -132,7 +131,7 @@ class TestHadolintSchema:
         from stats.schemas.hooks.docker import HadolintHookEvent
 
         event = HadolintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

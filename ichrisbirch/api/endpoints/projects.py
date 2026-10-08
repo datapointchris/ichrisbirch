@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from typing import Annotated
 from uuid import UUID
 
@@ -196,7 +195,7 @@ async def create(project: schemas.ProjectCreate, session: DbSession):
     if project.id is not None:
         db_obj.id = project.id
     if db_obj.status in TERMINAL_PROJECT_STATUSES:
-        db_obj.closed_at = datetime.now(UTC)
+        db_obj.closed_at = dt.datetime.now(dt.UTC)
     session.add(db_obj)
     try:
         session.commit()
@@ -246,7 +245,7 @@ def apply_status_transition(project: models.Project, update_data: dict, session:
         update_data['status_reason'] = None
         update_data['closed_at'] = None
     elif new_status != project.status:
-        update_data['closed_at'] = datetime.now(UTC)
+        update_data['closed_at'] = dt.datetime.now(dt.UTC)
 
 
 @router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)

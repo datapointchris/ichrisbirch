@@ -7,10 +7,10 @@ data instead of buried in conditional logic.
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.book import Book
@@ -115,7 +115,7 @@ BOOK_STATES = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM books'))
+    session.execute(sa.text('DELETE FROM books'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -133,7 +133,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             read_start = random_past_date(730) if has_read else None
             read_finish = None
             if has_read and progress == 'read' and read_start is not None:
-                read_finish = read_start + timedelta(days=random.randint(7, 90))
+                read_finish = read_start + dt.timedelta(days=random.randint(7, 90))
 
             purchase_date = random_past_date(1095) if has_purchase else None
             purchase_price = round(random.uniform(9.99, 49.99), 2) if has_purchase else None

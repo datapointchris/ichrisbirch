@@ -1,4 +1,4 @@
-from datetime import date
+import datetime as dt
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Date
@@ -19,8 +19,8 @@ class Duration(Base):
     __tablename__ = 'durations'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    start_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     color: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_notes: Mapped[list[DurationNote]] = relationship(

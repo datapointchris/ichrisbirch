@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import structlog
 from fastapi import APIRouter
@@ -58,7 +57,7 @@ async def revoke(id: int, user: CurrentUser, session: DbSession):
     if key := session.get(models.PersonalAPIKey, id):
         if key.user_id != user.id:
             raise NotFoundException('API key', id, logger)
-        key.revoked_at = datetime.now(UTC)
+        key.revoked_at = dt.datetime.now(dt.UTC)
         session.commit()
         logger.info('personal_api_key_revoked', key_id=id, user_id=user.id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)

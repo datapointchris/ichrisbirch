@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 
 class TestStagedFile:
@@ -49,7 +48,7 @@ class TestCommitEvent:
         from stats.schemas.commit import CommitEvent
 
         event = CommitEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             hash='abc123def456789012345678901234567890abcd',
@@ -77,7 +76,7 @@ class TestCommitEvent:
         ]
 
         event = CommitEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='feature-branch',
             hash='abc123def456789012345678901234567890abcd',
@@ -102,7 +101,7 @@ class TestCommitEvent:
         from stats.schemas.commit import StagedFile
 
         event = CommitEvent(
-            timestamp=datetime(2025, 12, 31, 12, 0, 0, tzinfo=UTC),
+            timestamp=dt.datetime(2025, 12, 31, 12, 0, 0, tzinfo=dt.UTC),
             project='ichrisbirch',
             branch='master',
             hash='abc123def456789012345678901234567890abcd',

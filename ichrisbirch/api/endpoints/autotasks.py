@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import structlog
 from fastapi import APIRouter
@@ -90,7 +89,7 @@ async def run(id: int, session: DbSession):
             autotask_id=autotask.id,
         )
         session.add(task)
-        autotask.last_run_date = datetime.now(UTC)
+        autotask.last_run_date = dt.datetime.now(dt.UTC)
         autotask.run_count += 1
         session.commit()
         session.refresh(autotask)

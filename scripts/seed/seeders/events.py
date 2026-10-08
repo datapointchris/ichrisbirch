@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.event import Event
@@ -48,7 +46,7 @@ NOTES = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM events'))
+    session.execute(sa.text('DELETE FROM events'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -60,12 +58,12 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             title = name if scale == 1 else f'{name} #{rep + 1}'
             # ~30% past events, ~70% upcoming, last 2 are imminent (today/tomorrow)
             if i >= len(EVENTS) - 2:
-                event_date = datetime.now(UTC) + timedelta(days=i - (len(EVENTS) - 2))
+                event_date = dt.datetime.now(dt.UTC) + dt.timedelta(days=i - (len(EVENTS) - 2))
             elif i % 3 == 0:
-                event_date = datetime.now(UTC) - timedelta(days=random.randint(7, 180))
+                event_date = dt.datetime.now(dt.UTC) - dt.timedelta(days=random.randint(7, 180))
                 past_count += 1
             else:
-                event_date = datetime.now(UTC) + timedelta(days=random.randint(7, 365))
+                event_date = dt.datetime.now(dt.UTC) + dt.timedelta(days=random.randint(7, 365))
 
             events.append(
                 Event(

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.autotask import AutoTask
@@ -33,7 +31,7 @@ AUTOTASKS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM autotasks'))
+    session.execute(sa.text('DELETE FROM autotasks'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
@@ -45,14 +43,14 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             # defaults to creation time via server_default — don't override it)
             if i < 2:
                 run_count = 0
-                last_run = datetime.now(UTC)  # mimics server_default=now()
+                last_run = dt.datetime.now(dt.UTC)  # mimics server_default=now()
             else:
                 run_count = random.randint(1, 20)
                 # One autotask should be due today (last_run far enough ago for its frequency)
                 if i == 2:
-                    last_run = datetime.now(UTC) - timedelta(days=30)
+                    last_run = dt.datetime.now(dt.UTC) - dt.timedelta(days=30)
                 else:
-                    last_run = datetime.now(UTC) - timedelta(days=random.randint(1, 60))
+                    last_run = dt.datetime.now(dt.UTC) - dt.timedelta(days=random.randint(1, 60))
 
             autotasks.append(
                 AutoTask(

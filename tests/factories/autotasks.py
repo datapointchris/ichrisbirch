@@ -1,8 +1,6 @@
 """AutoTask factory for generating test AutoTask objects."""
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 import factory
 
@@ -28,7 +26,7 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
     # Due days count from the first run, which a trait moving the last run has
     # to move too, or the first run lands after the last.
     first_run_date = factory.SelfAttribute('last_run_date')
-    last_run_date = factory.LazyFunction(lambda: datetime.now(UTC))
+    last_run_date = factory.LazyFunction(lambda: dt.datetime.now(dt.UTC))
     run_count = 0
 
     class Params:
@@ -37,6 +35,6 @@ class AutoTaskFactory(factory.alchemy.SQLAlchemyModelFactory):
         # Usage: AutoTaskFactory(monthly=True)
         monthly = factory.Trait(frequency='Monthly')
         # Usage: AutoTaskFactory(should_run=True) - last run was long ago
-        should_run = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(days=30)))
+        should_run = factory.Trait(last_run_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC) - dt.timedelta(days=30)))
         # Usage: AutoTaskFactory(ran_today=True)
-        ran_today = factory.Trait(last_run_date=factory.LazyFunction(lambda: datetime.now(UTC)), run_count=1)
+        ran_today = factory.Trait(last_run_date=factory.LazyFunction(lambda: dt.datetime.now(dt.UTC)), run_count=1)

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -26,7 +25,7 @@ class TestDependenciesSchema:
         from stats.schemas.collectors.dependencies import Dependency
 
         event = DependenciesCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             dependencies=[Dependency(name='pydantic', version='2.0.0')],

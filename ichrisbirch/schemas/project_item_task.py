@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,9 +22,9 @@ class ProjectItemTask(ProjectItemTaskConfig):
     item_id: UUID
     title: str
     completed: bool
-    completed_at: datetime | None = None
+    completed_at: dt.datetime | None = None
     position: int
-    created_at: datetime
+    created_at: dt.datetime
 
 
 class ProjectItemTaskUpdate(ProjectItemTaskConfig):

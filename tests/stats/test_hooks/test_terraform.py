@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -19,7 +18,7 @@ class TestTerraformValidateSchema:
         from stats.schemas.hooks.terraform import TerraformValidateHookEvent
 
         event = TerraformValidateHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -36,7 +35,7 @@ class TestTerraformValidateSchema:
         from stats.schemas.hooks.terraform import TerraformValidateHookEvent
 
         event = TerraformValidateHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -106,7 +105,7 @@ class TestTerraformTflintSchema:
         from stats.schemas.hooks.terraform import TflintIssue
 
         event = TerraformTflintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -149,7 +148,7 @@ class TestTerraformTflintSchema:
             )
 
         event = TerraformTflintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -170,7 +169,7 @@ class TestTerraformTflintSchema:
         from stats.schemas.hooks.terraform import TerraformTflintHookEvent
 
         event = TerraformTflintHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -248,7 +247,7 @@ class TestTerraformFmtSchema:
         from stats.schemas.hooks.terraform import TerraformFmtHookEvent
 
         event = TerraformFmtHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -266,7 +265,7 @@ class TestTerraformFmtSchema:
         from stats.schemas.hooks.terraform import TerraformFmtHookEvent
 
         event = TerraformFmtHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -336,7 +335,7 @@ class TestTerraformDocsSchema:
         from stats.schemas.hooks.terraform import TerraformDocsHookEvent
 
         event = TerraformDocsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -353,7 +352,7 @@ class TestTerraformDocsSchema:
         from stats.schemas.hooks.terraform import TerraformDocsHookEvent
 
         event = TerraformDocsHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',

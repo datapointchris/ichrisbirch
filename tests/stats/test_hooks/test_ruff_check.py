@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -45,7 +44,7 @@ class TestRuffSchema:
         parsed_issues = [RuffIssue.model_validate(i) for i in issues]
 
         event = RuffCheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -62,7 +61,7 @@ class TestRuffSchema:
     def test_ruff_hook_event_clean(self) -> None:
         """Test RuffCheckHookEvent with no issues."""
         event = RuffCheckHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -79,7 +78,7 @@ class TestRuffSchema:
     def test_ruff_hook_event_serializes_to_json(self) -> None:
         """Test RuffCheckHookEvent can be serialized to JSON."""
         event = RuffCheckHookEvent(
-            timestamp=datetime(2025, 12, 31, 7, 36, 12, tzinfo=UTC),
+            timestamp=dt.datetime(2025, 12, 31, 7, 36, 12, tzinfo=dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',
@@ -153,7 +152,7 @@ class TestRuffFormatSchema:
     def test_ruff_format_hook_event_with_changes(self) -> None:
         """Test RuffFormatHookEvent with files needing reformatting."""
         event = RuffFormatHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='failed',
@@ -170,7 +169,7 @@ class TestRuffFormatSchema:
     def test_ruff_format_hook_event_clean(self) -> None:
         """Test RuffFormatHookEvent with no files needing reformatting."""
         event = RuffFormatHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             status='passed',

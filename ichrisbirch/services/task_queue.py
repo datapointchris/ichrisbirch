@@ -7,9 +7,7 @@ scheduler's autotask and autofun jobs all make tasks through `new_task`, so the
 window falls back to the category's the same way in each.
 """
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 from sqlalchemy import Select
 from sqlalchemy.orm import Session
@@ -33,27 +31,27 @@ def new_task(
     window_days: int | None = None,
     pinned: bool = False,
     autotask_id: int | None = None,
-    now: datetime | None = None,
+    now: dt.datetime | None = None,
 ) -> models.Task:
     """A task ranked `window_days` from now, the category's window when unset. Not added to the session."""
-    now = now or datetime.now(UTC)
+    now = now or dt.datetime.now(dt.UTC)
     window = window_days or category_window_days(session, category)
     return models.Task(
         name=name,
         category=category,
         notes=notes,
         window_days=window,
-        rank_at=now + timedelta(days=window),
+        rank_at=now + dt.timedelta(days=window),
         pinned=pinned,
         autotask_id=autotask_id,
         add_date=now,
     )
 
 
-def restart_window(task: models.Task, *, now: datetime | None = None) -> None:
+def restart_window(task: models.Task, *, now: dt.datetime | None = None) -> None:
     """Restart the task's window from now and unpin it, since a pinned task sorts first whatever its date."""
-    now = now or datetime.now(UTC)
-    task.rank_at = now + timedelta(days=task.window_days)
+    now = now or dt.datetime.now(dt.UTC)
+    task.rank_at = now + dt.timedelta(days=task.window_days)
     task.pinned = False
 
 

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import subprocess  # nosec B404
 import time
-from datetime import UTC
-from datetime import datetime
 
 from stats.schemas.hooks.terraform import TerraformFmtHookEvent
 
@@ -29,7 +28,7 @@ def run(staged_files: list[str], branch: str, project: str) -> TerraformFmtHookE
 
     if not tf_files:
         return TerraformFmtHookEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project=project,
             branch=branch,
             status='passed',
@@ -51,7 +50,7 @@ def run(staged_files: list[str], branch: str, project: str) -> TerraformFmtHookE
     files_reformatted = [line for line in result.stdout.strip().splitlines() if line.strip()]
 
     return TerraformFmtHookEvent(
-        timestamp=datetime.now(UTC),
+        timestamp=dt.datetime.now(dt.UTC),
         project=project,
         branch=branch,
         status='passed' if result.returncode == 0 else 'failed',

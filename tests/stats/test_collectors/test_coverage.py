@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import tempfile
-from datetime import UTC
-from datetime import datetime
 
 
 class TestCoverageSchema:
@@ -32,7 +31,7 @@ class TestCoverageSchema:
         from stats.schemas.collectors.coverage import CoverageSummary
 
         event = CoverageCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             summary=CoverageSummary(

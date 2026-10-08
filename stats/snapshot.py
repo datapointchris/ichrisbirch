@@ -7,11 +7,10 @@ stats_*.json snapshot files that the CLI expects.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import re
 import sys
-from datetime import UTC
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -432,7 +431,7 @@ def build_snapshot(
     collectors_by_type = {e.get('type'): e for e in collector_events}
 
     snapshot = {
-        'collected_at': datetime.now(UTC).isoformat(),
+        'collected_at': dt.datetime.now(dt.UTC).isoformat(),
         'commit': build_commit_section(commit_event),
         'code': build_code_section(collectors_by_type.get('collect.tokei')),
         'tests': build_tests_section(collectors_by_type.get('collect.pytest')),
@@ -461,7 +460,7 @@ def write_snapshot(snapshot: dict, output_dir: str) -> Path:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now(UTC).strftime('%Y%m%d_%H%M%S')
+    timestamp = dt.datetime.now(dt.UTC).strftime('%Y%m%d_%H%M%S')
     commit_short = snapshot.get('commit', {}).get('short', 'unknown')
 
     filename = f'stats_{timestamp}_{commit_short}.json'

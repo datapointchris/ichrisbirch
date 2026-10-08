@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from typing import Annotated
 from uuid import UUID
 
@@ -278,7 +277,7 @@ async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session:
     for attr, value in update_data.items():
         setattr(item, attr, value)
     stamp_completion(item, was_completed, update_data)
-    item.updated_at = datetime.now(UTC)
+    item.updated_at = dt.datetime.now(dt.UTC)
     session.commit()
     session.refresh(item)
     return item

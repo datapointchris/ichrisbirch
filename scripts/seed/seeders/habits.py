@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import random
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.habit import Habit
@@ -42,14 +40,14 @@ HABITS = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM habits.completed'))
-    session.execute(sqlalchemy.text('DELETE FROM habits.habits'))
-    session.execute(sqlalchemy.text('DELETE FROM habits.categories'))
+    session.execute(sa.text('DELETE FROM habits.completed'))
+    session.execute(sa.text('DELETE FROM habits.habits'))
+    session.execute(sa.text('DELETE FROM habits.categories'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
     rng = random.Random(42)
-    today = datetime.now(UTC).date()
+    today = dt.datetime.now(dt.UTC).date()
 
     # Create categories
     categories = []
@@ -94,7 +92,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     HabitCompleted(
                         name=habit.name,
                         category_id=habit.category_id,
-                        complete_date=today - timedelta(days=days_ago),
+                        complete_date=today - dt.timedelta(days=days_ago),
                     )
                 )
             continue
@@ -123,7 +121,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     HabitCompleted(
                         name=habit.name,
                         category_id=habit.category_id,
-                        complete_date=today - timedelta(days=days_ago),
+                        complete_date=today - dt.timedelta(days=days_ago),
                     )
                 )
 

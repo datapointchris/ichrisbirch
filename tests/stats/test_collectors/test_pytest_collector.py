@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
@@ -51,7 +50,7 @@ class TestPytestSchema:
         from stats.schemas.collectors.pytest_collector import PytestSummary
 
         event = PytestCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             summary=PytestSummary(passed=100, total=100),

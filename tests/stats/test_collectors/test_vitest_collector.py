@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from pathlib import Path
 
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
@@ -50,7 +49,7 @@ class TestVitestSchema:
         from stats.schemas.collectors.vitest_collector import VitestSummary
 
         event = VitestCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             summary=VitestSummary(passed=4, failed=1, total=5),

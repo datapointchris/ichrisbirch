@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 
 class TestDockerSchema:
@@ -29,7 +28,7 @@ class TestDockerSchema:
         from stats.schemas.collectors.docker import DockerCollectEvent
 
         event = DockerCollectEvent(
-            timestamp=datetime.now(UTC),
+            timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
             branch='master',
             images=[],

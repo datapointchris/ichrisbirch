@@ -1,5 +1,4 @@
-from datetime import date
-from datetime import datetime
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pendulum
@@ -83,8 +82,8 @@ class AutoTask(Base):
     )
     max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     frequency: Mapped[str] = mapped_column(Text, ForeignKey('autotask_frequencies.name'), nullable=False)
-    first_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    last_run_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    first_run_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_run_date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (CheckConstraint('window_days IS NULL OR window_days >= 1', name='window_days_positive'),)
@@ -95,7 +94,7 @@ class AutoTask(Base):
                     first_run_date = {self.first_run_date}, last_run_date = {self.last_run_date},
                     run_count = {self.run_count})"""
 
-    def next_run_day(self, zone: ZoneInfo, *, last_closed_at: datetime | None) -> date:
+    def next_run_day(self, zone: ZoneInfo, *, last_closed_at: dt.datetime | None) -> dt.date:
         """The day the next copy is due in `zone`, by the template's anchor.
 
         `last_closed_at` is when the most recent copy was completed or dropped,
@@ -109,7 +108,7 @@ class AutoTask(Base):
             case _:
                 raise ValueError(f'Unknown autotask anchor: {self.anchor}')
 
-    def next_completion_day(self, zone: ZoneInfo, *, last_closed_at: datetime | None) -> date:
+    def next_completion_day(self, zone: ZoneInfo, *, last_closed_at: dt.datetime | None) -> dt.date:
         """One step after the later of the last close and the last run.
 
         A copy finished late moves every later one: nails grow from the last
@@ -121,7 +120,7 @@ class AutoTask(Base):
         base = latest.astimezone(zone).date()
         return pendulum.Date(base.year, base.month, base.day) + frequency_to_duration(self.frequency)
 
-    def next_calendar_day(self, zone: ZoneInfo) -> date:
+    def next_calendar_day(self, zone: ZoneInfo) -> dt.date:
         """The first due day after the last run, counted from the first run's day in `zone`.
 
         Each due day is the first run's day plus a whole number of steps, and
@@ -142,5 +141,5 @@ class AutoTask(Base):
             steps += 1
         return due
 
-    def is_due_on(self, day: date, zone: ZoneInfo, *, last_closed_at: datetime | None) -> bool:
+    def is_due_on(self, day: dt.date, zone: ZoneInfo, *, last_closed_at: dt.datetime | None) -> bool:
         return self.next_run_day(zone, last_closed_at=last_closed_at) <= day

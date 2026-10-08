@@ -1,6 +1,4 @@
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
 import pytest
 from fastapi import status
@@ -125,12 +123,12 @@ class TestQueueOrder:
 
     def test_a_new_task_ranks_its_window_from_now(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        before = datetime.now(UTC)
+        before = dt.datetime.now(dt.UTC)
         task = create(client, name='Water plants', category='Dingo')
 
         assert task['window_days'] == TASK_CATEGORY_WINDOW_DAYS['Dingo']
-        rank_at = datetime.fromisoformat(task['rank_at'])
-        assert before + timedelta(days=7) <= rank_at <= datetime.now(UTC) + timedelta(days=7)
+        rank_at = dt.datetime.fromisoformat(task['rank_at'])
+        assert before + dt.timedelta(days=7) <= rank_at <= dt.datetime.now(dt.UTC) + dt.timedelta(days=7)
 
     def test_a_given_window_overrides_the_category(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
@@ -177,7 +175,7 @@ class TestQueueOrder:
         first = create(client, name='First', window_days=1)
         second = create(client, name='Second', window_days=2)
         third = create(client, name='Third', window_days=3)
-        between = (datetime.fromisoformat(first['rank_at']) - timedelta(hours=1)).isoformat()
+        between = (dt.datetime.fromisoformat(first['rank_at']) - dt.timedelta(hours=1)).isoformat()
 
         response = client.patch(f'{ENDPOINT}{third["id"]}/', json={'rank_at': between})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -190,10 +188,10 @@ class TestSnooze:
         task = create(client, name='Later', window_days=5)
         client.patch(f'{ENDPOINT}{task["id"]}/', json={'rank_at': '2020-01-01T00:00:00+00:00'})
 
-        before = datetime.now(UTC)
+        before = dt.datetime.now(dt.UTC)
         response = client.patch(f'{ENDPOINT}{task["id"]}/snooze/')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert datetime.fromisoformat(response.json()['rank_at']) >= before + timedelta(days=5)
+        assert dt.datetime.fromisoformat(response.json()['rank_at']) >= before + dt.timedelta(days=5)
 
     def test_snooze_moves_a_task_behind_the_others(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
