@@ -421,6 +421,27 @@ function dev-smoke() {
 }
 
 # Test environment
+
+# Every checkout of this repo drives the one icb-test compose project, and
+# compose labels each container with the checkout that started it. From any
+# other checkout, a test run exercises the starting checkout's API code and
+# truncates the database a run there may be using, and reports it as its own.
+function require-test-stack-here() {
+  local owner
+  owner=$(docker ps -a --filter label=com.docker.compose.project=icb-test \
+    --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | sort -u | head -n 1)
+  if [[ -z "$owner" || "$owner" == "$ICHRISBIRCH_HOME" ]]; then
+    return 0
+  fi
+  echo "${red}The test stack was started from ${owner}, not from ${ICHRISBIRCH_HOME}.${reset}" >&2
+  echo "Its API serves that checkout's code, and its database may hold a run from there." >&2
+  echo "" >&2
+  echo "Once nothing there is using it, take the stack over:" >&2
+  echo "  ${blue}${ICHRISBIRCH_HOME}/ops/icbops testing stop${reset}" >&2
+  echo "  ${blue}${ICHRISBIRCH_HOME}/ops/icbops testing start${reset}" >&2
+  return 1
+}
+
 function test-run() {
   # A help flag answers here. Passed to pytest like every other argument, it
   # would wait behind the health check below, which takes unhealthy containers
@@ -431,6 +452,7 @@ function test-run() {
       return 0
       ;;
   esac
+  require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
@@ -487,6 +509,7 @@ function test-usage() {
 }
 
 function testing-start() {
+  require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
@@ -511,6 +534,7 @@ function testing-stop() {
 }
 
 function testing-restart() {
+  require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment"
   $COMPOSE_TEST up -d
@@ -533,6 +557,7 @@ function testing-rebuild() {
         ;;
     esac
   done
+  require-test-stack-here || return 1
 
   if [[ "$wipe_volumes" == true ]]; then
     echo "Wiping volumes for ${blue}TESTING${reset} environment (${yellow}--volumes${reset})"
@@ -1088,6 +1113,9 @@ case $1 in
         ;;
       db)
         shift 2
+        case "${1:-}" in
+          seed | init | reset) require-test-stack-here || exit 1 ;;
+        esac
         env-db testing "$@"
         ;;
       docker)
