@@ -79,10 +79,10 @@ at the top of the list, hidden because it is blocked.
 
 `rank` breaks ties inside a priority. It is a float, the way Linear's
 `sortOrder` is. A new issue goes one past the last. A move takes the midpoint
-of its two new neighbors, so it writes one row. When a gap falls below what a
-double can split, every rank is renumbered to whole numbers in its current
-order. `number` breaks a rank tie, because it is issued in creation order and
-never repeats.
+of its two new neighbors, so it writes one row. When a move would leave a gap
+smaller than `MIN_GAP` in `services/issue_rank.py`, every rank is renumbered to
+whole numbers in its current order. `number` breaks a rank tie, because it is
+issued in creation order and never repeats.
 
 A move names the issue to sit before or after, and that issue must sort at the
 same effective priority. Ranks are one global sequence, so a move beside an

@@ -106,9 +106,9 @@ def measure_readiness(session: Session, today: date, now: datetime) -> IssueRead
     def effective_urgency(issue_id: UUID) -> int:
         if issue_id in memo:
             return memo[issue_id]
-        # Dependency cycles are refused on write, but a child depending on its own
-        # parent closes a loop through the parent edge. Re-entering contributes
-        # nothing rather than recursing forever.
+        # Every loop through a dependency or a parent edge is refused on write, so
+        # re-entering means a row written around that check. Contributing nothing
+        # keeps the walk finite.
         if issue_id in walking:
             return NO_PRIORITY_URGENCY
         walking.add(issue_id)
