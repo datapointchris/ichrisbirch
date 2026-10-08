@@ -125,28 +125,26 @@ func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
 	}
 }
 
-// A miss on a project or an initiative name was never given a number, so a
-// hint naming the other store's `show <number>` there sends the reader after
-// a number they do not have.
-func TestOnlyANumberMissNamesTheOtherStore(t *testing.T) {
+// The Use line is how this knows a verb takes a number, so a verb spelling its
+// argument other than <item> or <issue> escapes the sweep.
+func TestTheOtherStoreIsNamedExactlyWhereANumberIsTaken(t *testing.T) {
 	const itemsShow, issuesShow = "icb projects items show <number>", "icb issues show <number>"
-	cases := []struct {
-		argv []string
-		want string
-	}{
-		{[]string{"projects", "items", "show", "999999"}, issuesShow},
-		{[]string{"issues", "complete", "999999"}, itemsShow},
-		{[]string{"projects", "items", "list", "--project", "no such project"}, ""},
-		{[]string{"issues", "create", "--title", "probe", "--initiative", "no such initiative"}, ""},
-	}
-	for _, c := range cases {
-		got := runWith(t, apiNotFound("not found"), c.argv...).Error()
+	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
+		want := ""
+		switch {
+		case strings.Contains(cmd.Use, "<item>"):
+			want = issuesShow
+		case strings.Contains(cmd.Use, "<issue>"):
+			want = itemsShow
+		}
+		hints := hintsFor(cmd)
+		joined := strings.Join(hints, "\n")
 		for _, hint := range []string{itemsShow, issuesShow} {
-			if named := strings.Contains(got, hint); named != (hint == c.want) {
-				t.Errorf("%v: names %q = %v, error = %q", c.argv, hint, named, got)
+			if named := strings.Contains(joined, hint); named != (hint == want) {
+				t.Errorf("%s: names %q = %v, hints = %v", cmd.CommandPath(), hint, named, hints)
 			}
 		}
-	}
+	})
 }
 
 // A project that held development work is an initiative with the same name, so

@@ -22,24 +22,26 @@ import (
 // context; a caller who wants more names a larger number.
 const defaultNextItemLimit = 10
 
-// itemHints and its two extensions are the commands that find a valid id for
-// each thing an items verb takes. An item id is the only one most of them take;
-// the membership verbs take a project name as well, and the task verbs a task
-// id.
+// itemHints and the lists built on it name the commands that find a valid id
+// for each thing an items verb takes. Most verbs take an item number alone. The
+// membership verbs take a project name as well, and the task verbs a task id.
 var (
 	itemHints = []string{
 		"Search items by title or notes: icb projects items search <query>",
 		"Completed and archived items are hidden: icb projects items list --status all",
 	}
 
-	// Only a verb whose one argument is an item number can miss a number the
-	// issues store holds, so only those verbs name it.
+	// itemNumberHints go on every verb taking an item number. On a verb taking
+	// only a project name, `icb issues show <number>` asks for a number the
+	// reader never typed.
 	itemNumberHints = append(slices.Clone(itemHints),
 		"Issues share item numbers, so the number may name an issue: icb issues show <number>")
 
 	itemAndProjectHints = append(slices.Clone(itemHints), projectHints...)
 
-	itemAndTaskHints = append(slices.Clone(itemHints),
+	itemNumberAndProjectHints = append(slices.Clone(itemNumberHints), projectHints...)
+
+	itemNumberAndTaskHints = append(slices.Clone(itemNumberHints),
 		"List an item's tasks: icb projects items tasks <item>")
 )
 
@@ -68,18 +70,18 @@ func newItemsCommand() *cobra.Command {
 		withNotFoundHints(newItemsDeleteCommand(), itemNumberHints...),
 		// A verb taking a second kind of id names the way to find that one too:
 		// --project on the membership verbs, a task id on the task verbs.
-		withNotFoundHints(newItemsReorderCommand(), itemAndProjectHints...),
-		withNotFoundHints(newItemsAddProjectCommand(), itemAndProjectHints...),
-		withNotFoundHints(newItemsRemoveProjectCommand(), itemAndProjectHints...),
-		newItemsAddDependencyCommand(),
-		newItemsRemoveDependencyCommand(),
-		newItemsBlockersCommand(),
-		withNotFoundHints(newItemsTreeCommand(), itemAndProjectHints...),
-		newItemsTasksCommand(),
-		newItemsAddTaskCommand(),
-		withNotFoundHints(newItemsCompleteTaskCommand(), itemAndTaskHints...),
-		withNotFoundHints(newItemsEditTaskCommand(), itemAndTaskHints...),
-		withNotFoundHints(newItemsRemoveTaskCommand(), itemAndTaskHints...),
+		withNotFoundHints(newItemsReorderCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsAddProjectCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsAddDependencyCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsBlockersCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsTasksCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsAddTaskCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
+		withNotFoundHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
+		withNotFoundHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
 	)
 	return cmd
 }
