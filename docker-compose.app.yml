@@ -34,10 +34,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/api.log
     ports: []
-    volumes:
-      - ichrisbirch_logs:/var/log/ichrisbirch
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -95,9 +92,7 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_COLORS=${LOG_COLORS:-false}
-      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     volumes:
-      - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: always
     healthcheck:
@@ -111,12 +106,6 @@ services:
         tag: "${DEPLOY_COLOR}-scheduler"
     networks:
       - icb-infra
-
-# Shared log volume (same as infra)
-volumes:
-  ichrisbirch_logs:
-    name: icb-prod-logs
-    driver: local
 
 # Connect to infrastructure networks
 networks:

@@ -44,10 +44,7 @@ def test_running_migrations_in_process_leaves_existing_loggers_enabled():
     assert logging.root.handlers == handlers
 
 
-def test_stdlib_records_reach_the_structlog_renderer_without_a_log_file():
-    """alembic reports each migration through stdlib logging, not structlog.
-
-    pytest runs on the host with no LOG_FILE, the same as the initializer in CI.
-    """
+def test_stdlib_records_reach_the_structlog_renderer():
+    """alembic reports each migration through stdlib logging, not structlog."""
     formatters = [handler.formatter for handler in logging.root.handlers]
     assert any(isinstance(formatter, structlog.stdlib.ProcessorFormatter) for formatter in formatters)

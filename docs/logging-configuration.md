@@ -10,7 +10,6 @@ The ichrisbirch application uses **structlog**, rendered through the stdlib root
 LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
-LOG_FILE = os.environ.get('LOG_FILE', '')
 ```
 
 ## Environment Variables
@@ -63,37 +62,6 @@ Controls whether colored output is used in console format.
 | `auto` (default) | Use TTY detection (colors if terminal, no colors if piped) |
 | `true` | Force colors on (useful in Docker where TTY detection fails) |
 | `false` | Force colors off |
-
-### LOG_FILE
-
-Optional path to a log file for persistence. When set and the directory exists, logs are written to both stderr and the specified file.
-
-| Value | Description |
-| --- | --- |
-| Empty (default) | No file logging, stderr only |
-| `/var/log/ichrisbirch/api.log` | Write logs to file (and stderr) |
-
-**File logging features:**
-
-- Uses `RotatingFileHandler` to prevent unbounded growth
-- Max 25MB per file with 5 backup files (~150MB total per service)
-- Plain text format (no ANSI color codes) for easy parsing
-
-The compose files set `LOG_FILE` on the api and the scheduler, and mount the `ichrisbirch_logs` volume where the files land:
-
-```yaml
-api:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/api.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-
-scheduler:
-  environment:
-    - LOG_FILE=/var/log/ichrisbirch/scheduler.log
-  volumes:
-    - ichrisbirch_logs:/var/log/ichrisbirch
-```
 
 ## Request Tracing
 

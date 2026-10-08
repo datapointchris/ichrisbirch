@@ -267,7 +267,7 @@ Unit tests mock the API with `vi.mock`; E2E runs through `app.docker.localhost`,
 
 ### Logging
 
-Python logs through structlog into the stdlib root logger, to stderr plus a file when `LOG_FILE` is set; `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL` and `LOG_COLORS` configure it.
+Python logs through structlog into the stdlib root logger, to stderr only; Docker's logging driver and Loki keep it. `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL` and `LOG_COLORS` configure it.
 Requests are traced by `X-Request-ID`.
 Vue logs through consola via `createLogger('ModuleName')`, in structlog's key=value shape, and as JSON for Loki in production.
 `./ops/icbops {dev,testing} logs [service]` reads a running environment's logs.
