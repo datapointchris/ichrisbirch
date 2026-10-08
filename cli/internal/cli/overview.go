@@ -429,13 +429,15 @@ func sortIssueQueue(issues []api.Issue) issueQueue {
 }
 
 // actionableItems returns the items that can be taken now — not completed, not
-// archived, not blocked — in the order they are taken: the whole queue of the
-// highest-ranked project, then the next project's, each queue in its own
-// position order. This is the order `projects items next` prints.
+// archived, not blocked, and in at least one active project — in the order they
+// are taken: the whole queue of the highest-ranked project, then the next
+// project's, each queue in its own position order. This is the order `projects
+// items next` prints.
 //
-// A kind narrows the queue as well as the items. Only projects of that kind
-// rank, so an item that is also in a higher-ranked project of another kind is
-// queued where it sits in its own kind's project. An empty kind is every project.
+// A kind narrows the queue as well as the items. Only active projects of that
+// kind rank, so an item that is also in a higher-ranked project of another kind
+// is queued where it sits in its own kind's project. An empty kind is every
+// project.
 func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind string) []api.ProjectItem {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
@@ -445,6 +447,9 @@ func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind stri
 	var next []api.ProjectItem
 	for _, item := range itemsOfKind(all, kind) {
 		if item.Completed || item.Archived || isBlocked[item.ID] {
+			continue
+		}
+		if _, active := primaryProject(item, kind); !active {
 			continue
 		}
 		next = append(next, item)
@@ -468,7 +473,8 @@ func overviewProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []ap
 // then by where each is queued in that project. Creation time and id settle
 // what remains, which is also the whole order when the API sends no positions.
 func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
-	projectA, projectB := primaryProject(a, kind), primaryProject(b, kind)
+	projectA, _ := primaryProject(a, kind)
+	projectB, _ := primaryProject(b, kind)
 	if projectA.ID != projectB.ID {
 		return outranks(projectA, projectB)
 	}
@@ -502,7 +508,7 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	longest := 0
 
 	for _, item := range items {
-		project := primaryProject(item, "")
+		project, _ := primaryProject(item, "")
 		if _, seen := queues[project.ID]; !seen {
 			order = append(order, project)
 		}
@@ -524,17 +530,18 @@ func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
 	return interleaved
 }
 
-// primaryProject is the project an item is drawn under. An item can belong to
-// several, so it competes in the round of the highest-priority one rather than
-// once per membership — otherwise multi-project items get a slot per project.
-// Items belonging to no project share the zero value, which keeps them in one
-// queue instead of making each its own round. A kind limits the candidates to
-// projects of that kind; an empty kind considers every project.
-func primaryProject(item api.ProjectItem, kind string) api.Project {
+// primaryProject is the project an item is drawn under, and whether it has one.
+// An item can belong to several, so it competes in the round of the
+// highest-priority one rather than once per membership — otherwise
+// multi-project items get a slot per project. Only an active project draws
+// work: a shelved, completed or dropped one is out of the queue, and so is an
+// item belonging to nothing else. A kind limits the candidates to projects of
+// that kind; an empty kind considers every project.
+func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
 	var primary api.Project
 	found := false
 	for _, project := range item.Projects {
-		if kind != "" && project.Kind != kind {
+		if project.Status != api.ProjectStatusActive || (kind != "" && project.Kind != kind) {
 			continue
 		}
 		if !found || outranks(project, primary) {
@@ -542,7 +549,7 @@ func primaryProject(item api.ProjectItem, kind string) api.Project {
 			found = true
 		}
 	}
-	return primary
+	return primary, found
 }
 
 // outranks orders projects by the position the API already exposes. Positions

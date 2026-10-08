@@ -20,7 +20,7 @@ import (
 // project — one source of truth, and a project spanning an API, a CLI, and a TUI
 // lists all three.
 //
-// Status is active/done/dropped. ClosedAt and StatusReason are set by the
+// Status is one of the ProjectStatus values. ClosedAt and StatusReason are set by the
 // server as consequences of the transition, never sent by the client.
 type Project struct {
 	ID             string     `json:"id"`

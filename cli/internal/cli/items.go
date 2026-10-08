@@ -264,10 +264,11 @@ func newItemsNextCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "next",
 		Short: "The actionable items, in the order to take them",
-		Long: "Not completed, not archived, not blocked — ordered by project position, then by\n" +
-			"each item's position in its project, so the first row is the next thing to do.\n" +
-			"An item in several projects is taken with the highest-ranked one. `icb overview`\n" +
-			"shows the same queue interleaved a project at a time.",
+		Long: "Not completed, not archived, not blocked, and in an active project — ordered by\n" +
+			"project position, then by each item's position in its project, so the first row\n" +
+			"is the next thing to do. An item in several projects is taken with the\n" +
+			"highest-ranked active one. A shelved project's items wait until it is active\n" +
+			"again. `icb overview` shows the same queue interleaved a project at a time.",
 		Example: "  icb projects items next\n" +
 			"  icb projects items next --kind build\n" +
 			"  icb projects items next --repo dotfiles\n" +
