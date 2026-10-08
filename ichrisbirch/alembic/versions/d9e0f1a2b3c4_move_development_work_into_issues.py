@@ -1,9 +1,10 @@
 """Move development work out of projects and into issues
 
-Every project whose kind is not `life` becomes an initiative with the same id,
-and every item whose projects are all of that kind becomes an issue with the
-same id and number. An item that also sits in a `life` project stays a project
-item, and loses its membership in the projects that moved.
+Every `build` project becomes an initiative with the same id, and every item
+whose projects are all `build` becomes an issue with the same id and number.
+A `chore` project stays, because its kind marks work that has to happen and
+makes nothing new. An item that also sits in a project of another kind stays a
+project item, and loses its membership in the projects that moved.
 
 Initiative status: completed and dropped carry over, and active and someday
 both become active. Priority ranks the active projects by position into
@@ -18,8 +19,8 @@ priority 0, so it ranks by its initiative.
 An item in several projects joins the initiative of the one it was drawn
 under: its active project with the lowest position, else its project with the
 lowest position. Rank is that project's place, then the item's position in
-it, which is the order `icb projects items next` reads. The moved issues rank
-after every issue that already exists.
+it, so each issue keeps the place its project queued it in. The moved issues
+rank after every issue that already exists.
 
 A dependency between two moved items is copied. An edge between a moved item
 and one that stays cannot cross tables. It becomes a line on the dependent
@@ -52,7 +53,7 @@ def upgrade() -> None:
         FROM project_item_memberships membership
         JOIN projects project ON project.id = membership.project_id
         GROUP BY membership.item_id
-        HAVING bool_and(project.kind <> 'life')
+        HAVING bool_and(project.kind = 'build')
     """)
     op.execute("""
         CREATE TEMP TABLE primary_memberships AS
@@ -85,9 +86,9 @@ def upgrade() -> None:
         LEFT JOIN (
             SELECT id, ntile(3) OVER (ORDER BY position, created_at, id) + 1 AS priority
             FROM projects
-            WHERE kind <> 'life' AND status = 'active'
+            WHERE kind = 'build' AND status = 'active'
         ) band ON band.id = project.id
-        WHERE project.kind <> 'life'
+        WHERE project.kind = 'build'
     """)
 
     op.execute("""
@@ -169,7 +170,7 @@ def upgrade() -> None:
     """)
 
     op.execute('DELETE FROM project_items WHERE id IN (SELECT id FROM moving_items)')
-    op.execute("DELETE FROM projects WHERE kind <> 'life'")
+    op.execute("DELETE FROM projects WHERE kind = 'build'")
 
     op.execute('DROP TABLE primary_memberships')
     op.execute('DROP TABLE moving_items')

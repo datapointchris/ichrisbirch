@@ -16,6 +16,7 @@ from tests.utils.database import test_settings
 
 BEFORE_MOVE = 'c8d9e0f1a2b3'
 FINISHED_AT = dt.datetime(2026, 9, 1, 12, 0, tzinfo=dt.UTC)
+STAYING = {'build-and-life', 'life-only', 'build-and-chore', 'chore-only'}
 
 
 @dataclass
@@ -101,6 +102,7 @@ def write_before(conn, before: Before) -> None:
     add_project(conn, before, 'build-dropped', 'build', 'dropped', 5, reason='gave up')
     add_project(conn, before, 'build-someday', 'build', 'someday', 6)
     add_project(conn, before, 'life', 'life', 'active', 7)
+    add_project(conn, before, 'chore', 'chore', 'active', 8)
 
     add_item(conn, before, 'open-with-tasks', {'build-first': 1}, notes='what the agent needs')
     add_item(conn, before, 'finished-then-archived', {'build-first': 0}, completed=True, archived=True)
@@ -110,6 +112,8 @@ def write_before(conn, before: Before) -> None:
     add_item(conn, before, 'in-completed-only', {'build-completed': 1})
     add_item(conn, before, 'build-and-life', {'build-first': 2, 'life': 0})
     add_item(conn, before, 'life-only', {'life': 1}, notes='a personal note')
+    add_item(conn, before, 'build-and-chore', {'build-first': 3, 'chore': 0})
+    add_item(conn, before, 'chore-only', {'chore': 1})
 
     add_task(conn, before, 'open-with-tasks', 'second', 1, completed=False)
     add_task(conn, before, 'open-with-tasks', 'first', 0, completed=True)
@@ -171,7 +175,7 @@ def test_items_keep_their_id_and_number(moved):
     engine, before = moved
     issues = issue_rows(engine, before)
 
-    moved_keys = set(before.items) - {'build-and-life', 'life-only'}
+    moved_keys = set(before.items) - STAYING
     assert set(issues) == moved_keys
     assert {key: issues[key].number for key in moved_keys} == {key: before.numbers[key] for key in moved_keys}
 
@@ -242,18 +246,23 @@ def test_an_edge_crossing_the_stores_becomes_a_line_on_the_dependent(moved):
     assert staying_notes == f'a personal note\n\nDepends on issue {before.numbers["in-completed-only"]}.'
 
 
-def test_only_life_projects_and_their_items_remain(moved):
+def test_only_personal_projects_and_their_items_remain(moved):
     engine, before = moved
     with engine.connect() as conn:
         projects = conn.execute(sa.text('SELECT id FROM projects WHERE id = ANY(:ids)'), {'ids': list(before.projects.values())}).scalars()
         items = conn.execute(sa.text('SELECT id FROM project_items WHERE id = ANY(:ids)'), {'ids': list(before.items.values())}).scalars()
-        memberships = conn.execute(
-            sa.text('SELECT project_id FROM project_item_memberships WHERE item_id = :id'), {'id': before.items['build-and-life']}
-        ).scalars()
+        memberships = {
+            key: list(
+                conn.execute(
+                    sa.text('SELECT project_id FROM project_item_memberships WHERE item_id = :id'), {'id': before.items[key]}
+                ).scalars()
+            )
+            for key in ('build-and-life', 'build-and-chore')
+        }
 
-        assert set(projects) == {before.projects['life']}
-        assert set(items) == {before.items['build-and-life'], before.items['life-only']}
-        assert list(memberships) == [before.projects['life']]
+        assert set(projects) == {before.projects['life'], before.projects['chore']}
+        assert set(items) == {before.items[key] for key in STAYING}
+        assert memberships == {'build-and-life': [before.projects['life']], 'build-and-chore': [before.projects['chore']]}
 
 
 def test_the_downgrade_refuses_while_issues_hold_rows(moved):
