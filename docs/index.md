@@ -12,7 +12,7 @@ Welcome to the iChrisBirch application documentation.
 - [Configuration](configuration.md) - Environment and settings management
 - [Logging Configuration](logging-configuration.md) - Structlog setup, request tracing, and log viewing
 - [Dependency Reach](dependency-reach.md) - What each wide-reaching dependency sees and which callers feed it
-- [Admin Dashboard](admin.md) - Live log streaming over WebSocket, JWT cookie auth, admin-only access
+- [Admin Dashboard](admin.md) - The admin pages, the API guard behind them, and why the health read bounds every probe
 
 ## Development
 

@@ -351,32 +351,15 @@ window.__setLogLevel('error')  // Errors only
 5. **No file management**: Docker handles persistence and rotation
 6. **Industry standard**: Follows 12-factor app logging principles
 
-## Admin UI Integration
+## Log Files
 
-When `LOG_FILE` is configured, the admin dashboard provides live log viewing capabilities.
-
-### Live Logs Feature
-
-The admin UI at `/admin/logs/` provides real-time log streaming via WebSocket:
-
-- **WebSocket endpoint**: `wss://api.docker.localhost/admin/log-stream/`
-- **Authentication**: JWT cookie-based (set automatically on Flask login)
-- **Admin-only**: Requires admin user privileges
-- **ANSI stripping**: Color codes removed for clean browser display
-- **Client-side colorization**: JavaScript re-applies colors based on log level
-
-### Log Graphs Feature
-
-The admin UI at `/admin/log-graphs/` provides log analytics:
-
-- Reads all `*.log` files from `LOG_DIR`
-- Parses structlog format into structured data
-- Generates charts for log levels, timestamps, and sources
-- Useful for identifying patterns and issues
+When `LOG_FILE` is set, a service writes its logs to that file as well as to stderr.
+The API's `/admin/log-stream/` WebSocket tails every `*.log` file in `LOG_DIR`.
+No current client opens that socket, as [Admin Dashboard](admin.md) explains.
 
 ### Docker Configuration
 
-To enable file logging in Docker Compose:
+The compose files enable file logging like this:
 
 ```yaml
 api:
@@ -392,4 +375,4 @@ scheduler:
     - ichrisbirch_logs:/var/log/ichrisbirch
 ```
 
-All services share the same log volume, allowing the admin UI to aggregate logs from all services.
+Both services share the one log volume, so a reader of `LOG_DIR` sees every service's file.
