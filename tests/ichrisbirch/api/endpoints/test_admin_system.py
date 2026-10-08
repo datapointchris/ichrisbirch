@@ -28,7 +28,7 @@ PROBE_DEADLINE_SECONDS = 2
 
 
 def finish_within[T](seconds: float, probe: Callable[[], T]) -> T:
-    """Run the probe on a daemon thread, so a probe that never returns fails the test instead of hanging it."""
+    """A probe that never returns fails the test at the deadline instead of hanging the suite."""
     result: list[T] = []
     thread = threading.Thread(target=lambda: result.append(probe()), daemon=True)
     thread.start()
@@ -97,8 +97,6 @@ class TestSystemHealth:
 
 
 class TestSystemHealthProbes:
-    """A dependency that is slow, silent or refusing reads as unavailable and holds no other request."""
-
     @pytest.mark.asyncio
     async def test_a_slow_probe_does_not_delay_a_concurrent_request(self, test_api_logged_in_admin):
         probe_started = threading.Event()
@@ -109,7 +107,7 @@ class TestSystemHealthProbes:
             probe_started.set()
             time.sleep(SLOW_PROBE_SECONDS)
 
-        # TestClient gives each request its own event loop, so one loop is driven here the way uvicorn drives it.
+        # TestClient runs each request on its own event loop, which would hide the stall, so one loop is driven here as uvicorn drives it.
         transport = httpx2.ASGITransport(app=test_api_logged_in_admin.app)
         with (
             patch('ichrisbirch.api.endpoints.admin._get_docker_containers', return_value=[]),

@@ -282,14 +282,15 @@ async def run_smoke_tests_endpoint(
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
 
-# The longest one probe call may take, and the whole Docker probe's deadline.
+# Each probe call, and the Docker probe as a whole, gets this long before it reads as unavailable.
 PROBE_TIMEOUT_SECONDS = 2
 
 TABLE_ROW_COUNTS_SQL = text('SELECT schemaname, relname, n_live_tup FROM pg_stat_user_tables ORDER BY schemaname, relname')
 DATABASE_SIZE_SQL = text('SELECT pg_database_size(current_database())')
 CONNECTION_COUNT_SQL = text('SELECT count(*) FROM pg_stat_activity')
 
-# One worker, so a daemon that answers slowly holds one thread however often the page refreshes.
+# A slow daemon holds one thread at most, however often the page refreshes. A health read arriving
+# meanwhile queues behind that thread until its own deadline.
 _docker_probe_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='docker-probe')
 
 
@@ -310,7 +311,7 @@ def _list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
 
 
 def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None:
-    """Get status of Docker containers, or None when the daemon cannot be read in time."""
+    """None when the daemon errors or misses the deadline. An empty list means it answered and no container matched."""
     probe = _docker_probe_executor.submit(_list_docker_containers)
     try:
         return probe.result(timeout=PROBE_TIMEOUT_SECONDS)

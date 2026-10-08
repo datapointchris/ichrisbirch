@@ -50,7 +50,7 @@ class ServerInfo(AdminConfig):
 
 class SystemHealth(AdminConfig):
     server: ServerInfo
-    # None means the probe got no answer, which is not the same reading as an empty or idle dependency.
+    # None when the probe got no answer. The page shows a None section as unavailable, and zeros as a measured idle dependency.
     docker: list[DockerContainerStatus] | None
     database: DatabaseStats | None
     redis: RedisStats | None

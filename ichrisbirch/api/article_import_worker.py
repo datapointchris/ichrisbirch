@@ -42,7 +42,8 @@ PAUSE_KEY = 'article_import:paused_until'
 BATCH_TTL = 86400  # 24 hours
 MAX_ATTEMPTS = 2
 QUEUE_WAIT_SECONDS = 5
-# BLPOP leaves the socket silent for up to QUEUE_WAIT_SECONDS, so the read timeout sits above it.
+# `blpop` leaves the socket silent for up to QUEUE_WAIT_SECONDS, so a read timeout at or below it
+# raises TimeoutError on every poll of an empty queue.
 QUEUE_READ_TIMEOUT_SECONDS = QUEUE_WAIT_SECONDS * 2
 # How long to hold the queue when the usage limit gives no reset time.
 USAGE_LIMIT_RECHECK = dt.timedelta(minutes=15)

@@ -17,6 +17,6 @@ def get_redis_client(settings: Settings, *, read_timeout: float) -> redis.Redis:
         decode_responses=True,
         socket_connect_timeout=CONNECT_TIMEOUT_SECONDS,
         socket_timeout=read_timeout,
-        # Retry only a dropped connection: a command that timed out may already have run, and a resend repeats it.
+        # Timeouts are not retried: the server may already have run the command, and a resend would queue a bulk import twice.
         retry=Retry(NoBackoff(), 1, supported_errors=(redis.ConnectionError,)),
     )

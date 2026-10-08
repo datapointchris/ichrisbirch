@@ -13,7 +13,6 @@ READ_TIMEOUT_SECONDS = 0.2
 
 @pytest.fixture
 def silent_server() -> Iterator[tuple[tuple[str, int], list[socket.socket]]]:
-    """Accept every connection and never reply, recording each one accepted."""
     server = socket.create_server(('127.0.0.1', 0))
     server.settimeout(0.05)
     accepted: list[socket.socket] = []
