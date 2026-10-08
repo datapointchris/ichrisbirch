@@ -29,10 +29,31 @@ const (
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
+// serviceScope is what a service client asks for. Authelia grants only the
+// scopes a request names, and the API admits this one to the routes the
+// project-item reads call.
+const serviceScope = "icb.project-items.read"
+
 type Config struct {
 	Issuer   string
 	ClientID string
 	APIBase  string
+
+	// ClientSecret selects the client-credentials grant. It is set only where a
+	// service runs icb with no person present to approve a device login.
+	ClientSecret string
+}
+
+// IsService reports whether icb authenticates as a confidential service client
+// rather than as the person who logged in on this machine.
+func (c Config) IsService() bool {
+	return c.ClientSecret != ""
+}
+
+// Service is the goclilogin view of this config for the client-credentials
+// grant. Nothing it obtains is stored, so it names no keyring or state directory.
+func (c Config) Service() goclilogin.ServiceClient {
+	return goclilogin.ServiceClient{Issuer: c.Issuer, ClientID: c.ClientID, Scopes: []string{serviceScope}}
 }
 
 // Login is the goclilogin view of this config: which provider to authenticate
@@ -55,9 +76,10 @@ func (c Config) Login() goclilogin.Config {
 // A config file layer can slot in below env later without changing callers.
 func Load() Config {
 	return Config{
-		Issuer:   getEnv("ICB_OIDC_ISSUER", defaultIssuer),
-		ClientID: getEnv("ICB_CLIENT_ID", defaultClientID()),
-		APIBase:  getEnv("ICB_API_BASE", defaultAPIBase),
+		Issuer:       getEnv("ICB_OIDC_ISSUER", defaultIssuer),
+		ClientID:     getEnv("ICB_CLIENT_ID", defaultClientID()),
+		APIBase:      getEnv("ICB_API_BASE", defaultAPIBase),
+		ClientSecret: os.Getenv("ICB_CLIENT_SECRET"),
 	}
 }
 

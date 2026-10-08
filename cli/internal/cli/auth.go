@@ -12,6 +12,7 @@ import (
 	"github.com/datapointchris/goclilogin"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
@@ -27,7 +28,10 @@ func newAuthCommand() *cobra.Command {
 		Long: "Authenticate this machine against Authelia using the OAuth 2.0 device\n" +
 			"authorization grant. The CLI prints a code and a URL; approve it in any\n" +
 			"browser on any device, including from a different machine over SSH. The\n" +
-			"resulting token is stored in the OS keychain, never on disk.",
+			"resulting token is stored in the OS keychain, never on disk.\n\n" +
+			"With ICB_CLIENT_SECRET set, icb is a service: it authenticates as the\n" +
+			"confidential client ICB_CLIENT_ID names through the client-credentials\n" +
+			"grant, requests a token per run, and stores nothing. There is no login.",
 		RunE: requireSubcommand,
 	}
 	cmd.AddCommand(newAuthLoginCommand(), newAuthLogoutCommand(), newAuthStatusCommand(), newAuthTokenCommand())
@@ -42,6 +46,9 @@ func newAuthLoginCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
+			if cfg.IsService() {
+				return fmt.Errorf("ICB_CLIENT_SECRET is set, so icb authenticates as service client %s with no login; unset it to log in as a person", cfg.ClientID)
+			}
 			login := cfg.Login()
 			store := goclilogin.NewTokenStore(login)
 
@@ -115,15 +122,14 @@ func newAuthTokenCommand() *cobra.Command {
 		Short: "Print the current access token to stdout",
 		Long: "Print a valid access token to stdout, refreshing it first if it has\n" +
 			"expired. Intended for scripting, e.g. `curl -H \"Authorization: Bearer\n" +
-			"$(icb auth token)\" …`. Exits non-zero if not logged in.",
+			"$(icb auth token)\" …`. Exits non-zero if not logged in. With\n" +
+			"ICB_CLIENT_SECRET set, it requests a new service token instead.",
 		Example: "  icb auth token",
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := goclilogin.NewTokenStore(cfg.Login())
-
-			source, err := goclilogin.TokenSource(cmd.Context(), cfg.Login(), store)
-			if errors.Is(err, goclilogin.ErrNotLoggedIn) {
+			source, err := tokenSource(cmd.Context(), cfg)
+			if errors.Is(err, errNeedsLogin) {
 				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Not logged in as %s. Run `icb auth login`.\n", cfg.ClientID)
 				return exitCode(1)
 			}
@@ -131,6 +137,9 @@ func newAuthTokenCommand() *cobra.Command {
 				return err
 			}
 			token, err := source.Token()
+			if err != nil && cfg.IsService() {
+				return fmt.Errorf("obtain a token for service client %s: %w", cfg.ClientID, err)
+			}
 			if err != nil {
 				return fmt.Errorf("obtain a valid token (refresh may have failed — try `icb auth login`): %w", err)
 			}
@@ -159,6 +168,10 @@ type statusReport struct {
 	// KeyringNote carries the keyring's own failure when there is no token and
 	// the keyring is the reason, rather than simply holding no entry.
 	KeyringNote string `json:"keyring_note,omitempty"`
+
+	// service is set when ICB_CLIENT_SECRET is, so the text names the secret
+	// rather than a login. JSON readers tell the two apart by client_id.
+	service bool
 }
 
 func newAuthStatusCommand() *cobra.Command {
@@ -170,40 +183,11 @@ func newAuthStatusCommand() *cobra.Command {
 		Args:    usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
-			store := goclilogin.NewTokenStore(cfg.Login())
-
-			report := statusReport{ClientID: cfg.ClientID, Issuer: cfg.Issuer}
-
-			token, backend, err := store.Load(cfg.ClientID)
-			switch {
-			case errors.Is(err, goclilogin.ErrNotLoggedIn):
-				// Logged out is a valid state, reported on stdout, exit 1 (like gh).
-				// goclilogin wraps ErrNotLoggedIn with the keyring's own failure when
-				// there was one, and that distinction decides what the user should do:
-				// a host with no Secret Service is fixed by logging in, a locked
-				// keychain is not.
-				if detail := strings.TrimPrefix(err.Error(), goclilogin.ErrNotLoggedIn.Error()); detail != "" {
-					report.KeyringNote = strings.Trim(detail, " ()")
-				}
-			case err != nil:
-				return fmt.Errorf("read token from keychain: %w", err)
-			default:
-				report.LoggedIn = true
-				report.Backend = backend
-				if !token.Expiry.IsZero() {
-					report.ExpiresAt = token.Expiry.Format(time.RFC3339)
-					report.Expired = time.Now().After(token.Expiry)
-				}
-				// Ask for a token the way a resource command does, which is the
-				// only thing that separates a soft expiry from a revoked grant.
-				// A live access token answers locally; an expired one performs
-				// the refresh the next call would have performed anyway, so the
-				// answer costs nothing that was not already due.
-				report.Session, token = goclilogin.VerifySession(cmd.Context(), cfg.Login(), store)
-				if token != nil && !token.Expiry.IsZero() {
-					report.ExpiresAt = token.Expiry.Format(time.RFC3339)
-					report.Expired = time.Now().After(token.Expiry)
-				}
+			report := statusReport{ClientID: cfg.ClientID, Issuer: cfg.Issuer, service: cfg.IsService()}
+			if cfg.IsService() {
+				serviceStatus(cmd.Context(), cfg, &report)
+			} else if err := loginStatus(cmd.Context(), cfg, &report); err != nil {
+				return err
 			}
 
 			if asJSON {
@@ -229,6 +213,58 @@ func newAuthStatusCommand() *cobra.Command {
 	return cmd
 }
 
+// loginStatus fills report from the token this machine logged in for.
+func loginStatus(ctx context.Context, cfg config.Config, report *statusReport) error {
+	store := goclilogin.NewTokenStore(cfg.Login())
+	token, backend, err := store.Load(cfg.ClientID)
+	switch {
+	case errors.Is(err, goclilogin.ErrNotLoggedIn):
+		// Logged out is a valid state, reported on stdout, exit 1 (like gh).
+		// goclilogin wraps ErrNotLoggedIn with the keyring's own failure when
+		// there was one, and that distinction decides what the user should do:
+		// a host with no Secret Service is fixed by logging in, a locked
+		// keychain is not.
+		if detail := strings.TrimPrefix(err.Error(), goclilogin.ErrNotLoggedIn.Error()); detail != "" {
+			report.KeyringNote = strings.Trim(detail, " ()")
+		}
+	case err != nil:
+		return fmt.Errorf("read token from keychain: %w", err)
+	default:
+		report.LoggedIn = true
+		report.Backend = backend
+		if !token.Expiry.IsZero() {
+			report.ExpiresAt = token.Expiry.Format(time.RFC3339)
+			report.Expired = time.Now().After(token.Expiry)
+		}
+		// Ask for a token the way a resource command does, which is the
+		// only thing that separates a soft expiry from a revoked grant.
+		// A live access token answers locally; an expired one performs
+		// the refresh the next call would have performed anyway, so the
+		// answer costs nothing that was not already due.
+		report.Session, token = goclilogin.VerifySession(ctx, cfg.Login(), store)
+		if token != nil && !token.Expiry.IsZero() {
+			report.ExpiresAt = token.Expiry.Format(time.RFC3339)
+			report.Expired = time.Now().After(token.Expiry)
+		}
+	}
+	return nil
+}
+
+// serviceStatus requests a token, because a service stores none that could say
+// whether its credentials still work. LoggedIn reports that they are configured.
+func serviceStatus(ctx context.Context, cfg config.Config, report *statusReport) {
+	report.LoggedIn = true
+	source, err := goclilogin.ClientCredentialsTokenSource(ctx, cfg.Service(), cfg.ClientSecret)
+	var token *oauth2.Token
+	if err == nil {
+		token, err = source.Token()
+	}
+	report.Session, token = goclilogin.ClassifySession(token, err)
+	if token != nil && !token.Expiry.IsZero() {
+		report.ExpiresAt = token.Expiry.Format(time.RFC3339)
+	}
+}
+
 func printStatus(cmd *cobra.Command, r statusReport) {
 	out := cmd.OutOrStdout()
 	if !r.LoggedIn {
@@ -238,12 +274,21 @@ func printStatus(cmd *cobra.Command, r statusReport) {
 		}
 		return
 	}
+	if r.Session == goclilogin.SessionRejected && r.service {
+		_, _ = fmt.Fprintf(out, "Service client refused by %s.\nCheck ICB_CLIENT_ID and ICB_CLIENT_SECRET.\n", r.Issuer)
+		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
+		return
+	}
 	if r.Session == goclilogin.SessionRejected {
 		_, _ = fmt.Fprintf(out, "Session rejected by %s.\nRun `icb auth login` to authenticate.\n", r.Issuer)
 		_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 		return
 	}
-	_, _ = fmt.Fprintf(out, "Logged in\n")
+	if r.service {
+		_, _ = fmt.Fprintf(out, "Authenticated as a service (client credentials)\n")
+	} else {
+		_, _ = fmt.Fprintf(out, "Logged in\n")
+	}
 	_, _ = fmt.Fprintf(out, "  client:   %s\n", r.ClientID)
 	_, _ = fmt.Fprintf(out, "  issuer:   %s\n", r.Issuer)
 	if r.ExpiresAt != "" {

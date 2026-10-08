@@ -120,7 +120,15 @@ authorizing the token. `cli/internal/config/config.go` sets it as
 
 Authelia does not carry the audience through the device grant — `aud` comes
 back empty — so cross-product isolation rests on the `client_id` claim, and the
-API requires it to start with `icb-cli-`.
+API requires it to start with `icb-cli-` or `icb-svc-`.
+
+A service runs icb with no person present to approve a login. It sets
+`ICB_CLIENT_ID` to its confidential client, `icb-svc-<machine>`, and
+`ICB_CLIENT_SECRET` to that client's secret. icb then requests a token through
+the client-credentials grant on each run, asking for `icb.project-items.read`,
+and stores nothing. `auth login` refuses in that mode, and `auth status` reports
+whether the provider still grants a token. The API never resolves that token to
+a user, and it answers 403 on every route outside the project-item reads.
 
 The login flow, the keychain store and the refresh are
 [goclilogin](https://github.com/datapointchris/goclilogin), shared with the
@@ -329,6 +337,7 @@ the wrong package to travel with a copy of that directory.
 | --- | --- | --- |
 | `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
 | `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id |
+| `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant |
 | `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
 
