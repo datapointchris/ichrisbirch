@@ -26,7 +26,7 @@ EOF
 
 @test "every verb that brings the stack up or writes its database refuses another checkout's stack" {
   echo /elsewhere/ichrisbirch >"$STACK_CHECKOUT_FILE"
-  for verb in "test run" "testing start" "testing restart" "testing rebuild" "testing db seed"; do
+  for verb in "test run" "testing start" "testing restart" "testing rebuild" "testing ensure" "testing db seed"; do
     echo "verb: $verb"
     read -ra args <<<"$verb"
     : >"$DOCKER_CALLS"

@@ -424,7 +424,7 @@ function dev-smoke() {
 
 # Every checkout of this repo drives the one icb-test compose project, and
 # compose labels each container with the checkout that started it. From any
-# other checkout, a test run exercises the starting checkout's API code and
+# other checkout, a test run exercises the starting checkout's API and Vue code and
 # truncates the database a run there may be using, and reports it as its own.
 function require-test-stack-here() {
   local owner
@@ -434,7 +434,7 @@ function require-test-stack-here() {
     return 0
   fi
   echo "${red}The test stack was started from ${owner}, not from ${ICHRISBIRCH_HOME}.${reset}" >&2
-  echo "Its API serves that checkout's code, and its database may hold a run from there." >&2
+  echo "Its API and Vue dev server serve that checkout's code, and its database may hold a run from there." >&2
   echo "" >&2
   echo "Once nothing there is using it, take the stack over:" >&2
   echo "  ${blue}${ICHRISBIRCH_HOME}/ops/icbops testing stop${reset}" >&2
@@ -616,6 +616,7 @@ function testing-is-ready() {
 }
 
 function testing-ensure() {
+  require-test-stack-here || return 1
   if testing-is-ready; then
     echo "${green}Test containers are running${reset}"
   else
