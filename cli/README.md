@@ -127,9 +127,14 @@ A service runs icb with no person present to approve a login. It sets
 `ICB_CLIENT_SECRET` to that client's secret. A secret with no `ICB_CLIENT_ID` is
 refused, because the default is the person's client. icb then requests a token
 through the client-credentials grant on each run, asking for
-`icb.project-items.read`, and stores nothing. `auth login` and `auth logout`
-refuse in that mode. The API never resolves that token to a user, and it answers
-403 on every route outside the reads the `icb projects items` commands make.
+`icb.project-items.read` and `icb.issues.read`, and stores nothing. `auth login`
+and `auth logout` refuse in that mode. The API never resolves that token to a
+user. It answers 403 on every route outside the reads the `icb projects items`
+commands make and the reads `icb issues list`, `search`, `next` and `show` make.
+
+Authelia refuses the whole token request when it names a scope the client does
+not hold. So a scope is granted to the client in Authelia before a release of
+icb requests it.
 
 The login flow, the keychain store and the refresh are
 [goclilogin](https://github.com/datapointchris/goclilogin), shared with the

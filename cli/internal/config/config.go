@@ -30,10 +30,14 @@ const (
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
-// serviceScope is the scope a service client requests. Authelia grants only the
-// scopes a request names, so a request naming none gets a token the API refuses.
-// ichrisbirch/api/client_scopes.py lists the routes this one reaches.
-const serviceScope = "icb.project-items.read"
+// The scopes a service client requests. Authelia grants only the scopes a
+// request names, so a request naming none gets a token the API refuses. It
+// refuses the whole request when one names a scope the client does not hold.
+// ichrisbirch/api/client_scopes.py lists the routes each one reaches.
+const (
+	projectItemsScope = "icb.project-items.read"
+	issuesScope       = "icb.issues.read"
+)
 
 type Config struct {
 	Issuer   string
@@ -68,7 +72,7 @@ func (c Config) CheckService() error {
 // Service is the goclilogin view of this config for the client-credentials
 // grant. Nothing it obtains is stored, so it names no keyring or state directory.
 func (c Config) Service() goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: c.Issuer, ClientID: c.ClientID, Scopes: []string{serviceScope}}
+	return goclilogin.ServiceClient{Issuer: c.Issuer, ClientID: c.ClientID, Scopes: []string{projectItemsScope, issuesScope}}
 }
 
 // Login is the goclilogin view of this config: which provider to authenticate

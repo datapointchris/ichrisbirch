@@ -97,6 +97,8 @@ requests every listed route as a scoped client and requires 200, so a renamed
 path parameter fails it with 403.
 
 A refused scoped client's 403 detail names the routes its scopes reach. The same
-test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`,
-and the CLI's suite requires every request `icb projects items search` sends as a
-service to match a route listed there for the scope the CLI requests.
+test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
+The CLI's suite runs each read a scheduled job makes as a service:
+`icb projects items search`, and `icb issues list`, `list --blocked`, `search`,
+`next` and `show`. It requires every request they send to match a route listed
+there for a scope the CLI requests.

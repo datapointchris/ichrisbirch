@@ -21,7 +21,7 @@ const (
 )
 
 // serviceIDP grants a token only to serviceClientID presenting serviceSecret in
-// a Basic header and naming exactly the scope icb asks for. Anything else gets
+// a Basic header and naming exactly the scopes icb asks for. Anything else gets
 // the refusal Authelia sends.
 func serviceIDP(t *testing.T) *httptest.Server {
 	t.Helper()
@@ -38,7 +38,7 @@ func serviceIDP(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"error":"invalid_client"}`))
 			return
 		}
-		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read" {
+		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read" {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"invalid_scope"}`))
 			return
@@ -182,10 +182,11 @@ func TestService_ARouteOutsideTheScopeReportsTheAPIsDetail(t *testing.T) {
 	}
 }
 
-// serviceIDP grants the scope this file spells, which is the CLI's own copy. So
-// a scope the API renamed, or a route `search` calls that the API stopped
-// listing, passes every other test here and answers 403 to every scheduled run.
-func TestService_SearchCallsARouteTheRequestedScopeReaches(t *testing.T) {
+// serviceIDP grants the scopes this file spells, which is the CLI's own copy.
+// So a scope the API renamed, or a route one of these reads calls that the API
+// stopped listing, passes every other test here and answers 403 to every
+// scheduled run.
+func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.T) {
 	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
 	if err != nil {
 		t.Fatalf("read the API's scope table — run tests/ichrisbirch/api/test_client_scopes.py to write it: %v", err)
@@ -195,22 +196,11 @@ func TestService_SearchCallsARouteTheRequestedScopeReaches(t *testing.T) {
 		t.Fatalf("decode the API's scope table: %v", err)
 	}
 
-	var sent []string
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sent = append(sent, r.Method+" "+r.URL.Path)
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[]`))
-	}))
-	t.Cleanup(api.Close)
-	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
-	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
-		t.Fatalf("search as a service: %v", err)
-	}
-
-	// Every {name} in these templates is a UUID. Matched as any segment,
-	// /project-items/{id}/ would also take /project-items/search/, which FastAPI
-	// routes to search.
-	uuid := `[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`
+	// A {name} in these templates is a UUID, or for an issue its number. Matched
+	// as any segment, /project-items/{id}/ would also take /project-items/search/
+	// and /issues/{id}/ would take /issues/vocabulary/, both of which FastAPI
+	// routes to another handler.
+	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)
 	scopes := config.Load().Service().Scopes
 	var listed []*regexp.Regexp
@@ -220,15 +210,43 @@ func TestService_SearchCallsARouteTheRequestedScopeReaches(t *testing.T) {
 			for i, literal := range literals {
 				literals[i] = regexp.QuoteMeta(literal)
 			}
-			listed = append(listed, regexp.MustCompile("^"+strings.Join(literals, uuid)+"$"))
+			listed = append(listed, regexp.MustCompile("^"+strings.Join(literals, reference)+"$"))
 		}
 	}
-	if len(sent) == 0 {
-		t.Fatal("search sent nothing to hold against the scopes")
-	}
-	for _, request := range sent {
-		if !slices.ContainsFunc(listed, func(re *regexp.Regexp) bool { return re.MatchString(request) }) {
-			t.Errorf("search sent %s, which the API lists for none of %v", request, scopes)
-		}
+
+	idp := serviceIDP(t)
+	for _, read := range []struct {
+		args []string
+		body string
+	}{
+		{[]string{"projects", "items", "search", "sync"}, `[]`},
+		{[]string{"issues", "search", "sync", "--json"}, `[]`},
+		{[]string{"issues", "list", "--json"}, `[]`},
+		{[]string{"issues", "list", "--blocked", "--json"}, `[]`},
+		{[]string{"issues", "next", "--json"}, `[]`},
+		{[]string{"issues", "show", "412", "--json"}, `{}`},
+		{[]string{"issues", "show", "019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b", "--json"}, `{}`},
+	} {
+		t.Run(strings.Join(read.args, " "), func(t *testing.T) {
+			var sent []string
+			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				sent = append(sent, r.Method+" "+r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(read.body))
+			}))
+			t.Cleanup(api.Close)
+			asService(t, idp.URL, api.URL, serviceSecret)
+			if _, err := runService(t, read.args...); err != nil {
+				t.Fatalf("run as a service: %v", err)
+			}
+			if len(sent) == 0 {
+				t.Fatal("sent nothing to hold against the scopes")
+			}
+			for _, request := range sent {
+				if !slices.ContainsFunc(listed, func(re *regexp.Regexp) bool { return re.MatchString(request) }) {
+					t.Errorf("sent %s, which the API lists for none of %v", request, scopes)
+				}
+			}
+		})
 	}
 }
