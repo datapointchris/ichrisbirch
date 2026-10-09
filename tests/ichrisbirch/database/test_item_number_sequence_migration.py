@@ -52,8 +52,11 @@ def the_highest_item_deleted(conn, issued: list[int]) -> None:
 
 @pytest.mark.parametrize('history', [an_item_numbered_by_hand_above_the_identity, the_highest_item_deleted])
 def test_no_number_is_issued_twice_across_the_switch(engine, history: Callable[..., None]):
+    # The downgrade across the move into issues refuses while any issue exists.
+    # The deleted issue's number stays drawn from the sequence.
     with engine.begin() as conn:
         issued = [insert_issue(conn)]
+        conn.execute(sa.text('DELETE FROM issues WHERE title = :title'), {'title': PROBE})
 
     command.downgrade(alembic_config(test_settings), BEFORE_ISSUES)
     with engine.begin() as conn:

@@ -116,10 +116,10 @@ class TestProjectKind:
         insert_test_data_transactional(session, 'projects')
         return client
 
-    def test_kind_defaults_to_build_when_omitted(self, client_with_projects):
+    def test_kind_defaults_to_life_when_omitted(self, client_with_projects):
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Unclassified project'})
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-        assert response.json()['kind'] == 'build'
+        assert response.json()['kind'] == 'life'
 
     def test_kind_round_trips_through_create_and_read(self, client_with_projects):
         created = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Sell the old keyboard', 'kind': 'chore'})

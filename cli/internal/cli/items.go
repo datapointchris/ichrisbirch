@@ -22,19 +22,26 @@ import (
 // context; a caller who wants more names a larger number.
 const defaultNextItemLimit = 10
 
-// itemHints and its two extensions are the commands that find a valid id for
-// each thing an items verb takes. An item id is the only one most of them take;
-// the membership verbs take a project name as well, and the task verbs a task
-// id.
+// itemHints and the lists built on it name the commands that find a valid id
+// for each thing an items verb takes. Most verbs take an item number alone. The
+// membership verbs take a project name as well, and the task verbs a task id.
 var (
 	itemHints = []string{
 		"Search items by title or notes: icb projects items search <query>",
 		"Completed and archived items are hidden: icb projects items list --status all",
 	}
 
+	// itemNumberHints go on every verb taking an item number. On a verb taking
+	// only a project name, `icb issues show <number>` asks for a number the
+	// reader never typed.
+	itemNumberHints = append(slices.Clone(itemHints),
+		"Issues share item numbers, so the number may name an issue: icb issues show <number>")
+
 	itemAndProjectHints = append(slices.Clone(itemHints), projectHints...)
 
-	itemAndTaskHints = append(slices.Clone(itemHints),
+	itemNumberAndProjectHints = append(slices.Clone(itemNumberHints), projectHints...)
+
+	itemNumberAndTaskHints = append(slices.Clone(itemNumberHints),
 		"List an item's tasks: icb projects items tasks <item>")
 )
 
@@ -53,28 +60,28 @@ func newItemsCommand() *cobra.Command {
 		newItemsNextCommand(),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
-		newItemsShowCommand(),
+		withNotFoundHints(newItemsShowCommand(), itemNumberHints...),
 		withNotFoundHints(newItemsCreateCommand(), itemAndProjectHints...),
-		newItemsEditCommand(),
-		newItemsCompletionCommand("complete", "Mark an item completed", true),
-		newItemsCompletionCommand("reopen", "Reopen a completed item", false),
-		newItemsArchiveCommand("archive", "Archive an item", true),
-		newItemsArchiveCommand("unarchive", "Restore an archived item", false),
-		newItemsDeleteCommand(),
+		withNotFoundHints(newItemsEditCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemNumberHints...),
+		withNotFoundHints(newItemsCompletionCommand("reopen", "Reopen a completed item", false), itemNumberHints...),
+		withNotFoundHints(newItemsArchiveCommand("archive", "Archive an item", true), itemNumberHints...),
+		withNotFoundHints(newItemsArchiveCommand("unarchive", "Restore an archived item", false), itemNumberHints...),
+		withNotFoundHints(newItemsDeleteCommand(), itemNumberHints...),
 		// A verb taking a second kind of id names the way to find that one too:
 		// --project on the membership verbs, a task id on the task verbs.
-		withNotFoundHints(newItemsReorderCommand(), itemAndProjectHints...),
-		withNotFoundHints(newItemsAddProjectCommand(), itemAndProjectHints...),
-		withNotFoundHints(newItemsRemoveProjectCommand(), itemAndProjectHints...),
-		newItemsAddDependencyCommand(),
-		newItemsRemoveDependencyCommand(),
-		newItemsBlockersCommand(),
-		withNotFoundHints(newItemsTreeCommand(), itemAndProjectHints...),
-		newItemsTasksCommand(),
-		newItemsAddTaskCommand(),
-		withNotFoundHints(newItemsCompleteTaskCommand(), itemAndTaskHints...),
-		withNotFoundHints(newItemsEditTaskCommand(), itemAndTaskHints...),
-		withNotFoundHints(newItemsRemoveTaskCommand(), itemAndTaskHints...),
+		withNotFoundHints(newItemsReorderCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsAddProjectCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsAddDependencyCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsBlockersCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsTasksCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsAddTaskCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
+		withNotFoundHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
+		withNotFoundHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
 	)
 	return cmd
 }
@@ -119,9 +126,9 @@ func newItemsListCommand() *cobra.Command {
 			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles --limit 10\n" +
 			"  icb projects items list --repo dotfiles --json\n" +
-			"  icb projects items list --project todoui\n" +
-			"  icb projects items list --project \"Tool Improvement\" --json\n" +
-			"  icb projects items list --project todoui --status all",
+			"  icb projects items list --project \"Kitchen remodel\"\n" +
+			"  icb projects items list --project \"Reading backlog\" --json\n" +
+			"  icb projects items list --project \"Kitchen remodel\" --status all",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
@@ -270,9 +277,9 @@ func newItemsNextCommand() *cobra.Command {
 			"highest-ranked active one. A shelved project's items wait until it is active\n" +
 			"again. `icb overview` shows the same queue interleaved a project at a time.",
 		Example: "  icb projects items next\n" +
-			"  icb projects items next --kind build\n" +
+			"  icb projects items next --kind chore\n" +
 			"  icb projects items next --repo dotfiles\n" +
-			"  icb projects items next --kind build --limit 1 --json",
+			"  icb projects items next --limit 1 --json",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -380,7 +387,7 @@ func newItemsSearchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "search <query>",
 		Short:   "Search items by title or notes",
-		Example: "  icb projects items search kitchen\n  icb projects items search sync --repo todoui",
+		Example: "  icb projects items search kitchen\n  icb projects items search backup --repo dotfiles",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter := repoFlagValue(cmd, repo)
@@ -619,7 +626,7 @@ func askProjectName(session prompt.Session) (string, error) {
 // newProjectFields is the rest of the record, with whatever a failed attempt
 // already collected as the defaults — so a retry is Enter three times.
 func newProjectFields(in api.ProjectCreateInput) []prompt.Field {
-	kind := api.ProjectKindBuild
+	kind := api.ProjectKindLife
 	if in.Kind != nil {
 		kind = *in.Kind
 	}
@@ -719,8 +726,8 @@ func newItemsCreateCommand() *cobra.Command {
 			"one. An answer the field rejects comes back for editing and nothing\n" +
 			"already entered is lost. Ctrl-C abandons the item.",
 		Example: "  icb projects items create\n" +
-			"  icb projects items create --project todoui --repo todoui --title \"Ship the CLI\"\n" +
-			"  icb projects items create --project todoui --title \"Ship it\" --notes \"$(cat b.md)\"",
+			"  icb projects items create --project \"Kitchen remodel\" --title \"Get three quotes\"\n" +
+			"  icb projects items create --project \"Kitchen remodel\" --title \"Pick tile\" --notes \"$(cat tile.md)\"",
 		Args: usageArgs(cobra.NoArgs),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			answers := flagAnswers(cmd, "title", "project", "repo", "notes")
@@ -940,7 +947,7 @@ func newItemsReorderCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "reorder <item> --project <project> --position <n>",
 		Short:   "Move an item to a new position within a project",
-		Example: "  icb projects items reorder 118 --project todoui --position 2",
+		Example: "  icb projects items reorder 118 --project \"Kitchen remodel\" --position 2",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
@@ -980,7 +987,7 @@ func newItemsAddProjectCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "add-project <item> --project <project>",
 		Short:   "Add an item to another project",
-		Example: "  icb projects items add-project 118 --project todoui",
+		Example: "  icb projects items add-project 118 --project \"Kitchen remodel\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
@@ -1015,7 +1022,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 		Use:     "remove-project <item> --project <project>",
 		Short:   "Remove an item from a project",
 		Long:    "Remove an item from a project. An item always belongs to at least one\nproject, so removing it from its last one is refused — delete the item instead.",
-		Example: "  icb projects items remove-project 118 --project todoui",
+		Example: "  icb projects items remove-project 118 --project \"Kitchen remodel\"",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {

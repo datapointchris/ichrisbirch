@@ -279,7 +279,7 @@ Description (optional): the crossing rebuild and everything it drags in
 Kind is one of:
   build  chore  life
   Tab cycles the matches.
-Kind [build]: build
+Kind [life]: life
   Created project "Zebra crossing overhaul".
 Project (another, or Enter to move on):
 ```

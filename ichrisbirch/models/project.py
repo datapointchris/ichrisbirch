@@ -59,13 +59,14 @@ class ProjectStatus(Base):
 
 
 class Project(Base):
-    """An ongoing initiative holding an ordered list of work items.
+    """A personal project holding an ordered list of work items.
 
     `kind` separates making something new from the work that merely has to
     happen, so a consumer asking "what should I build next" is not handed the
-    next errand. It defaults to `build` rather than being required: nearly every
-    project is one, and a wrong kind is one `PATCH` away, whereas a required
-    field breaks every existing caller of the create endpoint.
+    next errand. It defaults to `life`, because development work is an issue
+    and a project is personal unless it says otherwise. It is not required,
+    because a required field breaks every existing caller of the create
+    endpoint.
 
     `status` is a field rather than the `archived` boolean items carry, because
     for a project completion and hiding are the same event: a project is a
@@ -86,7 +87,7 @@ class Project(Base):
     # Unique among ACTIVE projects only — see uq_projects_name_active below.
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    kind: Mapped[str] = mapped_column(Text, ForeignKey('project_kinds.name'), nullable=False, server_default='build')
+    kind: Mapped[str] = mapped_column(Text, ForeignKey('project_kinds.name'), nullable=False, server_default='life')
     status: Mapped[str] = mapped_column(Text, ForeignKey('project_statuses.name'), nullable=False, server_default='active')
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     # When the project reached a terminal state. `created_at` orders by when work

@@ -125,6 +125,38 @@ func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
 	}
 }
 
+// The Use line is how this knows a verb takes a number, so a verb spelling its
+// argument other than <item> or <issue> escapes the sweep.
+func TestTheOtherStoreIsNamedExactlyWhereANumberIsTaken(t *testing.T) {
+	const itemsShow, issuesShow = "icb projects items show <number>", "icb issues show <number>"
+	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
+		want := ""
+		switch {
+		case strings.Contains(cmd.Use, "<item>"):
+			want = issuesShow
+		case strings.Contains(cmd.Use, "<issue>"):
+			want = itemsShow
+		}
+		hints := hintsFor(cmd)
+		joined := strings.Join(hints, "\n")
+		for _, hint := range []string{itemsShow, issuesShow} {
+			if named := strings.Contains(joined, hint); named != (hint == want) {
+				t.Errorf("%s: names %q = %v, hints = %v", cmd.CommandPath(), hint, named, hints)
+			}
+		}
+	})
+}
+
+// A project that held development work is an initiative with the same name, so
+// its old name has to lead somewhere other than the project list.
+func TestAProjectMissNamesTheInitiativeList(t *testing.T) {
+	err := runWith(t, apiNotFound("project todoui not found"), "projects", "show", "todoui")
+
+	if !strings.Contains(err.Error(), "icb issues list --initiative <name>") {
+		t.Errorf("error = %q, want it to name the initiative list", err)
+	}
+}
+
 // A verb taking both an item and one of its tasks can 404 on either number, so
 // it names both ways in.
 func TestATaskVerbNamesTheItemAndTheTaskList(t *testing.T) {

@@ -22,6 +22,11 @@ var issueHints = []string{
 	"Completed and canceled issues are hidden: icb issues list --status all",
 }
 
+// issueNumberHints go on every verb taking an issue number, for the reason
+// itemNumberHints gives.
+var issueNumberHints = append(slices.Clone(issueHints),
+	"Project items share issue numbers, so the number may name an item: icb projects items show <number>")
+
 // defaultNextIssueLimit caps `next`. The head of the queue is the answer, and
 // the rows after it are context.
 const defaultNextIssueLimit = 10
@@ -73,33 +78,33 @@ func newIssuesCommand() *cobra.Command {
 	add(issueGroupRead,
 		newIssuesListCommand(),
 		newIssuesSearchCommand(),
-		newIssuesShowCommand(),
-		newIssuesCommentsCommand(),
-		newIssuesTreeCommand(),
+		withNotFoundHints(newIssuesShowCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesCommentsCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesTreeCommand(), issueNumberHints...),
 		newIssuesVocabularyCommand(),
 	)
 	add(issueGroupWork,
 		newIssuesNextCommand(),
-		newIssuesClaimCommand(),
-		newIssuesReleaseCommand(),
+		withNotFoundHints(newIssuesClaimCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesReleaseCommand(), issueNumberHints...),
 	)
 	add(issueGroupFile,
 		withNotFoundHints(newIssuesCreateCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
-		withNotFoundHints(newIssuesEditCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
-		newIssuesAddCommentCommand(),
-		newIssuesRemoveCommentCommand(),
-		newIssuesDeleteCommand(),
+		withNotFoundHints(newIssuesEditCommand(), append(slices.Clone(issueNumberHints), initiativeHints...)...),
+		withNotFoundHints(newIssuesAddCommentCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesRemoveCommentCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesDeleteCommand(), issueNumberHints...),
 	)
 	add(issueGroupLifecycle,
-		newIssuesAcceptCommand(),
-		newIssuesCompleteCommand(),
-		newIssuesCancelCommand(),
-		newIssuesReopenCommand(),
+		withNotFoundHints(newIssuesAcceptCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesCompleteCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesCancelCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesReopenCommand(), issueNumberHints...),
 	)
 	add(issueGroupOrder,
-		newIssuesReorderCommand(),
-		newIssuesAddDependencyCommand(),
-		newIssuesRemoveDependencyCommand(),
+		withNotFoundHints(newIssuesReorderCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesAddDependencyCommand(), issueNumberHints...),
+		withNotFoundHints(newIssuesRemoveDependencyCommand(), issueNumberHints...),
 	)
 	add(issueGroupGrouping,
 		newIssueInitiativesCommand(),
