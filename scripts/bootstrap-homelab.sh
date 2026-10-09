@@ -255,22 +255,6 @@ post_start_database() {
     docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;"
     docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO icb_app;"
 
-    # Grant schema access and set default privileges for future objects
-    docker exec icb-infra-postgres psql -U postgres -d ichrisbirch -c "
-DO \$\$
-DECLARE
-    s TEXT;
-BEGIN
-    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','habits'])
-    LOOP
-        EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON SEQUENCES TO icb_app', s);
-    END LOOP;
-END
-\$\$;
-"
-
     log_success "Database role created"
     rm /tmp/ichrisbirch_db_init
 
@@ -296,22 +280,6 @@ END
     docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
     docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
     docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
-
-    # Grant schema access and set default privileges for future objects
-    docker exec icb-infra-postgres psql -U postgres -d ichrisbirch -c "
-DO \$\$
-DECLARE
-    s TEXT;
-BEGIN
-    FOR s IN SELECT unnest(ARRAY['public','admin','apartments','box_packing','habits'])
-    LOOP
-        EXECUTE format('GRANT ALL ON SCHEMA %I TO icb_app', s);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON TABLES TO icb_app', s);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT ALL ON SEQUENCES TO icb_app', s);
-    END LOOP;
-END
-\$\$;
-"
 
     # Restore
     docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner <"$backup_path" || true
