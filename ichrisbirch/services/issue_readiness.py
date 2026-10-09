@@ -21,9 +21,8 @@ gates sits at the top of the queue, hidden because it is blocked.
 
 from __future__ import annotations
 
+import datetime as dt
 from dataclasses import dataclass
-from datetime import date
-from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -59,7 +58,7 @@ class IssueReadiness:
         return (urgency(self.effective_priority.get(issue.id, issue.priority)), issue.rank, issue.number)
 
 
-def measure_readiness(session: Session, today: date, now: datetime) -> IssueReadiness:
+def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> IssueReadiness:
     """Read every issue's light columns once and derive the readiness of all of them.
 
     One pass over the whole table is cheaper than asking per issue, and the

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
-from datetime import datetime
+import datetime as dt
 from uuid import UUID
 from uuid import uuid7
 
@@ -74,8 +73,8 @@ class Initiative(Base):
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     priority: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default='0')
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default='0')
-    created_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
-    closed_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
+    closed_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     issues: Mapped[list[Issue]] = relationship('Issue', back_populates='initiative')
 
@@ -128,9 +127,9 @@ class Issue(Base):
     rank: Mapped[float] = mapped_column(Double, nullable=False)
     # A calendar day. The issue stays out of the ready queue until the day
     # arrives in the reader's zone, and does not count as blocked meanwhile.
-    deferred_until_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    deferred_until_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     claimed_by: Mapped[str | None] = mapped_column(Text, nullable=True)
-    claim_expires_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claim_expires_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     initiative_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('initiatives.id', ondelete='SET NULL'), nullable=True, index=True)
     # A parent is work too large for one issue, split into children. While any
     # child is open the parent is not ready and cannot be completed.
@@ -138,11 +137,11 @@ class Issue(Base):
     # Provenance only: found while working the other issue, and never gated by it.
     discovered_from_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True)
     duplicate_of_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True)
-    created_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
-    updated_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
+    created_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
+    updated_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
     # When the issue reached completed or canceled. Null on a closed issue means
     # the time is unknown, which is never inferred from `updated_ts`.
-    closed_ts: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     initiative: Mapped[Initiative | None] = relationship('Initiative', back_populates='issues')
     parent: Mapped[Issue | None] = relationship('Issue', remote_side=[id], foreign_keys=[parent_id], back_populates='children')
@@ -262,6 +261,6 @@ class IssueComment(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     # Who wrote it: a claimant's name for an agent, or a person's.
     author: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
+    created_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
 
     issue: Mapped[Issue] = relationship('Issue', back_populates='comments')

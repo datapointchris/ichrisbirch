@@ -8,11 +8,9 @@ its children, a triage issue and a decision.
 
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 
-import sqlalchemy
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from ichrisbirch.models.issue import Initiative
@@ -68,16 +66,16 @@ ISSUE_DATA = [
 
 
 def clear(session: Session) -> None:
-    session.execute(sqlalchemy.text('DELETE FROM issue_comments'))
-    session.execute(sqlalchemy.text('DELETE FROM issue_label_assignments'))
-    session.execute(sqlalchemy.text('DELETE FROM issue_dependencies'))
-    session.execute(sqlalchemy.text('DELETE FROM issues'))
-    session.execute(sqlalchemy.text('DELETE FROM issue_labels'))
-    session.execute(sqlalchemy.text('DELETE FROM initiatives'))
+    session.execute(sa.text('DELETE FROM issue_comments'))
+    session.execute(sa.text('DELETE FROM issue_label_assignments'))
+    session.execute(sa.text('DELETE FROM issue_dependencies'))
+    session.execute(sa.text('DELETE FROM issues'))
+    session.execute(sa.text('DELETE FROM issue_labels'))
+    session.execute(sa.text('DELETE FROM initiatives'))
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
 
     initiatives = []
     for rep in range(scale):
@@ -90,7 +88,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
                     status_reason=reason,
                     priority=priority,
                     position=position,
-                    closed_ts=None if initiative_status == 'active' else now - timedelta(days=20),
+                    closed_ts=None if initiative_status == 'active' else now - dt.timedelta(days=20),
                 )
             )
     session.add_all(initiatives)
@@ -117,9 +115,9 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             priority=priority,
             rank=float(idx + 1),
             initiative_id=active_initiatives[idx % len(active_initiatives)].id if idx % 3 != 2 else None,
-            created_ts=now - timedelta(days=60 - idx),
-            updated_ts=now - timedelta(days=(60 - idx) // 2),
-            closed_ts=now - timedelta(days=idx % 30) if closed else None,
+            created_ts=now - dt.timedelta(days=60 - idx),
+            updated_ts=now - dt.timedelta(days=(60 - idx) // 2),
+            closed_ts=now - dt.timedelta(days=idx % 30) if closed else None,
         )
         issue.label_assignments = [IssueLabelAssignment(label_id=labels[slug].id) for slug in label_slugs]
         issues.append(issue)
@@ -130,12 +128,12 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
 
     # A live claim, and one that expired: the expired one is back in the queue.
     live = by_title['icb issues next prints the claimed issue']
-    live.status, live.claimed_by, live.claim_expires_ts = 'in_progress', 'seed-session-live', now + timedelta(hours=3)
+    live.status, live.claimed_by, live.claim_expires_ts = 'in_progress', 'seed-session-live', now + dt.timedelta(hours=3)
     stale = by_title['Issue list filters by label']
-    stale.status, stale.claimed_by, stale.claim_expires_ts = 'in_progress', 'seed-session-gone', now - timedelta(hours=1)
+    stale.status, stale.claimed_by, stale.claim_expires_ts = 'in_progress', 'seed-session-gone', now - dt.timedelta(hours=1)
 
     # Deferred and nothing else, so the deferral alone keeps it out of the queue.
-    by_title['Comment thread on issue detail'].deferred_until_date = (now + timedelta(days=14)).date()
+    by_title['Comment thread on issue detail'].deferred_until_date = (now + dt.timedelta(days=14)).date()
 
     # A parent waiting on its children, one of them already completed.
     parent = by_title['Initiative board page']

@@ -1,5 +1,4 @@
-from datetime import date
-from datetime import datetime
+import datetime as dt
 from typing import Annotated
 from uuid import UUID
 
@@ -56,7 +55,7 @@ class IssueCreate(IssueConfig):
     type: str = 'task'
     status: str = 'open'
     priority: Priority = 0
-    deferred_until_date: date | None = None
+    deferred_until_date: dt.date | None = None
     initiative: InitiativeRef | None = None
     parent: IssueRef | None = None
     discovered_from: IssueRef | None = None
@@ -80,7 +79,7 @@ class IssueUpdate(IssueConfig):
     status: NotNull[str] = None
     status_reason: str | None = None
     priority: NotNull[Priority] = None
-    deferred_until_date: date | None = None
+    deferred_until_date: dt.date | None = None
     initiative: InitiativeRef | None = None
     parent: IssueRef | None = None
     discovered_from: IssueRef | None = None
@@ -109,9 +108,9 @@ class Issue(IssueConfig):
     priority: int
     effective_priority: int
     rank: float
-    deferred_until_date: date | None = None
+    deferred_until_date: dt.date | None = None
     claimed_by: str | None = None
-    claim_expires_ts: datetime | None = None
+    claim_expires_ts: dt.datetime | None = None
     initiative: InitiativeSummary | None = None
     parent: IssueSummary | None = None
     discovered_from: IssueSummary | None = None
@@ -124,9 +123,9 @@ class Issue(IssueConfig):
     comment_count: int = 0
     is_blocked: bool
     is_ready: bool
-    created_ts: datetime
-    updated_ts: datetime
-    closed_ts: datetime | None = None
+    created_ts: dt.datetime
+    updated_ts: dt.datetime
+    closed_ts: dt.datetime | None = None
 
 
 class IssueCommentCreate(IssueConfig):
@@ -139,7 +138,7 @@ class IssueComment(IssueConfig):
     issue_id: UUID
     body: str
     author: str | None = None
-    created_ts: datetime
+    created_ts: dt.datetime
 
 
 class IssueDetail(Issue):
@@ -218,8 +217,8 @@ class Initiative(IssueConfig):
     status_reason: str | None = None
     priority: int
     position: int
-    created_ts: datetime
-    closed_ts: datetime | None = None
+    created_ts: dt.datetime
+    closed_ts: dt.datetime | None = None
     issue_count: int = 0
     open_count: int = 0
     completed_count: int = 0

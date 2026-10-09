@@ -1,6 +1,4 @@
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
+import datetime as dt
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -211,7 +209,7 @@ class TestReadyQueue:
     def test_a_deferred_issue_waits_for_its_day_in_the_readers_zone(self, client):
         """UTC+14 and UTC-11 are 25 hours apart, so their calendars never share a day."""
         task = issue(client, 'Ready task without priority')
-        ahead = datetime.now(ZoneInfo('Pacific/Kiritimati')).date().isoformat()
+        ahead = dt.datetime.now(ZoneInfo('Pacific/Kiritimati')).date().isoformat()
         ok(patch(client, task['number'], deferred_until_date=ahead))
         assert task['title'] in titles(ok(client.get(f'{ISSUES}ready/', params={'timezone': 'Pacific/Kiritimati'})))
         assert task['title'] not in titles(ok(client.get(f'{ISSUES}ready/', params={'timezone': 'Pacific/Pago_Pago'})))
@@ -239,7 +237,7 @@ class TestClaim:
         bug = issue(client, 'Ready bug with high priority')
         first = ok(client.post(f'{ISSUES}{bug["number"]}/claim/', json={'claimant': 'agent-a', 'minutes': 10}))
         second = ok(client.post(f'{ISSUES}{bug["number"]}/claim/', json={'claimant': 'agent-a', 'minutes': 600}))
-        assert datetime.fromisoformat(second['claim_expires_ts']) > datetime.fromisoformat(first['claim_expires_ts'])
+        assert dt.datetime.fromisoformat(second['claim_expires_ts']) > dt.datetime.fromisoformat(first['claim_expires_ts'])
 
     def test_an_expired_claim_returns_the_issue_to_the_queue(self, seeded):
         client, session = seeded
@@ -250,7 +248,7 @@ class TestClaim:
         session.execute(
             update(models.Issue)
             .where(models.Issue.number == bug['number'])
-            .values(claim_expires_ts=datetime.now(UTC) - timedelta(minutes=1))
+            .values(claim_expires_ts=dt.datetime.now(dt.UTC) - dt.timedelta(minutes=1))
         )
         session.flush()
         assert titles(ok(client.get(f'{ISSUES}ready/')))[0] == bug['title']
@@ -279,7 +277,7 @@ class TestClaim:
 
     def test_a_deferred_issue_is_refused_until_its_day(self, client):
         task = issue(client, 'Ready task without priority')
-        day = (datetime.now(UTC) + timedelta(days=30)).date().isoformat()
+        day = (dt.datetime.now(dt.UTC) + dt.timedelta(days=30)).date().isoformat()
         ok(patch(client, task['number'], deferred_until_date=day))
         detail = refused(client.post(f'{ISSUES}{task["number"]}/claim/', json={'claimant': 'agent'}), 409)
         assert day in detail

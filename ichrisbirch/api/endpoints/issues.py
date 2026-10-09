@@ -1,7 +1,5 @@
+import datetime as dt
 from collections import deque
-from datetime import UTC
-from datetime import datetime
-from datetime import timedelta
 from typing import Annotated
 from uuid import UUID
 
@@ -158,7 +156,7 @@ def ensure_parent_open(parent: models.Issue) -> None:
         )
 
 
-def reopen_completed_ancestors(issue: models.Issue, now: datetime) -> None:
+def reopen_completed_ancestors(issue: models.Issue, now: dt.datetime) -> None:
     """Return each completed ancestor to open, because a completed issue never holds open work."""
     parent = issue.parent
     while parent is not None and parent.status == 'completed':
@@ -207,7 +205,7 @@ def resulting_reason(issue: models.Issue, update_data: dict, target: str) -> str
     return reason
 
 
-def apply_status_transition(session: Session, issue: models.Issue, update_data: dict, now: datetime) -> None:
+def apply_status_transition(session: Session, issue: models.Issue, update_data: dict, now: dt.datetime) -> None:
     """Validate a status change and apply everything it implies, in one place.
 
     Closing stamps `closed_ts` and drops the claim. Reopening clears the stamp,
@@ -377,16 +375,16 @@ async def read_ready(
     return issue_views(session, issues, zone, readiness)
 
 
-def claim_values(claimant: str, minutes: int, now: datetime) -> dict:
+def claim_values(claimant: str, minutes: int, now: dt.datetime) -> dict:
     return {
         'status': 'in_progress',
         'claimed_by': claimant,
-        'claim_expires_ts': now + timedelta(minutes=minutes),
+        'claim_expires_ts': now + dt.timedelta(minutes=minutes),
         'updated_ts': now,
     }
 
 
-def claimable(now: datetime, claimant: str | None = None):
+def claimable(now: dt.datetime, claimant: str | None = None):
     """The compare half of the claim's compare-and-set: no live claim by anyone else."""
     free = or_(
         models.Issue.status == 'open',
@@ -406,7 +404,7 @@ async def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession
     to the next candidate.
     """
     issues, _ = ready_issues(session, zone, repo=request.repo, type=request.type, label=request.label, initiative=request.initiative)
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
     for candidate in issues:
         taken = session.execute(
             sql_update(models.Issue)
@@ -500,7 +498,7 @@ async def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
 async def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
 
     if (issue_type := update_data.get('type')) is not None:
         validate_lookup(session, models.IssueType, issue_type, 'issue type')
@@ -553,7 +551,7 @@ def claim_conflict(issue: models.Issue) -> str:
     if issue.claimed_by is None or issue.claim_expires_ts is None:
         # Moved to in_progress by hand, which is a person working it.
         return f'#{issue.number} is in progress without a claim. Release it to open before claiming it.'
-    until = issue.claim_expires_ts.astimezone(UTC)
+    until = issue.claim_expires_ts.astimezone(dt.UTC)
     return f'#{issue.number} is claimed by {issue.claimed_by} until {until:%Y-%m-%d %H:%M} UTC'
 
 
@@ -621,7 +619,7 @@ async def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     if issue.status == 'in_progress':
         clear_claim(issue)
         issue.status = 'open'
-        issue.updated_ts = datetime.now(UTC)
+        issue.updated_ts = dt.datetime.now(dt.UTC)
         session.commit()
     return single_view(session, issue, zone)
 
@@ -676,7 +674,7 @@ async def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependen
         )
     ensure_no_wait_cycle(session, issue, depends_on)
     session.add(models.IssueDependency(issue_id=issue.id, depends_on_id=depends_on.id))
-    issue.updated_ts = datetime.now(UTC)
+    issue.updated_ts = dt.datetime.now(dt.UTC)
     session.commit()
     return detail(session, issue, zone)
 
@@ -694,7 +692,7 @@ async def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.I
             detail=f'#{issue.number} does not depend on #{depends_on.number}',
         )
     session.delete(edge)
-    issue.updated_ts = datetime.now(UTC)
+    issue.updated_ts = dt.datetime.now(dt.UTC)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -716,7 +714,7 @@ async def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimi
 async def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, session: DbSession):
     db_comment = models.IssueComment(issue_id=issue.id, body=comment.body, author=comment.author)
     session.add(db_comment)
-    issue.updated_ts = datetime.now(UTC)
+    issue.updated_ts = dt.datetime.now(dt.UTC)
     session.commit()
     session.refresh(db_comment)
     return db_comment

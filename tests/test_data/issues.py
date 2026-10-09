@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 from ichrisbirch.models import Initiative
 from ichrisbirch.models import Issue
@@ -29,14 +28,14 @@ BASE_DATA: list[Issue] = [
         status='completed',
         priority=2,
         rank=6.0,
-        closed_ts=datetime(2026, 9, 1, 12, 0, tzinfo=UTC),
+        closed_ts=dt.datetime(2026, 9, 1, 12, 0, tzinfo=dt.UTC),
     ),
 ]
 
 INITIATIVES: list[Initiative] = [
     Initiative(name='Ship the issue tracker', description='Issues apart from projects', priority=2, position=1),
     Initiative(name='Retire the old capture path', priority=0, position=2),
-    Initiative(name='Finished migration', status='completed', position=3, closed_ts=datetime(2026, 8, 1, 12, 0, tzinfo=UTC)),
+    Initiative(name='Finished migration', status='completed', position=3, closed_ts=dt.datetime(2026, 8, 1, 12, 0, tzinfo=dt.UTC)),
 ]
 
 LABELS: list[IssueLabel] = [

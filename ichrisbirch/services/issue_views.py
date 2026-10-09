@@ -8,10 +8,8 @@ in turn.
 
 from __future__ import annotations
 
+import datetime as dt
 from collections.abc import Iterable
-from datetime import UTC
-from datetime import date
-from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -39,9 +37,9 @@ ISSUE_LOAD_OPTIONS = (
 )
 
 
-def calendar_now(zone: str) -> tuple[date, datetime]:
+def calendar_now(zone: str) -> tuple[dt.date, dt.datetime]:
     """Today in the reader's zone, and the instant it was read at."""
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
     return now.astimezone(ZoneInfo(zone)).date(), now
 
 

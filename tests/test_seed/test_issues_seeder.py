@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 
 import pytest
 
@@ -20,7 +19,7 @@ pytestmark = [pytest.mark.seed, pytest.mark.integration]
 def seeded(db):
     issues.clear(db)
     issues.seed(db, scale=1)
-    now = datetime.now(UTC)
+    now = dt.datetime.now(dt.UTC)
     return db, measure_readiness(db, now.date(), now)
 
 
@@ -40,7 +39,7 @@ class TestIssueSeeder:
     def test_every_readiness_state_is_represented(self, seeded):
         """A state no seeded issue is in cannot be seen on the page or reached through a lens."""
         db, readiness = seeded
-        now = datetime.now(UTC)
+        now = dt.datetime.now(dt.UTC)
         rows = db.query(Issue).all()
         states = {
             'ready': any(issue.id in readiness.ready for issue in rows),

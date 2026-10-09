@@ -1,5 +1,4 @@
-from datetime import UTC
-from datetime import datetime
+import datetime as dt
 from typing import Annotated
 from uuid import UUID
 
@@ -164,7 +163,7 @@ async def create(initiative: schemas.InitiativeCreate, session: DbSession):
         position=position,
     )
     if db_obj.status in TERMINAL_INITIATIVE_STATUSES:
-        db_obj.closed_ts = datetime.now(UTC)
+        db_obj.closed_ts = dt.datetime.now(dt.UTC)
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -189,7 +188,7 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
         update_data['status_reason'] = None
         update_data['closed_ts'] = None
     elif new_status != initiative.status:
-        update_data['closed_ts'] = datetime.now(UTC)
+        update_data['closed_ts'] = dt.datetime.now(dt.UTC)
 
 
 @router.patch('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
