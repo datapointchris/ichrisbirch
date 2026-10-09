@@ -53,6 +53,7 @@ The toggle writes `is_signup_open` in `admin.settings` through `PATCH /admin/set
 That table is one row of settings an admin changes without a redeploy.
 `POST /users/` reads the row on every request, so the next signup sees the change.
 The migration that creates the row seeds it closed.
+`full_initialization` seeds it again when the table is empty, as `create_all` and the test suite's truncate leave it.
 
 ## Config
 

@@ -91,7 +91,7 @@ Module fixtures run once per test module:
 
 - **Scope**: Session
 - **Description**: Cleans all tables via TRUNCATE at session start, preserving schema so the API container's connection pool stays valid
-- **Implementation**: Uses `truncate_all_tables()` which truncates data, re-inserts lookup table values, and re-inserts default users
+- **Implementation**: Truncates every table with `truncate_all_tables()`, then re-inserts the rows the app cannot run without. The fixture body lists them.
 
 ### `insert_users_for_login`
 
@@ -110,7 +110,7 @@ There are two separate sets of users, each serving a different purpose:
 | **Default users** | `user@icb.com`, `admin@icb.com` | `insert_default_users()` in `initialization.py` | Application users for dev, E2E tests, Authelia auth simulation |
 | **Test login users** | `sacrifice@testgods.com`, `testloginregular@testuser.com`, `testloginadmin@testadmin.com` | `get_test_login_users()` in `tests/utils/database.py` | Pytest-specific users for Flask login and API auth fixtures |
 
-Default users are inserted during truncation (alongside lookup data) so the API container always has valid users. Test login users are inserted by the `insert_users_for_login` fixture. Both sets must be accounted for in tests that assert user counts.
+Default users are re-inserted after truncation, so the API container always has valid users. Test login users are inserted by the `insert_users_for_login` fixture. Both sets must be accounted for in tests that assert user counts.
 
 ### Test Client Fixtures (Module Scope)
 

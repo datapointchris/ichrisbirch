@@ -33,6 +33,19 @@ def test_a_second_initialization_changes_no_schema_revision_or_user():
     assert _database_state() == before
 
 
+def test_initialization_seeds_signups_closed_into_an_empty_settings_table():
+    """`create_all` leaves `admin.settings` empty, and every read of it expects one row."""
+    engine = get_db_engine(test_settings)
+    with engine.begin() as conn:
+        conn.execute(sa.text('DELETE FROM admin.settings'))
+
+    full_initialization(test_settings)
+
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text('SELECT id, is_signup_open FROM admin.settings')).all()
+    assert [tuple(row) for row in rows] == [(1, False)]
+
+
 def test_running_migrations_in_process_leaves_existing_loggers_enabled():
     """alembic.ini's fileConfig disables every logger that exists when it runs."""
     probe = logging.getLogger('tests.ichrisbirch.database.initialization_probe')
