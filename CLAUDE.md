@@ -24,7 +24,7 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 
 ### CLIs — `icbops` (ops) and `icb` (data)
 
-- **`ops/icbops`** — the bash ops/deploy tool (`dev`/`test`/`docker`/`routing`/`ssl-manager`/`db`/`stats`/`logs`). Path-invoked as `./ops/icbops <cmd>`; `icbops install` symlinks it to `~/.local/bin/icbops`. This is the tool used throughout this doc for local dev, testing, and deploy operations.
+- **`ops/icbops`** — the bash ops/deploy tool: `./ops/icbops <dev|testing|prod> <verb>`, plus the tools `test run [path]` (pytest), `routing`, `ssl-manager` and `stats`. `prod deploy-status` shows the live color. `icbops install` symlinks it to `~/.local/bin/icbops`.
 - **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Issues and Projects Are Separate Stores
