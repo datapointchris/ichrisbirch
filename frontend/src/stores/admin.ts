@@ -11,6 +11,8 @@ import type {
   User,
   EnvironmentConfigSection,
   SmokeTestReport,
+  SignupSettings,
+  SignupSettingsUpdate,
 } from '@/api/client'
 
 const logger = createLogger('AdminStore')
@@ -35,6 +37,10 @@ export const useAdminStore = defineStore('admin', () => {
   // Users
   const users = ref<User[]>([])
   const usersLoading = ref(false)
+
+  // Signup settings
+  const signupSettings = ref<SignupSettings | null>(null)
+  const signupSettingsLoading = ref(false)
 
   // Smoke tests
   const smokeReport = ref<SmokeTestReport | null>(null)
@@ -183,6 +189,41 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  // --- Signup settings ---
+
+  async function fetchSignupSettings() {
+    signupSettingsLoading.value = true
+    error.value = null
+    try {
+      const response = await api.get('/admin/signup-settings/')
+      signupSettings.value = response.data
+      logger.info('signup_settings_fetched', { is_open: signupSettings.value!.is_open })
+    } catch (e) {
+      error.value =
+        e instanceof ApiError
+          ? e
+          : new ApiError({ message: 'Failed to fetch signup settings', detail: 'Failed to fetch signup settings', status: 500 })
+      logger.error('signup_settings_fetch_failed', { error: error.value.detail })
+    } finally {
+      signupSettingsLoading.value = false
+    }
+  }
+
+  async function updateSignupSettings(update: SignupSettingsUpdate) {
+    try {
+      const response = await api.patch('/admin/signup-settings/', update)
+      signupSettings.value = response.data
+      logger.info('signup_settings_updated', { is_open: signupSettings.value!.is_open })
+    } catch (e) {
+      error.value =
+        e instanceof ApiError
+          ? e
+          : new ApiError({ message: 'Failed to update signup settings', detail: 'Failed to update signup settings', status: 500 })
+      logger.error('signup_settings_update_failed', { error: error.value.detail })
+      throw e
+    }
+  }
+
   // --- Config ---
 
   async function fetchConfig() {
@@ -235,6 +276,8 @@ export const useAdminStore = defineStore('admin', () => {
     jobHistoryLoading,
     users,
     usersLoading,
+    signupSettings,
+    signupSettingsLoading,
     config,
     configLoading,
     fetchSystemHealth,
@@ -246,6 +289,8 @@ export const useAdminStore = defineStore('admin', () => {
     fetchJobHistory,
     fetchUsers,
     updateUserAdmin,
+    fetchSignupSettings,
+    updateSignupSettings,
     fetchConfig,
     smokeReport,
     smokeTestsRunning,

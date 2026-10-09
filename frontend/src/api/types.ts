@@ -915,6 +915,14 @@ export interface SmokeTestReport {
   results: SmokeTestResult[]
 }
 
+export interface SignupSettings {
+  is_open: boolean
+}
+
+export interface SignupSettingsUpdate {
+  is_open?: boolean
+}
+
 // --- Recipe ---
 
 export type RecipeDifficulty = 'easy' | 'medium' | 'hard'

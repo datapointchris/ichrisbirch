@@ -125,6 +125,8 @@ from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
 from ichrisbirch.schemas.server import ServerStats
+from ichrisbirch.schemas.signup_settings import SignupSettings
+from ichrisbirch.schemas.signup_settings import SignupSettingsUpdate
 from ichrisbirch.schemas.strain import Strain
 from ichrisbirch.schemas.strain import StrainCreate
 from ichrisbirch.schemas.strain import StrainUpdate
@@ -265,6 +267,8 @@ __all__ = [
     'SchedulerJobRun',
     'SchedulerJobRunCreate',
     'ServerStats',
+    'SignupSettings',
+    'SignupSettingsUpdate',
     'CookingTechnique',
     'CookingTechniqueCategoryBreakdown',
     'CookingTechniqueCreate',

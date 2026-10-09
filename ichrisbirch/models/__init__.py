@@ -51,6 +51,7 @@ from ichrisbirch.models.recipe import RecipeIngredient
 from ichrisbirch.models.recipe import RecipeMealType
 from ichrisbirch.models.recipe import RecipeUnit
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
+from ichrisbirch.models.signup_settings import SignupSettings
 from ichrisbirch.models.strain import Strain
 from ichrisbirch.models.strain import StrainEffect
 from ichrisbirch.models.strain import StrainFlavor
@@ -115,6 +116,7 @@ __all__ = [
     'RecipeMealType',
     'RecipeUnit',
     'SchedulerJobRun',
+    'SignupSettings',
     'Strain',
     'StrainEffect',
     'StrainFlavor',

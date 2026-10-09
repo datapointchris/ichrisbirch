@@ -140,6 +140,31 @@ async def run_smoke_tests_endpoint(
     return await smoke_tests.run_smoke_tests(request.app, settings, user.email)
 
 
+# --- Signup settings ---
+
+
+@router.get('/signup-settings/', response_model=schemas.SignupSettings)
+def get_signup_settings(session: DbSession):
+    """Whether `POST /users/` creates an account."""
+    return session.scalars(select(models.SignupSettings)).one()
+
+
+@router.patch('/signup-settings/', response_model=schemas.SignupSettings)
+def update_signup_settings(
+    update: schemas.SignupSettingsUpdate,
+    session: DbSession,
+    user: models.User = Depends(get_admin_user),
+):
+    """Open or close signups. The next `POST /users/` reads the new state."""
+    signup_settings = session.scalars(select(models.SignupSettings)).one()
+    for attr, value in update.model_dump(exclude_unset=True).items():
+        setattr(signup_settings, attr, value)
+    session.commit()
+    session.refresh(signup_settings)
+    logger.info('signup_settings_updated', user_id=user.id, is_open=signup_settings.is_open)
+    return signup_settings
+
+
 # --- System health endpoints ---
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}

@@ -42,6 +42,23 @@ test.describe('Admin Pages', () => {
     await expect(page).toHaveTitle('Admin — Config | iChrisBirch')
   })
 
+  test('opens and closes signups from the users page', async ({ page }) => {
+    const open = page.getByTestId('admin-signups-toggle-option-open')
+    const closed = page.getByTestId('admin-signups-toggle-option-closed')
+
+    // The pressed option follows the server's answer, so each reload starts after the write landed.
+    await page.goto('/admin/users')
+    await open.click()
+    await expect(open).toHaveAttribute('aria-checked', 'true')
+    await page.reload()
+    await expect(open).toHaveAttribute('aria-checked', 'true')
+
+    await closed.click()
+    await expect(closed).toHaveAttribute('aria-checked', 'true')
+    await page.reload()
+    await expect(closed).toHaveAttribute('aria-checked', 'true')
+  })
+
   test('sidebar shows active state on admin pages', async ({ page }) => {
     await page.goto('/admin')
     await expect(page.locator('.nav-link--active', { hasText: 'Admin' })).toBeVisible()

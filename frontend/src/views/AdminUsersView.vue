@@ -1,6 +1,29 @@
 <template>
   <div>
     <div class="admin-section">
+      <h2>Signups</h2>
+      <div
+        v-if="store.signupSettingsLoading"
+        class="admin__empty"
+      >
+        Loading...
+      </div>
+      <div
+        v-else-if="store.signupSettings === null"
+        class="admin__empty"
+      >
+        Signup state unavailable
+      </div>
+      <NeuToggleGroup
+        v-else
+        :model-value="signupState"
+        :options="signupStateOptions"
+        data-testid="admin-signups-toggle"
+        @update:model-value="handleSignupStateChange"
+      />
+    </div>
+
+    <div class="admin-section">
       <h2>Users</h2>
       <div
         v-if="store.usersLoading"
@@ -69,21 +92,44 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAdminStore } from '@/stores/admin'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
 import { formatDate } from '@/composables/formatDate'
 import { ApiError } from '@/api/errors'
+import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
+import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
 import type { User } from '@/api/client'
+
+type SignupState = 'open' | 'closed'
+
+const signupStateOptions: NeuToggleGroupOption<SignupState>[] = [
+  { value: 'open', label: 'Open' },
+  { value: 'closed', label: 'Closed' },
+]
 
 const store = useAdminStore()
 const authStore = useAuthStore()
 const { show: notify } = useNotifications()
 
+const signupState = computed<SignupState>(() => (store.signupSettings?.is_open ? 'open' : 'closed'))
+
 onMounted(() => {
+  store.fetchSignupSettings()
   store.fetchUsers()
 })
+
+async function handleSignupStateChange(state: SignupState) {
+  if (state === signupState.value) return
+  try {
+    await store.updateSignupSettings({ is_open: state === 'open' })
+    notify(`Signups are now ${state}`, 'success')
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to set signups ${state}: ${detail}`, 'error')
+  }
+}
 
 function isSelf(userId: number): boolean {
   return authStore.user?.id === userId

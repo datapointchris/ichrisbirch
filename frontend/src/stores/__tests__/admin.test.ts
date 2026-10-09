@@ -150,6 +150,38 @@ describe('useAdminStore', () => {
     })
   })
 
+  describe('fetchSignupSettings', () => {
+    it('fetches and stores the signup state', async () => {
+      mockApi.get.mockResolvedValueOnce({ data: { is_open: false } })
+      const store = useAdminStore()
+      await store.fetchSignupSettings()
+      expect(mockApi.get).toHaveBeenCalledWith('/admin/signup-settings/')
+      expect(store.signupSettings).toEqual({ is_open: false })
+      expect(store.signupSettingsLoading).toBe(false)
+    })
+  })
+
+  describe('updateSignupSettings', () => {
+    it('stores the state the server answers with', async () => {
+      mockApi.patch.mockResolvedValueOnce({ data: { is_open: true } })
+      const store = useAdminStore()
+      store.signupSettings = { is_open: false }
+      await store.updateSignupSettings({ is_open: true })
+      expect(mockApi.patch).toHaveBeenCalledWith('/admin/signup-settings/', { is_open: true })
+      expect(store.signupSettings).toEqual({ is_open: true })
+    })
+
+    it('keeps the last known state and rethrows when the write fails', async () => {
+      const apiError = new ApiError({ message: 'Forbidden', detail: 'Access denied', status: 403 })
+      mockApi.patch.mockRejectedValueOnce(apiError)
+      const store = useAdminStore()
+      store.signupSettings = { is_open: false }
+      await expect(store.updateSignupSettings({ is_open: true })).rejects.toBe(apiError)
+      expect(store.signupSettings).toEqual({ is_open: false })
+      expect(store.error).toBe(apiError)
+    })
+  })
+
   describe('fetchConfig', () => {
     it('fetches and stores config sections', async () => {
       const sections = [

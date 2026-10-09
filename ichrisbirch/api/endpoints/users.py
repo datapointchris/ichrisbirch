@@ -134,15 +134,10 @@ def read_one(
 
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
-def create(
-    user: schemas.UserCreate,
-    session: DbSession,
-    settings: Settings = Depends(get_settings),
-):
-    if not settings.auth.accepting_new_signups:
-        message = settings.auth.no_new_signups_message
-        logger.warning(message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+def create(user: schemas.UserCreate, session: DbSession):
+    if not session.scalars(select(models.SignupSettings.is_open)).one():
+        logger.warning('signup_refused', reason=Refusal.SIGNUPS_CLOSED)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=Refusal.SIGNUPS_CLOSED)
     db_obj = models.User(**user.model_dump())
     session.add(db_obj)
     session.commit()

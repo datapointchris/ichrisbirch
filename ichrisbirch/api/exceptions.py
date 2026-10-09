@@ -29,6 +29,7 @@ class Refusal(enum.StrEnum):
     INVALID_TOKEN = 'Invalid token'
     MISSING_TOKEN = 'Missing token'
     OUTSIDE_CLIENT_SCOPES = "Route is outside this client's scopes"
+    SIGNUPS_CLOSED = 'New signups for VIP users only.'
 
 
 class NotFoundException(HTTPException):

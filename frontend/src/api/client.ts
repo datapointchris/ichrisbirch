@@ -177,6 +177,8 @@ export type {
   EnvironmentConfigSection,
   SmokeTestResult,
   SmokeTestReport,
+  SignupSettings,
+  SignupSettingsUpdate,
   RoastLevel,
   BrewMethod,
   CoffeeShop,
