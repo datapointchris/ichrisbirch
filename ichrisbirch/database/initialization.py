@@ -80,10 +80,10 @@ def stamp_alembic_head(settings) -> None:
 
 
 def drop_all_tables(settings) -> None:
-    """Drop every table in every non-system schema, including zombie tables
-    that exist in migrations but have no SQLAlchemy model (e.g. legacy
-    `apartments.apartments`). Uses live PostgreSQL introspection rather than
-    Base.metadata, which only tracks currently-imported models."""
+    """Drop every table in every non-system schema, including the ones no
+    model maps, such as `apscheduler_jobs` and `alembic_version`. Uses live
+    PostgreSQL introspection rather than Base.metadata, which only tracks
+    currently-imported models."""
     engine = get_db_engine(settings)
     logger.warning('dropping_all_tables')
 
