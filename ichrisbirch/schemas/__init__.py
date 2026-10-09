@@ -1,4 +1,6 @@
 from ichrisbirch.schemas import admin as admin
+from ichrisbirch.schemas.admin_settings import AdminSettings
+from ichrisbirch.schemas.admin_settings import AdminSettingsUpdate
 from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleBulkImport
 from ichrisbirch.schemas.article import ArticleCreate
@@ -125,8 +127,6 @@ from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
 from ichrisbirch.schemas.server import ServerStats
-from ichrisbirch.schemas.signup_settings import SignupSettings
-from ichrisbirch.schemas.signup_settings import SignupSettingsUpdate
 from ichrisbirch.schemas.strain import Strain
 from ichrisbirch.schemas.strain import StrainCreate
 from ichrisbirch.schemas.strain import StrainUpdate
@@ -145,6 +145,8 @@ from ichrisbirch.schemas.user import UserUpdate
 
 __all__ = [
     'admin',
+    'AdminSettings',
+    'AdminSettingsUpdate',
     'Article',
     'ArticleBulkImport',
     'ArticleCreate',
@@ -267,8 +269,6 @@ __all__ = [
     'SchedulerJobRun',
     'SchedulerJobRunCreate',
     'ServerStats',
-    'SignupSettings',
-    'SignupSettingsUpdate',
     'CookingTechnique',
     'CookingTechniqueCategoryBreakdown',
     'CookingTechniqueCreate',

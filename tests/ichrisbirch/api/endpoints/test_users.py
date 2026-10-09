@@ -45,7 +45,7 @@ NEW_OBJ = schemas.UserCreate(
 
 def open_signups(session):
     """Open signups inside the test's transaction, which its rollback closes again."""
-    session.scalars(select(models.SignupSettings)).one().is_open = True
+    session.scalars(select(models.AdminSettings)).one().is_signup_open = True
     session.flush()
 
 
@@ -183,7 +183,7 @@ def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
     client, admin_client = txn_multi_client['client'], txn_multi_client['client_admin']
     assert client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json')).status_code == status.HTTP_400_BAD_REQUEST
 
-    opened = admin_client.patch('/admin/signup-settings/', json={'is_open': True})
+    opened = admin_client.patch('/admin/settings/', json={'is_signup_open': True})
     assert opened.status_code == status.HTTP_200_OK, show_status_and_response(opened)
 
     created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))

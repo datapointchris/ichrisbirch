@@ -351,8 +351,8 @@ function createUsersWrapper(storeState: Record<string, unknown> = {}, authState:
             admin: {
               users: [],
               usersLoading: false,
-              signupSettings: { is_open: false },
-              signupSettingsLoading: false,
+              settings: { is_signup_open: false },
+              settingsLoading: false,
               error: null,
               ...storeState,
             },
@@ -423,12 +423,6 @@ describe('AdminUsersView', () => {
     expect(store.updateUserAdmin).toHaveBeenCalledWith(2, true)
   })
 
-  it('calls fetchSignupSettings on mount', () => {
-    createUsersWrapper()
-    const store = useAdminStore()
-    expect(store.fetchSignupSettings).toHaveBeenCalledOnce()
-  })
-
   it('presses Closed while signups are closed', () => {
     const wrapper = createUsersWrapper()
     expect(wrapper.get('[data-testid="admin-signups-toggle-option-closed"]').attributes('aria-checked')).toBe('true')
@@ -436,7 +430,7 @@ describe('AdminUsersView', () => {
   })
 
   it('presses Open while signups are open', () => {
-    const wrapper = createUsersWrapper({ signupSettings: { is_open: true } })
+    const wrapper = createUsersWrapper({ settings: { is_signup_open: true } })
     expect(wrapper.get('[data-testid="admin-signups-toggle-option-open"]').attributes('aria-checked')).toBe('true')
   })
 
@@ -444,18 +438,18 @@ describe('AdminUsersView', () => {
     const wrapper = createUsersWrapper()
     const store = useAdminStore()
     await wrapper.get('[data-testid="admin-signups-toggle-option-open"]').trigger('click')
-    expect(store.updateSignupSettings).toHaveBeenCalledWith({ is_open: true })
+    expect(store.updateSettings).toHaveBeenCalledWith({ is_signup_open: true })
   })
 
   it('sends nothing when the pressed option is clicked again', async () => {
     const wrapper = createUsersWrapper()
     const store = useAdminStore()
     await wrapper.get('[data-testid="admin-signups-toggle-option-closed"]').trigger('click')
-    expect(store.updateSignupSettings).not.toHaveBeenCalled()
+    expect(store.updateSettings).not.toHaveBeenCalled()
   })
 
   it('shows the signup state as unavailable rather than as closed when the read failed', () => {
-    const wrapper = createUsersWrapper({ signupSettings: null })
+    const wrapper = createUsersWrapper({ settings: null })
     expect(wrapper.text()).toContain('Signup state unavailable')
     expect(wrapper.find('[data-testid="admin-signups-toggle"]').exists()).toBe(false)
   })

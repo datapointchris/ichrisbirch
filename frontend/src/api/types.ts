@@ -915,12 +915,12 @@ export interface SmokeTestReport {
   results: SmokeTestResult[]
 }
 
-export interface SignupSettings {
-  is_open: boolean
+export interface AdminSettings {
+  is_signup_open: boolean
 }
 
-export interface SignupSettingsUpdate {
-  is_open?: boolean
+export interface AdminSettingsUpdate {
+  is_signup_open?: boolean
 }
 
 // --- Recipe ---

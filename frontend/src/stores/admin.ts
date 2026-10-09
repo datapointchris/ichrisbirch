@@ -11,8 +11,8 @@ import type {
   User,
   EnvironmentConfigSection,
   SmokeTestReport,
-  SignupSettings,
-  SignupSettingsUpdate,
+  AdminSettings,
+  AdminSettingsUpdate,
 } from '@/api/client'
 
 const logger = createLogger('AdminStore')
@@ -38,9 +38,9 @@ export const useAdminStore = defineStore('admin', () => {
   const users = ref<User[]>([])
   const usersLoading = ref(false)
 
-  // Signup settings
-  const signupSettings = ref<SignupSettings | null>(null)
-  const signupSettingsLoading = ref(false)
+  // Settings
+  const settings = ref<AdminSettings | null>(null)
+  const settingsLoading = ref(false)
 
   // Smoke tests
   const smokeReport = ref<SmokeTestReport | null>(null)
@@ -189,37 +189,37 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  // --- Signup settings ---
+  // --- Settings ---
 
-  async function fetchSignupSettings() {
-    signupSettingsLoading.value = true
+  async function fetchSettings() {
+    settingsLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/admin/signup-settings/')
-      signupSettings.value = response.data
-      logger.info('signup_settings_fetched', { is_open: signupSettings.value!.is_open })
+      const response = await api.get('/admin/settings/')
+      settings.value = response.data
+      logger.info('admin_settings_fetched', { ...settings.value })
     } catch (e) {
       error.value =
         e instanceof ApiError
           ? e
-          : new ApiError({ message: 'Failed to fetch signup settings', detail: 'Failed to fetch signup settings', status: 500 })
-      logger.error('signup_settings_fetch_failed', { error: error.value.detail })
+          : new ApiError({ message: 'Failed to fetch admin settings', detail: 'Failed to fetch admin settings', status: 500 })
+      logger.error('admin_settings_fetch_failed', { error: error.value.detail })
     } finally {
-      signupSettingsLoading.value = false
+      settingsLoading.value = false
     }
   }
 
-  async function updateSignupSettings(update: SignupSettingsUpdate) {
+  async function updateSettings(update: AdminSettingsUpdate) {
     try {
-      const response = await api.patch('/admin/signup-settings/', update)
-      signupSettings.value = response.data
-      logger.info('signup_settings_updated', { is_open: signupSettings.value!.is_open })
+      const response = await api.patch('/admin/settings/', update)
+      settings.value = response.data
+      logger.info('admin_settings_updated', { ...update })
     } catch (e) {
       error.value =
         e instanceof ApiError
           ? e
-          : new ApiError({ message: 'Failed to update signup settings', detail: 'Failed to update signup settings', status: 500 })
-      logger.error('signup_settings_update_failed', { error: error.value.detail })
+          : new ApiError({ message: 'Failed to update admin settings', detail: 'Failed to update admin settings', status: 500 })
+      logger.error('admin_settings_update_failed', { error: error.value.detail })
       throw e
     }
   }
@@ -276,8 +276,8 @@ export const useAdminStore = defineStore('admin', () => {
     jobHistoryLoading,
     users,
     usersLoading,
-    signupSettings,
-    signupSettingsLoading,
+    settings,
+    settingsLoading,
     config,
     configLoading,
     fetchSystemHealth,
@@ -289,8 +289,8 @@ export const useAdminStore = defineStore('admin', () => {
     fetchJobHistory,
     fetchUsers,
     updateUserAdmin,
-    fetchSignupSettings,
-    updateSignupSettings,
+    fetchSettings,
+    updateSettings,
     fetchConfig,
     smokeReport,
     smokeTestsRunning,

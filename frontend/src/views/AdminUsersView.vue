@@ -3,13 +3,13 @@
     <div class="admin-section">
       <h2>Signups</h2>
       <div
-        v-if="store.signupSettingsLoading"
+        v-if="store.settingsLoading"
         class="admin__empty"
       >
         Loading...
       </div>
       <div
-        v-else-if="store.signupSettings === null"
+        v-else-if="store.settings === null"
         class="admin__empty"
       >
         Signup state unavailable
@@ -113,17 +113,17 @@ const store = useAdminStore()
 const authStore = useAuthStore()
 const { show: notify } = useNotifications()
 
-const signupState = computed<SignupState>(() => (store.signupSettings?.is_open ? 'open' : 'closed'))
+const signupState = computed<SignupState>(() => (store.settings?.is_signup_open ? 'open' : 'closed'))
 
 onMounted(() => {
-  store.fetchSignupSettings()
+  store.fetchSettings()
   store.fetchUsers()
 })
 
 async function handleSignupStateChange(state: SignupState) {
   if (state === signupState.value) return
   try {
-    await store.updateSignupSettings({ is_open: state === 'open' })
+    await store.updateSettings({ is_signup_open: state === 'open' })
     notify(`Signups are now ${state}`, 'success')
   } catch (e) {
     const detail = e instanceof ApiError ? e.userMessage : String(e)

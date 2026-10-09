@@ -46,14 +46,16 @@ That route answers 403 to `is_admin` from anyone but an admin or the internal se
 
 Above the list, the Signups toggle opens or closes account creation.
 `POST /users/` takes no login, so this setting is its only gate.
-The toggle writes the single row in `admin.signup_settings` through `PATCH /admin/signup-settings/`.
-`POST /users/` reads that row on every request, so the next signup sees the change with no restart or redeploy.
+The toggle writes `is_signup_open` in `admin.settings` through `PATCH /admin/settings/`.
+That table is one row of settings an admin changes without a redeploy.
+`POST /users/` reads the row on every request, so the next signup sees the change.
 While closed, it answers 400 with `Refusal.SIGNUPS_CLOSED`.
 The migration that creates the row seeds it closed.
 
 ## Config
 
-`/admin/config` shows every settings section.
+`/admin/config` shows every section of the environment's configuration, which the containers read at startup.
+It is read-only, unlike `admin.settings`.
 A value is masked when its field name contains `key`, `secret`, `password` or `token`.
 Masking goes by the name alone, so a secret stored under any other name is shown.
 

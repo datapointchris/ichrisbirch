@@ -1,3 +1,4 @@
+from ichrisbirch.models.admin_settings import AdminSettings
 from ichrisbirch.models.article import Article
 from ichrisbirch.models.article import ArticleFailedImport
 from ichrisbirch.models.autofun import AutoFun
@@ -51,7 +52,6 @@ from ichrisbirch.models.recipe import RecipeIngredient
 from ichrisbirch.models.recipe import RecipeMealType
 from ichrisbirch.models.recipe import RecipeUnit
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
-from ichrisbirch.models.signup_settings import SignupSettings
 from ichrisbirch.models.strain import Strain
 from ichrisbirch.models.strain import StrainEffect
 from ichrisbirch.models.strain import StrainFlavor
@@ -63,6 +63,7 @@ from ichrisbirch.models.task import TaskCategory
 from ichrisbirch.models.user import User
 
 __all__ = [
+    'AdminSettings',
     'Article',
     'ArticleFailedImport',
     'AutoFun',
@@ -116,7 +117,6 @@ __all__ = [
     'RecipeMealType',
     'RecipeUnit',
     'SchedulerJobRun',
-    'SignupSettings',
     'Strain',
     'StrainEffect',
     'StrainFlavor',

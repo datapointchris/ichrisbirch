@@ -140,29 +140,29 @@ async def run_smoke_tests_endpoint(
     return await smoke_tests.run_smoke_tests(request.app, settings, user.email)
 
 
-# --- Signup settings ---
+# --- Admin settings ---
 
 
-@router.get('/signup-settings/', response_model=schemas.SignupSettings)
-def get_signup_settings(session: DbSession):
-    """Whether `POST /users/` creates an account."""
-    return session.scalars(select(models.SignupSettings)).one()
+@router.get('/settings/', response_model=schemas.AdminSettings)
+def get_admin_settings(session: DbSession):
+    return session.scalars(select(models.AdminSettings)).one()
 
 
-@router.patch('/signup-settings/', response_model=schemas.SignupSettings)
-def update_signup_settings(
-    update: schemas.SignupSettingsUpdate,
+@router.patch('/settings/', response_model=schemas.AdminSettings)
+def update_admin_settings(
+    update: schemas.AdminSettingsUpdate,
     session: DbSession,
     user: models.User = Depends(get_admin_user),
 ):
-    """Open or close signups. The next `POST /users/` reads the new state."""
-    signup_settings = session.scalars(select(models.SignupSettings)).one()
-    for attr, value in update.model_dump(exclude_unset=True).items():
-        setattr(signup_settings, attr, value)
+    """Change the settings an admin owns. The next request each one governs reads the new value."""
+    admin_settings = session.scalars(select(models.AdminSettings)).one()
+    changes = update.model_dump(exclude_unset=True)
+    for attr, value in changes.items():
+        setattr(admin_settings, attr, value)
     session.commit()
-    session.refresh(signup_settings)
-    logger.info('signup_settings_updated', user_id=user.id, is_open=signup_settings.is_open)
-    return signup_settings
+    session.refresh(admin_settings)
+    logger.info('admin_settings_updated', user_id=user.id, changes=changes)
+    return admin_settings
 
 
 # --- System health endpoints ---

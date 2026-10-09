@@ -168,13 +168,13 @@ def insert_lookup_table_data(settings) -> None:
     logger.info('lookup_data_inserted', tables=list(LOOKUP_DATA.keys()))
 
 
-def insert_signup_settings(settings) -> None:
-    """Insert the signup settings row closed, as migration `e8d57aa23bca` seeds it."""
+def insert_admin_settings(settings) -> None:
+    """Insert the admin settings row with signups closed, as migration `e8d57aa23bca` seeds it."""
     engine = get_db_engine(settings)
     with engine.connect() as conn:
-        conn.execute(text('INSERT INTO admin.signup_settings (id, is_open) VALUES (1, false)'))
+        conn.execute(text('INSERT INTO admin.settings (id, is_signup_open) VALUES (1, false)'))
         conn.commit()
-    logger.info('signup_settings_inserted', is_open=False)
+    logger.info('admin_settings_inserted', is_signup_open=False)
 
 
 def truncate_all_tables(settings) -> None:

@@ -145,7 +145,7 @@ def read_one(
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
 def create(user: schemas.UserCreate, session: DbSession):
-    if not session.scalars(select(models.SignupSettings.is_open)).one():
+    if not session.scalars(select(models.AdminSettings.is_signup_open)).one():
         logger.warning('signup_refused', reason=Refusal.SIGNUPS_CLOSED)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=Refusal.SIGNUPS_CLOSED)
     refuse_taken_email(session, user.email)
