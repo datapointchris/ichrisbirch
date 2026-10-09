@@ -190,6 +190,28 @@ def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 
 
+def test_create_refuses_an_email_another_account_holds(users_admin_context):
+    client, session, _ = users_admin_context
+    open_signups(session)
+    taken = NEW_OBJ.model_copy(update={'email': TEST_USERS[0]['email']})
+    response = client.post(ENDPOINT, json=taken.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+
+
+def test_update_refuses_an_email_another_account_holds(users_admin_context):
+    client, _, users = users_admin_context
+    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[0]['email']})
+    assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+
+
+def test_update_accepts_an_account_resending_its_own_email(users_admin_context):
+    client, _, users = users_admin_context
+    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[1]['email']})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+
 def test_delete(users_admin_context):
     client, _, _ = users_admin_context
     crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, expected_length=EXPECTED_LENGTH)

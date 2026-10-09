@@ -58,6 +58,16 @@ def require_own_data_or_admin(
         raise ForbiddenException(f'can only {operation}', logger)
 
 
+def refuse_taken_email(session: Session, email: str, exclude_id: int | None = None) -> None:
+    """Answer 409 for an email another account holds, where `uq_users_email` would answer 500."""
+    query = select(models.User.id).where(models.User.email == email)
+    if exclude_id is not None:
+        query = query.where(models.User.id != exclude_id)
+    if session.scalar(query) is not None:
+        logger.warning('user_email_taken')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=Refusal.EMAIL_TAKEN)
+
+
 def require_admin_or_internal_service(
     access_granted: bool = Depends(get_admin_or_internal_service_access),
 ):
@@ -138,6 +148,7 @@ def create(user: schemas.UserCreate, session: DbSession):
     if not session.scalars(select(models.SignupSettings.is_open)).one():
         logger.warning('signup_refused', reason=Refusal.SIGNUPS_CLOSED)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=Refusal.SIGNUPS_CLOSED)
+    refuse_taken_email(session, user.email)
     db_obj = models.User(**user.model_dump())
     session.add(db_obj)
     session.commit()
@@ -258,6 +269,8 @@ def update(
     logger.debug('user_update', user_id=id, update_data=update_data)
 
     if db_user := session.get(models.User, id):
+        if 'email' in update_data:
+            refuse_taken_email(session, update_data['email'], exclude_id=id)
         for attr, value in update_data.items():
             setattr(db_user, attr, value)
         session.commit()

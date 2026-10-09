@@ -23,6 +23,7 @@ class Refusal(enum.StrEnum):
     ADMIN_OR_INTERNAL_REQUIRED = 'Admin or internal service access required'
     AUTH_REQUIRED = 'Authentication required'
     CANNOT_DELETE_OWN_ACCOUNT = 'Cannot delete your own account'
+    EMAIL_TAKEN = 'An account with that email already exists'
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_INTERNAL_CREDENTIALS = 'Invalid internal service credentials'
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
