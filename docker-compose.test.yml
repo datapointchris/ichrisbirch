@@ -142,11 +142,9 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/api.log
     volumes: !override
       - .:/app
       - /app/.venv
-      - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: on-failure:3
     healthcheck:
@@ -175,11 +173,9 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     volumes: !override
       - .:/app
       - /app/.venv
-      - ichrisbirch_logs:/var/log/ichrisbirch
     restart: on-failure:3
     depends_on:
       api:
@@ -239,9 +235,6 @@ volumes:
     driver: local
   redis_data:
     name: icb-test-redis-data
-    driver: local
-  ichrisbirch_logs:
-    name: icb-test-logs
     driver: local
   vue_test_node_modules:
     name: icb-test-vue-node-modules

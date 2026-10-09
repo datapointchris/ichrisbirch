@@ -41,7 +41,8 @@ The page also shows the run history the scheduler records in the database.
 
 ## Users
 
-`/admin/users` lists every user account.
+`/admin/users` lists every user account, and grants or revokes admin through `PATCH /users/{id}/`.
+That route answers 403 to `is_admin` from anyone but an admin or the internal service, so a user cannot promote themselves.
 
 ## Config
 
@@ -51,18 +52,19 @@ Masking goes by the name alone, so a secret stored under any other name is shown
 
 ## Smoke Tests
 
-`/admin/smoke` calls every GET route in the API's own route table and reports each status.
+`/admin/smoke` calls the GET routes that `discover_get_endpoints` in `ichrisbirch/api/smoke_tests.py` selects, and reports each status.
 It runs in-process through `httpx2.ASGITransport`, as the requesting admin.
 A route with a path parameter or a required query parameter is skipped, because there is no value to call it with.
+The `/auth/` routes and the route names in `SKIP_NAMES` are skipped too.
+A green report says nothing about a skipped route.
 
 ## Design
 
 `/admin/design` previews the color themes against the shadow styles and the segmented toggle experiments.
 It is a workbench for the design-style switcher rather than an admin function.
 
-## Log Stream
+## Logs
 
-The API also serves a `/admin/log-stream/` WebSocket that tails every `*.log` file in `LOG_DIR`.
-It authenticates with a `ws_auth` cookie holding an HMAC token signed with `internal_service_key`.
-No current client issues that cookie or opens the socket.
-Service logs are read in Loki, as [Logging Configuration](logging-configuration.md) describes.
+The admin area has no log viewer.
+Service logs are read in Loki, or from a terminal with `./ops/icbops {dev,testing,prod} logs [service]`.
+[Logging Configuration](logging-configuration.md) covers both.

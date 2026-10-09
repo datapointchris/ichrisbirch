@@ -523,6 +523,23 @@ def test_update_user_allows_internal_service(users_test_context, test_regular_us
     assert user_data['name'] == 'Service Updated Name'
 
 
+def test_update_user_refuses_own_is_admin(users_test_context, test_regular_user):
+    client, _, _ = users_test_context
+    headers = make_app_headers_for_user(test_regular_user)
+    response = client.patch(f'/users/{test_regular_user.id}/', json={'is_admin': True}, headers=headers)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert client.get(f'/users/{test_regular_user.id}/', headers=headers).json()['is_admin'] is False
+
+
+def test_update_user_lets_admin_grant_is_admin(users_test_context, test_admin_user, test_regular_user):
+    client, _, _ = users_test_context
+    headers = make_app_headers_for_user(test_admin_user)
+    response = client.patch(f'/users/{test_regular_user.id}/', json={'is_admin': True}, headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['is_admin'] is True
+
+
 def test_delete_user_requires_admin_or_internal_service(users_test_context, test_regular_user_2, test_regular_user):
     """Test that regular users cannot delete any users."""
     client, _, _ = users_test_context

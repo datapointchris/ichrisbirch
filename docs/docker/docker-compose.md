@@ -52,8 +52,8 @@ services:
 ```
 
 An `!override` list is a complete list, so anything the base contributed has to
-be written out again. That is why `docker-compose.ci.yml` repeats `.:/app`,
-`/app/.venv` and the logs volume while dropping only the Docker socket.
+be written out again. That is why `docker-compose.ci.yml` repeats `.:/app` and
+`/app/.venv` while dropping only the Docker socket.
 
 So `!override` belongs on `ports` and `volumes` and nowhere else. Putting it on
 `environment` replaces the whole block, and every variable the base set and the

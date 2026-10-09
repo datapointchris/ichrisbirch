@@ -1,11 +1,10 @@
-"""Structlog configuration with optional file logging.
+"""Structlog configuration.
 
-All logs go to stderr. Optionally also writes to a file for admin UI and persistence.
+All logs go to stderr, where Docker's logging driver and Loki collect them.
 Configuration is controlled by environment variables:
 - LOG_FORMAT: 'console' (default) or 'json'
 - LOG_LEVEL: 'DEBUG' (default), 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
 - LOG_COLORS: 'auto' (default), 'true', 'false'
-- LOG_FILE: Path to log file (optional, enables file logging if set and directory exists)
 
 Note: 304 redirect filtering is handled by app.middleware.RequestLoggingMiddleware,
 not by the logging configuration.
@@ -15,8 +14,6 @@ import functools
 import logging
 import os
 import sys
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 import structlog
 from structlog.processors import CallsiteParameter
@@ -25,8 +22,6 @@ from structlog.processors import CallsiteParameterAdder
 LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
-LOG_FILE = os.environ.get('LOG_FILE', '')
-LOG_DIR = os.environ.get('LOG_DIR', '/var/log/ichrisbirch')
 
 
 def _use_colors() -> bool:
@@ -44,37 +39,8 @@ def _use_colors() -> bool:
     return sys.stderr.isatty()
 
 
-def _setup_file_handler() -> logging.Handler | None:
-    """Set up rotating file handler if LOG_FILE is configured and directory exists.
-
-    Uses RotatingFileHandler to prevent unbounded log growth:
-    - Max 25MB per file
-    - Keeps 5 backup files (app.log.1, app.log.2, etc.)
-    - Total max ~150MB per service
-    """
-    if not LOG_FILE:
-        return None
-
-    log_path = Path(LOG_FILE)
-    if not log_path.parent.exists():
-        return None
-
-    try:
-        handler = RotatingFileHandler(
-            LOG_FILE,
-            maxBytes=25 * 1024 * 1024,  # 25MB
-            backupCount=5,
-        )
-        handler.name = 'ichrisbirch_file'
-        handler.setLevel(getattr(logging, LOG_LEVEL))
-        # Formatter is set in configure_structlog() to use structlog's renderer
-        return handler
-    except (OSError, PermissionError):
-        return None
-
-
 def configure_structlog():
-    """Configure structlog - stderr always, file optionally."""
+    """Render structlog and stdlib records through one root handler on stderr."""
     # Shared processors for both stdlib and structlog
     shared_processors = [
         structlog.contextvars.merge_contextvars,
@@ -99,9 +65,6 @@ def configure_structlog():
         stream=sys.stderr,
         force=True,
     )
-    file_handler = _setup_file_handler()
-    if file_handler:
-        logging.root.addHandler(file_handler)
 
     structlog.configure(
         processors=shared_processors
@@ -115,30 +78,19 @@ def configure_structlog():
     )
 
     if LOG_FORMAT == 'json':
-        console_formatter = structlog.stdlib.ProcessorFormatter(
+        formatter = structlog.stdlib.ProcessorFormatter(
             processor=structlog.processors.JSONRenderer(),
         )
-        file_formatter = console_formatter  # JSON is already plain text
     else:
-        console_formatter = structlog.stdlib.ProcessorFormatter(
+        formatter = structlog.stdlib.ProcessorFormatter(
             processor=structlog.dev.ConsoleRenderer(
                 colors=_use_colors(),
                 pad_level=True,
             ),
         )
-        # File handler gets plain text (no colors)
-        file_formatter = structlog.stdlib.ProcessorFormatter(
-            processor=structlog.dev.ConsoleRenderer(
-                colors=False,
-                pad_level=True,
-            ),
-        )
 
     for handler in logging.root.handlers:
-        if handler.name == 'ichrisbirch_file':
-            handler.setFormatter(file_formatter)
-        else:
-            handler.setFormatter(console_formatter)
+        handler.setFormatter(formatter)
 
 
 def configure_stdlib_logging():

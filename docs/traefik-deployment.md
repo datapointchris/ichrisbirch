@@ -105,7 +105,6 @@ CORS and security headers are in **separate middlewares** to prevent chaining co
 | Security Headers | `dev-security` | `security-headers-test` | `security-headers-prod` |
 | Auth Simulation | `dev-authelia-sim` | `test-authelia-sim` | (Authelia ForwardAuth) |
 | Rate Limiting | (none) | `rate-limit-test` | `rate-limit-prod` |
-| WebSocket | (none) | `websocket-test` | (none) |
 
 ### Network Architecture
 

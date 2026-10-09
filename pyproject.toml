@@ -36,7 +36,6 @@ dependencies = [
   "psycopg>=3.1.19",
   "pyarrow>=16.1.0",
   "pydantic>=2.7.1",
-  "pygtail>=0.14.0",
   # [crypto] pulls `cryptography`, which PyJWT needs to verify the RS256 access
   # tokens Authelia issues to the icb CLI.
   "pyjwt[crypto]>=2.8.0",

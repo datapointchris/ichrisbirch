@@ -118,7 +118,6 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/api.log
     ports: !override
       - "8000:8000"
     restart: on-failure:3
@@ -131,7 +130,6 @@ services:
     volumes: !override
       - .:/app
       - /app/.venv
-      - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels: !override
       - "traefik.environment=development"
@@ -186,12 +184,10 @@ services:
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}
-      - LOG_FILE=/var/log/ichrisbirch/scheduler.log
     restart: on-failure:3
     volumes: !override
       - .:/app
       - /app/.venv
-      - ichrisbirch_logs:/var/log/ichrisbirch
       - /var/run/docker.sock:/var/run/docker.sock:ro
     logging:
       driver: "json-file"
@@ -207,9 +203,6 @@ volumes:
     driver: local
   redis_data:
     name: icb-dev-redis-data
-    driver: local
-  ichrisbirch_logs:
-    name: icb-dev-logs
     driver: local
   vue_node_modules:
     name: icb-dev-vue-node-modules
