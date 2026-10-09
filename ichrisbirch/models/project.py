@@ -12,7 +12,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Index
 from sqlalchemy import Integer
 from sqlalchemy import Text
-from sqlalchemy import UniqueConstraint
 from sqlalchemy import Uuid
 from sqlalchemy import text
 from sqlalchemy.orm import Mapped
@@ -226,7 +225,6 @@ class ProjectItemDependency(Base):
 
     __table_args__ = (
         CheckConstraint('item_id != depends_on_id', name='no_self_dependency'),
-        UniqueConstraint('item_id', 'depends_on_id'),
         Index('idx_pid_item', 'item_id'),
         Index('idx_pid_depends', 'depends_on_id'),
     )

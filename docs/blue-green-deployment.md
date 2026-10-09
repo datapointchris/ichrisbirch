@@ -200,6 +200,11 @@ write, so the color still serving keeps running and returns the wrong rows. A
 `TimeZone`, which is UTC here, so
 `date '2026-09-20' >= timestamptz '2026-09-20 00:00 America/New_York'` is false.
 
+`varchar` to `text`, or an array of one to an array of the other, is the one
+type change that takes a single deploy. `varchar` has no operators of its own
+and casts to `text` without converting anything. Both colors therefore compare
+with `text`'s operators and read the same rows.
+
 Phase 2 of a drop waits for a deploy that phase 1 has already completed. The
 migration runs before the smoke gate and `POINT OF NO RETURN` sits below both,
 so a smoke failure tears the deploy color down with the tables already gone and

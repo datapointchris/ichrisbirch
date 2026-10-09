@@ -143,7 +143,7 @@ class RecipeIngredient(Base):
     __tablename__ = 'recipe_ingredients'
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
-    recipe_id: Mapped[int] = mapped_column(Integer, ForeignKey('recipes.id', ondelete='CASCADE'), nullable=False)
+    recipe_id: Mapped[int] = mapped_column(Integer, ForeignKey('recipes.id', ondelete='CASCADE'), nullable=False, index=True)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     quantity: Mapped[float | None] = mapped_column(Float, nullable=True)
     unit: Mapped[str | None] = mapped_column(Text, ForeignKey('recipe_units.name'), nullable=True)
