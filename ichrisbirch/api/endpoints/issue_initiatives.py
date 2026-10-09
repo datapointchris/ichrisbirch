@@ -112,7 +112,7 @@ def counted(session: Session, initiative: models.Initiative) -> schemas.Initiati
 
 
 @router.get('/', response_model=list[schemas.Initiative], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     initiative_status: str = Query(
         'active',
@@ -145,7 +145,7 @@ async def read_many(
 
 
 @router.post('/', response_model=schemas.Initiative, status_code=status.HTTP_201_CREATED)
-async def create(initiative: schemas.InitiativeCreate, session: DbSession):
+def create(initiative: schemas.InitiativeCreate, session: DbSession):
     validate_status(initiative.status, session)
     require_reason_when_dropped(initiative.status, initiative.status_reason)
     if initiative.status == 'active':
@@ -171,7 +171,7 @@ async def create(initiative: schemas.InitiativeCreate, session: DbSession):
 
 
 @router.get('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
-async def read_one(initiative: InitiativeFromPath, session: DbSession):
+def read_one(initiative: InitiativeFromPath, session: DbSession):
     return counted(session, initiative)
 
 
@@ -192,7 +192,7 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
 
 
 @router.patch('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
-async def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
+def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     resulting_status = update_data.get('status', initiative.status)
     resulting_name = update_data.get('name', initiative.name)
@@ -207,7 +207,7 @@ async def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdat
 
 
 @router.delete('/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(initiative: InitiativeFromPath, session: DbSession):
+def delete(initiative: InitiativeFromPath, session: DbSession):
     """Delete the initiative. Its issues stay, and stop inheriting its priority."""
     session.delete(initiative)
     session.commit()

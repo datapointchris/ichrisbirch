@@ -41,14 +41,14 @@ def _get_task_or_404(session: Session, item_id: UUID, task_id: UUID) -> ProjectI
 
 
 @router.get('/', response_model=list[ProjectItemTaskSchema], status_code=status.HTTP_200_OK)
-async def list_tasks(item: ItemFromPath, session: DbSession):
+def list_tasks(item: ItemFromPath, session: DbSession):
     """List all tasks for a project item, ordered by position."""
     query = select(ProjectItemTask).where(ProjectItemTask.item_id == item.id).order_by(ProjectItemTask.position.asc())
     return list(session.scalars(query).all())
 
 
 @router.post('/', response_model=ProjectItemTaskSchema, status_code=status.HTTP_201_CREATED)
-async def create_task(item: ItemFromPath, task: ProjectItemTaskCreate, session: DbSession):
+def create_task(item: ItemFromPath, task: ProjectItemTaskCreate, session: DbSession):
     """Create a new task on a project item."""
     # Auto-assign position if default (0) and tasks already exist
     position = task.position
@@ -73,7 +73,7 @@ async def create_task(item: ItemFromPath, task: ProjectItemTaskCreate, session: 
 
 
 @router.patch('/{task_id}/', response_model=ProjectItemTaskSchema, status_code=status.HTTP_200_OK)
-async def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTaskUpdate, session: DbSession):
+def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTaskUpdate, session: DbSession):
     """Update a project item task."""
     task = _get_task_or_404(session, item.id, task_id)
     update_data = update.model_dump(exclude_unset=True)
@@ -87,7 +87,7 @@ async def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTask
 
 
 @router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(item: ItemFromPath, task_id: UUID, session: DbSession):
+def delete_task(item: ItemFromPath, task_id: UUID, session: DbSession):
     """Delete a project item task."""
     task = _get_task_or_404(session, item.id, task_id)
     session.delete(task)

@@ -260,6 +260,18 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
    response. `test_every_read_that_takes_a_limit_declares_the_shared_one` walks
    the routes and fails on either, and adding the endpoint to `LIMITED_READS` in
    the same file is what gets it the five behavioral cases.
+10. **A handler or dependency is `def` unless it awaits something.** FastAPI runs
+   an `async def` one on the event loop and a `def` one in its threadpool. The
+   session, the docker client, the Redis client and every outbound fetch are
+   synchronous, so an `async def` handler calling them holds every other request
+   in the worker until they return. One that must await the assistant passes each
+   fetch to `run_in_threadpool`. Its session queries stay on the loop, because each
+   takes milliseconds beside the assistant call.
+   `test_blocking_calls_stay_off_the_event_loop.py` fails on an async handler or
+   dependency that awaits nothing, and on an async function that calls a known
+   outbound fetcher by name. Its held-call cases fail when a slow call on a route
+   `HELD_CALLS` names keeps `/health` waiting, which is the only check that sees
+   a handler that awaits and then blocks.
 
 ### Adding a Vue Page
 

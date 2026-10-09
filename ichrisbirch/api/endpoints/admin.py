@@ -45,7 +45,7 @@ def _format_time_until(next_run_time) -> str:
 
 
 @router.get('/scheduler/jobs/', response_model=list[schemas.SchedulerJob])
-async def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
+def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
     """List all APScheduler jobs with their status."""
     jobstore = get_jobstore(settings=settings)
     jobs = jobstore.get_all_jobs()
@@ -63,7 +63,7 @@ async def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
 
 
 @router.post('/scheduler/jobs/{job_id}/pause/', response_model=schemas.SchedulerJob)
-async def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Pause a scheduler job by setting next_run_time to None."""
     jobstore = get_jobstore(settings=settings)
     job = jobstore.lookup_job(job_id)
@@ -83,7 +83,7 @@ async def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_sett
 
 
 @router.post('/scheduler/jobs/{job_id}/resume/', response_model=schemas.SchedulerJob)
-async def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Resume a paused scheduler job by recalculating next_run_time."""
     jobstore = get_jobstore(settings=settings)
     job = jobstore.lookup_job(job_id)
@@ -103,7 +103,7 @@ async def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_set
 
 
 @router.delete('/scheduler/jobs/{job_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
+def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Delete a scheduler job from the jobstore."""
     jobstore = get_jobstore(settings=settings)
     job = jobstore.lookup_job(job_id)
@@ -114,7 +114,7 @@ async def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_set
 
 
 @router.get('/scheduler/history/', response_model=list[schemas.SchedulerJobRun])
-async def get_scheduler_history(
+def get_scheduler_history(
     session: DbSession,
     job_id: str | None = None,
     limit: CappedRowLimit = 50,
@@ -282,13 +282,13 @@ def get_system_health(
 
 
 @router.get('/system/errors/', response_model=list[schemas.admin.RecentError])
-async def get_recent_errors():
+def get_recent_errors():
     """Get recent 4xx/5xx errors from the in-memory ring buffer."""
     return list(recent_errors)
 
 
 @router.get('/config/', response_model=list[schemas.admin.EnvironmentConfigSection])
-async def get_environment_config(settings: Settings = Depends(get_settings)):
+def get_environment_config(settings: Settings = Depends(get_settings)):
     """Get environment configuration with sensitive values masked."""
     sections = []
     for attr in sorted(dir(settings)):

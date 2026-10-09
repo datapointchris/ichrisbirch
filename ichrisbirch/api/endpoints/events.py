@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, limit: RowLimit = None):
+def read_many(session: DbSession, limit: RowLimit = None):
     # Ordering resolves the reading against each event's own zone. `date` alone is a
     # wall clock somewhere else, so ordering by it puts a 09:00 in Tokyo after an
     # 08:00 in New York, thirteen hours the wrong way.
@@ -26,7 +26,7 @@ async def read_many(session: DbSession, limit: RowLimit = None):
 
 
 @router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
-async def create(event: schemas.EventCreate, session: DbSession):
+def create(event: schemas.EventCreate, session: DbSession):
     logger.debug('event_create', date_from_app=str(event.date))
     db_obj = models.Event(**event.model_dump())
     session.add(db_obj)
@@ -37,14 +37,14 @@ async def create(event: schemas.EventCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         return event
     raise NotFoundException('event', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         session.delete(event)
         session.commit()
@@ -54,7 +54,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.EventUpdate, session: DbSession):
+def update(id: int, update: schemas.EventUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('event_update', event_id=id, update_data=update_data)
 
@@ -69,7 +69,7 @@ async def update(id: int, update: schemas.EventUpdate, session: DbSession):
 
 
 @router.patch('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
-async def attend(id: int, session: DbSession):
+def attend(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         event.attending = True
         session.add(event)

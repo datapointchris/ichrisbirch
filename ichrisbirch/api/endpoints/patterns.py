@@ -16,7 +16,7 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Pattern], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession, search: str | None = None, limit: RowLimit = None):
+def read_many(session: DbSession, search: str | None = None, limit: RowLimit = None):
     query = select(models.Pattern).order_by(models.Pattern.recorded_at.desc())
     if search:
         query = query.where(models.Pattern.message.ilike(f'%{search}%'))
@@ -24,7 +24,7 @@ async def read_many(session: DbSession, search: str | None = None, limit: RowLim
 
 
 @router.post('/', response_model=schemas.Pattern, status_code=status.HTTP_201_CREATED)
-async def create(pattern: schemas.PatternCreate, session: DbSession):
+def create(pattern: schemas.PatternCreate, session: DbSession):
     db_obj = models.Pattern(**pattern.model_dump(exclude_none=True))
     session.add(db_obj)
     session.commit()
@@ -33,14 +33,14 @@ async def create(pattern: schemas.PatternCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if pattern := session.get(models.Pattern, id):
         return pattern
     raise NotFoundException('pattern', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if pattern := session.get(models.Pattern, id):
         session.delete(pattern)
         session.commit()
@@ -50,7 +50,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.PatternUpdate, session: DbSession):
+def update(id: int, update: schemas.PatternUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('pattern_update', pattern_id=id, update_data=update_data)
 

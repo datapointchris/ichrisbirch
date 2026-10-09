@@ -145,7 +145,7 @@ def _next_position_in_project(session: Session, project_id: UUID) -> int:
 
 
 @router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     zone: RequestZone,
     repo: str | None = None,
@@ -179,7 +179,7 @@ async def read_many(
 
 
 @router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def list_blocked(session: DbSession, repo: str | None = None):
+def list_blocked(session: DbSession, repo: str | None = None):
     """List items that have at least one incomplete dependency."""
     query = (
         select(models.ProjectItem)
@@ -199,7 +199,7 @@ async def list_blocked(session: DbSession, repo: str | None = None):
 
 
 @router.get('/search/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession, repo: str | None = None):
+def search(q: str, session: DbSession, repo: str | None = None):
     logger.debug('project_item_search', query=q)
     query = (
         select(models.ProjectItem)
@@ -217,7 +217,7 @@ async def search(q: str, session: DbSession, repo: str | None = None):
 
 
 @router.post('/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
-async def create(item: schemas.ProjectItemCreate, session: DbSession):
+def create(item: schemas.ProjectItemCreate, session: DbSession):
     if not item.project_ids:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -255,12 +255,12 @@ async def create(item: schemas.ProjectItemCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
-async def read_one(item: ItemFromPath, session: DbSession):
+def read_one(item: ItemFromPath, session: DbSession):
     return _detail(session, item)
 
 
 @router.patch('/{id}/', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
-async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session: DbSession):
+def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_item_update', item_id=item.id, update_data=update_data)
 
@@ -284,7 +284,7 @@ async def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session:
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(item: ItemFromPath, session: DbSession):
+def delete(item: ItemFromPath, session: DbSession):
     session.delete(item)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -294,7 +294,7 @@ async def delete(item: ItemFromPath, session: DbSession):
 
 
 @router.patch('/{id}/reorder/', response_model=schemas.ProjectItemInProject, status_code=status.HTTP_200_OK)
-async def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, session: DbSession):
+def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, session: DbSession):
     project = resolve_project(session, reorder.project_id)
 
     membership = session.get(ProjectItemMembership, (item.id, project.id))
@@ -328,7 +328,7 @@ async def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, sessi
 
 
 @router.get('/{id}/projects/', response_model=list[schemas.Project], status_code=status.HTTP_200_OK)
-async def list_projects(item: ItemFromPath, session: DbSession):
+def list_projects(item: ItemFromPath, session: DbSession):
     query = (
         select(models.Project)
         .join(ProjectItemMembership, models.Project.id == ProjectItemMembership.project_id)
@@ -339,7 +339,7 @@ async def list_projects(item: ItemFromPath, session: DbSession):
 
 
 @router.post('/{id}/projects/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
-async def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembershipCreate, session: DbSession):
+def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembershipCreate, session: DbSession):
     project = resolve_project(session, membership.project_id)
 
     if session.get(ProjectItemMembership, (item.id, project.id)):
@@ -356,7 +356,7 @@ async def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMemb
 
 
 @router.delete('/{id}/projects/{project_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: DbSession):
+def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: DbSession):
     membership = session.get(ProjectItemMembership, (item.id, project.id))
     if not membership:
         raise HTTPException(
@@ -381,7 +381,7 @@ async def remove_from_project(item: ItemFromPath, project: ProjectFromPath, sess
 
 
 @router.post('/{id}/dependencies/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
-async def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate, session: DbSession):
+def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate, session: DbSession):
     depends_on = resolve_item(session, dep.depends_on_id)
 
     if item.id == depends_on.id:
@@ -406,7 +406,7 @@ async def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyC
 
 
 @router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPath, session: DbSession):
+def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPath, session: DbSession):
     dep = session.get(ProjectItemDependency, (item.id, depends_on.id))
     if not dep:
         raise HTTPException(
@@ -420,7 +420,7 @@ async def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPa
 
 
 @router.get('/{id}/blockers/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
-async def get_blockers(item: ItemFromPath, session: DbSession):
+def get_blockers(item: ItemFromPath, session: DbSession):
     """Get incomplete dependencies (items that block this item)."""
     query = (
         select(models.ProjectItem)

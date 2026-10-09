@@ -15,13 +15,13 @@ router = APIRouter()
 
 
 @router.get('/', response_model=list[schemas.Duration], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+def read_many(session: DbSession):
     query = select(models.Duration).options(selectinload(models.Duration.duration_notes)).order_by(models.Duration.start_date.asc())
     return list(session.scalars(query).all())
 
 
 @router.post('/', response_model=schemas.Duration, status_code=status.HTTP_201_CREATED)
-async def create(duration: schemas.DurationCreate, session: DbSession):
+def create(duration: schemas.DurationCreate, session: DbSession):
     db_obj = models.Duration(**duration.model_dump())
     session.add(db_obj)
     session.commit()
@@ -30,7 +30,7 @@ async def create(duration: schemas.DurationCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     query = select(models.Duration).options(selectinload(models.Duration.duration_notes)).where(models.Duration.id == id)
     if duration := session.scalars(query).first():
         return duration
@@ -38,7 +38,7 @@ async def read_one(id: int, session: DbSession):
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if duration := session.get(models.Duration, id):
         session.delete(duration)
         session.commit()
@@ -47,7 +47,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.DurationUpdate, session: DbSession):
+def update(id: int, update: schemas.DurationUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('duration_update', duration_id=id, update_data=update_data)
 
@@ -64,7 +64,7 @@ async def update(id: int, update: schemas.DurationUpdate, session: DbSession):
 
 
 @router.post('/{id}/notes/', response_model=schemas.DurationNote, status_code=status.HTTP_201_CREATED)
-async def create_note(id: int, note: schemas.DurationNoteCreate, session: DbSession):
+def create_note(id: int, note: schemas.DurationNoteCreate, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)
     db_obj = models.DurationNote(duration_id=id, **note.model_dump())
@@ -75,7 +75,7 @@ async def create_note(id: int, note: schemas.DurationNoteCreate, session: DbSess
 
 
 @router.patch('/{id}/notes/{note_id}/', response_model=schemas.DurationNote, status_code=status.HTTP_200_OK)
-async def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate, session: DbSession):
+def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)
     note_obj = session.get(models.DurationNote, note_id)
@@ -91,7 +91,7 @@ async def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate,
 
 
 @router.delete('/{id}/notes/{note_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_note(id: int, note_id: int, session: DbSession):
+def delete_note(id: int, note_id: int, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)
     note_obj = session.get(models.DurationNote, note_id)

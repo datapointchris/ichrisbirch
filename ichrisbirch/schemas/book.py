@@ -101,6 +101,10 @@ class BookUpdate(BookConfig):
         return data
 
 
+class BookGoodreadsLookup(BookConfig):
+    isbn: str
+
+
 class BookGoodreadsInfo(BookConfig):
     title: str
     author: str

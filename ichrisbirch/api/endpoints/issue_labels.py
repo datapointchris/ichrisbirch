@@ -60,13 +60,13 @@ def ensure_group_holds(session: Session, label: models.IssueLabel, group_slug: s
 
 
 @router.get('/', response_model=list[schemas.IssueLabel], status_code=status.HTTP_200_OK)
-async def read_many(session: DbSession):
+def read_many(session: DbSession):
     """The whole label vocabulary, grouped labels first, with each one's open issue count."""
     return label_views(session)
 
 
 @router.post('/', response_model=schemas.IssueLabel, status_code=status.HTTP_201_CREATED)
-async def create(label: schemas.IssueLabelCreate, session: DbSession):
+def create(label: schemas.IssueLabelCreate, session: DbSession):
     if session.scalar(select(models.IssueLabel).where(models.IssueLabel.slug == label.slug)) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'Label {label.slug!r} already exists')
     db_obj = models.IssueLabel(slug=label.slug, group_slug=label.group_slug, description=label.description)
@@ -77,12 +77,12 @@ async def create(label: schemas.IssueLabelCreate, session: DbSession):
 
 
 @router.get('/{slug}/', response_model=schemas.IssueLabel, status_code=status.HTTP_200_OK)
-async def read_one(label: LabelFromPath, session: DbSession):
+def read_one(label: LabelFromPath, session: DbSession):
     return view(session, label)
 
 
 @router.patch('/{slug}/', response_model=schemas.IssueLabel, status_code=status.HTTP_200_OK)
-async def update(label: LabelFromPath, update: schemas.IssueLabelUpdate, session: DbSession):
+def update(label: LabelFromPath, update: schemas.IssueLabelUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     group_slug = update_data.get('group_slug')
     if group_slug is not None and group_slug != label.group_slug:
@@ -94,7 +94,7 @@ async def update(label: LabelFromPath, update: schemas.IssueLabelUpdate, session
 
 
 @router.delete('/{slug}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(label: LabelFromPath, session: DbSession):
+def delete(label: LabelFromPath, session: DbSession):
     """Delete the label and take it off every issue carrying it."""
     session.delete(label)
     session.commit()

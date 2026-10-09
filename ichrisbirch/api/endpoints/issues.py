@@ -267,7 +267,7 @@ def single_view(session: Session, issue: models.Issue, zone: str) -> schemas.Iss
 
 
 @router.get('/', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     zone: RequestZone,
     issue_status: str | None = Query(
@@ -359,7 +359,7 @@ def ready_issues(
 
 
 @router.get('/ready/', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
-async def read_ready(
+def read_ready(
     session: DbSession,
     zone: RequestZone,
     repo: str | None = Query(None, description='A repo name, or an empty string for issues on no repo'),
@@ -396,7 +396,7 @@ def claimable(now: dt.datetime, claimant: str | None = None):
 
 
 @router.post('/ready/claim/', response_model=schemas.IssueClaimResult, status_code=status.HTTP_200_OK)
-async def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone: RequestZone):
+def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone: RequestZone):
     """Take the head of the ready queue in one step.
 
     Each candidate is taken with a compare-and-set, so two agents asking at once
@@ -421,7 +421,7 @@ async def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession
 
 
 @router.get('/vocabulary/', response_model=schemas.IssueVocabulary, status_code=status.HTTP_200_OK)
-async def read_vocabulary(session: DbSession):
+def read_vocabulary(session: DbSession):
     """Every value the closed issue fields accept, with the open issue count per label.
 
     Statuses and types come back in their lifecycle order rather than the
@@ -445,7 +445,7 @@ def in_declared_order(values: set[str], declared: list[str]) -> list[str]:
 
 
 @router.post('/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
-async def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
+def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
     if issue.status not in CREATE_STATUSES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -490,12 +490,12 @@ async def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZo
 
 
 @router.get('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
-async def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
+def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     return detail(session, issue, zone)
 
 
 @router.patch('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
-async def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone):
+def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
     now = dt.datetime.now(dt.UTC)
@@ -540,7 +540,7 @@ async def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbS
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(issue: IssueFromPath, session: DbSession):
+def delete(issue: IssueFromPath, session: DbSession):
     session.delete(issue)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -578,7 +578,7 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
 
 
 @router.post('/{id}/claim/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
-async def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
+def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
     """Take this issue, or extend the claim already held under the same name.
 
     A named issue is taken only when it is ready, a decision included, so an
@@ -610,7 +610,7 @@ async def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, sessio
 
 
 @router.delete('/{id}/claim/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
-async def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
+def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     """Give the issue back to the ready queue. Releasing an issue not in progress changes nothing.
 
     A claim sits only on an in-progress issue, so this one test covers both a
@@ -642,7 +642,7 @@ def ensure_same_priority(issue: models.Issue, neighbor: models.Issue, readiness:
 
 
 @router.post('/{id}/rank/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
-async def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSession, zone: RequestZone):
+def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSession, zone: RequestZone):
     """Place this issue directly before or after another of the same effective priority.
 
     Rank orders issues within one priority. Beside an issue of another priority,
@@ -663,7 +663,7 @@ async def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSes
 
 
 @router.post('/{id}/dependencies/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
-async def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependencyCreate, session: DbSession, zone: RequestZone):
+def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependencyCreate, session: DbSession, zone: RequestZone):
     depends_on = resolve_issue(session, dependency.depends_on)
     if depends_on.id == issue.id:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail='An issue cannot depend on itself')
@@ -684,7 +684,7 @@ def path_dependency(dep_id: str, session: DbSession) -> models.Issue:
 
 
 @router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.Issue, Depends(path_dependency)], session: DbSession):
+def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.Issue, Depends(path_dependency)], session: DbSession):
     edge = session.get(models.IssueDependency, (issue.id, depends_on.id))
     if edge is None:
         raise HTTPException(
@@ -698,7 +698,7 @@ async def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.I
 
 
 @router.get('/{id}/comments/', response_model=list[schemas.IssueComment], status_code=status.HTTP_200_OK)
-async def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimit = None):
+def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimit = None):
     """The issue's comments, oldest first, so a thread reads in the order it was written."""
     query = (
         select(models.IssueComment)
@@ -711,7 +711,7 @@ async def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimi
 
 
 @router.post('/{id}/comments/', response_model=schemas.IssueComment, status_code=status.HTTP_201_CREATED)
-async def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, session: DbSession):
+def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, session: DbSession):
     db_comment = models.IssueComment(issue_id=issue.id, body=comment.body, author=comment.author)
     session.add(db_comment)
     issue.updated_ts = dt.datetime.now(dt.UTC)
@@ -721,7 +721,7 @@ async def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCrea
 
 
 @router.delete('/{id}/comments/{comment_id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_comment(issue: IssueFromPath, comment_id: UUID, session: DbSession):
+def delete_comment(issue: IssueFromPath, comment_id: UUID, session: DbSession):
     deleted = session.execute(
         sql_delete(models.IssueComment)
         .where(models.IssueComment.id == comment_id, models.IssueComment.issue_id == issue.id)

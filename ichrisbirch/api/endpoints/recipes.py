@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import case
 from sqlalchemy import cast
 from sqlalchemy import func
@@ -63,7 +64,7 @@ def _scaled_recipe_response(recipe: models.Recipe, servings: int | None) -> sche
 
 
 @router.get('/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     cuisine: str | None = None,
     meal_type: str | None = None,
@@ -87,7 +88,7 @@ async def read_many(
 
 
 @router.post('/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
-async def create(recipe: schemas.RecipeCreate, session: DbSession):
+def create(recipe: schemas.RecipeCreate, session: DbSession):
     ingredients_data = recipe.ingredients
     recipe_data = recipe.model_dump(exclude={'ingredients'})
     obj = models.Recipe(**recipe_data)
@@ -105,7 +106,7 @@ async def create(recipe: schemas.RecipeCreate, session: DbSession):
 
 
 @router.get('/search/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     """Search recipes by name, tags, or instructions.
 
     Follows the books/articles pattern: split on comma (for phrases) or whitespace,
@@ -133,7 +134,7 @@ async def search(q: str, session: DbSession):
     response_model=list[schemas.RecipeIngredientSearchResult],
     status_code=status.HTTP_200_OK,
 )
-async def search_by_ingredients(
+def search_by_ingredients(
     session: DbSession,
     have: str = Query(..., description='Comma-separated list of ingredients the user has'),
     match: str = Query('any', pattern='^(any|all)$'),
@@ -201,7 +202,7 @@ async def search_by_ingredients(
 
 
 @router.get('/stats/', response_model=schemas.RecipeStats, status_code=status.HTTP_200_OK)
-async def stats(session: DbSession):
+def stats(session: DbSession):
     total_recipes = session.scalar(select(func.count(models.Recipe.id))) or 0
     total_times_cooked = session.scalar(select(func.coalesce(func.sum(models.Recipe.times_made), 0))) or 0
     average_rating = session.scalar(select(func.avg(models.Recipe.rating)))
@@ -304,7 +305,7 @@ async def ai_suggest(
 
 
 @router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
-async def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
+def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
     """Save an AI-generated candidate to the recipes table."""
     payload = candidate.model_dump()
     ingredients_data = payload.pop('ingredients', [])
@@ -351,7 +352,7 @@ async def import_from_url(
         )
 
     try:
-        content = url_ingest.extract_content_for_classifier(url)
+        content = await run_in_threadpool(url_ingest.extract_content_for_classifier, url)
     except (PageFetchError, PageStatusError, PageUnreadable) as e:
         logger.error('url_content_fetch_failed', url=url, error=str(e))
         raise HTTPException(
@@ -364,7 +365,7 @@ async def import_from_url(
 
 
 @router.post('/save-url-import/', response_model=schemas.UrlImportSaveResult, status_code=status.HTTP_201_CREATED)
-async def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
+def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
     """Persist a reviewed URL-import candidate atomically.
 
     For `kind='both'`, both the recipe and technique are created in one transaction
@@ -416,7 +417,7 @@ async def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSess
 
 
 @router.get('/cooking-techniques/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
-async def list_cooking_techniques(
+def list_cooking_techniques(
     session: DbSession,
     category: str | None = None,
     rating_min: int | None = Query(None, ge=1, le=5),
@@ -431,7 +432,7 @@ async def list_cooking_techniques(
 
 
 @router.post('/cooking-techniques/', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)
-async def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session: DbSession):
+def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session: DbSession):
     data = technique.model_dump()
     data['slug'] = _unique_cooking_technique_slug(session, slugify(data['name']))
     obj = models.CookingTechnique(**data)
@@ -442,7 +443,7 @@ async def create_cooking_technique(technique: schemas.CookingTechniqueCreate, se
 
 
 @router.get('/cooking-techniques/search/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
-async def search_cooking_techniques(q: str, session: DbSession):
+def search_cooking_techniques(q: str, session: DbSession):
     """Search cooking techniques by name, summary, body, or tags.
 
     Whitespace- or comma-separated terms; ILIKE match on any field, OR'd together.
@@ -469,7 +470,7 @@ async def search_cooking_techniques(q: str, session: DbSession):
     response_model=list[schemas.CookingTechniqueCategoryBreakdown],
     status_code=status.HTTP_200_OK,
 )
-async def list_cooking_technique_categories(session: DbSession):
+def list_cooking_technique_categories(session: DbSession):
     """List all cooking technique categories with counts. Includes zero-count categories so the UI shows every bucket."""
     category_names = list(
         session.scalars(select(models.CookingTechniqueCategory.name).order_by(models.CookingTechniqueCategory.name.asc())).all()
@@ -482,7 +483,7 @@ async def list_cooking_technique_categories(session: DbSession):
 
 
 @router.get('/cooking-techniques/slug/{slug}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
-async def read_cooking_technique_by_slug(slug: str, session: DbSession):
+def read_cooking_technique_by_slug(slug: str, session: DbSession):
     technique = session.scalar(select(models.CookingTechnique).where(models.CookingTechnique.slug == slug))
     if technique is None:
         raise NotFoundException('cooking technique', slug, logger)
@@ -490,7 +491,7 @@ async def read_cooking_technique_by_slug(slug: str, session: DbSession):
 
 
 @router.get('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
-async def read_cooking_technique(id: int, session: DbSession):
+def read_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
         raise NotFoundException('cooking technique', id, logger)
@@ -498,7 +499,7 @@ async def read_cooking_technique(id: int, session: DbSession):
 
 
 @router.delete('/cooking-techniques/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete_cooking_technique(id: int, session: DbSession):
+def delete_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
         raise NotFoundException('cooking technique', id, logger)
@@ -508,7 +509,7 @@ async def delete_cooking_technique(id: int, session: DbSession):
 
 
 @router.patch('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
-async def update_cooking_technique(id: int, technique_update: schemas.CookingTechniqueUpdate, session: DbSession):
+def update_cooking_technique(id: int, technique_update: schemas.CookingTechniqueUpdate, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
         raise NotFoundException('cooking technique', id, logger)
@@ -534,7 +535,7 @@ async def update_cooking_technique(id: int, technique_update: schemas.CookingTec
 
 
 @router.get('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
-async def read_one(
+def read_one(
     id: int,
     session: DbSession,
     servings: int | None = Query(None, ge=1, description='Optional scaling — returns scaled_quantity per ingredient'),
@@ -546,7 +547,7 @@ async def read_one(
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     recipe = session.get(models.Recipe, id)
     if recipe is None:
         raise NotFoundException('recipe', id, logger)
@@ -556,7 +557,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
-async def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
+def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
     recipe = _load_recipe(session, id)
     if recipe is None:
         raise NotFoundException('recipe', id, logger)
@@ -581,7 +582,7 @@ async def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSessio
 
 
 @router.post('/{id}/mark-made/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
-async def mark_made(id: int, session: DbSession):
+def mark_made(id: int, session: DbSession):
     """Increment times_made and set last_made_date to now."""
     recipe = session.get(models.Recipe, id)
     if recipe is None:

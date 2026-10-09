@@ -35,7 +35,7 @@ ALL_STATUSES = 'all'
 
 
 @router.get('/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     zone: RequestZone,
     limit: RowLimit = None,
@@ -106,19 +106,19 @@ async def read_many(
 
 
 @router.get('/todo/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def todo(session: DbSession, limit: RowLimit = None):
+def todo(session: DbSession, limit: RowLimit = None):
     query = in_queue_order(is_open(select(models.Task)))
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
 @router.get('/categories/', response_model=list[schemas.TaskCategory], status_code=status.HTTP_200_OK)
-async def read_categories(session: DbSession):
+def read_categories(session: DbSession):
     """Every task category with the window a new task in it gets."""
     return list(session.scalars(select(models.TaskCategory).order_by(models.TaskCategory.name)).all())
 
 
 @router.patch('/categories/{name}/', response_model=schemas.TaskCategory, status_code=status.HTTP_200_OK)
-async def update_category(name: str, update: schemas.TaskCategoryUpdate, session: DbSession):
+def update_category(name: str, update: schemas.TaskCategoryUpdate, session: DbSession):
     """Change a category's window. Tasks already open keep the window they were made with."""
     if category := session.get(models.TaskCategory, name):
         for attr, value in update.model_dump(exclude_unset=True).items():
@@ -131,7 +131,7 @@ async def update_category(name: str, update: schemas.TaskCategoryUpdate, session
 
 
 @router.get('/completed/', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
-async def completed(
+def completed(
     session: DbSession,
     zone: RequestZone,
     start_date: str | None = None,
@@ -155,7 +155,7 @@ async def completed(
 
 
 @router.get('/search/', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     logger.debug('task_search', query=q)
     tasks = (
         select(models.Task)
@@ -168,7 +168,7 @@ async def search(q: str, session: DbSession):
 
 
 @router.post('/', response_model=schemas.Task, status_code=status.HTTP_201_CREATED)
-async def create(task: schemas.TaskCreate, session: DbSession):
+def create(task: schemas.TaskCreate, session: DbSession):
     try:
         db_obj = new_task(session, **task.model_dump())
     except LookupError as e:
@@ -180,14 +180,14 @@ async def create(task: schemas.TaskCreate, session: DbSession):
 
 
 @router.get('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if task := session.get(models.Task, id):
         return task
     raise NotFoundException('task', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if task := session.get(models.Task, id):
         session.delete(task)
         session.commit()
@@ -197,7 +197,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.TaskUpdate, session: DbSession):
+def update(id: int, update: schemas.TaskUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('task_update', task_id=id, update_data=update_data)
 
@@ -242,7 +242,7 @@ def open_task(session: DbSession, task_id: int, verb: str) -> models.Task:
 
 
 @router.patch('/{task_id}/complete/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def complete(task_id: int, session: DbSession):
+def complete(task_id: int, session: DbSession):
     task = open_task(session, task_id, 'completed')
     task.complete_date = dt.datetime.now(dt.UTC)
     match_fields_to_state(task)
@@ -252,7 +252,7 @@ async def complete(task_id: int, session: DbSession):
 
 
 @router.patch('/{task_id}/drop/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None = None):
+def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None = None):
     """Close a task you are letting go of. It stays on record and does not count as completed."""
     task = open_task(session, task_id, 'dropped')
     task.drop_date = dt.datetime.now(dt.UTC)
@@ -265,7 +265,7 @@ async def drop(task_id: int, session: DbSession, body: schemas.TaskDrop | None =
 
 
 @router.patch('/{task_id}/reopen/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def reopen(task_id: int, session: DbSession):
+def reopen(task_id: int, session: DbSession):
     """Put a completed or dropped task back on the list at the `rank_at` it had."""
     task = session.get(models.Task, task_id)
     if task is None:
@@ -285,7 +285,7 @@ async def reopen(task_id: int, session: DbSession):
 
 
 @router.patch('/{task_id}/snooze/', response_model=schemas.Task, status_code=status.HTTP_200_OK)
-async def snooze(task_id: int, session: DbSession):
+def snooze(task_id: int, session: DbSession):
     """Restart the task's window from now, which moves it back down the list, and unpin it."""
     task = open_task(session, task_id, 'snoozed')
     restart_window(task)

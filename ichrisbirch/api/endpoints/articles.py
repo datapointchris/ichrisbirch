@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import cast
 from sqlalchemy import func
 from sqlalchemy import or_
@@ -74,7 +75,7 @@ def _read_page_for_request(url: str) -> ArticlePage:
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
-async def read_many(
+def read_many(
     session: DbSession,
     zone: RequestZone,
     favorites: bool | None = None,
@@ -116,13 +117,13 @@ async def read_many(
 
 
 @router.get('/current/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
-async def current(session: DbSession):
+def current(session: DbSession):
     query = select(models.Article).where(models.Article.is_current.is_(True))
     return session.scalars(query).first()
 
 
 @router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one_url(url: str, session: DbSession):
+def read_one_url(url: str, session: DbSession):
     url = clean_url(url)
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
         return article
@@ -130,7 +131,7 @@ async def read_one_url(url: str, session: DbSession):
 
 
 @router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
-async def create(article: schemas.ArticleCreate, session: DbSession):
+def create(article: schemas.ArticleCreate, session: DbSession):
     obj = models.Article(**article.model_dump())
     session.add(obj)
     session.commit()
@@ -150,7 +151,7 @@ async def _summarize_and_create_article(url: str, notes: str | None, session: Se
     if existing:
         raise ArticleAlreadyExists(url)
 
-    page = read_article_page(url)
+    page = await run_in_threadpool(read_article_page, url)
 
     assistant = AnthropicAssistant(
         name='Article Summary with Tags',
@@ -194,22 +195,19 @@ async def create_from_url(
 
 
 @router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
-async def bulk_import(request: Request):
+def bulk_import(body: schemas.ArticleBulkImport, request: Request):
     """Enqueue URLs for bulk import. Returns batch_id for status polling."""
     from ichrisbirch.api.article_import_worker import enqueue_bulk_import
 
-    body = await request.json()
-    urls = body.get('urls', [])
-    notes_map = body.get('notes', {})
-    if not urls:
+    if not body.urls:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No URLs provided')
     redis_client = request.app.state.redis_client
-    batch_id = enqueue_bulk_import(redis_client, urls, notes_map)
-    return {'batch_id': batch_id, 'total': len(urls), 'status': 'queued'}
+    batch_id = enqueue_bulk_import(redis_client, body.urls, body.notes)
+    return {'batch_id': batch_id, 'total': len(body.urls), 'status': 'queued'}
 
 
 @router.get('/bulk-import/{batch_id}/', status_code=status.HTTP_200_OK)
-async def bulk_import_status(batch_id: str, request: Request):
+def bulk_import_status(batch_id: str, request: Request):
     """Check status of a bulk article import batch."""
     from ichrisbirch.api.article_import_worker import get_batch_status
 
@@ -221,14 +219,14 @@ async def bulk_import_status(batch_id: str, request: Request):
 
 
 @router.get('/failed-imports/', response_model=list[schemas.ArticleFailedImport], status_code=status.HTTP_200_OK)
-async def list_failed_imports(session: DbSession):
+def list_failed_imports(session: DbSession):
     """List all failed article imports."""
     query = select(models.ArticleFailedImport).order_by(models.ArticleFailedImport.failed_at.desc())
     return list(session.scalars(query).all())
 
 
 @router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
-async def search(q: str, session: DbSession):
+def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
 
     Search terms must be separated and wildcards added.
@@ -248,16 +246,15 @@ async def search(q: str, session: DbSession):
 
 
 @router.post('/summarize/', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
-async def summarize(request: Request, settings: Settings = Depends(get_settings)):
+async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video summary. If article,
     use html content for summary. Claude produces the summary and the tags.
     """
-    request_data = await request.json()
-    logger.debug('article_summarize_request', data=request_data)
-    url = clean_url(request_data.get('url'))
-    page = _read_page_for_request(url)
+    logger.debug('article_summarize_request', url=body.url)
+    url = clean_url(body.url)
+    page = await run_in_threadpool(_read_page_for_request, url)
     logger.debug('article_title_retrieved', title=page.title)
 
     assistant = AnthropicAssistant(
@@ -270,18 +267,17 @@ async def summarize(request: Request, settings: Settings = Depends(get_settings)
 
 
 @router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
-async def insights(request: Request, settings: Settings = Depends(get_settings)):
+async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
     Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If article, use html content
     for summary. Claude produces the insights.
     """
-    request_data = await request.json()
-    logger.debug('article_insights_request', data=request_data)
-    url = clean_url(request_data.get('url'))
+    logger.debug('article_insights_request', url=body.url)
+    url = clean_url(body.url)
     logger.debug('article_insights_processing', url=url)
     try:
-        page = read_article_page(url)
+        page = await run_in_threadpool(read_article_page, url)
     except (VideoHasNoCaptions, CaptionsBlocked) as e:
         # A YouTube caption failure is rendered as the answer, because the form
         # that calls this treats any non-200 as a script error.
@@ -313,14 +309,14 @@ async def insights(request: Request, settings: Settings = Depends(get_settings))
 
 
 @router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def read_one(id: int, session: DbSession):
+def read_one(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         return article
     raise NotFoundException('article', id, logger)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-async def delete(id: int, session: DbSession):
+def delete(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         session.delete(article)
         session.commit()
@@ -329,7 +325,7 @@ async def delete(id: int, session: DbSession):
 
 
 @router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
-async def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
+def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('article_update', article_id=id, update_data=update_data)
     if article := session.get(models.Article, id):

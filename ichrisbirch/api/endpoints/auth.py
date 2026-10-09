@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastapi import status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -242,11 +243,13 @@ async def authenticate_with_oauth2(request: Request, session: Session = Depends(
     password = form_data.get('password')
     if not username or not password:
         return None
+    return await run_in_threadpool(_check_credentials, str(username), str(password), session)
 
-    user = validate_user_email(str(username), session)
-    if not user or not validate_password(user, str(password)):
+
+def _check_credentials(username: str, password: str, session: Session) -> str | None:
+    user = validate_user_email(username, session)
+    if not user or not validate_password(user, password):
         return None
-
     return user.get_id()
 
 
@@ -444,7 +447,7 @@ AdminOrInternalServiceAccess = Annotated[bool, Depends(get_admin_or_internal_ser
 
 
 @router.post('/token/', response_model=None, status_code=status.HTTP_201_CREATED)
-async def access_token(response: Response, user: CurrentUser, token_handler: JWTTokenHandler = Depends(get_token_handler)):
+def access_token(response: Response, user: CurrentUser, token_handler: JWTTokenHandler = Depends(get_token_handler)):
     """Create access and refresh tokens for authenticated user.
 
     Sets cookies and returns token data in response body.
@@ -460,7 +463,7 @@ async def access_token(response: Response, user: CurrentUser, token_handler: JWT
 
 
 @router.get('/token/validate/', status_code=status.HTTP_200_OK)
-async def validate_token(
+def validate_token(
     jwt_token: Annotated[str, Depends(get_token_from_header)],
     access_token: str | None = Cookie(None),
     settings: Settings = Depends(get_settings),
@@ -482,7 +485,7 @@ async def validate_token(
 
 
 @router.post('/token/refresh/', status_code=status.HTTP_201_CREATED)
-async def refresh_token(
+def refresh_token(
     jwt_token: Annotated[str, Depends(get_token_from_header)],
     refresh_token: str = Cookie(None),
     token_handler: JWTTokenHandler = Depends(get_token_handler),
@@ -512,7 +515,7 @@ async def refresh_token(
 
 
 @router.get('/logout/', response_model=None, status_code=status.HTTP_200_OK)
-async def logout_user(x_user_id: str = Header(...), token_handler: JWTTokenHandler = Depends(get_token_handler)):
+def logout_user(x_user_id: str = Header(...), token_handler: JWTTokenHandler = Depends(get_token_handler)):
     """Logout user by deleting their refresh token.
 
     Requires X-User-ID header for identification.

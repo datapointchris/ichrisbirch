@@ -1,11 +1,13 @@
 from ichrisbirch.schemas import admin as admin
 from ichrisbirch.schemas.article import Article
+from ichrisbirch.schemas.article import ArticleBulkImport
 from ichrisbirch.schemas.article import ArticleCreate
 from ichrisbirch.schemas.article import ArticleCreateFromUrl
 from ichrisbirch.schemas.article import ArticleFailedImport
 from ichrisbirch.schemas.article import ArticleSummary
 from ichrisbirch.schemas.article import ArticleSummaryAndTags
 from ichrisbirch.schemas.article import ArticleUpdate
+from ichrisbirch.schemas.article import ArticleUrl
 from ichrisbirch.schemas.autofun import AutoFun
 from ichrisbirch.schemas.autofun import AutoFunCreate
 from ichrisbirch.schemas.autofun import AutoFunUpdate
@@ -15,6 +17,7 @@ from ichrisbirch.schemas.autotask import AutoTaskUpdate
 from ichrisbirch.schemas.book import Book
 from ichrisbirch.schemas.book import BookCreate
 from ichrisbirch.schemas.book import BookGoodreadsInfo
+from ichrisbirch.schemas.book import BookGoodreadsLookup
 from ichrisbirch.schemas.book import BookUpdate
 from ichrisbirch.schemas.box import Box
 from ichrisbirch.schemas.box import BoxCreate
@@ -141,11 +144,13 @@ from ichrisbirch.schemas.user import UserUpdate
 __all__ = [
     'admin',
     'Article',
+    'ArticleBulkImport',
     'ArticleCreate',
     'ArticleCreateFromUrl',
     'ArticleSummary',
     'ArticleSummaryAndTags',
     'ArticleUpdate',
+    'ArticleUrl',
     'ArticleFailedImport',
     'AutoFun',
     'AutoFunCreate',
@@ -156,6 +161,7 @@ __all__ = [
     'Book',
     'BookCreate',
     'BookGoodreadsInfo',
+    'BookGoodreadsLookup',
     'BookUpdate',
     'CoffeeBean',
     'CoffeeBeanCreate',

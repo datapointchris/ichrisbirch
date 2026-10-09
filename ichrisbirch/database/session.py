@@ -48,7 +48,7 @@ def get_sqlalchemy_session() -> Generator[Session]:
     Use this for FastAPI dependency injection:
 
     >>> @router.get('/{id}/')
-    >>> async def read_habit(id: int, session: Session = Depends(get_sqlalchemy_session)):
+    >>> def read_habit(id: int, session: Session = Depends(get_sqlalchemy_session)):
     >>>     return session.get(models.Habit, id)
     """
     with create_session(get_settings()) as session:
