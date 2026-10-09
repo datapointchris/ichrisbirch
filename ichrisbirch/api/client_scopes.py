@@ -8,6 +8,14 @@ resolves a user answers 403. A template is FastAPI's with the router prefix incl
 from starlette.routing import BaseRoute
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
+    # The reads `icb issues list`, `search`, `next` and `show` make. `--blocked` filters `/issues/`.
+    'icb.issues.read': frozenset(
+        {
+            ('GET', '/issues/'),
+            ('GET', '/issues/ready/'),
+            ('GET', '/issues/{id}/'),
+        }
+    ),
     # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
         {

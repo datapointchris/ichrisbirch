@@ -125,7 +125,7 @@ def create_api(settings: Settings) -> FastAPI:
     # Ahead of /issues, whose /{id}/ would otherwise read "initiatives" as an issue.
     api.include_router(endpoints.issue_initiatives.router, prefix='/issues/initiatives', dependencies=deps)
     api.include_router(endpoints.issue_labels.router, prefix='/issues/labels', dependencies=deps)
-    api.include_router(endpoints.issues.router, prefix='/issues', dependencies=deps)
+    api.include_router(endpoints.issues.router, prefix='/issues', dependencies=scoped_deps)
     api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
     api.include_router(endpoints.personal_api_keys.router, prefix='/api-keys', dependencies=deps)
     api.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)

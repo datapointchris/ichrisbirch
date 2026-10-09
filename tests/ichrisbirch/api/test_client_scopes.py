@@ -19,13 +19,17 @@ from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.oidc_auth import get_oidc_identity
 from tests.util import show_status_and_response
 
-SCOPE = 'icb.project-items.read'
-CLIENT = ScopedClient(client_id='icb-svc-worker', scopes=frozenset({SCOPE}))
+PROJECT_ITEMS = 'icb.project-items.read'
+ISSUES = 'icb.issues.read'
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
 SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 
-# One request per route `SCOPE` lists, keyed by its template.
+# One request per route any scope lists, keyed by its template. The issue reads are the ones the
+# CLI sends: search widens the status to all, and show names the issue by number.
 SCOPED_URLS = {
+    '/issues/': '/issues/?search=scheduler&status=all',
+    '/issues/ready/': '/issues/ready/',
+    '/issues/{id}/': '/issues/{issue}/',
     '/project-items/': '/project-items/',
     '/project-items/blocked/': '/project-items/blocked/',
     '/project-items/search/': '/project-items/search/?q=scheduler',
@@ -35,14 +39,31 @@ SCOPED_URLS = {
     '/projects/{id}/items/': '/projects/{project}/items/',
 }
 
+SCOPED_ROUTES = sorted((scope, method, template) for scope, routes in SCOPE_ROUTES.items() for method, template in routes)
+
+# How a refusal's list of what each scope reaches begins.
+REACHES = {
+    ISSUES: 'GET /issues/, GET /issues/ready/, GET /issues/{id}/',
+    PROJECT_ITEMS: 'GET /project-items/, ',
+}
+
+
+def scoped(scope: str) -> ScopedClient:
+    return ScopedClient(client_id='icb-svc-worker', scopes=frozenset({scope}))
+
 
 @pytest.fixture
 def as_caller(txn_api):
-    """Seed one item in one project. `caller(identity)` sets who the token says is calling and returns the client."""
+    """Seed one item in one project, and one issue.
+
+    `caller(identity)` sets who the token says is calling and returns the client, and `url(template)`
+    fills a template with the seeded rows.
+    """
     client, session = txn_api
     project = models.Project(name='scheduler project')
     item = models.ProjectItem(title='scheduler item')
-    session.add_all([project, item])
+    issue = models.Issue(title='scheduler issue', rank=1.0)
+    session.add_all([project, item, issue])
     session.flush()
     session.add(models.ProjectItemMembership(item_id=item.id, project_id=project.id))
     session.add(models.ProjectItemTask(item_id=item.id, title='scheduler task'))
@@ -52,40 +73,72 @@ def as_caller(txn_api):
         client.app.dependency_overrides[get_oidc_identity] = lambda: identity
         return client
 
-    return SimpleNamespace(caller=caller, item=item, project=project)
+    def url(template):
+        return template.format(item=item.id, project=project.id, issue=issue.number)
+
+    return SimpleNamespace(caller=caller, url=url, project=project)
 
 
-@pytest.mark.parametrize(('method', 'template'), sorted(SCOPE_ROUTES[SCOPE]))
-def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, method, template):
-    client = as_caller.caller(CLIENT)
-    url = SCOPED_URLS[template].format(item=as_caller.item.id, project=as_caller.project.id)
-    response = client.request(method, url)
+@pytest.mark.parametrize(('scope', 'method', 'template'), SCOPED_ROUTES)
+def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, method, template):
+    response = as_caller.caller(scoped(scope)).request(method, as_caller.url(SCOPED_URLS[template]))
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 @pytest.mark.parametrize(
-    ('method', 'url'),
+    ('scope', 'method', 'url'),
     [
-        ('POST', '/project-items/'),
-        ('GET', '/projects/'),
-        ('GET', '/tasks/'),
-        ('GET', '/users/me/'),
-        ('GET', '/users/1/'),
+        (PROJECT_ITEMS, 'POST', '/project-items/'),
+        (PROJECT_ITEMS, 'GET', '/projects/'),
+        (PROJECT_ITEMS, 'GET', '/issues/'),
+        (PROJECT_ITEMS, 'GET', '/tasks/'),
+        (PROJECT_ITEMS, 'GET', '/users/me/'),
+        (PROJECT_ITEMS, 'GET', '/users/1/'),
+        (ISSUES, 'POST', '/issues/'),
+        (ISSUES, 'PATCH', '/issues/{issue}/'),
+        (ISSUES, 'DELETE', '/issues/{issue}/'),
+        (ISSUES, 'POST', '/issues/ready/claim/'),
+        (ISSUES, 'POST', '/issues/{issue}/claim/'),
+        (ISSUES, 'POST', '/issues/{issue}/comments/'),
+        (ISSUES, 'GET', '/issues/{issue}/comments/'),
+        (ISSUES, 'GET', '/issues/vocabulary/'),
+        (ISSUES, 'GET', '/issues/labels/'),
+        (ISSUES, 'GET', '/project-items/'),
     ],
-    ids=['write-on-a-scoped-router', 'unlisted-read-on-a-scoped-router', 'unscoped-router', 'current-user', 'user-or-none'],
+    ids=[
+        'project-items-write-on-a-scoped-router',
+        'project-items-unlisted-read-on-a-scoped-router',
+        'project-items-another-scopes-route',
+        'project-items-unscoped-router',
+        'project-items-current-user',
+        'project-items-user-or-none',
+        'issues-create',
+        'issues-update',
+        'issues-delete',
+        'issues-claim-next',
+        'issues-claim-one',
+        'issues-comment',
+        'issues-unlisted-read-on-a-scoped-router',
+        'issues-vocabulary',
+        'issues-labels-router',
+        'issues-another-scopes-route',
+    ],
 )
-def test_a_scoped_client_is_refused_off_its_scopes(as_caller, method, url):
-    response = as_caller.caller(CLIENT).request(method, url, json={'title': 'written by a scoped client'})
+def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
+    response = as_caller.caller(scoped(scope)).request(method, as_caller.url(url), json={'title': 'written by a scoped client'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
     assert Refusal.OUTSIDE_CLIENT_SCOPES in response.json()['detail']
-    assert 'they reach only GET /project-items/, ' in response.json()['detail']
+    assert f'they reach only {REACHES[scope]}' in response.json()['detail']
 
 
-@pytest.mark.parametrize(('method', 'url'), [('GET', '/tasks/'), ('PATCH', '/project-items/{item}/')])
-def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, method, url):
+@pytest.mark.parametrize(
+    ('scope', 'method', 'url'),
+    [(PROJECT_ITEMS, 'GET', '/tasks/'), (PROJECT_ITEMS, 'PATCH', '/project-items/{item}/'), (ISSUES, 'PATCH', '/issues/{issue}/')],
+)
+def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope, method, url):
     """The header strategy resolves that account, so without the refusal the request runs as it."""
-    client = as_caller.caller(CLIENT)
-    response = client.request(method, url.format(item=as_caller.item.id), headers=FORGED_HEADERS, json={'title': 'renamed'})
+    client = as_caller.caller(scoped(scope))
+    response = client.request(method, as_caller.url(url), headers=FORGED_HEADERS, json={'title': 'renamed'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
 
 

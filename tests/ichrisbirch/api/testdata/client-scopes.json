@@ -1,4 +1,9 @@
 {
+  "icb.issues.read": [
+    "GET /issues/",
+    "GET /issues/ready/",
+    "GET /issues/{id}/"
+  ],
   "icb.project-items.read": [
     "GET /project-items/",
     "GET /project-items/blocked/",
