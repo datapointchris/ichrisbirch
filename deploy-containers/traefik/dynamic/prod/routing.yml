@@ -10,10 +10,12 @@
 http:
   routers:
     # Direct API access (for clients using Personal API Keys / JWT)
+    # No ForwardAuth runs on this host, so any Remote-* header came from the client.
     api:
       rule: "Host(`api.ichrisbirch.com`)"
       service: api
       middlewares:
+        - strip-authelia-identity-headers@file
         - cors-prod@file
         - security-headers-prod@file
         - rate-limit-prod@file
@@ -22,7 +24,9 @@ http:
 
     # Same-origin API proxy for Vue frontend
     # Requests to ichrisbirch.com/api/* get Remote-User headers from Authelia,
-    # then the /api prefix is stripped before reaching FastAPI.
+    # then the /api prefix is stripped before reaching FastAPI. This is the one
+    # router that keeps Remote-* headers. The edge sends a bearer request past
+    # ForwardAuth, and the API ignores Remote-* beside an Authorization header.
     api-proxy:
       rule: "Host(`ichrisbirch.com`) && PathPrefix(`/api`)"
       service: api
@@ -40,6 +44,7 @@ http:
       service: vue
       priority: 100
       middlewares:
+        - strip-authelia-identity-headers@file
         - cors-prod@file
         - security-headers-prod@file
         - rate-limit-prod@file
@@ -52,6 +57,7 @@ http:
       service: vue
       priority: 100
       middlewares:
+        - strip-authelia-identity-headers@file
         - cors-prod@file
         - security-headers-prod@file
         - rate-limit-prod@file

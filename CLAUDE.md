@@ -60,6 +60,8 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 
 **Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
 
+**`Remote-*` headers are trusted only through `api-proxy`.** The header strategy ignores them on any request carrying `Authorization`, and the prod Traefik blanks them on every other router with `strip-authelia-identity-headers`. A new prod router takes that middleware unless ForwardAuth runs in front of it. `docs/authentication-architecture.md` gives the two bypasses this closes.
+
 **FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + Personal API Keys + local JWT tokens (lifetimes in `AuthSettings`). Protected routes use `Depends(auth.get_current_user)`, and a router with a route in `SCOPE_ROUTES` uses `get_current_user_or_scoped_client`. `tests/conftest.py` overrides each by function identity. An override reaches a `Depends` on that function and not a direct call to it, so `get_current_user_or_scoped_client`, which calls `get_current_user` directly, needs its own line there.
 
 ### Configuration & Secrets

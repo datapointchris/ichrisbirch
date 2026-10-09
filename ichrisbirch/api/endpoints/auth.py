@@ -158,10 +158,18 @@ def authenticate_with_authelia_headers(
     and Remote-Email headers into the proxied request. This reads those headers and
     resolves to a local user.
 
+    A request carrying an `Authorization` header is never read here. The edge sends any bearer
+    request to ichrisbirch.com past ForwardAuth, so on such a request these headers came from the
+    client. A token no other strategy accepts would otherwise fall through to them.
+
     Returns the user's alternative_id (as string) if valid, None otherwise.
     """
     remote_user = request.headers.get('Remote-User')
     remote_email = request.headers.get('Remote-Email')
+    if 'Authorization' in request.headers:
+        if remote_user or remote_email:
+            logger.warning('authelia_headers_beside_authorization', remote_user=remote_user, remote_email=remote_email)
+        return None
     if not remote_user or not remote_email:
         return None
 

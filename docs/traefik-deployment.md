@@ -105,6 +105,11 @@ CORS and security headers are in **separate middlewares** to prevent chaining co
 | Security Headers | `dev-security` | `security-headers-test` | `security-headers-prod` |
 | Auth Simulation | `dev-authelia-sim` | `test-authelia-sim` | (Authelia ForwardAuth) |
 | Rate Limiting | (none) | `rate-limit-test` | `rate-limit-prod` |
+| Identity Header Strip | (none) | (none) | `strip-authelia-identity-headers` |
+
+In prod every router except `api-proxy` blanks `Remote-User`, `Remote-Email`, `Remote-Name` and `Remote-Groups`.
+ForwardAuth runs in front of `api-proxy` alone, so on any other router those headers came from the client.
+A new prod router takes `strip-authelia-identity-headers` unless ForwardAuth runs in front of it.
 
 ### Network Architecture
 

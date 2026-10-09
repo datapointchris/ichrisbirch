@@ -38,6 +38,27 @@ A token that fails any check answers one opaque 401 and never falls through to
 a weaker strategy. Otherwise a junk token sent beside a forged `Remote-User`
 header would be ignored, and the request would run as that header's user.
 
+## Remote-User is read only where ForwardAuth set it
+
+The edge runs ForwardAuth on `ichrisbirch.com` alone, and two kinds of request
+reach the API without it. `api.ichrisbirch.com` skips ForwardAuth entirely. The
+`ichrisbirch-bearer` router carries any `ichrisbirch.com` request holding
+`Authorization: Bearer` past it. On either, a `Remote-User` header came from the
+client.
+
+Each is closed in this repo, whatever the edge does:
+
+- The prod Traefik blanks `Remote-User`, `Remote-Email`, `Remote-Name` and
+  `Remote-Groups` on every router except `api-proxy`.
+- The header strategy returns None for any request carrying an `Authorization`
+  header, whatever that header holds.
+
+So a bearer token no strategy accepts answers 401 rather than resolving the
+headers. A valid one runs as its own user, even beside an admin's headers. The
+header strategy outranks a personal API key and a local JWT, so without the
+second rule either credential would run as the account the headers named.
+`tests/ichrisbirch/api/test_authelia_headers.py` holds both cases.
+
 ## The client_id prefix decides whether a token is a person or a scoped client
 
 `icb-cli-<machine>` is a person. The token must carry a non-empty `sub`, and it
