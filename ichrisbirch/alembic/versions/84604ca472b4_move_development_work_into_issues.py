@@ -32,8 +32,8 @@ restore them. Each left an initiative or an issue behind, so the downgrade
 refuses while either table holds a row. With both empty there is nothing to
 undo, and the downgrade only moves the revision back.
 
-Revision ID: d9e0f1a2b3c4
-Revises: c8d9e0f1a2b3
+Revision ID: 84604ca472b4
+Revises: d9e0f1a2b3c4
 Create Date: 2026-10-08
 
 """
@@ -41,8 +41,8 @@ Create Date: 2026-10-08
 import sqlalchemy as sa
 from alembic import op
 
-revision = 'd9e0f1a2b3c4'
-down_revision = 'c8d9e0f1a2b3'
+revision = '84604ca472b4'
+down_revision = 'd9e0f1a2b3c4'
 branch_labels = None
 depends_on = None
 

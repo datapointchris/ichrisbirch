@@ -15,6 +15,8 @@ alembic upgrade head
 
 For data migrations (INSERT, UPDATE, type conversions), use `alembic revision -m '...'` without `--autogenerate` and write the migration by hand.
 
+The revision ID is the one `alembic revision` picks at random. Never write one by hand, and never continue the sliding sequence many files here carry (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`, ...). Two branches cut from the same head continue it to the same ID. A database already at that ID then reads the second migration as applied and skips it. `tests/ichrisbirch/database/test_migration_revision_ids.py` fails when two files share an ID.
+
 ## Squashing Migrations
 
 When migration history gets too long or messy, squash into a single baseline.

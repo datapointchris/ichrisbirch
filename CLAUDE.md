@@ -116,6 +116,7 @@ The Claude Code CLI that `claude-agent-sdk` starts inherits the API's whole decr
 
 - Pydantic schemas: `*Create` (POST), base (GET), `*Update` (PATCH), `ConfigDict(from_attributes=True)`. Every `*Update` field may be omitted. A field over a NOT NULL column is written `NotNull[T] = None` (`schemas/not_null.py`), so an explicit null answers 422 rather than reaching the column as a 500. `test_update_schemas_refuse_null.py` walks every `*Update` against its model and fails on one that lets a null through.
 - Migrations: Alembic (`ichrisbirch/alembic/`). A migration creates any schema it writes into, as `e1f2a3b4c5d6_add_coffee_tables` does, because nothing creates schemas ahead of alembic. pytest's session setup migrates the test database to head.
+- **A revision ID comes from `alembic revision`, never by hand.** Many files carry a hand-written sliding sequence (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`), and two branches continuing it from one head pick the same ID. Production, already at that ID, then skips the second migration. `docs/alembic.md` has the rest.
 
 ## Testing
 

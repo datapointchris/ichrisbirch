@@ -6,7 +6,7 @@ column default reaches only a writer naming no kind. A project created through
 the release still serving while this runs gets that release's `build`.
 
 Revision ID: e0f1a2b3c4d5
-Revises: d9e0f1a2b3c4
+Revises: 84604ca472b4
 Create Date: 2026-10-08
 
 """
@@ -14,7 +14,7 @@ Create Date: 2026-10-08
 from alembic import op
 
 revision = 'e0f1a2b3c4d5'
-down_revision = 'd9e0f1a2b3c4'
+down_revision = '84604ca472b4'
 branch_labels = None
 depends_on = None
 
