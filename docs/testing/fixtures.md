@@ -91,7 +91,7 @@ Module fixtures run once per test module:
 
 - **Scope**: Session
 - **Description**: Cleans all tables via TRUNCATE at session start, preserving schema so the API container's connection pool stays valid
-- **Implementation**: Truncates every table with `truncate_all_tables()`, then re-inserts the rows the app cannot run without. The fixture body lists them.
+- **Implementation**: Truncates every table with `truncate_all_tables()`, then re-inserts the rows the app cannot run without. The fixture body in `tests/conftest.py` lists them.
 
 ### `insert_users_for_login`
 

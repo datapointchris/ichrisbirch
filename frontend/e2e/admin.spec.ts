@@ -46,7 +46,7 @@ test.describe('Admin Pages', () => {
     const open = page.getByTestId('admin-signups-toggle-option-open')
     const closed = page.getByTestId('admin-signups-toggle-option-closed')
 
-    // The pressed option follows the server's answer, so each reload starts after the write landed.
+    // `aria-checked` turns only once the PATCH answers, so asserting it first keeps `reload()` from racing the write.
     await page.goto('/admin/users')
     await open.click()
     await expect(open).toHaveAttribute('aria-checked', 'true')

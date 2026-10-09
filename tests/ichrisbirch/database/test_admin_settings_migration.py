@@ -1,4 +1,8 @@
-"""`admin.settings` created and seeded by its migration, run through alembic."""
+"""The session's truncate re-seeds `admin.settings` through `insert_admin_settings`.
+
+So only a downgrade and an upgrade reach the seed in migration `e8d57aa23bca`,
+which is the one a production database gets.
+"""
 
 import pytest
 import sqlalchemy as sa

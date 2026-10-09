@@ -50,7 +50,7 @@ When the session ends, `teardown()` leaves the containers running, so the next s
 
 ### `truncate_tables` resets the data
 
-It truncates every table, then re-inserts the rows the app cannot run without. `truncate_tables` in `tests/conftest.py` lists them. `insert_users_for_login` then adds the login users that tests authenticate as, from `get_test_login_users` in `tests/utils/database.py`. Truncation preserves the schema, so the API container's connection pool stays valid.
+It truncates every table, then re-inserts the rows the app cannot run without. Its body in `tests/conftest.py` lists them. `insert_users_for_login` then adds the login users that tests authenticate as, from `get_test_login_users` in `tests/utils/database.py`. Truncation preserves the schema, so the API container's connection pool stays valid.
 
 ## Running Tests Locally
 
@@ -71,7 +71,7 @@ It truncates every table, then re-inserts the rows the app cannot run without. `
 
 | Operation | What it does | When |
 | --- | --- | --- |
-| **Initialize** (`db init`) | Migrate to head, create the jobstore table, insert default users. Idempotent. | End of every `testing start`, `testing restart` and `testing rebuild`, and every pytest session |
+| **Initialize** (`db init`) | Migrate to head, create the jobstore table, insert the admin settings row and the default users. Idempotent. | End of every `testing start`, `testing restart` and `testing rebuild`, and every pytest session |
 | **Reset** (`db reset`) | Drop every schema, then initialize from scratch | Manual only — a corrupt schema, or a migration edited after it was applied |
 | **Truncate** (`truncate_tables` fixture) | TRUNCATE all tables, re-insert the rows the app cannot run without | Start of every pytest session |
 

@@ -34,7 +34,7 @@ def test_a_second_initialization_changes_no_schema_revision_or_user():
 
 
 def test_initialization_seeds_signups_closed_into_an_empty_settings_table():
-    """`create_all` leaves `admin.settings` empty, and every read of it expects one row."""
+    """`create_all` leaves `admin.settings` empty, where `POST /users/` and both `/admin/settings/` routes answer 500."""
     engine = get_db_engine(test_settings)
     with engine.begin() as conn:
         conn.execute(sa.text('DELETE FROM admin.settings'))

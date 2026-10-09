@@ -154,7 +154,7 @@ def update_admin_settings(
     session: DbSession,
     user: models.User = Depends(get_admin_user),
 ):
-    """Change the settings an admin owns. The next request each one governs reads the new value."""
+    """A changed setting reaches the next request that reads it, with no restart."""
     admin_settings = session.scalars(select(models.AdminSettings)).one()
     changes = update.model_dump(exclude_unset=True)
     for attr, value in changes.items():

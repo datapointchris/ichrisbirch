@@ -8,7 +8,7 @@ from ichrisbirch.database.base import Base
 
 
 class AdminSettings(Base):
-    """The one row of settings an admin changes without a redeploy, read on every request each one governs."""
+    """The one row of settings an admin changes without a redeploy. Each is read on every request it governs."""
 
     __tablename__ = 'settings'
     __table_args__ = (CheckConstraint('id = 1', name='single_row'), {'schema': 'admin'})

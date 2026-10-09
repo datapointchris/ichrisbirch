@@ -149,7 +149,10 @@ def create(
     session: DbSession,
     caller: models.User | None = Depends(get_current_user_or_none),
 ):
-    """Create an account. While signups are closed, only an admin may."""
+    """While signups are open, this takes any caller, including one with no login.
+
+    No model is scoped per user, so that account reaches the same tasks, issues and books as the admin.
+    """
     caller_is_admin = caller is not None and caller.is_admin
     if not caller_is_admin and not session.scalars(select(models.AdminSettings.is_signup_open)).one():
         logger.warning('signup_refused', reason=Refusal.SIGNUPS_CLOSED)

@@ -45,9 +45,10 @@ The page also shows the run history the scheduler records in the database.
 That route answers 403 to `is_admin` from anyone but an admin or the internal service, so a user cannot promote themselves.
 
 Above the list, the Signups toggle decides who may create an account through `POST /users/`.
-While closed, only an admin may, and every other caller gets 400 with `Refusal.SIGNUPS_CLOSED`.
+While closed, only an admin may.
+Every other caller gets 400 with `Refusal.SIGNUPS_CLOSED`.
 While open, anyone may, including a caller with no login.
-No model is scoped per user, so an account created while open can read and write every row.
+No model is scoped per user, so an account created while open reads and writes the same tasks, issues and books the admin does.
 
 The toggle writes `is_signup_open` in `admin.settings` through `PATCH /admin/settings/`.
 That table is one row of settings an admin changes without a redeploy.
@@ -57,8 +58,8 @@ The migration that creates the row seeds it closed.
 
 ## Config
 
-`/admin/config` shows every section of the environment's configuration, which the containers read at startup.
-It is read-only, unlike `admin.settings`.
+`/admin/config` shows every section of the environment's configuration.
+The containers read it at startup, so changing a value takes a redeploy, unlike a value in `admin.settings`.
 A value is masked when its field name contains `key`, `secret`, `password` or `token`.
 Masking goes by the name alone, so a secret stored under any other name is shown.
 
