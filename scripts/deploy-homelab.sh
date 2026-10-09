@@ -339,7 +339,7 @@ run_migrations() {
 
   local migration_output
   if migration_output=$(docker exec -w /app/ichrisbirch "icb-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
-    log_info "migrations_completed" "color" "$DEPLOY_COLOR" | tee -a "$LOG_FILE"
+    log_info "migrations_completed" "color" "$DEPLOY_COLOR" "output" "$migration_output" | tee -a "$LOG_FILE"
   else
     FAILURE_OUTPUT="$migration_output"
     log_error "migrations_failed" "color" "$DEPLOY_COLOR" "output" "$migration_output" | tee -a "$LOG_FILE"

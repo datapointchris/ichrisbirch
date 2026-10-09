@@ -10,6 +10,7 @@ from sqlalchemy import Identity
 from sqlalchemy import Integer
 from sqlalchemy import Text
 from sqlalchemy import event
+from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -198,23 +199,13 @@ class User(Base):
 
     @staticmethod
     def _hash_password(mapper, connection, target):
-        """The mapper and connection parameters are part of SQLAlchemy's event API. a special kind of function that gets called when a
-        certain event happens. In This method is being used as a case, the event is this 'before_insert' on the User listener function,
-        which is model.
+        """Hash a password assigned since the last flush, on insert and on update alike.
 
-        mapper:
-            This is the Mapper that is handling the operation.
-            In SQLAlchemy, a Mapper is the component that links a Python class (in this case, User) to a database table.
-            It's responsible for loading objects from the database and saving them back.
-
-        connection:
-            This is the Connection being used to communicate with the database.
-            It provides a source of database connectivity and behavior.
-
-        target:
-            This is the specific instance of the mapped class (in this case, User) that the event is being performed on.
+        A password is set by assigning the plaintext, and this listener is the one place it is
+        hashed. A flush that leaves the password alone carries the stored hash unchanged.
         """
-        target.password = generate_password_hash(target.password)
+        if inspect(target).attrs.password.history.has_changes():
+            target.password = generate_password_hash(target.password)
 
     def _validate_preferences(self, updated_preferences: dict, preferences=DEFAULT_USER_PREFERENCES):
         """Validate if the preference exists and the value is valid."""
@@ -345,10 +336,6 @@ class User(Base):
         """Set alternative_id as 64-bit integer."""
         self.alternative_id = self.generate_63_bit_int()
 
-    def set_password(self, password):
-        """Create hashed password."""
-        self.password = generate_password_hash(password)
-
     def check_password(self, password):
         """Check hashed password."""
         return check_password_hash(self.password, password)
@@ -357,7 +344,5 @@ class User(Base):
         return f'User(name={self.name}, email={self.email}, created_on={self.created_on}, last_login={self.last_login})'
 
 
-# Associate the listener function with User model, before_insert event
-# This will hash the user's password before inserting into the database,
-# but not re-hash it any other time, perfect.
 event.listen(User, 'before_insert', User._hash_password)
+event.listen(User, 'before_update', User._hash_password)

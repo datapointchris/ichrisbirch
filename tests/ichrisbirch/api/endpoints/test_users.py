@@ -228,13 +228,38 @@ def test_read_one_user_by_alt_id(users_logged_in_context):
     assert me_user == alt_user
 
 
-def test_user_set_password():
-    user = models.User(**NEW_OBJ.model_dump())
-    # should not be hashed yet, hasn't been inserted in db
-    assert user.password == NEW_OBJ.password
-    user.set_password(user.password)  # hash and re-assign to self
-    assert user.password != NEW_OBJ.password
-    assert user.check_password(NEW_OBJ.password)
+def _log_in(client, email: str, password: str):
+    return client.post('/auth/token/', data={'username': email, 'password': password})
+
+
+def test_a_patched_password_is_stored_hashed_and_logs_in(users_test_context, test_regular_user):
+    client, session, _ = users_test_context
+    old_password, new_password = TEST_USERS[0]['password'], 'a-password-set-through-patch'
+    token = _log_in(client, test_regular_user.email, old_password).json()['access_token']
+
+    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': new_password}, headers=make_jwt_header(token))
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+    session.refresh(test_regular_user)
+    assert test_regular_user.password != new_password
+    assert test_regular_user.check_password(new_password)
+    assert _log_in(client, test_regular_user.email, new_password).status_code == status.HTTP_201_CREATED
+    assert _log_in(client, test_regular_user.email, old_password).status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_an_update_that_leaves_the_password_alone_keeps_its_hash(users_test_context, test_regular_user):
+    client, session, _ = users_test_context
+    password = TEST_USERS[0]['password']
+    stored_hash = test_regular_user.password
+    token = _log_in(client, test_regular_user.email, password).json()['access_token']
+
+    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'name': 'Renamed User'}, headers=make_jwt_header(token))
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+
+    session.refresh(test_regular_user)
+    assert test_regular_user.name == 'Renamed User'
+    assert test_regular_user.password == stored_hash
+    assert _log_in(client, test_regular_user.email, password).status_code == status.HTTP_201_CREATED
 
 
 def test_create_user_password_hashed(users_logged_in_context):
