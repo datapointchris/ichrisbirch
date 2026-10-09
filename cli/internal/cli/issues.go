@@ -42,8 +42,10 @@ const (
 
 func newIssuesCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "issues",
-		Short: "Track development work: bugs, features, chores, and the decisions they wait on",
+		Use: "issues",
+		// Top-level words that mean an issue: `items`, or a verb typed with no noun.
+		SuggestFor: []string{"items", "show", "search"},
+		Short:      "Track development work: bugs, features, chores, and the decisions they wait on",
 		Long: "Development work, mostly filed and taken by agents. An issue needs no project:\n" +
 			"its repo, labels and dependencies place it, and an optional initiative groups\n" +
 			"the issues that ship together. Personal projects stay in `icb projects`.\n" +

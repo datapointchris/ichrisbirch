@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
@@ -49,6 +50,16 @@ func requireSubcommand(cmd *cobra.Command, args []string) error {
 	return goclikit.UnknownCommand(cmd, args[0])
 }
 
+// unknownWord refuses a word that names no subcommand of cmd, with cobra's own
+// suggestions. No help pointer: goclikit.Execute appends one to a flag error.
+func unknownWord(cmd *cobra.Command, word string) error {
+	refusal := fmt.Sprintf("unknown command %q for %q", word, cmd.CommandPath())
+	if names := cmd.SuggestionsFor(word); len(names) > 0 {
+		refusal += "\n\nDid you mean this?\n\t" + strings.Join(names, "\n\t")
+	}
+	return errors.New(refusal)
+}
+
 // usageArgs wraps a positional-args validator so a violation (wrong count, etc.)
 // surfaces as a usageError → exit 2, matching how flag errors are classified.
 // Cobra's built-in validators return plain errors that would otherwise exit 1.
@@ -90,7 +101,14 @@ func NewRootCommand() *cobra.Command {
 	// goclikit.Execute composes with this rather than replacing it, and keeping
 	// it here is what makes the tree self-classifying for anything driving
 	// NewRootCommand directly.
-	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error { return usageError{err} })
+	// At the root, words before the bad flag mean no command matched, so the
+	// first of them is the mistake and is the one answered.
+	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
+		if words := cmd.Flags().Args(); !cmd.HasParent() && len(words) > 0 {
+			return usageError{unknownWord(cmd, words[0])}
+		}
+		return usageError{err}
+	})
 
 	root.PersistentFlags().BoolVar(&noInput, "no-input", false,
 		"Never prompt; fail naming the flag that would have answered")

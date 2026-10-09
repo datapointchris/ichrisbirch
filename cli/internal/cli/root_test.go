@@ -38,8 +38,8 @@ type wrapped struct{ err error }
 func (w wrapped) Error() string { return w.err.Error() }
 func (w wrapped) Unwrap() error { return w.err }
 
-// A word one slip from a subcommand is answered with the subcommand, at the
-// root and inside a group alike.
+// A word one slip from a subcommand, or one its SuggestFor lists, is answered
+// with the subcommand, at the root and inside a group alike.
 func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 	for _, c := range []struct {
 		args  []string
@@ -47,6 +47,9 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 	}{
 		{[]string{"tasjs"}, "tasks"},
 		{[]string{"tasks", "lisy"}, "list"},
+		{[]string{"items", "show", "848"}, "issues"},
+		{[]string{"show", "848", "--json"}, "issues"},
+		{[]string{"search", "golang"}, "issues"},
 	} {
 		root := NewRootCommand()
 		root.SetOut(&bytes.Buffer{})
