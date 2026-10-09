@@ -11,6 +11,8 @@ import type {
   User,
   EnvironmentConfigSection,
   SmokeTestReport,
+  AdminSettings,
+  AdminSettingsUpdate,
 } from '@/api/client'
 
 const logger = createLogger('AdminStore')
@@ -35,6 +37,10 @@ export const useAdminStore = defineStore('admin', () => {
   // Users
   const users = ref<User[]>([])
   const usersLoading = ref(false)
+
+  // Settings
+  const settings = ref<AdminSettings | null>(null)
+  const settingsLoading = ref(false)
 
   // Smoke tests
   const smokeReport = ref<SmokeTestReport | null>(null)
@@ -183,6 +189,41 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  // --- Settings ---
+
+  async function fetchSettings() {
+    settingsLoading.value = true
+    error.value = null
+    try {
+      const response = await api.get('/admin/settings/')
+      settings.value = response.data
+      logger.info('admin_settings_fetched', { ...settings.value })
+    } catch (e) {
+      error.value =
+        e instanceof ApiError
+          ? e
+          : new ApiError({ message: 'Failed to fetch admin settings', detail: 'Failed to fetch admin settings', status: 500 })
+      logger.error('admin_settings_fetch_failed', { error: error.value.detail })
+    } finally {
+      settingsLoading.value = false
+    }
+  }
+
+  async function updateSettings(update: AdminSettingsUpdate) {
+    try {
+      const response = await api.patch('/admin/settings/', update)
+      settings.value = response.data
+      logger.info('admin_settings_updated', { ...update })
+    } catch (e) {
+      error.value =
+        e instanceof ApiError
+          ? e
+          : new ApiError({ message: 'Failed to update admin settings', detail: 'Failed to update admin settings', status: 500 })
+      logger.error('admin_settings_update_failed', { error: error.value.detail })
+      throw e
+    }
+  }
+
   // --- Config ---
 
   async function fetchConfig() {
@@ -235,6 +276,8 @@ export const useAdminStore = defineStore('admin', () => {
     jobHistoryLoading,
     users,
     usersLoading,
+    settings,
+    settingsLoading,
     config,
     configLoading,
     fetchSystemHealth,
@@ -246,6 +289,8 @@ export const useAdminStore = defineStore('admin', () => {
     fetchJobHistory,
     fetchUsers,
     updateUserAdmin,
+    fetchSettings,
+    updateSettings,
     fetchConfig,
     smokeReport,
     smokeTestsRunning,

@@ -1,4 +1,6 @@
 from ichrisbirch.schemas import admin as admin
+from ichrisbirch.schemas.admin_settings import AdminSettings
+from ichrisbirch.schemas.admin_settings import AdminSettingsUpdate
 from ichrisbirch.schemas.article import Article
 from ichrisbirch.schemas.article import ArticleBulkImport
 from ichrisbirch.schemas.article import ArticleCreate
@@ -143,6 +145,8 @@ from ichrisbirch.schemas.user import UserUpdate
 
 __all__ = [
     'admin',
+    'AdminSettings',
+    'AdminSettingsUpdate',
     'Article',
     'ArticleBulkImport',
     'ArticleCreate',

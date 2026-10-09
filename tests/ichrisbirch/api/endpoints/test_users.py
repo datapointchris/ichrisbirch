@@ -43,6 +43,12 @@ NEW_OBJ = schemas.UserCreate(
 )
 
 
+def open_signups(session):
+    """Open signups inside the test's transaction, which its rollback closes again."""
+    session.scalars(select(models.AdminSettings)).one().is_signup_open = True
+    session.flush()
+
+
 def create_test_users():
     """Create standard test users using factories.
 
@@ -149,6 +155,7 @@ def test_create(txn_multi_client):
     """Test user creation using multi-client fixture to avoid transaction deadlock."""
     ctx = txn_multi_client
     create_test_users()  # Use factory instead of insert_test_data_transactional
+    open_signups(ctx['session'])
 
     client = ctx['client_logged_in']
     admin_client = ctx['client_admin']
@@ -162,6 +169,60 @@ def test_create(txn_multi_client):
     all_users = admin_client.get(ENDPOINT)
     assert all_users.status_code == status.HTTP_200_OK, show_status_and_response(all_users)
     crud_tests._verify_length(all_users, EXPECTED_LENGTH + 1)
+
+
+def test_create_is_refused_while_signups_are_closed(txn_api):
+    client, session = txn_api
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.SIGNUPS_CLOSED
+    assert session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).first() is None
+
+
+def test_a_logged_in_non_admin_is_refused_while_signups_are_closed(users_logged_in_context):
+    client, _, _ = users_logged_in_context
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.SIGNUPS_CLOSED
+
+
+def test_an_admin_creates_an_account_while_signups_are_closed(users_admin_context):
+    client, session, _ = users_admin_context
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()
+
+
+def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
+    client, admin_client = txn_multi_client['client'], txn_multi_client['client_admin']
+    assert client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json')).status_code == status.HTTP_400_BAD_REQUEST
+
+    opened = admin_client.patch('/admin/settings/', json={'is_signup_open': True})
+    assert opened.status_code == status.HTTP_200_OK, show_status_and_response(opened)
+
+    created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+
+def test_create_refuses_an_email_another_account_holds(users_admin_context):
+    client, _, _ = users_admin_context
+    taken = NEW_OBJ.model_copy(update={'email': TEST_USERS[0]['email']})
+    response = client.post(ENDPOINT, json=taken.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+
+
+def test_update_refuses_an_email_another_account_holds(users_admin_context):
+    client, _, users = users_admin_context
+    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[0]['email']})
+    assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+
+
+def test_update_accepts_an_account_resending_its_own_email(users_admin_context):
+    client, _, users = users_admin_context
+    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[1]['email']})
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_delete(users_admin_context):
@@ -185,6 +246,7 @@ def test_patch_user(txn_multi_client):
     """Test that a logged-in user can update another user only if they are admin."""
     ctx = txn_multi_client
     create_test_users()  # Use factory instead of insert_test_data_transactional
+    open_signups(ctx['session'])
 
     client = ctx['client_logged_in']
     admin_client = ctx['client_admin']
@@ -264,6 +326,7 @@ def test_an_update_that_leaves_the_password_alone_keeps_its_hash(users_test_cont
 
 def test_create_user_password_hashed(users_logged_in_context):
     client, session, _ = users_logged_in_context
+    open_signups(session)
     created_response = client.post('/users/', json=NEW_OBJ.model_dump(mode='json'))
     assert created_response.status_code == status.HTTP_201_CREATED, show_status_and_response(created_response)
     stored = session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()

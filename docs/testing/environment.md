@@ -38,7 +38,7 @@ It calls `DockerComposeTestEnvironment.setup()`:
 
 1. **In CI**, it verifies that the containers the workflow started are running.
 2. **Locally**, it reuses running `postgres`, `redis` and `api` containers, or starts them with `docker compose up -d`. `verify_test_services()` then waits for Postgres and Redis to accept a socket connection and for the API's `/health` to return 200.
-3. **In both**, it runs `full_initialization()` from `ichrisbirch/database/initialization.py`. That migrates the database to head, creates the APScheduler jobstore table, and inserts the default users.
+3. **In both**, it runs `full_initialization()` from `ichrisbirch/database/initialization.py`. That migrates the database to head, creates the APScheduler jobstore table, and inserts the admin settings row and the default users.
 
 Step 3 runs on every session. The test Postgres keeps its data on tmpfs, so a container that was stopped or recreated holds an empty database while every health check passes. Initialization is idempotent, so a database already at head passes through unchanged, and a new migration reaches pytest without restarting anything.
 
@@ -50,7 +50,7 @@ When the session ends, `teardown()` leaves the containers running, so the next s
 
 ### `truncate_tables` resets the data
 
-It truncates every table, then inserts the lookup data and the default users. `insert_users_for_login` then adds the login users that tests authenticate as, from `get_test_login_users` in `tests/utils/database.py`. Truncation preserves the schema, so the API container's connection pool stays valid.
+It truncates every table, then re-inserts the rows the app cannot run without. Its body in `tests/conftest.py` lists them. `insert_users_for_login` then adds the login users that tests authenticate as, from `get_test_login_users` in `tests/utils/database.py`. Truncation preserves the schema, so the API container's connection pool stays valid.
 
 ## Running Tests Locally
 
@@ -71,9 +71,9 @@ It truncates every table, then inserts the lookup data and the default users. `i
 
 | Operation | What it does | When |
 | --- | --- | --- |
-| **Initialize** (`db init`) | Migrate to head, create the jobstore table, insert default users. Idempotent. | End of every `testing start`, `testing restart` and `testing rebuild`, and every pytest session |
+| **Initialize** (`db init`) | Migrate to head, create the jobstore table, insert the admin settings row and the default users. Idempotent. | End of every `testing start`, `testing restart` and `testing rebuild`, and every pytest session |
 | **Reset** (`db reset`) | Drop every schema, then initialize from scratch | Manual only — a corrupt schema, or a migration edited after it was applied |
-| **Truncate** (`truncate_tables` fixture) | TRUNCATE all tables, re-insert lookup data and default users | Start of every pytest session |
+| **Truncate** (`truncate_tables` fixture) | TRUNCATE all tables, re-insert the rows the app cannot run without | Start of every pytest session |
 
 The migrations create every schema they write into, so a database needs nothing created ahead of `alembic upgrade head`.
 
@@ -162,7 +162,7 @@ gh run view <run-id> --log-failed
 | Fixture | Purpose |
 | --- | --- |
 | `setup_test_environment` | Start or reuse containers, initialize the database |
-| `truncate_tables` | Truncate every table, re-insert lookup data and default users |
+| `truncate_tables` | Truncate every table, re-insert the rows the app cannot run without |
 | `insert_users_for_login` | Create test login users |
 
 ### Module-Scoped (run once per test file)

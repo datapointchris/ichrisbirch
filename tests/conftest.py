@@ -27,6 +27,7 @@ from ichrisbirch import models
 from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
 from ichrisbirch.config import get_settings
+from ichrisbirch.database.initialization import insert_admin_settings
 from ichrisbirch.database.initialization import insert_default_users
 from ichrisbirch.database.initialization import insert_lookup_table_data
 from ichrisbirch.database.initialization import truncate_all_tables
@@ -190,6 +191,7 @@ def truncate_tables(setup_test_environment, request):
                 logger.info(f'Worker {worker_id}: Cleaning tables (first to acquire lock)')
                 truncate_all_tables(test_settings)
                 insert_lookup_table_data(test_settings)
+                insert_admin_settings(test_settings)
                 with create_session(test_settings) as session:
                     insert_default_users(session, test_settings)
                 logger.info(f'Worker {worker_id}: Tables cleaned')
@@ -201,6 +203,7 @@ def truncate_tables(setup_test_environment, request):
     else:
         truncate_all_tables(test_settings)
         insert_lookup_table_data(test_settings)
+        insert_admin_settings(test_settings)
         with create_session(test_settings) as session:
             insert_default_users(session, test_settings)
         logger.info('cleaned all tables (session scope)')

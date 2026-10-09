@@ -1,10 +1,11 @@
 """Database initialization for all environments.
 
 `full_initialization` migrates a database to head, creates the APScheduler
-jobstore table, and inserts the default users. Every step is idempotent, so it
-runs against a blank database and a database already at head alike: every
-`icbops` start, restart and rebuild runs it, and so does each pytest session.
-A database restored from a backup already carries its schema and users.
+jobstore table, and inserts the admin settings row and the default users.
+Every step is idempotent, so it runs against a blank database and a database
+already at head alike: every `icbops` start, restart and rebuild runs it, and
+so does each pytest session. A database restored from a backup already carries
+its schema and users.
 
 Usage:
     from ichrisbirch.database.initialization import full_initialization
@@ -168,6 +169,20 @@ def insert_lookup_table_data(settings) -> None:
     logger.info('lookup_data_inserted', tables=list(LOOKUP_DATA.keys()))
 
 
+def insert_admin_settings(settings) -> None:
+    """Seed the settings row closed, where `create_all` or the test suite's truncate left none.
+
+    Every read of `admin.settings` expects exactly one row. Migration
+    `e8d57aa23bca` seeds the same values. `ON CONFLICT` keeps an existing row,
+    so a restart does not close signups an admin opened.
+    """
+    engine = get_db_engine(settings)
+    with engine.connect() as conn:
+        result = conn.execute(text('INSERT INTO admin.settings (id, is_signup_open) VALUES (1, false) ON CONFLICT (id) DO NOTHING'))
+        conn.commit()
+    logger.info('admin_settings_seeded', inserted=result.rowcount == 1)
+
+
 def truncate_all_tables(settings) -> None:
     """Truncate all data tables, preserving schema and alembic state."""
     engine = get_db_engine(settings)
@@ -259,6 +274,7 @@ def full_initialization(settings, use_alembic: bool = True) -> None:
     logger.info('db_init_starting', environment=settings.ENVIRONMENT, use_alembic=use_alembic)
 
     create_tables(settings, use_alembic=use_alembic)
+    insert_admin_settings(settings)
     with create_session(settings) as session:
         insert_default_users(session, settings)
 

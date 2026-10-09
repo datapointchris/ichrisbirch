@@ -140,6 +140,31 @@ async def run_smoke_tests_endpoint(
     return await smoke_tests.run_smoke_tests(request.app, settings, user.email)
 
 
+# --- Admin settings ---
+
+
+@router.get('/settings/', response_model=schemas.AdminSettings)
+def get_admin_settings(session: DbSession):
+    return session.scalars(select(models.AdminSettings)).one()
+
+
+@router.patch('/settings/', response_model=schemas.AdminSettings)
+def update_admin_settings(
+    update: schemas.AdminSettingsUpdate,
+    session: DbSession,
+    user: models.User = Depends(get_admin_user),
+):
+    """A changed setting reaches the next request that reads it, with no restart."""
+    admin_settings = session.scalars(select(models.AdminSettings)).one()
+    changes = update.model_dump(exclude_unset=True)
+    for attr, value in changes.items():
+        setattr(admin_settings, attr, value)
+    session.commit()
+    session.refresh(admin_settings)
+    logger.info('admin_settings_updated', user_id=user.id, changes=changes)
+    return admin_settings
+
+
 # --- System health endpoints ---
 
 SENSITIVE_FIELD_KEYWORDS = {'key', 'secret', 'password', 'token'}
