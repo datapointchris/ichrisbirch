@@ -40,7 +40,7 @@ def upgrade() -> None:
         op.f('fk_projects_status_project_statuses'), 'projects', 'project_statuses', ['status'], ['name']
     )
     op.create_check_constraint(
-        'dropped_requires_reason',
+        op.f('ck_projects_`dropped_requires_reason`'),
         'projects',
         "status <> 'dropped' OR status_reason IS NOT NULL",
     )
@@ -70,7 +70,7 @@ def downgrade() -> None:
     op.drop_index('uq_projects_name_active', table_name='projects')
     op.create_unique_constraint(op.f('uq_projects_name'), 'projects', ['name'])
 
-    op.drop_constraint('dropped_requires_reason', 'projects', type_='check')
+    op.drop_constraint(op.f('ck_projects_`dropped_requires_reason`'), 'projects', type_='check')
     op.drop_constraint(op.f('fk_projects_status_project_statuses'), 'projects', type_='foreignkey')
     op.drop_column('projects', 'closed_at')
     op.drop_column('projects', 'status_reason')

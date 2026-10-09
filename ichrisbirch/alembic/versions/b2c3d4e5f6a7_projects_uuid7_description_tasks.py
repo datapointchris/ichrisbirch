@@ -91,7 +91,7 @@ def upgrade() -> None:
             name=op.f('fk_project_item_dependencies_depends_on_id_project_items'),
             ondelete='CASCADE',
         ),
-        sa.CheckConstraint('item_id != depends_on_id', name='no_self_dependency'),
+        sa.CheckConstraint('item_id != depends_on_id', name=op.f('ck_project_item_dependencies_`no_self_dependency`')),
         sa.UniqueConstraint('item_id', 'depends_on_id', name=op.f('uq_project_item_dependencies_item_id')),
     )
     op.create_index('idx_pid_item', 'project_item_dependencies', ['item_id'])
@@ -191,7 +191,7 @@ def downgrade() -> None:
             name=op.f('fk_project_item_dependencies_depends_on_id_project_items'),
             ondelete='CASCADE',
         ),
-        sa.CheckConstraint('item_id != depends_on_id', name='no_self_dependency'),
+        sa.CheckConstraint('item_id != depends_on_id', name=op.f('ck_project_item_dependencies_`no_self_dependency`')),
         sa.UniqueConstraint('item_id', 'depends_on_id', name=op.f('uq_project_item_dependencies_item_id')),
     )
     op.create_index('idx_pid_item', 'project_item_dependencies', ['item_id'])

@@ -17,6 +17,8 @@ For data migrations (INSERT, UPDATE, type conversions), use `alembic revision -m
 
 The revision ID is the one `alembic revision` picks at random. Never write one by hand, and never continue the sliding sequence many files here carry (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`, ...). Two branches cut from the same head continue it to the same ID. A database already at that ID then reads the second migration as applied and skips it. `tests/ichrisbirch/database/test_migration_revision_ids.py` fails when two files share an ID.
 
+Name every constraint with `op.f()`, as in `name=op.f('ck_tasks_window_days_positive')`. Alembic passes a bare name through the naming convention in `ichrisbirch/database/base.py` when the migration runs, not when it was written. A bare name therefore moves whenever the convention does, and a replay builds names production never held. The check constraints created before `464a363261aa` are pinned to the backticked names an earlier convention gave them. Production held those names until that revision renamed them. `tests/ichrisbirch/database/test_check_constraint_names.py` fails when a table's check constraints differ from the names its model renders, which `alembic check` never compares.
+
 ## Squashing Migrations
 
 When migration history gets too long or messy, squash into a single baseline.

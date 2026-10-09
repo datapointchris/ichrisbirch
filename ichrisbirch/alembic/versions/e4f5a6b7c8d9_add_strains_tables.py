@@ -111,7 +111,7 @@ def upgrade() -> None:
         sa.Column('last_tried_date', sa.Date(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 10)', name='rating_range'),
+        sa.CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 10)', name=op.f('ck_strains_`rating_range`')),
         # NULLS NOT DISTINCT so two rows named the same with no breeder collide.
         # Postgres treats nulls as distinct by default, which would let the
         # unknown-breeder case duplicate freely — and that is the common case.

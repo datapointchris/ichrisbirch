@@ -25,7 +25,7 @@ def upgrade() -> None:
         'settings',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('is_signup_open', sa.Boolean(), nullable=False),
-        sa.CheckConstraint('id = 1', name='single_row'),
+        sa.CheckConstraint('id = 1', name=op.f('ck_settings_`single_row`')),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_settings')),
         schema='admin',
     )

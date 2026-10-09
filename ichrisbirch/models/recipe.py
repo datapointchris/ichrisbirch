@@ -170,7 +170,7 @@ class CookingTechniqueCategory(Base):
 
 class CookingTechnique(Base):
     __tablename__ = 'cooking_techniques'
-    __table_args__ = (CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 5)', name='ck_cooking_techniques_rating_range'),)
+    __table_args__ = (CheckConstraint('rating IS NULL OR (rating BETWEEN 1 AND 5)', name='rating_range'),)
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)

@@ -83,9 +83,9 @@ def upgrade() -> None:
         sa.Column('created_ts', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
         sa.Column('closed_ts', sa.DateTime(timezone=True), nullable=True),
         sa.CheckConstraint(
-            "status <> 'dropped' OR status_reason IS NOT NULL", name='initiative_dropped_requires_reason'
+            "status <> 'dropped' OR status_reason IS NOT NULL", name=op.f('ck_initiatives_`initiative_dropped_requires_reason`')
         ),
-        sa.CheckConstraint('priority BETWEEN 0 AND 4', name='initiative_priority_range'),
+        sa.CheckConstraint('priority BETWEEN 0 AND 4', name=op.f('ck_initiatives_`initiative_priority_range`')),
     )
     op.create_index(
         'uq_initiatives_name_active', 'initiatives', ['name'], unique=True, postgresql_where=sa.text("status = 'active'")
@@ -116,25 +116,29 @@ def upgrade() -> None:
         sa.Column('created_ts', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
         sa.Column('updated_ts', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
         sa.Column('closed_ts', sa.DateTime(timezone=True), nullable=True),
-        sa.CheckConstraint('priority BETWEEN 0 AND 4', name='issue_priority_range'),
+        sa.CheckConstraint('priority BETWEEN 0 AND 4', name=op.f('ck_issues_`issue_priority_range`')),
         sa.CheckConstraint(
             "status <> 'canceled' OR status_reason IS NOT NULL OR duplicate_of_id IS NOT NULL",
-            name='issue_canceled_requires_reason',
-        ),
-        sa.CheckConstraint("status_reason IS NULL OR status = 'canceled'", name='issue_reason_only_when_canceled'),
-        sa.CheckConstraint('(claimed_by IS NULL) = (claim_expires_ts IS NULL)', name='issue_claim_is_whole'),
-        sa.CheckConstraint("claimed_by IS NULL OR status = 'in_progress'", name='issue_claim_only_in_progress'),
-        sa.CheckConstraint(
-            "closed_ts IS NULL OR status IN ('completed', 'canceled')", name='issue_closed_ts_only_when_closed'
+            name=op.f('ck_issues_`issue_canceled_requires_reason`'),
         ),
         sa.CheckConstraint(
-            "duplicate_of_id IS NULL OR status = 'canceled'", name='issue_duplicate_only_when_canceled'
+            "status_reason IS NULL OR status = 'canceled'", name=op.f('ck_issues_`issue_reason_only_when_canceled`')
         ),
-        sa.CheckConstraint('parent_id IS NULL OR parent_id <> id', name='issue_not_own_parent'),
+        sa.CheckConstraint('(claimed_by IS NULL) = (claim_expires_ts IS NULL)', name=op.f('ck_issues_`issue_claim_is_whole`')),
+        sa.CheckConstraint("claimed_by IS NULL OR status = 'in_progress'", name=op.f('ck_issues_`issue_claim_only_in_progress`')),
         sa.CheckConstraint(
-            'discovered_from_id IS NULL OR discovered_from_id <> id', name='issue_not_discovered_from_itself'
+            "closed_ts IS NULL OR status IN ('completed', 'canceled')", name=op.f('ck_issues_`issue_closed_ts_only_when_closed`')
         ),
-        sa.CheckConstraint('duplicate_of_id IS NULL OR duplicate_of_id <> id', name='issue_not_duplicate_of_itself'),
+        sa.CheckConstraint(
+            "duplicate_of_id IS NULL OR status = 'canceled'", name=op.f('ck_issues_`issue_duplicate_only_when_canceled`')
+        ),
+        sa.CheckConstraint('parent_id IS NULL OR parent_id <> id', name=op.f('ck_issues_`issue_not_own_parent`')),
+        sa.CheckConstraint(
+            'discovered_from_id IS NULL OR discovered_from_id <> id', name=op.f('ck_issues_`issue_not_discovered_from_itself`')
+        ),
+        sa.CheckConstraint(
+            'duplicate_of_id IS NULL OR duplicate_of_id <> id', name=op.f('ck_issues_`issue_not_duplicate_of_itself`')
+        ),
     )
     op.create_index('ix_issues_repo', 'issues', ['repo'])
     op.create_index('ix_issues_initiative_id', 'issues', ['initiative_id'])
@@ -146,7 +150,7 @@ def upgrade() -> None:
         'issue_dependencies',
         sa.Column('issue_id', sa.Uuid(), sa.ForeignKey('issues.id', ondelete='CASCADE'), primary_key=True),
         sa.Column('depends_on_id', sa.Uuid(), sa.ForeignKey('issues.id', ondelete='CASCADE'), primary_key=True),
-        sa.CheckConstraint('issue_id <> depends_on_id', name='issue_no_self_dependency'),
+        sa.CheckConstraint('issue_id <> depends_on_id', name=op.f('ck_issue_dependencies_`issue_no_self_dependency`')),
     )
     op.create_index('idx_issue_dependencies_depends_on', 'issue_dependencies', ['depends_on_id'])
 
@@ -156,9 +160,9 @@ def upgrade() -> None:
         sa.Column('slug', sa.Text(), nullable=False, unique=True),
         sa.Column('group_slug', sa.Text(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.CheckConstraint(f"slug ~ '{SLUG_PATTERN}'", name='issue_label_slug_shape'),
+        sa.CheckConstraint(f"slug ~ '{SLUG_PATTERN}'", name=op.f('ck_issue_labels_`issue_label_slug_shape`')),
         sa.CheckConstraint(
-            f"group_slug IS NULL OR group_slug ~ '{SLUG_PATTERN}'", name='issue_label_group_slug_shape'
+            f"group_slug IS NULL OR group_slug ~ '{SLUG_PATTERN}'", name=op.f('ck_issue_labels_`issue_label_group_slug_shape`')
         ),
     )
 
