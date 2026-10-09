@@ -144,8 +144,14 @@ def read_one(
 
 
 @router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
-def create(user: schemas.UserCreate, session: DbSession):
-    if not session.scalars(select(models.AdminSettings.is_signup_open)).one():
+def create(
+    user: schemas.UserCreate,
+    session: DbSession,
+    caller: models.User | None = Depends(get_current_user_or_none),
+):
+    """Create an account. While signups are closed, only an admin may."""
+    caller_is_admin = caller is not None and caller.is_admin
+    if not caller_is_admin and not session.scalars(select(models.AdminSettings.is_signup_open)).one():
         logger.warning('signup_refused', reason=Refusal.SIGNUPS_CLOSED)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=Refusal.SIGNUPS_CLOSED)
     refuse_taken_email(session, user.email)

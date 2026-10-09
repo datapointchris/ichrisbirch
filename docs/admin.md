@@ -44,12 +44,14 @@ The page also shows the run history the scheduler records in the database.
 `/admin/users` lists every user account, and grants or revokes admin through `PATCH /users/{id}/`.
 That route answers 403 to `is_admin` from anyone but an admin or the internal service, so a user cannot promote themselves.
 
-Above the list, the Signups toggle opens or closes account creation.
-`POST /users/` takes no login, so this setting is its only gate.
+Above the list, the Signups toggle decides who may create an account through `POST /users/`.
+While closed, only an admin may, and every other caller gets 400 with `Refusal.SIGNUPS_CLOSED`.
+While open, anyone may, including a caller with no login.
+No model is scoped per user, so an account created while open can read and write every row.
+
 The toggle writes `is_signup_open` in `admin.settings` through `PATCH /admin/settings/`.
 That table is one row of settings an admin changes without a redeploy.
 `POST /users/` reads the row on every request, so the next signup sees the change.
-While closed, it answers 400 with `Refusal.SIGNUPS_CLOSED`.
 The migration that creates the row seeds it closed.
 
 ## Config

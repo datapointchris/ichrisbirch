@@ -179,6 +179,20 @@ def test_create_is_refused_while_signups_are_closed(txn_api):
     assert session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).first() is None
 
 
+def test_a_logged_in_non_admin_is_refused_while_signups_are_closed(users_logged_in_context):
+    client, _, _ = users_logged_in_context
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
+    assert response.json()['detail'] == Refusal.SIGNUPS_CLOSED
+
+
+def test_an_admin_creates_an_account_while_signups_are_closed(users_admin_context):
+    client, session, _ = users_admin_context
+    response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
+    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+    assert session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()
+
+
 def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
     client, admin_client = txn_multi_client['client'], txn_multi_client['client_admin']
     assert client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json')).status_code == status.HTTP_400_BAD_REQUEST
@@ -191,8 +205,7 @@ def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
 
 
 def test_create_refuses_an_email_another_account_holds(users_admin_context):
-    client, session, _ = users_admin_context
-    open_signups(session)
+    client, _, _ = users_admin_context
     taken = NEW_OBJ.model_copy(update={'email': TEST_USERS[0]['email']})
     response = client.post(ENDPOINT, json=taken.model_dump(mode='json'))
     assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
@@ -330,8 +343,7 @@ def test_a_stored_password_logs_its_user_in(users_test_context, user_data):
 
 
 def test_no_user_response_carries_the_password(users_admin_context):
-    client, session, _ = users_admin_context
-    open_signups(session)
+    client, _, _ = users_admin_context
     created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     me = client.get('/users/me/')
     by_email = client.get(f'/users/email/{NEW_OBJ.email}/')
