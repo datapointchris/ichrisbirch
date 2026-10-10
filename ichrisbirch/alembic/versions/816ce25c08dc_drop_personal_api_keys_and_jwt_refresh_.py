@@ -12,7 +12,7 @@ release serving with the tables gone. That release declares the two models and
 queries neither.
 
 Revision ID: 816ce25c08dc
-Revises: 04106ba80f02
+Revises: 4ac06e1ade3e
 Create Date: 2026-10-10
 
 """
@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = '816ce25c08dc'
-down_revision = '04106ba80f02'
+down_revision = '4ac06e1ade3e'
 branch_labels = None
 depends_on = None
 
