@@ -24,6 +24,9 @@ is in, keeps it where it was.
 Names are unique ignoring case, through a unique index on `lower(name)`. So an
 item or a section is addressed by its name as well as its UUID, in the path and
 in the CLI. A name that matches nothing answers 404 with the nearest names.
+The reference is declared as a path rather than one segment. A client escapes
+the slash in a name such as "Fruit/Veg", and the server decodes it before
+routing, so a one-segment reference would never match that name.
 
 ## Order is a float rank, so a hidden row keeps its place
 

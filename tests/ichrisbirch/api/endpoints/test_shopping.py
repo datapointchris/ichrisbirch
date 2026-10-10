@@ -1,4 +1,5 @@
 import datetime as dt
+from urllib.parse import quote
 
 import pytest
 from fastapi import status
@@ -56,6 +57,11 @@ def check_off(client, name: str) -> dict:
     return ok(client.post(f'{ITEMS}{name}/purchases/'), status.HTTP_201_CREATED)
 
 
+def escaped(name: str) -> str:
+    """A name as the CLI puts it in a path, every slash escaped, as Go's `url.PathEscape` does."""
+    return quote(name, safe='')
+
+
 class TestSections:
     def test_sections_read_in_rank_order(self, client):
         assert names(ok(client.get(SECTIONS))) == ['Costco', 'Grocery', 'Hardware']
@@ -107,6 +113,25 @@ class TestSections:
     def test_an_unknown_section_names_the_nearest(self, client):
         detail = refused(client.patch(f'{SECTIONS}Costko/', json={'name': 'x'}), status.HTTP_404_NOT_FOUND)
         assert 'Costco' in detail
+
+
+class TestNamesHoldingASlash:
+    def test_the_cli_moves_renames_and_deletes_a_fruit_veg_aisle_by_name(self, client):
+        ok(client.post(SECTIONS, json={'name': 'Fruit/Veg'}), status.HTTP_201_CREATED)
+        ok(client.post(f'{SECTIONS}{escaped("Fruit/Veg")}/rank/', json={'before': 'Costco'}))
+        assert names(ok(client.get(SECTIONS)))[0] == 'Fruit/Veg'
+        ok(client.patch(f'{SECTIONS}{escaped("Fruit/Veg")}/', json={'name': 'Deli/Bakery'}))
+        ok(client.delete(f'{SECTIONS}{escaped("Deli/Bakery")}/'), status.HTTP_204_NO_CONTENT)
+        assert names(ok(client.get(SECTIONS))) == ['Costco', 'Grocery', 'Hardware']
+
+    def test_the_cli_moves_edits_checks_off_and_deletes_a_salt_pepper_item_by_name(self, client):
+        add(client, 'salt/pepper', section='Grocery')
+        ok(client.post(f'{ITEMS}{escaped("salt/pepper")}/rank/', json={'section': 'Costco'}))
+        ok(client.patch(f'{ITEMS}{escaped("salt/pepper")}/', json={'note': 'the grinder'}))
+        assert item(client, escaped('salt/pepper'))['section_name'] == 'Costco'
+        assert check_off(client, escaped('salt/pepper'))['note'] == 'the grinder'
+        ok(client.delete(f'{ITEMS}{escaped("salt/pepper")}/'), status.HTTP_204_NO_CONTENT)
+        assert 'salt/pepper' not in names(ok(client.get(ITEMS, params={'status': 'all'})))
 
 
 class TestReadingTheList:
