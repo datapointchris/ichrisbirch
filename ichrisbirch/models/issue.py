@@ -182,6 +182,7 @@ class Issue(Base):
         CheckConstraint('(claimed_by IS NULL) = (claim_expires_ts IS NULL)', name='issue_claim_is_whole'),
         CheckConstraint("claimed_by IS NULL OR status = 'in_progress'", name='issue_claim_only_in_progress'),
         CheckConstraint("closed_ts IS NULL OR status IN ('completed', 'canceled')", name='issue_closed_ts_only_when_closed'),
+        CheckConstraint("closed_by IS NULL OR status IN ('completed', 'canceled')", name='issue_closed_by_only_when_closed'),
         CheckConstraint("duplicate_of_id IS NULL OR status = 'canceled'", name='issue_duplicate_only_when_canceled'),
         CheckConstraint('parent_id IS NULL OR parent_id <> id', name='issue_not_own_parent'),
         CheckConstraint('discovered_from_id IS NULL OR discovered_from_id <> id', name='issue_not_discovered_from_itself'),
