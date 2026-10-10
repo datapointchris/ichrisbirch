@@ -29,3 +29,5 @@
 /admin
 /dashboard
 /fonts
+/icons
+/manifest.webmanifest

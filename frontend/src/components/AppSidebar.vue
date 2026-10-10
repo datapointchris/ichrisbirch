@@ -7,6 +7,7 @@
     >
       <div
         class="button-sidebar-tab"
+        data-testid="sidebar-open-button"
         tabindex="0"
         @click="$emit('toggle')"
         @keydown.enter="$emit('toggle')"
@@ -169,8 +170,11 @@ function isActive(link: NavLink): boolean {
 
 <style lang="scss" scoped>
 @use 'components/buttons';
+@use 'abstracts/breakpoints';
 .sidebar {
   width: 220px;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
   background-color: var(--clr-primary--darker);
   border-right: 1px solid var(--clr-gray-800);
   display: flex;
@@ -238,6 +242,12 @@ function isActive(link: NavLink): boolean {
   top: var(--space-m);
   left: var(--space-xs);
   z-index: 100;
+
+  // Within reach of a thumb, and clear of a page's sticky header.
+  @include breakpoints.phone {
+    top: auto;
+    bottom: calc(var(--space-s) + env(safe-area-inset-bottom));
+  }
 }
 
 /* Sidebar slide transition */
