@@ -98,6 +98,25 @@ func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
 	}
 }
 
+// cobra answers --help before it parses anything else, so a mistyped word
+// asking for help would print the group's screen and exit 0 as though the word
+// had been a subcommand.
+func TestAWordTypedWithHelpIsRefusedAtEveryGroup(t *testing.T) {
+	for _, args := range [][]string{
+		{"projects", "bogus", "--help"},
+		{"projects", "items", "bogus", "--help"},
+		{"tasks", "categories", "bogus", "-h"},
+	} {
+		err := runLine(t, args...)
+		if err == nil || !strings.Contains(err.Error(), `unknown command "bogus"`) {
+			t.Errorf("%v answered %v, want it to refuse \"bogus\"", args, err)
+		}
+		if got := exitCodeFor(err); got != 2 {
+			t.Errorf("%v exit = %d, want 2", args, got)
+		}
+	}
+}
+
 // A positional on a leaf is refused as an argument, never as a command, and a
 // leaf taking that value through a flag spells the line that passes it there.
 func TestAPositionalOnALeafIsRefusedAsAnArgument(t *testing.T) {
