@@ -24,8 +24,9 @@ setup() {
 }
 
 # Prints each service that builds under an image name this project does not own.
-# Compose opens every env_file at load, and a CI runner has no .env. An env_file
-# sets the container's environment and never the image it builds under, so the
+# An env_file sets the container's environment and never the image a service
+# builds under, and a CI runner has no .env. Compose 5 skips env files under
+# config --no-env-resolution; the 2.x a runner ships opens them anyway. So the
 # project directory, which relative env_file paths resolve against, holds an
 # empty one.
 foreign_builds() {
