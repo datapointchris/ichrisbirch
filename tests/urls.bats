@@ -64,7 +64,8 @@ setup() {
 @test "no tool that reads the grid spells a hostname by hand" {
   # The grid exists because this was written out twice. A third copy is a
   # hostname literal anywhere outside ops/lib/urls.sh itself.
-  run rg -n 'docker\.localhost|test\.localhost' \
+  # grep exits 1 for no match alone, so a missing tool or a bad path fails here.
+  run grep -nE 'docker\.localhost|test\.localhost' \
     "$REPO_ROOT/ops/icbops" "$REPO_ROOT/ops/health-check.sh"
-  [ "$status" -ne 0 ]
+  [ "$status" -eq 1 ]
 }
