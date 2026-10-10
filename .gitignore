@@ -96,3 +96,4 @@ deploy-containers/traefik/acme.json
 deploy-containers/traefik/dynamic/prod/services.yml
 
 .planning
+coverage.xml
