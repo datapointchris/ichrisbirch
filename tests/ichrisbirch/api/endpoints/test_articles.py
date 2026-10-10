@@ -417,6 +417,32 @@ def test_create_article_without_save_date_returns_422(txn_api_logged_in):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
+def test_a_title_is_stored_on_one_line(txn_api_logged_in):
+    """A title pasted with a page's newlines and indentation otherwise prints across
+    several lines and sorts ahead of every letter."""
+    client, _ = txn_api_logged_in
+    payload = {
+        'title': '\n\tDeciphering Glyph ::\n        Software Needs  More\n  ',
+        'url': 'http://one-line.example',
+        'summary': 'A summary',
+        'save_date': str(dt.datetime.now(dt.UTC)),
+    }
+    created = client.post(ENDPOINT, json=payload)
+    assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+    assert created.json()['title'] == 'Deciphering Glyph :: Software Needs More'
+
+    updated = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'title': '  Renamed\n\ttitle '})
+    assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
+    assert updated.json()['title'] == 'Renamed title'
+
+
+def test_a_title_that_is_only_whitespace_is_refused(txn_api_logged_in):
+    client, _ = txn_api_logged_in
+    payload = {'title': ' \n\t ', 'url': 'http://blank.example', 'summary': 'A summary', 'save_date': str(dt.datetime.now(dt.UTC))}
+    response = client.post(ENDPOINT, json=payload)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+
 @pytest.mark.parametrize('route', ['summarize/', 'insights/'])
 @pytest.mark.parametrize('payload', [{}, {'link': 'https://a.example'}])
 def test_a_page_request_without_a_url_names_the_field(txn_api_logged_in, route, payload):

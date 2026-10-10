@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from ichrisbirch.schemas.not_null import NotNull
+from ichrisbirch.schemas.one_line_text import OneLineText
 
 
 class ArticleConfig(BaseModel):
@@ -12,7 +13,7 @@ class ArticleConfig(BaseModel):
 
 
 class ArticleCreate(ArticleConfig):
-    title: str
+    title: OneLineText
     url: str
     tags: list[str] = []
     summary: str
@@ -56,7 +57,7 @@ class Article(ArticleConfig):
 
 
 class ArticleUpdate(ArticleConfig):
-    title: NotNull[str] = None
+    title: NotNull[OneLineText] = None
     tags: list[str] = []
     summary: NotNull[str] = None
     notes: str | None = None
