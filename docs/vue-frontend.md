@@ -56,7 +56,7 @@ Catches: TypeScript errors, missing imports, dependencies missing in Docker.
 ### Unit Tests
 
 ```bash
-npm run test:unit    # Vitest (681 tests)
+npm run test:unit    # Vitest
 npm run test:watch   # Watch mode
 npm run test:ui      # Interactive UI
 ```
@@ -66,13 +66,15 @@ Catches: Store logic errors, error handling paths, API response parsing.
 ### E2E Tests
 
 ```bash
-npm run test:e2e     # Playwright (85 tests, requires test containers)
+npm run test:e2e     # Playwright, requires test containers
 npm run test:e2e:ui  # Interactive UI
 ```
 
 Catches: CORS failures, auth header issues, Traefik routing, real CRUD operations.
 
 E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to test the real user path including cross-origin API calls to `api.docker.localhost`.
+
+The `phone` Playwright project reruns the specs its `testMatch` names on a Pixel 7 profile, at phone size and with touch. A page meant to be used from a phone adds its spec there.
 
 ### All Tests
 
@@ -85,11 +87,17 @@ npm test             # Build check + unit tests
 1. Create Pinia store in `frontend/src/stores/` using `createLogger` and `ApiError`
 2. Create Vue view in `frontend/src/views/`
 3. Add route in `frontend/src/router.ts`
-4. Add sidebar link in `frontend/src/components/AppSidebar.vue`
+4. Add sidebar link in `frontend/src/components/sidebarLinks.ts`, to `allMainLinks` and `DEFAULT_SIDEBAR_ORDER`
 5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`
 6. Write unit tests in `frontend/src/stores/__tests__/`
 7. Write E2E tests in `frontend/e2e/`
 8. Run `npm test` and `npm run test:e2e` before considering the page done
+
+## Phone Layout
+
+One width separates a phone from everything else. `abstracts/_breakpoints.scss` holds it as `$phone-max-width` and wraps it in `@include breakpoints.phone`. `base/_base.scss` publishes the same value as the `--phone-max-width` CSS variable, and `usePhoneViewport()` reads that variable. So a stylesheet and a script switch at the same width, and changing the width is one edit.
+
+Under that width the sidebar is off-canvas. It starts closed, closes on every navigation, and closes when its backdrop is tapped. The page reaches the screen edges, padded by the `env(safe-area-inset-*)` insets, because `index.html` sets `viewport-fit=cover` and a translucent status bar for the home-screen app. `public/manifest.webmanifest` and `public/icons/` make the site installable to a home screen.
 
 ## Pre-commit Hooks
 

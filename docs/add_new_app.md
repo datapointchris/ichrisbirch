@@ -94,7 +94,9 @@ For new pages being built in Vue (the standard going forward):
 
 ### 3. Navigation Link
 
-Add link in `frontend/src/components/AppSidebar.vue`
+Add the link to `allMainLinks` and its path to `DEFAULT_SIDEBAR_ORDER` in
+`frontend/src/components/sidebarLinks.ts`. `AppSidebar.vue` renders that list,
+and appends a link missing from a user's saved order.
 
 ### 4. Traefik Routing
 
