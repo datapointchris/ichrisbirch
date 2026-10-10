@@ -20,9 +20,6 @@ router = APIRouter()
 def search(q: str, session: DbSession):
     """This search is different from the other searches as it joins the Box and BoxItem tables and returns a list of tuples of Box and
     BoxItem objects instead of only BoxItem objects.
-
-    This requires the QueryAPI to use the `get_generic` method instead of the `get_many` method since this search
-    returns more than one type of ModelType.
     """
     logger.debug('box_search', query=q)
     items = select(models.Box, models.BoxItem).join(models.Box).filter(models.BoxItem.name.ilike('%' + q + '%'))

@@ -8,10 +8,8 @@ bot protection — Medium and its publications, most of the articles a person
 saves — answer a plain HTTP client with 403 whatever user agent it claims,
 because the refusal is decided on the handshake rather than the headers.
 
-Requests to this app's own API are a different concern and do not belong here:
-`ichrisbirch/api/client/` covers those. So does OIDC discovery in
-`api/oidc_auth.py`, which talks to the identity provider with its own user agent
-and its own caller-supplied timeout.
+OIDC discovery in `api/oidc_auth.py` does not belong here. It talks to the
+identity provider with its own user agent and its own caller-supplied timeout.
 """
 
 from dataclasses import dataclass

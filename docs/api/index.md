@@ -3,7 +3,6 @@
 ## Documentation
 
 - [Authentication](../authentication-architecture.md) — which caller each strategy serves, and what a service token reaches
-- [API Client](client/index.md) — the session-based Python client, its auth providers and resource CRUD
 
 ## FastAPI Crud Endpoints
 

@@ -1,9 +1,8 @@
 /**
  * Structured API error types for the Vue frontend.
  *
- * Mirrors the error hierarchy in ichrisbirch/api/client/exceptions.py:
- * - ApiHttpError: HTTP 4xx/5xx responses (like APIHTTPError)
- * - ApiNetworkError: Connection/timeout failures (like APIConnectionError)
+ * - ApiHttpError: HTTP 4xx/5xx responses
+ * - ApiNetworkError: Connection/timeout failures
  *
  * Each error carries structured context (status, detail, request_id) so
  * stores and views never need to manually extract error info from Axios.
