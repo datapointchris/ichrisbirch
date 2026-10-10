@@ -7,6 +7,7 @@ import re
 import subprocess  # nosec B404
 import time
 
+from stats.hooks._text_files import text_files
 from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
 
 # Pattern: Fixing filepath
@@ -14,10 +15,11 @@ FIXING_PATTERN = re.compile(r'^Fixing\s+(.+)$')
 
 
 def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHookEvent:
-    """Run end-of-file-fixer on staged files, return fully-typed event."""
+    """Run end-of-file-fixer on the staged text files, return fully-typed event."""
     start_time = time.perf_counter()
+    files = text_files(staged_files)
 
-    if not staged_files:
+    if not files:
         return EndOfFileFixerHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project=project,
@@ -30,7 +32,7 @@ def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHoo
         )
 
     result = subprocess.run(  # nosec B603 B607
-        ['uvx', '--from', 'pre-commit-hooks', 'end-of-file-fixer', *staged_files],
+        ['uvx', '--from', 'pre-commit-hooks', 'end-of-file-fixer', *files],
         capture_output=True,
         text=True,
     )
@@ -45,7 +47,7 @@ def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHoo
         status='passed' if result.returncode == 0 else 'failed',
         exit_code=result.returncode,
         fixed_files=fixed_files,
-        files_checked=staged_files,
+        files_checked=files,
         duration_seconds=round(duration, 3),
     )
 

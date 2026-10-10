@@ -48,3 +48,14 @@ nav {
     }
   }
 }
+
+// Opaque, because the page scrolls under it.
+.phone-bar {
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+}
+
+// Dims the page behind the sidebar where the sidebar covers it, on a phone.
+.sidebar-backdrop {
+  background: var(--clr-black-trans-800);
+}

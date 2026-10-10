@@ -273,7 +273,8 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 
 ### Adding a Vue Page
 
-A page is a Pinia store (`createLogger`, `ApiError`, `error: ref<ApiError | null>`), a `<script setup>` view that fetches in `onMounted` and reports through `useNotifications()`, a lazy-loaded route in `frontend/src/router.ts`, and an entry in `AppSidebar.vue`.
+A page is a Pinia store (`createLogger`, `ApiError`, `error: ref<ApiError | null>`), a `<script setup>` view that fetches in `onMounted` and reports through `useNotifications()`, a lazy-loaded route in `frontend/src/router.ts`, and an entry in `components/sidebarLinks.ts`.
+A layout that differs on a phone switches at `@include breakpoints.phone` in SCSS and `usePhoneViewport()` in script, which read one width.
 Add its path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`.
 Unit tests mock the API with `vi.mock`; E2E runs through `app.docker.localhost`, never `vue.docker.localhost`, so CORS faults surface.
 

@@ -1459,3 +1459,58 @@ export interface InitiativeUpdate {
   priority?: number
   position?: number
 }
+
+// --- Shopping list ---
+
+export interface ShoppingSection {
+  id: string
+  name: string
+  rank: number
+  created_ts: string
+}
+
+/** A catalog row. `is_needed` is whether it is on the list; null `section_id` is Unsorted. */
+export interface ShoppingItem {
+  id: string
+  name: string
+  note: string | null
+  section_id: string | null
+  section_name: string | null
+  rank: number
+  is_needed: boolean
+  needed_ts: string | null
+  created_ts: string
+  purchase_count: number
+  last_purchased_ts: string | null
+}
+
+/** A known name is listed again rather than created; `section` omitted keeps it where it was, null is Unsorted. */
+export interface ShoppingItemCreate {
+  name: string
+  note?: string
+  section?: string | null
+}
+
+/** `section` null moves the item to Unsorted. */
+export interface ShoppingItemUpdate {
+  name?: string
+  note?: string | null
+  section?: string | null
+  is_needed?: boolean
+}
+
+/** Where a dragged item lands: a section (null is Unsorted) and at most one neighbor there. */
+export interface ShoppingItemRankMove {
+  section: string | null
+  before?: string
+  after?: string
+}
+
+export interface ShoppingPurchase {
+  id: string
+  item_id: string | null
+  item_name: string
+  note: string | null
+  section_name: string | null
+  purchased_ts: string
+}

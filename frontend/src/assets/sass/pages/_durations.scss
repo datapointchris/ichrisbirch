@@ -211,7 +211,7 @@
 // Compare panel
 .duration-compare {
   position: sticky;
-  top: 0;
+  top: var(--page-sticky-top);
   z-index: 50;
   background: var(--clr-primary--darker);
   border: 1px solid var(--clr-gray-700);

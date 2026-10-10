@@ -30,6 +30,9 @@ from ichrisbirch.models import ProjectItem  # noqa
 from ichrisbirch.models import ProjectItemDependency  # noqa
 from ichrisbirch.models import ProjectItemMembership  # noqa
 from ichrisbirch.models import SchedulerJobRun  # noqa
+from ichrisbirch.models import ShoppingItem
+from ichrisbirch.models import ShoppingPurchase
+from ichrisbirch.models import ShoppingSection
 from ichrisbirch.models import Strain
 from ichrisbirch.models import StrainEffect
 from ichrisbirch.models import StrainFlavor

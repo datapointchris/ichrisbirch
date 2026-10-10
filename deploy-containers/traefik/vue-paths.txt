@@ -23,9 +23,12 @@
 /projects
 /issues
 /recipes
+/shopping
 /strains
 /tasks
 /profile
 /admin
 /dashboard
 /fonts
+/icons
+/manifest.webmanifest

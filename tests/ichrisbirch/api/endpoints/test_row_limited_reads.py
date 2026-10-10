@@ -45,6 +45,8 @@ LIMITED_READS = [
     ('/projects/', 'projects'),
     ('/recipes/', 'recipes'),
     ('/recipes/cooking-techniques/', 'cooking_techniques'),
+    ('/shopping/items/', 'shopping_sections'),
+    ('/shopping/sections/', 'shopping_sections'),
     ('/strains/', 'strains'),
     ('/tasks/', 'tasks'),
     ('/tasks/todo/', 'tasks'),

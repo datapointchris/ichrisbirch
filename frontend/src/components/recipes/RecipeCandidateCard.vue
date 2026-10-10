@@ -74,19 +74,13 @@
 
 <script setup lang="ts">
 import type { RecipeCandidate } from '@/api/client'
+import { formatUnit } from '@/composables/ingredientAmount'
 
 withDefaults(defineProps<{ candidate: RecipeCandidate; hideActions?: boolean }>(), { hideActions: false })
 defineEmits<{
   save: [candidate: RecipeCandidate]
   dismiss: [candidate: RecipeCandidate]
 }>()
-
-function formatUnit(unit: string | null): string {
-  if (!unit) return ''
-  if (unit === 'to_taste') return 'to taste'
-  if (unit === 'fl_oz') return 'fl oz'
-  return unit
-}
 </script>
 
 <style scoped>

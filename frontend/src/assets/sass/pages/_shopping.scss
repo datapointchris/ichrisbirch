@@ -1,0 +1,322 @@
+@use '../components/buttons';
+@use '../components/list_item';
+@use '../components/toggle_chips';
+
+// A finger is the pointer on this page, so every control is at least this tall.
+$touch-target: 44px;
+
+.shopping {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-bottom: var(--space-xl);
+
+  &__add-bar {
+    position: sticky;
+    top: var(--page-sticky-top);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding: var(--space-xs);
+    border-radius: var(--border-radius);
+    background-color: var(--clr-primary);
+    box-shadow: var(--floating-box);
+  }
+
+  &__add-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__add-input {
+    flex: 1;
+    min-width: 0;
+    min-height: $touch-target;
+    font-size: var(--fs-500);
+  }
+
+  &__icon-button {
+    @include buttons.neu-button;
+
+    flex-shrink: 0;
+    width: $touch-target;
+    height: $touch-target;
+    font-size: var(--fs-500);
+  }
+
+  &__total {
+    min-width: 2ch;
+    color: var(--clr-accent-light);
+    font-size: var(--fs-500);
+    text-align: right;
+  }
+
+  &__last-added {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+
+  &__suggestions {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__suggestion {
+    @include list_item.list-item;
+
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    min-height: $touch-target;
+    color: var(--clr-text);
+    font-size: var(--fs-400);
+    text-align: left;
+  }
+
+  &__suggestion-where {
+    color: var(--clr-gray-500);
+    font-size: var(--fs-300);
+  }
+
+  &__empty {
+    color: var(--clr-gray-500);
+    font-style: italic;
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+  }
+
+  &__new-section-button {
+    @include buttons.neu-button;
+
+    align-self: flex-start;
+    min-height: $touch-target;
+    padding-inline: var(--space-s);
+    font-size: var(--fs-400);
+  }
+
+  &__new-section {
+    display: flex;
+
+    .textbox {
+      flex: 1;
+      min-height: $touch-target;
+    }
+  }
+}
+
+.shopping-buy-again {
+  @include toggle_chips.toggle-chips;
+
+  align-items: center;
+
+  &__label {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+}
+
+.shopping-section {
+  border-radius: var(--border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+
+  &--ghost {
+    opacity: 0.4;
+  }
+
+  &--bought {
+    box-shadow: var(--floating-box-pressed);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: $touch-target;
+    padding-inline: var(--space-2xs);
+  }
+
+  &__toggle,
+  &__grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $touch-target;
+    height: $touch-target;
+    color: var(--clr-gray-400);
+  }
+
+  &__grip {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  &__name {
+    flex: 1;
+    min-height: $touch-target;
+    color: var(--clr-accent-light);
+    font-size: var(--fs-500);
+    text-align: left;
+
+    &--unsorted {
+      display: flex;
+      align-items: center;
+      color: var(--clr-gray-300);
+    }
+  }
+
+  &__name-input {
+    flex: 1;
+    min-width: 0;
+    min-height: $touch-target;
+    font-size: var(--fs-500);
+  }
+
+  &__count {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+
+  &__delete {
+    min-width: $touch-target;
+    min-height: $touch-target;
+    color: var(--clr-gray-500);
+
+    &--confirming {
+      color: var(--clr-error);
+    }
+  }
+
+  // An empty section stays a drop target.
+  &__items {
+    min-height: $touch-target;
+    margin: 0;
+    padding: 0 0 var(--space-2xs);
+    list-style: none;
+  }
+}
+
+.shopping-item {
+  @include list_item.list-item;
+
+  display: flex;
+  gap: var(--space-2xs);
+  padding: 0 var(--space-2xs);
+
+  &--ghost {
+    opacity: 0.4;
+  }
+
+  &--checking &__name {
+    color: var(--clr-gray-500);
+    text-decoration: line-through;
+  }
+
+  &__check {
+    flex-shrink: 0;
+    width: $touch-target;
+    height: $touch-target;
+    border-radius: 50%;
+    color: transparent;
+    box-shadow: var(--floating-box-pressed);
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--clr-gray-500);
+    }
+  }
+
+  &--checking &__check {
+    color: var(--clr-success);
+  }
+
+  &__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    min-height: $touch-target;
+    cursor: pointer;
+  }
+
+  &__name {
+    color: var(--clr-text);
+    font-size: var(--fs-400);
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  &__note {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+    overflow-wrap: anywhere;
+  }
+
+  &__link {
+    color: var(--clr-accent);
+  }
+
+  &__grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: $touch-target;
+    height: $touch-target;
+    color: var(--clr-gray-500);
+    cursor: grab;
+    touch-action: none;
+  }
+}
+
+.recipe-to-shopping {
+  &__servings,
+  &__amount {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+
+  &__optional {
+    color: var(--clr-gray-500);
+    font-size: var(--fs-300);
+    font-style: italic;
+  }
+}
+
+.shopping-bought {
+  @include list_item.list-item;
+
+  display: flex;
+  gap: var(--space-xs);
+  width: 100%;
+  min-height: $touch-target;
+  color: var(--clr-gray-500);
+  font-size: var(--fs-400);
+  text-align: left;
+
+  &__name {
+    flex: 1;
+    text-decoration: line-through;
+  }
+
+  &__section {
+    font-size: var(--fs-300);
+  }
+
+  &__day {
+    margin: var(--space-xs) 0 var(--space-3xs);
+    padding-inline: var(--space-xs);
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+    font-weight: 500;
+  }
+}

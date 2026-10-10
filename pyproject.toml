@@ -108,6 +108,7 @@ dev = [
   "jupyterthemes>=0.20.0",
   "docker>=7.1.0",
   "pre-commit>=4.3.0",
+  "identify>=2.6.18",
   "factory-boy>=3.3.3",
   "pytest-json-report>=1.5.0",
   "radon>=5.1.0",

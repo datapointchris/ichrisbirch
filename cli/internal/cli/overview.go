@@ -19,7 +19,7 @@ import (
 
 const (
 	// overviewSchemaVersion is the contract between this command and its
-	// consumers (menu dashboard, and the wall and mobile renderers behind it).
+	// consumers (a terminal dashboard, and the wall and mobile renderers behind it).
 	// Bump it only for a breaking reshape: consumers read fields defensively, so
 	// additions are free.
 	//

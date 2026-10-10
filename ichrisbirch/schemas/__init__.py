@@ -125,6 +125,15 @@ from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
 from ichrisbirch.schemas.server import ServerStats
+from ichrisbirch.schemas.shopping import ShoppingItem
+from ichrisbirch.schemas.shopping import ShoppingItemCreate
+from ichrisbirch.schemas.shopping import ShoppingItemRankMove
+from ichrisbirch.schemas.shopping import ShoppingItemUpdate
+from ichrisbirch.schemas.shopping import ShoppingPurchase
+from ichrisbirch.schemas.shopping import ShoppingSection
+from ichrisbirch.schemas.shopping import ShoppingSectionCreate
+from ichrisbirch.schemas.shopping import ShoppingSectionRankMove
+from ichrisbirch.schemas.shopping import ShoppingSectionUpdate
 from ichrisbirch.schemas.strain import Strain
 from ichrisbirch.schemas.strain import StrainCreate
 from ichrisbirch.schemas.strain import StrainUpdate
@@ -269,6 +278,15 @@ __all__ = [
     'CookingTechniqueCategoryBreakdown',
     'CookingTechniqueCreate',
     'CookingTechniqueUpdate',
+    'ShoppingItem',
+    'ShoppingItemCreate',
+    'ShoppingItemRankMove',
+    'ShoppingItemUpdate',
+    'ShoppingPurchase',
+    'ShoppingSection',
+    'ShoppingSectionCreate',
+    'ShoppingSectionRankMove',
+    'ShoppingSectionUpdate',
     'Strain',
     'StrainCreate',
     'StrainUpdate',

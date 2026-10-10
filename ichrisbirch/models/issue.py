@@ -8,7 +8,6 @@ from sqlalchemy import BigInteger
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Date
 from sqlalchemy import DateTime
-from sqlalchemy import Double
 from sqlalchemy import ForeignKey
 from sqlalchemy import Identity
 from sqlalchemy import Index
@@ -22,6 +21,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
+from ichrisbirch.database.fractionally_ranked import FractionallyRanked
 from ichrisbirch.models.item_number_sequence import ITEM_NUMBER_SEQUENCE
 
 # `in_progress` is what a claim sets, and the only status a claim may sit on.
@@ -88,7 +88,7 @@ class Initiative(Base):
         return f'Initiative(id={self.id!r}, name={self.name!r}, status={self.status!r})'
 
 
-class Issue(Base):
+class Issue(FractionallyRanked, Base):
     """A unit of software work, written for the agent that will do it.
 
     `id` is the key and `number` is the handle a person or an agent types. The
@@ -106,7 +106,6 @@ class Issue(Base):
     """
 
     __tablename__ = 'issues'
-    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
     number: Mapped[int] = mapped_column(
         BigInteger, ITEM_NUMBER_SEQUENCE, server_default=ITEM_NUMBER_SEQUENCE.next_value(), nullable=False, unique=True
     )
@@ -124,7 +123,6 @@ class Issue(Base):
     # Why the issue was canceled. Completed work says what it shipped in a comment.
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     priority: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default='0')
-    rank: Mapped[float] = mapped_column(Double, nullable=False)
     # A calendar day. The issue stays out of the ready queue until the day
     # arrives in the reader's zone, and does not count as blocked meanwhile.
     deferred_until_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
@@ -137,7 +135,6 @@ class Issue(Base):
     # Provenance only: found while working the other issue, and never gated by it.
     discovered_from_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True)
     duplicate_of_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('issues.id', ondelete='SET NULL'), nullable=True)
-    created_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
     updated_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
     # When the issue reached completed or canceled. Null on a closed issue means
     # the time is unknown, which is never inferred from `updated_ts`.
@@ -147,10 +144,10 @@ class Issue(Base):
     closed_by: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     initiative: Mapped[Initiative | None] = relationship('Initiative', back_populates='issues')
-    parent: Mapped[Issue | None] = relationship('Issue', remote_side=[id], foreign_keys=[parent_id], back_populates='children')
+    parent: Mapped[Issue | None] = relationship('Issue', remote_side='Issue.id', foreign_keys=[parent_id], back_populates='children')
     children: Mapped[list[Issue]] = relationship('Issue', foreign_keys=[parent_id], back_populates='parent', order_by='Issue.rank')
-    discovered_from: Mapped[Issue | None] = relationship('Issue', remote_side=[id], foreign_keys=[discovered_from_id])
-    duplicate_of: Mapped[Issue | None] = relationship('Issue', remote_side=[id], foreign_keys=[duplicate_of_id])
+    discovered_from: Mapped[Issue | None] = relationship('Issue', remote_side='Issue.id', foreign_keys=[discovered_from_id])
+    duplicate_of: Mapped[Issue | None] = relationship('Issue', remote_side='Issue.id', foreign_keys=[duplicate_of_id])
     dependencies: Mapped[list[IssueDependency]] = relationship(
         'IssueDependency', foreign_keys='IssueDependency.issue_id', back_populates='issue', cascade='all, delete-orphan'
     )

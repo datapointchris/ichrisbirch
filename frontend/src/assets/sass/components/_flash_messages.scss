@@ -1,9 +1,18 @@
+@use '../abstracts/breakpoints';
+
 .flash-messages {
   position: fixed;
   right: var(--space-m);
   bottom: var(--space-m);
   width: 40%;
   z-index: 9999;
+
+  @include breakpoints.phone {
+    left: var(--space-xs);
+    right: var(--space-xs);
+    bottom: calc(var(--space-xs) + env(safe-area-inset-bottom));
+    width: auto;
+  }
 
   &__list {
     display: flex;

@@ -50,6 +50,9 @@ from ichrisbirch.models.recipe import RecipeIngredient
 from ichrisbirch.models.recipe import RecipeMealType
 from ichrisbirch.models.recipe import RecipeUnit
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
+from ichrisbirch.models.shopping import ShoppingItem
+from ichrisbirch.models.shopping import ShoppingPurchase
+from ichrisbirch.models.shopping import ShoppingSection
 from ichrisbirch.models.strain import Strain
 from ichrisbirch.models.strain import StrainEffect
 from ichrisbirch.models.strain import StrainFlavor
@@ -113,6 +116,9 @@ __all__ = [
     'RecipeMealType',
     'RecipeUnit',
     'SchedulerJobRun',
+    'ShoppingItem',
+    'ShoppingPurchase',
+    'ShoppingSection',
     'Strain',
     'StrainEffect',
     'StrainFlavor',

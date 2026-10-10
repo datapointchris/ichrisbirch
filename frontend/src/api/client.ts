@@ -237,4 +237,10 @@ export type {
   Initiative,
   InitiativeCreate,
   InitiativeUpdate,
+  ShoppingSection,
+  ShoppingItem,
+  ShoppingItemCreate,
+  ShoppingItemUpdate,
+  ShoppingItemRankMove,
+  ShoppingPurchase,
 } from './types'

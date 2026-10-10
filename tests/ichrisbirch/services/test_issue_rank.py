@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 
 from ichrisbirch import models
-from ichrisbirch.services.issue_rank import MIN_GAP
+from ichrisbirch.services.fractional_rank import MIN_GAP
 from ichrisbirch.services.issue_rank import move_issue
 
 

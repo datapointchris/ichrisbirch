@@ -66,6 +66,15 @@ func addCapFlag(cmd *cobra.Command, target *int, fallback int, what string) {
 	cmd.Flags().VarP(limitValue{target: target}, "limit", "n", what)
 }
 
+// addServerCappedLimitFlag declares --limit/-n on a read the API caps by itself
+// when no limit is sent. Unset still sends nothing, like addLimitFlag, but the
+// usage names the server's cap, since "every row" would be false.
+func addServerCappedLimitFlag(cmd *cobra.Command, target *int, serverCap int) {
+	*target = 0
+	usage := fmt.Sprintf("Maximum number of rows to return (default: the newest %d)", serverCap)
+	cmd.Flags().VarP(limitValue{target: target}, "limit", "n", usage)
+}
+
 // limitFlag returns a *int for the --limit flag, or nil when it was not set (so
 // the client omits the query param and the API returns everything).
 //

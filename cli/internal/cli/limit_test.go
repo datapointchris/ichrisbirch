@@ -25,6 +25,9 @@ func TestEveryListCommandTakesLimit(t *testing.T) {
 		{"projects", "list"},
 		{"projects", "items", "list"},
 		{"recipes", "list"},
+		{"shopping", "list"},
+		{"shopping", "history"},
+		{"shopping", "sections", "list"},
 		{"strains", "list"},
 		{"tasks", "list"},
 	}
