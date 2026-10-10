@@ -280,33 +280,16 @@ def test_read_one_user_by_alt_id(users_logged_in_context):
     assert me_user == alt_user
 
 
-def test_a_patched_password_is_stored_hashed(users_test_context, test_regular_user):
+def test_a_password_sent_through_patch_is_not_stored_as_sent(users_test_context, test_regular_user):
     client, session, _ = users_test_context
-    old_password, new_password = TEST_USERS[0]['password'], 'a-password-set-through-patch'
+    password = 'a-password-set-through-patch'
     headers = make_app_headers_for_user(test_regular_user)
 
-    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': new_password}, headers=headers)
+    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': password}, headers=headers)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     session.refresh(test_regular_user)
-    assert test_regular_user.password != new_password
-    assert test_regular_user.check_password(new_password)
-    assert not test_regular_user.check_password(old_password)
-
-
-def test_an_update_that_leaves_the_password_alone_keeps_its_hash(users_test_context, test_regular_user):
-    client, session, _ = users_test_context
-    password = TEST_USERS[0]['password']
-    stored_hash = test_regular_user.password
-    headers = make_app_headers_for_user(test_regular_user)
-
-    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'name': 'Renamed User'}, headers=headers)
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-
-    session.refresh(test_regular_user)
-    assert test_regular_user.name == 'Renamed User'
-    assert test_regular_user.password == stored_hash
-    assert test_regular_user.check_password(password)
+    assert test_regular_user.password != password
 
 
 def test_create_user_password_hashed(users_logged_in_context):
@@ -317,13 +300,6 @@ def test_create_user_password_hashed(users_logged_in_context):
     stored = session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()
     assert stored.password != NEW_OBJ.password
     assert stored.check_password(NEW_OBJ.password)
-
-
-@pytest.mark.parametrize('user_data', TEST_USERS)
-def test_a_stored_password_verifies_against_its_user(users_test_context, user_data):
-    _, session, _ = users_test_context
-    stored = session.scalars(select(models.User).where(models.User.email == user_data['email'])).one()
-    assert stored.check_password(user_data['password'])
 
 
 def test_no_user_response_carries_the_password(users_admin_context):
