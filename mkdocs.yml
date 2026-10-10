@@ -141,7 +141,6 @@ nav:
       - Issues: issues.md
   - DevOps:
       - Overview: devops/index.md
-      - Domain Names: domain_names.md
       - Traefik:
           - Deployment: traefik-deployment.md
           - CLI Usage: cli-traefik-usage.md

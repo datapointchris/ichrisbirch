@@ -40,7 +40,6 @@ Welcome to the iChrisBirch application documentation.
 - [Terraform](terraform.md) - Infrastructure as code
 - [DevOps](devops/index.md) - Server, database, nginx, supervisor and pg_cron setup notes
 - [Blue/Green Deployment](blue-green-deployment.md) - Zero-downtime deploys across alternating app container colors
-- [Domain Names](domain_names.md) - Route 53 hosted zones and records for the apex, api and docs domains
 
 ## API
 

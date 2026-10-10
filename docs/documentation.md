@@ -30,7 +30,7 @@ Branch: gh-pages / (root)
 
 Custom domain: docs.ichrisbirch.com
 
-Refer to [Domain Names](domain_names.md) for setting up the subdomain.
+The domain's DNS is on Cloudflare, which the [production deployment](homelab-deployment.md) page covers.
 
 !!! note "Note"
     CNAME record needs to be set up **before** adding the custom domain, or the lookup will fail.
