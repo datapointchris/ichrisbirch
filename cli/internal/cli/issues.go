@@ -731,9 +731,6 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 	field("labels", strings.Join(issue.Labels, ", "))
 	field("deferred", strValue(issue.DeferredUntilDate))
 	field("created", localDay(issue.CreatedTS))
-	if issue.ClosedTS != nil {
-		field("closed", localDay(*issue.ClosedTS))
-	}
 
 	section := func(title, body string) {
 		if body != "" {
