@@ -90,11 +90,23 @@
         class="today-block__header"
       >
         <h2 class="today-block__title">Tasks</h2>
-        <span class="today-block__count">{{ store.openTaskCount }} open</span>
+        <span
+          v-if="store.status.tasks === 'loaded'"
+          class="today-block__count"
+        >
+          {{ store.openTaskCount }} open
+        </span>
         <i class="fa-solid fa-chevron-right"></i>
       </RouterLink>
       <p
-        v-if="store.openTasks.length === 0"
+        v-if="store.status.tasks !== 'loaded'"
+        class="today-block__empty"
+        data-testid="today-tasks-state"
+      >
+        {{ notLoaded('tasks') }}
+      </p>
+      <p
+        v-else-if="store.openTasks.length === 0"
         class="today-block__empty"
       >
         Nothing open
@@ -124,7 +136,7 @@
           <span class="today-row__tag">{{ task.category }}</span>
         </li>
       </ul>
-      <template v-if="store.doneTasks.length">
+      <template v-if="store.status.tasks === 'loaded' && store.doneTasks.length">
         <h3 class="today-block__subtitle">Done today</h3>
         <ul class="today-block__rows">
           <li
@@ -155,17 +167,29 @@
         class="today-block__header"
       >
         <h2 class="today-block__title">Habits</h2>
-        <span class="today-block__count">{{ store.habitsLeft }} left</span>
+        <span
+          v-if="store.status.habits === 'loaded'"
+          class="today-block__count"
+        >
+          {{ store.habitsLeft }} left
+        </span>
         <i class="fa-solid fa-chevron-right"></i>
       </RouterLink>
       <p
-        v-if="store.habitsLeft === 0"
+        v-if="store.status.habits !== 'loaded'"
+        class="today-block__empty"
+        data-testid="today-habits-state"
+      >
+        {{ notLoaded('habits') }}
+      </p>
+      <p
+        v-else-if="store.habitsLeft === 0"
         class="today-block__empty"
       >
         {{ store.habitsDone.length ? 'All done for today' : 'No habits due' }}
       </p>
       <template
-        v-for="(habits, categoryName) in store.habitsDue"
+        v-for="(habits, categoryName) in habitsShown"
         :key="categoryName"
       >
         <h3 class="today-block__subtitle">{{ categoryName }}</h3>
@@ -191,7 +215,7 @@
           </li>
         </ul>
       </template>
-      <template v-if="store.habitsDone.length">
+      <template v-if="store.status.habits === 'loaded' && store.habitsDone.length">
         <h3 class="today-block__subtitle">Done today</h3>
         <ul class="today-block__rows">
           <li
@@ -222,7 +246,12 @@
         class="today-block__header"
       >
         <h2 class="today-block__title">Shopping</h2>
-        <span class="today-block__count">{{ store.shoppingCount }} on the list</span>
+        <span
+          class="today-block__count"
+          data-testid="today-shopping-count"
+        >
+          {{ store.status.shopping === 'loaded' ? `${store.shoppingCount} on the list` : notLoaded('shopping') }}
+        </span>
         <i class="fa-solid fa-chevron-right"></i>
       </RouterLink>
     </section>
@@ -235,60 +264,66 @@
         <h2 class="today-block__title">Coming up</h2>
       </div>
       <p
-        v-if="store.countdownsComing.length === 0 && store.eventsComing.length === 0"
+        v-if="comingUpLoading"
         class="today-block__empty"
+        data-testid="today-coming-up-state"
       >
-        Nothing coming up
+        {{ LOADING }}
       </p>
-      <ul class="today-block__rows">
-        <li
-          v-for="countdown in store.countdownsComing"
-          :key="`countdown-${countdown.id}`"
+      <template v-else>
+        <ul
+          v-if="store.comingUpRows.length"
+          class="today-block__rows"
         >
-          <RouterLink
-            to="/countdowns"
-            class="today-ahead"
-            data-testid="today-countdown"
+          <li
+            v-for="row in store.comingUpRows"
+            :key="`${row.kind}-${row.id}`"
           >
-            <i class="fa-solid fa-hourglass-half today-ahead__icon"></i>
-            <span class="today-ahead__name">{{ countdown.name }}</span>
-            <span class="today-ahead__when">{{ daysUntil(countdown.due_date, store.today) }}</span>
-          </RouterLink>
-        </li>
-        <li
-          v-for="event in store.eventsComing"
-          :key="`event-${event.id}`"
+            <RouterLink
+              :to="row.kind === 'countdown' ? '/countdowns' : '/events'"
+              class="today-ahead"
+              :data-testid="`today-${row.kind}`"
+            >
+              <i
+                class="fa-solid today-ahead__icon"
+                :class="row.kind === 'countdown' ? 'fa-hourglass-half' : 'fa-calendar'"
+              ></i>
+              <span class="today-ahead__name">{{ row.name }}</span>
+              <i
+                v-if="row.attending"
+                class="fa-solid fa-check today-ahead__going"
+                aria-label="Going"
+              ></i>
+              <span class="today-ahead__when">{{ daysUntil(row.day, store.today) }}</span>
+            </RouterLink>
+          </li>
+        </ul>
+        <p
+          v-if="comingUpFailed.length"
+          class="today-block__empty"
+          data-testid="today-coming-up-state"
         >
-          <RouterLink
-            to="/events"
-            class="today-ahead"
-            data-testid="today-event"
-          >
-            <i class="fa-solid fa-calendar today-ahead__icon"></i>
-            <span class="today-ahead__name">{{ event.name }}</span>
-            <i
-              v-if="event.attending"
-              class="fa-solid fa-check today-ahead__going"
-              aria-label="Going"
-            ></i>
-            <span class="today-ahead__when">{{ formatDate(event.date, 'monthDay') }}</span>
-          </RouterLink>
-        </li>
-      </ul>
+          Could not load {{ comingUpFailed.join(' or ') }}
+        </p>
+        <p
+          v-else-if="store.comingUpRows.length === 0"
+          class="today-block__empty"
+        >
+          Nothing coming up
+        </p>
+      </template>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { ApiError } from '@/api/errors'
 import type { Habit, HabitCompleted, Task, TaskCategory } from '@/api/client'
-import { todayKey } from '@/composables/calendarDay'
-import { formatDate } from '@/composables/formatDate'
 import { useNotifications } from '@/composables/useNotifications'
 import type { CompletedTask } from '@/stores/tasks'
 import { TASK_CATEGORIES } from '@/stores/tasks'
-import { daysUntil, useTodayStore } from '@/stores/today'
+import { type TodayPart, daysUntil, useTodayStore } from '@/stores/today'
 
 type AddMode = 'task' | 'shopping'
 
@@ -301,9 +336,20 @@ const CATEGORY_STORAGE_KEY = 'today-task-category'
 const PICK_CATEGORY = 'Pick a category for the task'
 // Long enough to see the check land before the row leaves.
 const CHECK_OFF_DELAY_MS = 300
+// How often a page left visible checks whether midnight has passed, as /habits does.
+const ROLLOVER_POLL_MS = 60_000
+const LOADING = 'Loading…'
 
 const store = useTodayStore()
 const { show: notify } = useNotifications()
+
+function notLoaded(part: TodayPart): string {
+  return store.status[part] === 'failed' ? `Could not load ${part}` : LOADING
+}
+
+const habitsShown = computed(() => (store.status.habits === 'loaded' ? store.habitsDue : {}))
+const comingUpLoading = computed(() => store.status.countdowns === 'loading' || store.status.events === 'loading')
+const comingUpFailed = computed(() => (['countdowns', 'events'] as const).filter((part) => store.status[part] === 'failed'))
 
 const addInput = ref<HTMLInputElement | null>(null)
 const categoryRow = ref<HTMLElement | null>(null)
@@ -424,19 +470,27 @@ async function uncheckHabit(completion: HabitCompleted) {
   }
 }
 
-async function load() {
-  const failed = await store.load()
+function reportFailed(failed: TodayPart[]) {
   if (failed.length) notify(`Could not load ${failed.join(', ')}`, 'error')
 }
 
-// An installed app resumes where it was left, so a page opened yesterday
-// reloads when it comes back on a new day.
-function onVisible() {
-  if (document.visibilityState === 'visible' && todayKey() !== store.today) void load()
+async function load() {
+  reportFailed(await store.load())
 }
+
+// An installed app resumes where it was left and has no reload control, and
+// the lists may have changed from another device meanwhile, so every return
+// reloads them.
+function onVisible() {
+  if (document.visibilityState === 'visible') void load()
+}
+
+// A tab that never goes hidden fires no visibility change at midnight.
+let rolloverTimer: ReturnType<typeof setInterval> | undefined
 
 onMounted(async () => {
   document.addEventListener('visibilitychange', onVisible)
+  rolloverTimer = setInterval(() => void store.syncDay().then(reportFailed), ROLLOVER_POLL_MS)
   // The category row scrolls sideways on a phone, so the remembered choice is brought into view.
   await nextTick()
   categoryRow.value?.querySelector('.today-categories__chip--on')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
@@ -444,6 +498,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  clearInterval(rolloverTimer)
   document.removeEventListener('visibilitychange', onVisible)
 })
 </script>

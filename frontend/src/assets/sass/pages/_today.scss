@@ -61,8 +61,8 @@
   }
 }
 
-// Twelve categories fit one row only on a wide screen, so on a phone the row
-// scrolls sideways rather than wrapping into three.
+// The categories fit one row only on a wide screen, so on a phone the row
+// scrolls sideways rather than wrapping.
 .today-categories {
   @include toggle_chips.toggle-chips;
 

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { COMING_UP_SHOWN, countdownsAhead, daysUntil, eventsAhead, useTodayStore } from '../today'
+import { COMING_UP_SHOWN, comingUp, daysUntil, useTodayStore } from '../today'
 import { useTasksStore } from '../tasks'
 import { ApiError } from '@/api/errors'
-import type { Countdown, Event, Habit, HabitCategory, HabitsDay, Task } from '@/api/client'
+import type { Countdown, Event, Habit, HabitCategory, HabitCompleted, HabitsDay, Task } from '@/api/client'
 
 vi.mock('@/api/client', () => ({
   api: {
@@ -14,9 +14,12 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
+// The day on the clock, moved by a test to walk past midnight.
+const clock = vi.hoisted(() => ({ day: '2026-10-10' }))
+
 vi.mock('@/composables/calendarDay', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/composables/calendarDay')>()),
-  todayKey: () => '2026-10-10',
+  todayKey: () => clock.day,
 }))
 
 import { api } from '@/api/client'
@@ -61,15 +64,38 @@ function serve(data: Record<string, unknown> = {}, failing: string[] = []) {
   })
 }
 
-describe('countdownsAhead', () => {
-  it('drops the countdowns already due and puts the soonest first', () => {
-    const list = [countdown(1, '2026-12-01'), countdown(2, '2026-10-09'), countdown(3, '2026-10-10')]
-    expect(countdownsAhead(list, '2026-10-10').map((c) => c.id)).toEqual([3, 1])
+describe('comingUp', () => {
+  const now = Date.parse('2026-10-10T12:00:00Z')
+
+  it('puts countdowns and events in one list by the day they arrive', () => {
+    const rows = comingUp(
+      [countdown(1, '2027-03-14'), countdown(2, '2026-10-11')],
+      [event(3, '2026-11-04T12:00'), event(4, '2026-10-20T12:00')],
+      '2026-10-10',
+      now
+    )
+    expect(rows.map((row) => `${row.kind}-${row.id}`)).toEqual(['countdown-2', 'event-4', 'event-3', 'countdown-1'])
   })
 
-  it(`shows at most ${COMING_UP_SHOWN}`, () => {
-    const list = Array.from({ length: 8 }, (_, i) => countdown(i, `2026-11-1${i}`))
-    expect(countdownsAhead(list, '2026-10-10')).toHaveLength(COMING_UP_SHOWN)
+  it('orders events on one day by when they happen, after a countdown due that day', () => {
+    const rows = comingUp([countdown(1, '2026-10-12')], [event(2, '2026-10-12T19:00'), event(3, '2026-10-12T09:00')], '2026-10-10', now)
+    expect(rows.map((row) => row.id)).toEqual([1, 3, 2])
+  })
+
+  it('drops a countdown already due and an event whose time at the venue has passed', () => {
+    const rows = comingUp(
+      [countdown(1, '2026-10-09'), countdown(2, '2026-10-10')],
+      [event(3, '2026-10-10T09:00'), event(4, '2026-10-10T19:00')],
+      '2026-10-10',
+      now
+    )
+    expect(rows.map((row) => `${row.kind}-${row.id}`)).toEqual(['countdown-2', 'event-4'])
+  })
+
+  it(`shows at most ${COMING_UP_SHOWN} across both`, () => {
+    const countdowns = Array.from({ length: 4 }, (_, i) => countdown(i, `2026-11-1${i}`))
+    const events = Array.from({ length: 4 }, (_, i) => event(10 + i, `2026-12-1${i}T12:00`))
+    expect(comingUp(countdowns, events, '2026-10-10', now)).toHaveLength(COMING_UP_SHOWN)
   })
 })
 
@@ -81,19 +107,16 @@ describe('daysUntil', () => {
   })
 })
 
-describe('eventsAhead', () => {
-  it('drops an event whose time at the venue has passed', () => {
-    const now = Date.parse('2026-10-10T12:00:00Z')
-    const list = [event(1, '2026-10-10T09:00'), event(2, '2026-10-10T19:00')]
-    expect(eventsAhead(list, now).map((e) => e.id)).toEqual([2])
-  })
-})
-
 describe('useTodayStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    clock.day = '2026-10-10'
   })
+
+  function dayLoadsFor(day: string) {
+    return mockApi.get.mock.calls.filter(([url, config]) => url === '/habits/day/' && config?.params?.date === day)
+  }
 
   it("loads today's completed tasks into its own list and leaves the shared one empty", async () => {
     serve()
@@ -116,7 +139,45 @@ describe('useTodayStore', () => {
 
     expect(failed.sort()).toEqual(['events', 'habits'])
     expect(store.error?.status).toBe(503)
+    expect(store.status).toEqual({
+      tasks: 'loaded',
+      habits: 'failed',
+      countdowns: 'loaded',
+      events: 'failed',
+      shopping: 'loaded',
+    })
     expect(store.openTasks).toHaveLength(2)
+  })
+
+  it('reloads every list for the new day when a page left visible passes midnight', async () => {
+    serve()
+    const store = useTodayStore()
+    await store.load()
+    vi.clearAllMocks()
+
+    expect(await store.syncDay()).toEqual([])
+    expect(mockApi.get).not.toHaveBeenCalled()
+
+    clock.day = '2026-10-11'
+    await store.syncDay()
+    expect(store.today).toBe('2026-10-11')
+    expect(dayLoadsFor('2026-10-11')).toHaveLength(1)
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed/', { params: { start_date: '2026-10-11', end_date: '2026-10-11' } })
+  })
+
+  it('still moves to the new day when a habit was undone just after midnight', async () => {
+    const completion = { id: 40, habit_id: 7, name: 'Morning run', complete_date: '2026-10-10' } as HabitCompleted
+    serve({ '/habits/day/': { ...day, completed: [completion], due: [] } })
+    const store = useTodayStore()
+    await store.load()
+
+    // The undo reloads the board it is on, which is still yesterday's.
+    clock.day = '2026-10-11'
+    await store.uncheckHabit(completion)
+    expect(dayLoadsFor('2026-10-11')).toHaveLength(0)
+
+    await store.syncDay()
+    expect(dayLoadsFor('2026-10-11')).toHaveLength(1)
   })
 
   it('moves a completed task to the top of done today, and reopening it moves it back', async () => {

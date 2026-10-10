@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { START_LOCATION, createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -319,6 +319,18 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+function isInstalledApp(): boolean {
+  if (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches) return true
+  return (navigator as Navigator & { standalone?: boolean }).standalone === true
+}
+
+// A Home Screen icon may keep the start URL its manifest had when it was added,
+// so an installed app launched on `/` is sent to the page it is meant to open on.
+// Only the launch is redirected; Home stays reachable from inside the app.
+router.beforeEach((to, from) => {
+  if (from === START_LOCATION && to.path === '/' && isInstalledApp()) return { path: '/today', replace: true }
 })
 
 router.beforeEach(async (to) => {

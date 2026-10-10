@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import TodayView from '../TodayView.vue'
-import { useTodayStore } from '@/stores/today'
+import { type PartStatus, type TodayPart, useTodayStore } from '@/stores/today'
 import { ApiError } from '@/api/errors'
 import type { Countdown, Event as CalendarEvent, Habit, HabitCategory, HabitCompleted, ShoppingItem, Task } from '@/api/client'
 
@@ -42,32 +42,49 @@ const stretched: HabitCompleted = {
 const gutters = task(1, 'clean gutters')
 const watered = { ...task(3, 'water plants'), complete_date: '2026-10-10T08:00:00Z' }
 const renewal: Countdown = { id: 5, name: 'Insurance renewal', due_date: '2026-10-11' }
+// Noon UTC falls on the same day in every zone a test machine runs in.
 const wedding: CalendarEvent = {
   id: 9,
   name: 'Friends wedding',
-  date: '2026-11-04T16:00',
-  timezone: 'America/New_York',
+  date: '2026-11-04T12:00',
+  timezone: 'UTC',
   venue: 'Barn',
   cost: 0,
   attending: true,
 }
 const eggs = { id: 'eggs', name: 'eggs', section_name: 'Costco' } as ShoppingItem
 
-function createWrapper() {
+const allLoaded: Record<TodayPart, PartStatus> = {
+  tasks: 'loaded',
+  habits: 'loaded',
+  countdowns: 'loaded',
+  events: 'loaded',
+  shopping: 'loaded',
+}
+
+function createWrapper(status: Partial<Record<TodayPart, PartStatus>> = {}) {
   const pinia = createTestingPinia({
     initialState: {
       tasks: { tasks: [gutters], completedTasks: [], loading: false, error: null },
-      habits: { dayDue: [run], dayCompleted: [stretched], selectedDate: '2026-10-10', loading: false, error: null },
+      habits: {
+        dayDue: [run],
+        dayCompleted: [stretched],
+        selectedDate: '2026-10-10',
+        today: '2026-10-10',
+        loading: false,
+        error: null,
+      },
       countdowns: { countdowns: [renewal], loading: false, error: null },
       events: { events: [wedding], loading: false, error: null },
       shopping: { catalog: [{ ...eggs, is_needed: true }], sections: [], recentPurchases: [], loading: false, error: null },
-      today: { today: '2026-10-10', doneTasks: [watered], loading: false, error: null },
+      today: { doneTasks: [watered], status: { ...allLoaded, ...status }, error: null },
     },
     stubActions: true,
     createSpy: vi.fn,
   })
   const store = useTodayStore(pinia)
   vi.mocked(store.load).mockResolvedValue([])
+  vi.mocked(store.syncDay).mockResolvedValue([])
   const wrapper = mount(TodayView, {
     global: {
       plugins: [pinia],
@@ -81,6 +98,7 @@ describe('TodayView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    vi.useFakeTimers({ now: Date.parse('2026-10-10T12:00:00Z') })
   })
 
   afterEach(() => {
@@ -97,7 +115,26 @@ describe('TodayView', () => {
     expect(wrapper.find('[data-testid="today-habit"]').text()).toContain('Morning run')
     expect(wrapper.find('[data-testid="today-shopping"]').text()).toContain('1 on the list')
     expect(wrapper.find('[data-testid="today-countdown"]').text()).toContain('Tomorrow')
-    expect(wrapper.find('[data-testid="today-event"]').text()).toContain('Nov 4')
+    expect(wrapper.find('[data-testid="today-event"]').text()).toContain('25 days')
+  })
+
+  it('says a list is loading until it arrives and could not load once it fails, never that it is empty', async () => {
+    const { wrapper } = createWrapper({ tasks: 'loading', habits: 'failed', shopping: 'loading', countdowns: 'failed' })
+    await flushPromises()
+
+    const tasks = wrapper.find('[data-testid="today-tasks"]').text()
+    expect(tasks).toContain('Loading…')
+    expect(tasks).not.toContain('open')
+    const habits = wrapper.find('[data-testid="today-habits"]').text()
+    expect(habits).toContain('Could not load habits')
+    expect(habits).not.toContain('No habits due')
+    expect(habits).not.toContain('Morning run')
+    expect(wrapper.find('[data-testid="today-shopping-count"]').text()).toBe('Loading…')
+    const comingUp = wrapper.find('[data-testid="today-coming-up"]')
+    expect(comingUp.find('[data-testid="today-event"]').exists()).toBe(true)
+    expect(comingUp.find('[data-testid="today-countdown"]').exists()).toBe(false)
+    expect(comingUp.text()).toContain('Could not load countdowns')
+    expect(comingUp.text()).not.toContain('Nothing coming up')
   })
 
   it('says which lists did not load', async () => {
@@ -110,7 +147,6 @@ describe('TodayView', () => {
   })
 
   it('strikes a task through on the tap and completes it once the strike lands', async () => {
-    vi.useFakeTimers()
     const { wrapper, store } = createWrapper()
     await flushPromises()
 
@@ -131,7 +167,6 @@ describe('TodayView', () => {
   })
 
   it('checks a habit off, and undoes one tapped under done today', async () => {
-    vi.useFakeTimers()
     const { wrapper, store } = createWrapper()
     await flushPromises()
 
@@ -193,17 +228,28 @@ describe('TodayView', () => {
     expect(mockNotify).toHaveBeenCalledWith(expect.stringContaining('Could not add fix the gate'), 'error')
   })
 
-  it('reloads when the app comes back on a later day, and not when it comes back the same day', async () => {
+  it('reloads every list each time the installed app resumes, the same day included', async () => {
     const { store } = createWrapper()
-    await flushPromises()
-
-    document.dispatchEvent(new Event('visibilitychange'))
     await flushPromises()
     expect(store.load).toHaveBeenCalledOnce()
 
-    store.today = '2026-10-09'
     document.dispatchEvent(new Event('visibilitychange'))
     await flushPromises()
-    expect(store.load).toHaveBeenCalledTimes(2)
+    document.dispatchEvent(new Event('visibilitychange'))
+    await flushPromises()
+    expect(store.load).toHaveBeenCalledTimes(3)
+  })
+
+  it('checks the clock every minute while a tab stays visible past midnight', async () => {
+    const { wrapper, store } = createWrapper()
+    await flushPromises()
+    expect(store.syncDay).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(store.syncDay).toHaveBeenCalledOnce()
+
+    wrapper.unmount()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(store.syncDay).toHaveBeenCalledOnce()
   })
 })
