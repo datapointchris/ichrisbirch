@@ -3,7 +3,7 @@
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
 programmatic front door to the personal-productivity apps (tasks, projects,
 countdowns, books, articles, habits, events, recipes, cooking-techniques,
-strains) and the
+strains, shopping) and the
 **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
 
@@ -78,6 +78,13 @@ tables, so their values are read from the server on every create and edit and a
 wrong one is refused with the list of what would have worked. Adding a value is
 an insert on the server, not a release of this binary. `icb strains vocabulary`
 prints every value with how many strains carry it.
+
+`shopping` takes its own verbs, because an item is a catalog row rather than a
+record made once. `add` puts names on the list, and a name bought before goes
+back in the section it was last in. `check` records a purchase and takes the
+item off, `remove` takes it off without one, and `delete` forgets it. `history`
+reads the purchase log. `shopping sections` creates, renames, reorders and
+deletes the sections. Items and sections are named by name, in any case.
 
 Each machine authenticates as its own Authelia public client, `icb-cli-<host>`.
 A new machine needs that client registered in the Authelia configuration before
@@ -181,11 +188,12 @@ icb overview --limit 3       # a tighter per-section cap
 
 `--limit 0` returns nothing everywhere it appears, and a negative is a usage
 error. What it counts differs by command: a list read caps rows and omitting the
-flag returns every one of them, while `overview` caps each section separately and
-`projects items next` and `issues next` cap what they print. Each `--help` names
-its own unit.
+flag returns every one of them, except `shopping history`, whose purchase log
+only grows and so comes back capped at its newest rows. `overview` caps each
+section separately, and `projects items next` and `issues next` cap what they
+print. Each `--help` names its own unit and default.
 
-Contract notes for consumers (`menu dashboard` in dotfiles is the first):
+Contract notes for consumers (a terminal dashboard is the first):
 
 - `schema_version` is the compatibility signal. Additive changes do not bump it;
   read fields defensively and it stays stable.
