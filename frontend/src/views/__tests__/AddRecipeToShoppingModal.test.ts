@@ -49,9 +49,9 @@ const quiche: Recipe = {
   ],
 }
 
-function mountModal() {
+function mountModal(recipe: Recipe = quiche) {
   return mount(AddRecipeToShoppingModal, {
-    props: { visible: true, recipe: quiche, servings: 8 },
+    props: { visible: true, recipe, servings: 8 },
     global: {
       stubs: {
         AddEditModal: {
@@ -79,6 +79,26 @@ describe('AddRecipeToShoppingModal', () => {
       { name: 'milk', note: '1/2 cup · Quiche' },
       { name: 'salt', note: 'to taste · Quiche' },
       { name: 'pie crust', note: 'Quiche' },
+    ])
+  })
+
+  it('asks for both eggs when a pie takes one in the crust and one in the filling', async () => {
+    const pie: Recipe = {
+      ...quiche,
+      name: 'Pie',
+      ingredients: [
+        ingredient(1, 'egg', { quantity: 1, ingredient_group: 'crust' }),
+        ingredient(2, 'butter', { quantity: 2, unit: 'tbsp', ingredient_group: 'crust' }),
+        ingredient(3, 'Egg', { quantity: 1, ingredient_group: 'filling' }),
+        ingredient(4, 'butter', { quantity: 0.5, unit: 'cup', ingredient_group: 'filling' }),
+      ],
+    }
+    const wrapper = mountModal(pie)
+    await wrapper.get('form').trigger('submit')
+
+    expect(wrapper.emitted('add')?.[0]?.[0]).toEqual([
+      { name: 'egg', note: '2 · Pie' },
+      { name: 'butter', note: '2 tbsp + 1/2 cup · Pie' },
     ])
   })
 

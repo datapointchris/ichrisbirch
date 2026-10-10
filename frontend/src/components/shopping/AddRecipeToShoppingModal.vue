@@ -63,9 +63,33 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { Recipe, ShoppingItemCreate } from '@/api/client'
+import type { Recipe, RecipeIngredient, ShoppingItemCreate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
 import { ingredientAmount } from '@/composables/ingredientAmount'
+
+type Ingredient = Pick<RecipeIngredient, 'item' | 'quantity' | 'scaled_quantity' | 'unit'>
+
+// One item per name with its amounts summed by unit, because the server keeps a repeated note once.
+function itemsFor(ingredients: Ingredient[], recipeName: string): ShoppingItemCreate[] {
+  const byName = new Map<string, { name: string; totals: Map<string, number | null> }>()
+  for (const ing of ingredients) {
+    const name = ing.item.trim()
+    const key = name.toLowerCase()
+    const entry = byName.get(key) ?? { name, totals: new Map<string, number | null>() }
+    byName.set(key, entry)
+    const unit = ing.unit ?? ''
+    const quantity = ing.scaled_quantity ?? ing.quantity
+    const total = entry.totals.get(unit) ?? null
+    entry.totals.set(unit, quantity === null || quantity === undefined ? total : (total ?? 0) + quantity)
+  }
+  return [...byName.values()].map(({ name, totals }) => {
+    const amount = [...totals]
+      .map(([unit, quantity]) => ingredientAmount({ quantity, scaled_quantity: null, unit: unit || null }))
+      .filter(Boolean)
+      .join(' + ')
+    return { name, note: amount ? `${amount} · ${recipeName}` : recipeName }
+  })
+}
 
 const props = defineProps<{
   visible: boolean
@@ -90,12 +114,10 @@ watch(
 )
 
 function handleSubmit(handleSuccess: () => void) {
-  const items = props.recipe.ingredients
-    .filter((ing) => chosen.value.includes(ing.id))
-    .map((ing) => {
-      const amount = ingredientAmount(ing)
-      return { name: ing.item.trim(), note: amount ? `${amount} · ${props.recipe.name}` : props.recipe.name }
-    })
+  const items = itemsFor(
+    props.recipe.ingredients.filter((ing) => chosen.value.includes(ing.id)),
+    props.recipe.name
+  )
   if (items.length === 0) return
   emit('add', items)
   handleSuccess()
