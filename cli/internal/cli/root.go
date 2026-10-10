@@ -52,7 +52,14 @@ func requireSubcommand(cmd *cobra.Command, args []string) error {
 
 // unknownWord refuses a word that names no subcommand of cmd, with cobra's own
 // suggestions. No help pointer: goclikit.Execute appends one to a flag error.
+//
+// The distance defaults to two exactly as cobra's own findSuggestions does.
+// Left at zero, a group would offer prefixes only, and `projects itms --json`
+// would name nothing where `projects itms` names items.
 func unknownWord(cmd *cobra.Command, word string) error {
+	if cmd.SuggestionsMinimumDistance <= 0 {
+		cmd.SuggestionsMinimumDistance = 2
+	}
 	refusal := fmt.Sprintf("unknown command %q for %q", word, cmd.CommandPath())
 	if names := cmd.SuggestionsFor(word); len(names) > 0 {
 		refusal += "\n\nDid you mean this?\n\t" + strings.Join(names, "\n\t")
@@ -101,10 +108,12 @@ func NewRootCommand() *cobra.Command {
 	// goclikit.Execute composes with this rather than replacing it, and keeping
 	// it here is what makes the tree self-classifying for anything driving
 	// NewRootCommand directly.
-	// At the root, words before the bad flag mean no command matched, so the
-	// first of them is the mistake and is the one answered.
+	// At a group, words before the bad flag mean no subcommand matched, so the
+	// first of them is the mistake and is the one answered. Every group runs
+	// requireSubcommand and takes no positional of its own, which is what makes
+	// a leftover word an unknown command rather than an argument.
 	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
-		if words := cmd.Flags().Args(); !cmd.HasParent() && len(words) > 0 {
+		if words := cmd.Flags().Args(); cmd.HasAvailableSubCommands() && len(words) > 0 {
 			return usageError{unknownWord(cmd, words[0])}
 		}
 		return usageError{err}

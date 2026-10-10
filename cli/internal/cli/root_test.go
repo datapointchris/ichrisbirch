@@ -50,6 +50,8 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 		{[]string{"items", "show", "848"}, "issues"},
 		{[]string{"show", "848", "--json"}, "issues"},
 		{[]string{"search", "golang"}, "issues"},
+		{[]string{"projects", "itms", "--json"}, "items"},
+		{[]string{"projects", "items", "lisz", "--json"}, "list"},
 	} {
 		root := NewRootCommand()
 		root.SetOut(&bytes.Buffer{})
@@ -58,6 +60,29 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 		err := root.Execute()
 		if err == nil || !slices.Contains(strings.Fields(err.Error()), c.meant) {
 			t.Errorf("%v answered %v, want it to name %q", c.args, err, c.meant)
+		}
+	}
+}
+
+// A flag the leaf would have taken, typed after a word naming no subcommand,
+// leaves the word as the mistake at every depth.
+func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
+	for _, args := range [][]string{
+		{"bogus", "search", "foo", "--json"},
+		{"projects", "bogus", "--json"},
+		{"projects", "items", "bogus", "5", "--json"},
+		{"tasks", "categories", "bogus", "--json"},
+	} {
+		root := NewRootCommand()
+		root.SetOut(&bytes.Buffer{})
+		root.SetErr(&bytes.Buffer{})
+		root.SetArgs(args)
+		err := root.Execute()
+		if err == nil || !strings.Contains(err.Error(), `unknown command "bogus"`) {
+			t.Errorf("%v answered %v, want it to refuse \"bogus\"", args, err)
+		}
+		if got := exitCodeFor(err); got != 2 {
+			t.Errorf("%v exit = %d, want 2", args, got)
 		}
 	}
 }
