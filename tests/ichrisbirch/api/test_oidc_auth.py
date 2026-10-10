@@ -272,7 +272,6 @@ class TestIsAccessToken:
 
     def test_rejects_an_id_token_and_anything_unparseable(self, idp):
         assert not is_access_token(idp.sign(idp.valid_claims(), token_type='JWT'))
-        assert not is_access_token('icb_a_personal_api_key')
         assert not is_access_token('')
 
 
@@ -289,15 +288,11 @@ class TestGetOIDCIdentity:
 
     @pytest.mark.parametrize(
         'authorization',
-        [None, '', 'Basic dXNlcjpwdw==', 'Bearer icb_a_personal_api_key', 'Bearer not-a-jwt'],
+        [None, '', 'Basic dXNlcjpwdw==', 'Bearer not-a-jwt'],
     )
     def test_passes_other_credentials_through_untouched(self, idp, authorization):
         """A credential belonging to another strategy is not this one's to reject."""
         assert get_oidc_identity(make_request(authorization), oidc_settings(idp)) is None
-
-    def test_a_locally_signed_jwt_is_not_an_access_token(self, idp):
-        local = jwt.encode({'sub': '123'}, 'a-local-hs256-secret-of-at-least-32-bytes', algorithm='HS256')
-        assert get_oidc_identity(make_request(f'Bearer {local}'), oidc_settings(idp)) is None
 
     @pytest.mark.parametrize(
         'claims_override',

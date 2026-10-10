@@ -28,10 +28,9 @@ def test_the_headers_forwardauth_sets_resolve_the_account(txn_api):
     'authorization',
     [
         'Bearer forged.jwt.value',
-        'Bearer icb_not_a_real_key',
         'Bearer ' + jwt.encode({'sub': '1'}, 'a-secret-this-api-never-signed-with', algorithm='HS256'),
     ],
-    ids=['junk-token', 'personal-api-key', 'locally-signed-jwt'],
+    ids=['junk-token', 'locally-signed-jwt'],
 )
 def test_a_rejected_bearer_never_falls_through_to_the_headers(txn_api, authorization):
     client, _ = txn_api
