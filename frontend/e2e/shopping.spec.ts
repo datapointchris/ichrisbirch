@@ -41,6 +41,35 @@ test.describe('Shopping Page', () => {
     await expect(page.getByTestId('shopping-bought-row').filter({ hasText: name })).toBeVisible()
   })
 
+  test('on a phone, a list longer than the screen keeps every check circle clear of the menu button', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'the menu button moves to the phone bar only at phone width')
+    await page.goto('/shopping')
+    const stamp = Date.now()
+    for (let i = 0; i < 20; i++) {
+      await page.getByTestId('shopping-add-input').fill(`e2e long list ${stamp} ${i}`)
+      await page.getByTestId('shopping-add-input').press('Enter')
+    }
+    await expect(page.getByTestId('shopping-item').filter({ hasText: `e2e long list ${stamp} 19` })).toBeVisible()
+
+    // At every scroll position, a circle showing below the sticky add bar takes the tap itself.
+    const covered = await page.evaluate(() => {
+      const hidden = new Set<string>()
+      for (let y = 0; y <= document.documentElement.scrollHeight; y += 100) {
+        window.scrollTo(0, y)
+        const addBar = document.querySelector('.shopping__add-bar')!.getBoundingClientRect()
+        for (const circle of document.querySelectorAll('[data-testid="shopping-item-check"]')) {
+          const box = circle.getBoundingClientRect()
+          if (box.top < addBar.bottom || box.bottom > window.innerHeight) continue
+          const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+          if (!circle.contains(hit)) hidden.add(circle.closest('[data-testid="shopping-item"]')?.textContent?.trim() ?? '')
+        }
+      }
+      return [...hidden]
+    })
+    expect(covered).toEqual([])
+    await expect(page.getByTestId('sidebar-open-button')).toBeVisible()
+  })
+
   test('sidebar navigation to shopping works', async ({ page, isMobile }) => {
     await page.goto('/shopping')
     if (isMobile) await page.getByTestId('sidebar-open-button').click()

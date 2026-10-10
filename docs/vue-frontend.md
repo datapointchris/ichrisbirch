@@ -97,7 +97,11 @@ npm test             # Build check + unit tests
 
 One width separates a phone from everything else. `abstracts/_breakpoints.scss` holds it as `$phone-max-width` and wraps it in `@include breakpoints.phone`. `base/_base.scss` publishes the same value as the `--phone-max-width` CSS variable, and `usePhoneViewport()` reads that variable. So a stylesheet and a script switch at the same width, and changing the width is one edit.
 
-Under that width the sidebar is off-canvas. It starts closed, closes on every navigation, and closes when its backdrop is tapped. The page reaches the screen edges, padded by the `env(safe-area-inset-*)` insets, because `index.html` sets `viewport-fit=cover` and a translucent status bar for the home-screen app. `public/manifest.webmanifest` and `public/icons/` make the site installable to a home screen.
+Under that width the sidebar is off-canvas. It starts closed, closes on every navigation, and closes when its backdrop is tapped. It opens from the menu button in the phone bar, a sticky strip `App.vue` puts above every page. The button lives in that bar because a floating one sits over whatever scrolls beneath it, such as a list's check-off column.
+
+A page's own sticky header sets `top: var(--page-sticky-top)`. On a phone that value clears the phone bar, and elsewhere it clears only the notch.
+
+The page reaches the screen edges, padded by the `env(safe-area-inset-*)` insets, because `index.html` sets `viewport-fit=cover` and a translucent status bar for the home-screen app. `public/manifest.webmanifest` and `public/icons/` make the site installable to a home screen. The manifest link carries `crossorigin="use-credentials"`. Without it the browser fetches the manifest with no cookies, and production answers a request with no session by redirecting to the login page.
 
 ## Pre-commit Hooks
 

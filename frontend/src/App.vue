@@ -18,6 +18,25 @@
       class="layout"
       :class="{ 'layout--expanded': !sidebarOpen || isPhone }"
     >
+      <header
+        v-if="isPhone"
+        class="phone-bar"
+        data-testid="phone-bar"
+      >
+        <div
+          class="button-sidebar-tab"
+          data-testid="sidebar-open-button"
+          role="button"
+          aria-label="Open the menu"
+          tabindex="0"
+          @click="sidebarOpen = true"
+          @keydown.enter="sidebarOpen = true"
+        >
+          <div class="button-sidebar-tab__text">
+            <span class="fa-solid fa-bars"></span>
+          </div>
+        </div>
+      </header>
       <main class="main">
         <RouterView v-if="ready" />
       </main>
@@ -108,9 +127,21 @@ onMounted(async () => {
   padding-bottom: calc(var(--space-m) + env(safe-area-inset-bottom));
 
   @include breakpoints.phone {
+    padding-top: var(--space-s);
     padding-left: calc(var(--space-xs) + env(safe-area-inset-left));
     padding-right: calc(var(--space-xs) + env(safe-area-inset-right));
   }
+}
+
+// The phone bar takes the notch, so the page under it needs no inset of its own.
+.phone-bar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  height: calc(var(--phone-bar-height) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) calc(var(--space-xs) + env(safe-area-inset-right)) 0 calc(var(--space-xs) + env(safe-area-inset-left));
 }
 
 .sidebar-backdrop {

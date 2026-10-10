@@ -15,7 +15,7 @@ $touch-target: 44px;
 
   &__add-bar {
     position: sticky;
-    top: env(safe-area-inset-top);
+    top: var(--page-sticky-top);
     z-index: 3;
     display: flex;
     flex-direction: column;

@@ -1,8 +1,8 @@
 <template>
-  <!-- Collapsed tab — visible when sidebar is closed -->
+  <!-- Collapsed tab — visible when sidebar is closed. A phone opens it from the phone bar in App.vue. -->
   <Transition name="tab">
     <div
-      v-if="!open"
+      v-if="!open && !isPhone"
       class="sidebar-tab"
     >
       <div
@@ -108,6 +108,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
 import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
+import { usePhoneViewport } from '@/composables/usePhoneViewport'
 
 defineProps<{
   open: boolean
@@ -120,6 +121,7 @@ defineEmits<{
 
 const route = useRoute()
 const auth = useAuthStore()
+const isPhone = usePhoneViewport()
 
 const mainLinks = computed(() => {
   const order = (auth.preferences?.sidebar_order as string[] | undefined) ?? DEFAULT_SIDEBAR_ORDER
@@ -170,7 +172,6 @@ function isActive(link: NavLink): boolean {
 
 <style lang="scss" scoped>
 @use 'components/buttons';
-@use 'abstracts/breakpoints';
 .sidebar {
   width: 220px;
   padding-top: env(safe-area-inset-top);
@@ -242,12 +243,6 @@ function isActive(link: NavLink): boolean {
   top: var(--space-m);
   left: var(--space-xs);
   z-index: 100;
-
-  // Within reach of a thumb, and clear of a page's sticky header.
-  @include breakpoints.phone {
-    top: auto;
-    bottom: calc(var(--space-s) + env(safe-area-inset-bottom));
-  }
 }
 
 /* Sidebar slide transition */
