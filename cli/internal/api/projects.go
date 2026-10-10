@@ -103,11 +103,17 @@ func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus s
 	return projects, nil
 }
 
+// projectPath escapes the reference because a project is addressed by its name,
+// and a name may hold a slash, a question mark or a hash.
+func projectPath(ref string) string {
+	return "/projects/" + url.PathEscape(ref) + "/"
+}
+
 // GetProject returns a single project with its item count (GET /projects/{id}/).
 // A missing id surfaces as an *APIError with StatusCode 404.
 func (c *Client) GetProject(ctx context.Context, id string) (Project, error) {
 	var project Project
-	if err := c.get(ctx, "/projects/"+id+"/", &project); err != nil {
+	if err := c.get(ctx, projectPath(id), &project); err != nil {
 		return Project{}, err
 	}
 	return project, nil
@@ -126,7 +132,7 @@ func (c *Client) CreateProject(ctx context.Context, in ProjectCreateInput) (Proj
 // updated project. A missing id surfaces as an *APIError with StatusCode 404.
 func (c *Client) UpdateProject(ctx context.Context, id string, in ProjectUpdateInput) (Project, error) {
 	var project Project
-	if err := c.send(ctx, http.MethodPatch, "/projects/"+id+"/", in, &project); err != nil {
+	if err := c.send(ctx, http.MethodPatch, projectPath(id), in, &project); err != nil {
 		return Project{}, err
 	}
 	return project, nil
@@ -136,7 +142,7 @@ func (c *Client) UpdateProject(ctx context.Context, id string, in ProjectUpdateI
 // the delete: a project with incomplete items that belong only to it returns
 // 409, which surfaces as an *APIError with StatusCode 409. A missing id is 404.
 func (c *Client) DeleteProject(ctx context.Context, id string) error {
-	return c.send(ctx, http.MethodDelete, "/projects/"+id+"/", nil, nil)
+	return c.send(ctx, http.MethodDelete, projectPath(id), nil, nil)
 }
 
 // The statuses a project can be in. Stored, unlike an item's, because for a
@@ -194,7 +200,7 @@ func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, st
 	}
 	applyDateBounds(query, start, end, zone)
 	applyLimit(query, limit)
-	path := withQuery("/projects/"+id+"/items/", query)
+	path := withQuery(projectPath(id)+"items/", query)
 	var items []ProjectItemInProject
 	if err := c.get(ctx, path, &items); err != nil {
 		return nil, err

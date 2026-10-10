@@ -166,7 +166,7 @@ func newItemsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
-	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order")
+	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order (full name or id)")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&start, "start", "", "Only items completed on or after this ISO 8601 date")

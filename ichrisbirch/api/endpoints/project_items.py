@@ -355,7 +355,9 @@ def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembership
     return project
 
 
-@router.delete('/{id}/projects/{project_id}/', status_code=status.HTTP_204_NO_CONTENT)
+# `{project_id:path}` because a project name may hold a slash, which reaches
+# routing decoded. It is the last segment, so nothing after it competes.
+@router.delete('/{id}/projects/{project_id:path}/', status_code=status.HTTP_204_NO_CONTENT)
 def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: DbSession):
     membership = session.get(ProjectItemMembership, (item.id, project.id))
     if not membership:

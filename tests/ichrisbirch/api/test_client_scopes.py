@@ -36,7 +36,7 @@ SCOPED_URLS = {
     '/project-items/{id}/': '/project-items/{item}/',
     '/project-items/{id}/blockers/': '/project-items/{item}/blockers/',
     '/project-items/{item_id}/tasks/': '/project-items/{item}/tasks/',
-    '/projects/{id}/items/': '/projects/{project}/items/',
+    '/projects/{id:path}/items/': '/projects/{project}/items/',
 }
 
 SCOPED_ROUTES = sorted((scope, method, template) for scope, routes in SCOPE_ROUTES.items() for method, template in routes)

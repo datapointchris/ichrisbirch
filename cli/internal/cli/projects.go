@@ -18,10 +18,11 @@ import (
 // projectHints is the command that finds a valid project name. The items
 // subcommands take a project name too, so their own hints name it as well.
 //
-// Each hidden status is named rather than summed up as "closed", because a
-// reader typing a word --status does not accept gets a second refusal.
+// A name resolves whatever the project's status, so a miss is a name that did
+// not match in full, never a project hidden by status. The API names the
+// projects near the miss on the line above these.
 var projectHints = []string{
-	"Shelved, completed and dropped projects are hidden: icb projects list --status all",
+	"A project is named in full or by its id; every project: icb projects list --status all",
 	"A development project is an issue initiative: icb issues list --initiative <name>",
 }
 
@@ -31,7 +32,10 @@ func newProjectsCommand() *cobra.Command {
 		Short: "List, inspect, and manage your projects",
 		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
 			"is the container; the work itself is in `icb projects items`. Development\n" +
-			"work is `icb issues`.",
+			"work is `icb issues`.\n" +
+			"\n" +
+			"<project> and --project take a project's full name or its id, whatever its\n" +
+			"status. A name that misses is answered with the names near it.",
 		RunE: requireSubcommand,
 	}
 	withNotFoundHints(cmd, projectHints...)

@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.names_near import names_near
 
 logger = structlog.get_logger()
 
@@ -95,6 +96,14 @@ def resolve_project(session: Session, ref: str | UUID) -> models.Project:
         project = session.get(models.Project, project_id)
     else:
         project = _project_by_name(session, ref)
+        if project is None:
+            raise NotFoundException('project', ref, logger, near=names_near(ref, _project_names(session)))
     if project is None:
         raise NotFoundException('project', str(ref), logger)
     return project
+
+
+def _project_names(session: Session) -> list[str]:
+    """Every project's name, active ones first and each group in board order."""
+    query = select(models.Project.name).order_by((models.Project.status == 'active').desc(), models.Project.position)
+    return list(session.scalars(query))

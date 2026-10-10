@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 )
 
@@ -160,6 +162,47 @@ func TestDeleteProject_Sends204Delete(t *testing.T) {
 	}
 	if gotPath != "/projects/018f-a/" {
 		t.Errorf("path = %s, want /projects/018f-a/", gotPath)
+	}
+}
+
+// A name holding a slash travels as one escaped segment on every call taking a
+// project, or the server reads two segments and answers 404.
+func TestAProjectNameHoldingASlashTravelsAsOneSegment(t *testing.T) {
+	var gotPaths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPaths = append(gotPaths, r.URL.EscapedPath())
+		if r.Method == http.MethodDelete {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if strings.HasSuffix(r.URL.Path, "/items/") {
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+
+	ctx := context.Background()
+	name := "Linux-first / De-Big-Tech"
+	client := New(srv.URL, staticTokenClient("t"))
+	_, _ = client.GetProject(ctx, name)
+	_, _ = client.UpdateProject(ctx, name, ProjectUpdateInput{})
+	_ = client.DeleteProject(ctx, name)
+	_, _ = client.ListProjectItems(ctx, name, "", "", "", "", nil)
+	_ = client.RemoveItemFromProject(ctx, "5", name)
+
+	escaped := "Linux-first%20%2F%20De-Big-Tech"
+	want := []string{
+		"/projects/" + escaped + "/",
+		"/projects/" + escaped + "/",
+		"/projects/" + escaped + "/",
+		"/projects/" + escaped + "/items/",
+		"/project-items/5/projects/" + escaped + "/",
+	}
+	if !slices.Equal(gotPaths, want) {
+		t.Errorf("paths = %q, want %q", gotPaths, want)
 	}
 }
 

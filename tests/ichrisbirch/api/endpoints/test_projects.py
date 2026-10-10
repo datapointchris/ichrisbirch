@@ -1,4 +1,5 @@
 import datetime as dt
+from urllib.parse import quote
 
 import pytest
 from fastapi import status
@@ -1289,6 +1290,59 @@ class TestProjectNameAsReference:
     def test_an_unknown_name_is_a_404(self, project_and_client):
         client, _ = project_and_client
         assert client.get(f'{PROJECTS_ENDPOINT}no-such-project/').status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize('typed', ['ypl', 'YPL', 'ypl — YouTube playlst CLI'])
+    def test_a_short_or_mistyped_name_is_answered_with_the_one_it_meant(self, project_and_client, typed):
+        client, _ = project_and_client
+        client.post(PROJECTS_ENDPOINT, json={'name': 'ypl — YouTube playlist CLI'})
+
+        response = client.get(f'{PROJECTS_ENDPOINT}{quote(typed, safe="")}/')
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+        assert "'ypl — YouTube playlist CLI'" in response.json()['detail']
+
+    def test_a_name_near_nothing_names_nothing(self, project_and_client):
+        client, _ = project_and_client
+        assert client.get(f'{PROJECTS_ENDPOINT}zzqx/').json()['detail'] == 'project zzqx not found'
+
+
+class TestProjectNameHoldingASlash:
+    """The path reaches routing decoded, so a name's `%2F` arrives as a slash."""
+
+    NAME = 'Linux-first / De-Big-Tech'
+
+    @pytest.fixture
+    def client_and_path(self, txn_api_logged_in):
+        client, session = txn_api_logged_in
+        insert_test_data_transactional(session, 'projects')
+        created = client.post(PROJECTS_ENDPOINT, json={'name': self.NAME})
+        assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+        return client, f'{PROJECTS_ENDPOINT}{quote(self.NAME, safe="")}/'
+
+    def test_every_project_route_resolves_it(self, client_and_path):
+        client, path = client_and_path
+        other = next(row['name'] for row in client.get(PROJECTS_ENDPOINT).json() if row['name'] != self.NAME)
+        item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Leave the big clouds', 'project_ids': [self.NAME, other]}).json()
+
+        assert client.get(path).json()['name'] == self.NAME
+        assert [row['number'] for row in client.get(f'{path}items/').json()] == [item['number']]
+        assert client.patch(path, json={'description': 'Named with a slash'}).json()['description'] == 'Named with a slash'
+
+        removed = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{item["number"]}/projects/{quote(self.NAME, safe="")}/')
+        assert removed.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(removed)
+
+        assert client.delete(path).status_code == status.HTTP_204_NO_CONTENT
+        assert client.get(path).status_code == status.HTTP_404_NOT_FOUND
+
+    def test_the_item_list_of_one_project_is_not_read_as_another_project(self, client_and_path):
+        client, _ = client_and_path
+        refused = client.post(PROJECTS_ENDPOINT, json={'name': 'Kitchen/items'})
+        assert refused.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(refused)
+
+    def test_a_rename_ending_in_the_items_route_is_refused(self, client_and_path):
+        client, path = client_and_path
+        refused = client.patch(path, json={'name': 'Linux-first/items'})
+        assert refused.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(refused)
 
 
 class TestProjectItemCompletedAt:

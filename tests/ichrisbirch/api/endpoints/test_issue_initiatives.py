@@ -56,6 +56,12 @@ def test_a_name_holding_a_slash_addresses_its_initiative(client):
     assert client.get(path).status_code == status.HTTP_404_NOT_FOUND
 
 
+def test_a_short_name_is_answered_with_the_initiative_it_meant(client):
+    response = client.get(f'{INITIATIVES}issue tracker/')
+    assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
+    assert "'Ship the issue tracker'" in response.json()['detail']
+
+
 def test_counts_partition_the_issues_and_repos_name_the_work_done_or_left(client):
     created = {
         repo: ok(

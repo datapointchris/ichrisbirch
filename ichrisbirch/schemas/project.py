@@ -1,10 +1,24 @@
 import datetime as dt
+from typing import Annotated
 from uuid import UUID
 
+from pydantic import AfterValidator
 from pydantic import BaseModel
 from pydantic import ConfigDict
 
 from ichrisbirch.schemas.not_null import NotNull
+
+ITEMS_ROUTE_SUFFIX = '/items'
+
+
+def refuse_items_route_suffix(name: str) -> str:
+    """A project is addressed by name in the path, so `x/items` would read as project `x`'s items."""
+    if name.endswith(ITEMS_ROUTE_SUFFIX):
+        raise ValueError(f'cannot end in {ITEMS_ROUTE_SUFFIX!r}, which /projects/<name>/items/ reads as an item list')
+    return name
+
+
+ProjectName = Annotated[str, AfterValidator(refuse_items_route_suffix)]
 
 
 class ProjectConfig(BaseModel):
@@ -17,7 +31,7 @@ class ProjectCreate(ProjectConfig):
     it completed while disconnected must not come back as active."""
 
     id: UUID | None = None
-    name: str
+    name: ProjectName
     description: str | None = None
     kind: str = 'life'
     status: str = 'active'
@@ -42,7 +56,7 @@ class ProjectUpdate(ProjectConfig):
     into a terminal status and clears it on reopen, so it cannot drift from the
     status it describes."""
 
-    name: NotNull[str] = None
+    name: NotNull[ProjectName] = None
     description: str | None = None
     kind: NotNull[str] = None
     status: NotNull[str] = None

@@ -247,7 +247,7 @@ func (c *Client) AddItemToProject(ctx context.Context, id string, in ProjectMemb
 // (DELETE /project-items/{id}/projects/{projectID}/ → 204). The API refuses (409)
 // to remove an item from its last project.
 func (c *Client) RemoveItemFromProject(ctx context.Context, id, projectID string) error {
-	return c.send(ctx, http.MethodDelete, "/project-items/"+id+"/projects/"+projectID+"/", nil, nil)
+	return c.send(ctx, http.MethodDelete, "/project-items/"+id+"/projects/"+url.PathEscape(projectID)+"/", nil, nil)
 }
 
 // AddDependency records that item id depends on another item

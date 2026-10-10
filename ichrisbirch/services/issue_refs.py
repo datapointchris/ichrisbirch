@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.services.names_near import names_near
 
 logger = structlog.get_logger()
 
@@ -79,9 +80,17 @@ def resolve_initiative(session: Session, ref: str | UUID) -> models.Initiative:
         initiative = session.get(models.Initiative, initiative_id)
     else:
         initiative = _initiative_by_name(session, ref)
+        if initiative is None:
+            raise NotFoundException('initiative', ref, logger, near=names_near(ref, _initiative_names(session)))
     if initiative is None:
         raise NotFoundException('initiative', str(ref), logger)
     return initiative
+
+
+def _initiative_names(session: Session) -> list[str]:
+    """Every initiative's name, active ones first and each group in board order."""
+    query = select(models.Initiative.name).order_by((models.Initiative.status == 'active').desc(), models.Initiative.position)
+    return list(session.scalars(query))
 
 
 def resolve_label(session: Session, slug: str) -> models.IssueLabel:

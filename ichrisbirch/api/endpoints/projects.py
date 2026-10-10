@@ -206,104 +206,12 @@ def create(project: schemas.ProjectCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
-def read_one(project: ProjectFromPath, session: DbSession):
-    counts = (
-        select(*item_count_columns())
-        .select_from(ProjectItemMembership)
-        .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
-        .where(ProjectItemMembership.project_id == project.id)
-    )
-    item_count, open_count, completed_count, repos = session.execute(counts).one()
-    return project_with_counts(project, item_count, open_count, completed_count, repos)
-
-
-def apply_status_transition(project: models.Project, update_data: dict, session: Session) -> None:
-    """Fold the derived consequences of a status change into the update payload.
-
-    `closed_at` and the clearing of `status_reason` are consequences of the
-    transition, never things a caller sets — a client free to send them could
-    leave a project claiming to be active with a closing timestamp on it. This
-    is also the one place a transition is validated, which is why status moves
-    through PATCH rather than through complete/drop/reopen action endpoints.
-    """
-    new_status = update_data.get('status')
-    reason = update_data.get('status_reason', project.status_reason)
-
-    if new_status is None:
-        # No transition, but the reason can still be edited — and cleared, which
-        # the CHECK constraint refuses while the project is dropped.
-        require_reason_when_dropped(project.status, reason)
-        return
-
-    validate_status(new_status, session)
-    require_reason_when_dropped(new_status, reason)
-
-    # `someday` is open work set aside, so moving to it clears `closed_at` and the
-    # reason, as `active` does.
-    if new_status not in TERMINAL_PROJECT_STATUSES:
-        update_data['status_reason'] = None
-        update_data['closed_at'] = None
-    elif new_status != project.status:
-        update_data['closed_at'] = dt.datetime.now(dt.UTC)
-
-
-@router.patch('/{id}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
-def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
-    update_data = update.model_dump(exclude_unset=True)
-    logger.debug('project_update', project_id=project.id, update_data=update_data)
-    if (kind := update_data.get('kind')) is not None:
-        validate_kind(kind, session)
-
-    # A rename and a reopen both end with the project holding a name as an
-    # active project, which is the only status that holds one. Resolving both to
-    # the resulting (status, name) checks each of them, and the pair of them, once.
-    resulting_status = update_data.get('status', project.status)
-    resulting_name = update_data.get('name', project.name)
-    if resulting_status == 'active' and (resulting_name != project.name or project.status != 'active'):
-        ensure_active_name_available(session, resulting_name, exclude_id=project.id)
-
-    apply_status_transition(project, update_data, session)
-
-    for attr, value in update_data.items():
-        setattr(project, attr, value)
-    session.commit()
-    session.refresh(project)
-    return project
-
-
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
-def delete(project: ProjectFromPath, session: DbSession):
-    # Find items that only belong to this project (would become orphans)
-    multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != project.id)
-    orphan_query = (
-        select(models.ProjectItem)
-        .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
-        .where(ProjectItemMembership.project_id == project.id)
-        .where(~models.ProjectItem.id.in_(multi_project_items))
-    )
-    orphan_items = session.execute(orphan_query).scalars().all()
-
-    # Auto-delete completed orphans; block only on incomplete ones
-    incomplete_orphans = [item for item in orphan_items if not item.completed]
-    if incomplete_orphans:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f'Cannot delete project: {len(incomplete_orphans)} incomplete item(s) belong only to this project.'
-                ' Complete, move, or delete them first.'
-            ),
-        )
-
-    for item in orphan_items:
-        session.delete(item)
-
-    session.delete(project)
-    session.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.get('/{id}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
+# `{id:path}` on every route below, because a project name may hold a slash and
+# the path reaches routing already decoded, so `%2F` arrives as `/`. This route
+# is declared first: `/{id:path}/` would otherwise read `x/items/` as a project
+# named `x/items`, and `ProjectCreate` refuses that name so the reading stays
+# unambiguous.
+@router.get('/{id:path}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
 def list_items(
     project: ProjectFromPath,
     session: DbSession,
@@ -360,3 +268,100 @@ def list_items(
         )
         for item, position in session.execute(query).all()
     ]
+
+
+@router.get('/{id:path}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
+def read_one(project: ProjectFromPath, session: DbSession):
+    counts = (
+        select(*item_count_columns())
+        .select_from(ProjectItemMembership)
+        .outerjoin(models.ProjectItem, ProjectItemMembership.item_id == models.ProjectItem.id)
+        .where(ProjectItemMembership.project_id == project.id)
+    )
+    item_count, open_count, completed_count, repos = session.execute(counts).one()
+    return project_with_counts(project, item_count, open_count, completed_count, repos)
+
+
+def apply_status_transition(project: models.Project, update_data: dict, session: Session) -> None:
+    """Fold the derived consequences of a status change into the update payload.
+
+    `closed_at` and the clearing of `status_reason` are consequences of the
+    transition, never things a caller sets — a client free to send them could
+    leave a project claiming to be active with a closing timestamp on it. This
+    is also the one place a transition is validated, which is why status moves
+    through PATCH rather than through complete/drop/reopen action endpoints.
+    """
+    new_status = update_data.get('status')
+    reason = update_data.get('status_reason', project.status_reason)
+
+    if new_status is None:
+        # No transition, but the reason can still be edited — and cleared, which
+        # the CHECK constraint refuses while the project is dropped.
+        require_reason_when_dropped(project.status, reason)
+        return
+
+    validate_status(new_status, session)
+    require_reason_when_dropped(new_status, reason)
+
+    # `someday` is open work set aside, so moving to it clears `closed_at` and the
+    # reason, as `active` does.
+    if new_status not in TERMINAL_PROJECT_STATUSES:
+        update_data['status_reason'] = None
+        update_data['closed_at'] = None
+    elif new_status != project.status:
+        update_data['closed_at'] = dt.datetime.now(dt.UTC)
+
+
+@router.patch('/{id:path}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
+def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug('project_update', project_id=project.id, update_data=update_data)
+    if (kind := update_data.get('kind')) is not None:
+        validate_kind(kind, session)
+
+    # A rename and a reopen both end with the project holding a name as an
+    # active project, which is the only status that holds one. Resolving both to
+    # the resulting (status, name) checks each of them, and the pair of them, once.
+    resulting_status = update_data.get('status', project.status)
+    resulting_name = update_data.get('name', project.name)
+    if resulting_status == 'active' and (resulting_name != project.name or project.status != 'active'):
+        ensure_active_name_available(session, resulting_name, exclude_id=project.id)
+
+    apply_status_transition(project, update_data, session)
+
+    for attr, value in update_data.items():
+        setattr(project, attr, value)
+    session.commit()
+    session.refresh(project)
+    return project
+
+
+@router.delete('/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+def delete(project: ProjectFromPath, session: DbSession):
+    # Find items that only belong to this project (would become orphans)
+    multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != project.id)
+    orphan_query = (
+        select(models.ProjectItem)
+        .join(ProjectItemMembership, models.ProjectItem.id == ProjectItemMembership.item_id)
+        .where(ProjectItemMembership.project_id == project.id)
+        .where(~models.ProjectItem.id.in_(multi_project_items))
+    )
+    orphan_items = session.execute(orphan_query).scalars().all()
+
+    # Auto-delete completed orphans; block only on incomplete ones
+    incomplete_orphans = [item for item in orphan_items if not item.completed]
+    if incomplete_orphans:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f'Cannot delete project: {len(incomplete_orphans)} incomplete item(s) belong only to this project.'
+                ' Complete, move, or delete them first.'
+            ),
+        )
+
+    for item in orphan_items:
+        session.delete(item)
+
+    session.delete(project)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
