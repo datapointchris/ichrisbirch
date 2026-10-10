@@ -1,4 +1,4 @@
-# forge-toolchain: 37
+# forge-toolchain: 38
 fail_fast: true
 default_stages: [pre-commit]
 repos:
@@ -236,14 +236,47 @@ repos:
         types: [python]
         pass_filenames: false
 
+# generated:go-format-and-lint - Go formatting and lint, at the release CI installs
+  # pre-commit installs each tool into an environment of its own, from the
+  # module and version below, which is the release generated CI installs. A hook
+  # running the copy on PATH passes or fails by what that machine last
+  # installed, and gofumpt writes, so two releases rewrite each other's output.
+  #
+  # One pair per declared Go directory, each run over its whole module from
+  # inside it, as CI runs them. A gofumpt fed only the staged files passes a
+  # commit that CI then fails on a file nobody touched, after any pin raise
+  # adding a rule. golangci-lint loads packages from the go.mod it starts
+  # beside. Filenames are never passed, so files only decides when they fire.
+  - repo: local
+    hooks:
+      - id: gofumpt
+        name: gofumpt
+        entry: bash -c 'cd cli && exec gofumpt -l -w .'
+        language: golang
+        additional_dependencies:
+          - mvdan.cc/gofumpt@v0.12.0
+        pass_filenames: false
+        types: [go]
+        files: '^cli/'
+
+      # --allow-parallel-runners, because golangci-lint locks a cache under
+      # $HOME, and two worktrees committing at once would meet on it.
+      - id: golangci-lint
+        name: golangci-lint
+        entry: bash -c 'cd cli && exec golangci-lint run --allow-parallel-runners'
+        language: golang
+        additional_dependencies:
+          - github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.1
+        pass_filenames: false
+        types: [go]
+        files: '^cli/'
+
 # generated:go - Go
   # Every -repo- hook runs in each go.mod it finds, so a repo holding api/ and
   # cli/ needs no hook per module.
   - repo: https://github.com/tekwizely/pre-commit-golang
     rev: v1.0.0-rc.1
     hooks:
-      - id: go-fumpt-repo
-        args: [-w]
       - id: go-vet-repo-mod
       - id: go-build-repo-mod
       - id: go-mod-tidy-repo
@@ -251,7 +284,6 @@ repos:
         # A commit gate runs the fast tests; CI runs everything. Without this a
         # repo with DB integration tests has to keep a hook of its own.
         args: [-short]
-      - id: golangci-lint-repo-mod
 
 # generated:vue - Vue/Frontend
   # Every hook runs from the component directory, so filenames are never passed:
@@ -334,12 +366,48 @@ repos:
     rev: v1.99.5
     hooks:
       - id: terraform_validate
-      - id: terraform_tflint
       - id: terraform_fmt
-      - id: terraform_docs
-        args:
-          - --args=--anchor=false
-          - --args=--html=false
+
+# generated:terraform-lint-and-docs - Terraform lint and module docs, at the release CI installs
+  # pre-commit installs each tool into an environment of its own, from the
+  # module and version below, which is the release generated CI downloads. A
+  # hook running the copy on PATH passes or fails by what that machine last
+  # installed.
+  #
+  # One pair per declared Terraform directory, run from it, the same as the CI
+  # job. Filenames are never passed, so files: only decides whether it runs.
+  - repo: local
+    hooks:
+      # --init installs the plugins a .tflint.hcl names. With none named it
+      # reads nothing from the network.
+      - id: tflint
+        name: tflint
+        entry: bash -c 'cd . && tflint --init && exec tflint --recursive'
+        language: golang
+        additional_dependencies:
+          - github.com/terraform-linters/tflint@v0.64.0
+        pass_filenames: false
+        types: [terraform]
+        files: '^'
+
+      # Writes only into a README.md already holding the begin marker, so a
+      # module nobody documents is left alone. md, --anchor=false and
+      # --html=false are what the CI step checks against.
+      - id: terraform-docs
+        name: terraform-docs
+        entry: >-
+          bash -c 'cd . || exit 1; status=0;
+          for readme in $(git ls-files README.md "*/README.md"); do
+          grep -q "<!-- BEGIN_TF_DOCS -->" "$readme" || continue;
+          terraform-docs md --output-file README.md --output-mode inject
+          --anchor=false --html=false "$(dirname "$readme")" || status=1;
+          done; exit "$status"'
+        language: golang
+        additional_dependencies:
+          - github.com/terraform-docs/terraform-docs@v0.24.0
+        pass_filenames: false
+        types: [terraform]
+        files: '^'
 
 # generated:sql - SQL
   # Lint only, never fix: sqlfluff's fixer rewrites whole statements, and a
