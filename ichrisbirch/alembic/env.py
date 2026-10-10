@@ -24,9 +24,7 @@ from ichrisbirch.models import Event  # noqa
 from ichrisbirch.models import Habit  # noqa
 from ichrisbirch.models import HabitCategory  # noqa
 from ichrisbirch.models import HabitCompleted  # noqa
-from ichrisbirch.models import JWTRefreshToken  # noqa
 from ichrisbirch.models import MoneyWasted  # noqa
-from ichrisbirch.models import PersonalAPIKey  # noqa
 from ichrisbirch.models import Project  # noqa
 from ichrisbirch.models import ProjectItem  # noqa
 from ichrisbirch.models import ProjectItemDependency  # noqa
@@ -68,6 +66,7 @@ def include_name(name, type_, parent_names):
         return False
     return True
 
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -101,7 +100,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
         include_schemas=True,
         include_name=include_name,
     )

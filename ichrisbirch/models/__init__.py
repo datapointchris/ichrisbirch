@@ -32,10 +32,8 @@ from ichrisbirch.models.issue import IssueLabel
 from ichrisbirch.models.issue import IssueLabelAssignment
 from ichrisbirch.models.issue import IssueStatus
 from ichrisbirch.models.issue import IssueType
-from ichrisbirch.models.jwt_refresh_token import JWTRefreshToken
 from ichrisbirch.models.money_wasted import MoneyWasted
 from ichrisbirch.models.pattern import Pattern
-from ichrisbirch.models.personal_api_key import PersonalAPIKey
 from ichrisbirch.models.project import Project
 from ichrisbirch.models.project import ProjectItem
 from ichrisbirch.models.project import ProjectItemDependency
@@ -97,9 +95,7 @@ __all__ = [
     'IssueLabelAssignment',
     'IssueStatus',
     'IssueType',
-    'JWTRefreshToken',
     'MoneyWasted',
-    'PersonalAPIKey',
     'Pattern',
     'Project',
     'ProjectItem',
