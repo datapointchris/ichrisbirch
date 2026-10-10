@@ -3,8 +3,10 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -118,29 +120,51 @@ func TestActorIdentity_IsThePersonOutsideASessionOrAWorker(t *testing.T) {
 	}
 }
 
-func TestCloser_SendsWhoIsRunningIcbUnlessEmptied(t *testing.T) {
+// A Claude Code session closing an issue: the PATCH names the session unless
+// --closed-by names someone else or is emptied.
+func TestIssues_CompleteAndCancelSendWhoIsClosingInTheirPatch(t *testing.T) {
 	t.Setenv("CLAUDE_CODE_SESSION_ID", "2c3201ae")
 	t.Setenv("CLAUDE_CODE_SESSION_ATTENDED", "1")
 	t.Setenv(actorWorkerEnv, "")
-	for _, command := range []func() *cobra.Command{newIssuesCompleteCommand, newIssuesCancelCommand} {
-		cases := []struct {
-			args []string
-			want *string
-		}{
-			{nil, ptr("claude-code/2c3201ae")},
-			{[]string{"--closed-by", "chris@desk"}, ptr("chris@desk")},
-			{[]string{"--closed-by", ""}, nil},
-		}
+	idp := serviceIDP(t)
+	verbs := [][]string{{"issues", "complete", "412"}, {"issues", "cancel", "412", "--reason", "superseded"}}
+	cases := []struct {
+		flags []string
+		want  *string
+	}{
+		{nil, ptr("claude-code/2c3201ae")},
+		{[]string{"--closed-by", "chris@desk"}, ptr("chris@desk")},
+		{[]string{"--closed-by", ""}, nil},
+	}
+	for _, verb := range verbs {
 		for _, c := range cases {
-			cmd := command()
-			if err := cmd.ParseFlags(c.args); err != nil {
-				t.Fatalf("%s %v: %v", cmd.Name(), c.args, err)
-			}
-			value, _ := cmd.Flags().GetString("closed-by")
-			got := closer(cmd, &value)
-			if (got == nil) != (c.want == nil) || (got != nil && *got != *c.want) {
-				t.Errorf("%s %v sends %v, want %v", cmd.Name(), c.args, strValue(got), strValue(c.want))
-			}
+			args := append(slices.Clone(verb), c.flags...)
+			t.Run(strings.Join(args, " "), func(t *testing.T) {
+				var patch map[string]any
+				api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method == http.MethodPatch {
+						_ = json.NewDecoder(r.Body).Decode(&patch)
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"open"}`))
+				}))
+				t.Cleanup(api.Close)
+				asService(t, idp.URL, api.URL, serviceSecret)
+
+				if _, err := runService(t, args...); err != nil {
+					t.Fatalf("run: %v", err)
+				}
+				if patch == nil {
+					t.Fatal("sent no PATCH")
+				}
+				got, sent := patch["closed_by"]
+				switch {
+				case c.want == nil && sent:
+					t.Errorf("sent closed_by %v, want it left out", got)
+				case c.want != nil && got != *c.want:
+					t.Errorf("sent closed_by %v, want %q", got, *c.want)
+				}
+			})
 		}
 	}
 }
