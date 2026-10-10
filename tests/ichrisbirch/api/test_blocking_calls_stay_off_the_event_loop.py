@@ -9,7 +9,7 @@ import threading
 from collections.abc import Iterator
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
@@ -145,9 +145,9 @@ def test_a_held_call_leaves_the_worker_answering(request, monkeypatch, target, m
 
     monkeypatch.setattr(target, held)
 
-    async def hold_one_and_ask_for_health() -> httpx.Response:
-        transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
-        async with httpx.AsyncClient(transport=transport, base_url='http://test') as client:
+    async def hold_one_and_ask_for_health() -> httpx2.Response:
+        transport = httpx2.ASGITransport(app=app, raise_app_exceptions=False)
+        async with httpx2.AsyncClient(transport=transport, base_url='http://test') as client:
             slow = asyncio.create_task(client.request(method, path, **request_kwargs))
             assert await asyncio.to_thread(entered.wait, HOLD_SECONDS), f'{path} never reached {target}'
             health = await client.get('/health')
