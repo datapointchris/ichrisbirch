@@ -34,5 +34,4 @@ missing path.
 
 The files are kept because they record the worker counts and the process-group
 semantics the container deploy had to match. They sit in
-`deploy-metal/{dev,prod}/supervisor/`, with an identical copy under
-`deploy-containers/`.
+`deploy-metal/{dev,prod}/supervisor/`.

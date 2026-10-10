@@ -2,7 +2,7 @@
 
 ## Documentation
 
-- [New Server Setup](new_server.md) — apt packages, pyenv, supervisor and nginx on a fresh Ubuntu host
+- [New Server Setup](new_server.md) — standing up the production container with its bootstrap script
 - [New Database](new_database.md) — creating the schemas by hand, then the first alembic autogenerate
 - [pg_cron](pg_cron.md) — the Postgres job scheduler, kept for reference and replaced by APScheduler
 - [NGINX](nginx.md) — the bare-metal reverse proxy and its port layout, replaced by Traefik

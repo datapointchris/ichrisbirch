@@ -349,9 +349,9 @@ Health Check for dev Environment
 - **API**: Multiple workers for production (4 workers)
 - **Database**: Production-tuned PostgreSQL settings
 
-## 🔄 Migration History
+## 🔄 The nginx configuration
 
-Nginx was replaced by Traefik. The original nginx configuration remains in `deploy-metal/` (legacy, will be retired).
+Traefik replaced nginx. `deploy-metal/` keeps the nginx configuration for the port layout it records, and [NGINX](devops/nginx.md) describes it.
 
 ## 🛠️ Advanced Configuration
 
