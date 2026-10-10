@@ -172,8 +172,8 @@ This middleware is applied to the API router so Vue's cross-origin API calls are
 
 Production uses **Cloudflare Tunnel** for secure external access without exposing ports:
 
-- **API**: <https://api.ichrisbirch.com/>
-- **App**: <https://app.ichrisbirch.com/>
+- **App**: <https://ichrisbirch.com/>
+- **API**: <https://ichrisbirch.com/api/>, a bearer request only from outside the browser
 
 Cloudflare handles TLS termination; Traefik receives HTTP internally and provides routing, CORS, security headers, and rate limiting.
 

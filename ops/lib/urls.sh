@@ -43,9 +43,9 @@ icb_env_suffix() {
   esac
 }
 
-# The hostname a service answers on in one environment. Two cases break the
-# subdomain pattern: the Vue app is the bare domain in production, and
-# production serves no Traefik dashboard.
+# The hostname a service answers on in one environment. Production breaks the
+# subdomain pattern three ways: the Vue app is the bare domain, the API shares
+# it under the path icb_service_path gives, and there is no Traefik dashboard.
 # Arguments:
 #   $1 - environment: dev, test or prod
 #   $2 - service: api, app, dashboard
@@ -57,9 +57,22 @@ icb_service_host() {
   local environment="$1" service="$2" suffix
   suffix=$(icb_env_suffix "$environment") || return 1
   case "${environment}:${service}" in
-    prod:app) echo "$suffix" ;;
+    prod:app | prod:api) echo "$suffix" ;;
     prod:dashboard) return 1 ;;
     *) echo "${service}.${suffix}" ;;
+  esac
+}
+
+# The path a service is mounted under on its host, empty where it owns the
+# host. Production's API sits behind the same-origin proxy that strips /api.
+# Arguments:
+#   $1 - environment: dev, test or prod
+#   $2 - service: api, app, dashboard
+# Outputs:
+#   The path with its leading slash, or nothing, on stdout
+icb_service_path() {
+  case "$1:$2" in
+    prod:api) echo '/api' ;;
   esac
 }
 
@@ -74,7 +87,7 @@ icb_service_host() {
 icb_service_url() {
   local host
   host=$(icb_service_host "$1" "$2") || return 1
-  echo "https://${host}"
+  echo "https://${host}$(icb_service_path "$1" "$2")"
 }
 
 # Every service reachable through Traefik, for a caller that iterates rather
