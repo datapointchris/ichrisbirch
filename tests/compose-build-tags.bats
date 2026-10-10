@@ -24,13 +24,17 @@ setup() {
 }
 
 # Prints each service that builds under an image name this project does not own.
-# An env_file only sets the container's environment, never the image it builds
-# under, so the .env a CI runner lacks is left unread.
+# Compose opens every env_file at load, and a CI runner has no .env. An env_file
+# sets the container's environment and never the image it builds under, so the
+# project directory, which relative env_file paths resolve against, holds an
+# empty one.
 foreign_builds() {
-  local args=() file resolved
-  for file in "$@"; do args+=(-f "$file"); done
-  resolved=$(DEPLOY_COLOR=blue docker compose --project-name icb-build-tags "${args[@]}" \
-    config --no-env-resolution --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
+  local args=() file resolved project="$BATS_TEST_TMPDIR/project"
+  mkdir -p "$project" && : >"$project/.env"
+  for file in "$@"; do args+=(-f "$PWD/$file"); done
+  resolved=$(DEPLOY_COLOR=blue docker compose --project-name icb-build-tags \
+    --project-directory "$project" "${args[@]}" \
+    config --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
     cat "$BATS_TEST_TMPDIR/compose.err"
     return 1
   }
