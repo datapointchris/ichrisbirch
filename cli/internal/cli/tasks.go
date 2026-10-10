@@ -16,7 +16,7 @@ import (
 )
 
 func newTasksCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "tasks",
 		Short: "List, inspect, and manage your tasks",
 		Long: "The flat maintenance list — chores and one-offs that belong to no project.\n" +
@@ -28,8 +28,7 @@ func newTasksCommand() *cobra.Command {
 			"shown. `snooze` restarts a task's window, `pin` holds it at the top,\n" +
 			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
 			"completed or dropped one.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd,
 		"Search tasks by name or notes: icb tasks search <query>",
 		"Completed and dropped tasks are hidden: icb tasks list --status all",
@@ -480,11 +479,10 @@ func newTasksReopenCommand() *cobra.Command {
 }
 
 func newTaskCategoriesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "categories",
 		Short: "List and tune the categories --category accepts, with each one's window",
-		RunE:  requireSubcommand,
-	}
+	})
 	cmd.AddCommand(newTaskCategoriesListCommand(), newTaskCategoriesEditCommand())
 	return cmd
 }

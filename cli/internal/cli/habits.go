@@ -26,12 +26,11 @@ var (
 )
 
 func newHabitsCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "habits",
 		Short: "List, inspect, complete, and manage your habits",
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
-		RunE:  requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, habitHints...)
 	cmd.AddCommand(
 		newHabitsTodayCommand(),

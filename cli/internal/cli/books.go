@@ -24,13 +24,12 @@ type bookFlagVars struct {
 }
 
 func newBooksCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "books",
 		Short: "List, inspect, search, and manage your books",
 		Long: "Your book catalog: what you own, where each book is in the reading cycle,\n" +
 			"and what is queued next. `list --progress reading` is the reading-now view.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, "Search books by title, author, or tags: icb books search <query>")
 	cmd.AddCommand(
 		newBooksListCommand(),

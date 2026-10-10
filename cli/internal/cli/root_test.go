@@ -3,9 +3,13 @@ package cli
 import (
 	"bytes"
 	"errors"
+	"io"
+	"os"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/datapointchris/goselfupdate/autoupdate"
 )
 
 func TestExitCodeFor(t *testing.T) {
@@ -38,6 +42,21 @@ type wrapped struct{ err error }
 func (w wrapped) Error() string { return w.err.Error() }
 func (w wrapped) Unwrap() error { return w.err }
 
+// runLine drives the real tree through run, the path the shipped binary takes,
+// with the version check suppressed. goclikit.Execute resolves the command
+// from os.Args, so the line goes there rather than through SetArgs.
+func runLine(t *testing.T, args ...string) error {
+	t.Helper()
+	original := os.Args
+	os.Args = append([]string{"icb"}, args...)
+	t.Cleanup(func() { os.Args = original })
+
+	root := NewRootCommand()
+	root.SetOut(io.Discard)
+	root.SetErr(io.Discard)
+	return run(root, autoupdate.Config{Suppress: true})
+}
+
 // A word one slip from a subcommand, or one its SuggestFor lists, is answered
 // with the subcommand, at the root and inside a group alike.
 func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
@@ -53,11 +72,7 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 		{[]string{"projects", "itms", "--json"}, "items"},
 		{[]string{"projects", "items", "lisz", "--json"}, "list"},
 	} {
-		root := NewRootCommand()
-		root.SetOut(&bytes.Buffer{})
-		root.SetErr(&bytes.Buffer{})
-		root.SetArgs(c.args)
-		err := root.Execute()
+		err := runLine(t, c.args...)
 		if err == nil || !slices.Contains(strings.Fields(err.Error()), c.meant) {
 			t.Errorf("%v answered %v, want it to name %q", c.args, err, c.meant)
 		}
@@ -73,11 +88,7 @@ func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
 		{"projects", "items", "bogus", "5", "--json"},
 		{"tasks", "categories", "bogus", "--json"},
 	} {
-		root := NewRootCommand()
-		root.SetOut(&bytes.Buffer{})
-		root.SetErr(&bytes.Buffer{})
-		root.SetArgs(args)
-		err := root.Execute()
+		err := runLine(t, args...)
 		if err == nil || !strings.Contains(err.Error(), `unknown command "bogus"`) {
 			t.Errorf("%v answered %v, want it to refuse \"bogus\"", args, err)
 		}

@@ -46,14 +46,13 @@ var (
 )
 
 func newItemsCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "items",
 		Short: "Work with project items — the structured to-do units in projects",
 		Long: "The ordered work units inside a project, each with sub-tasks, dependencies,\n" +
 			"and membership in one or more projects. Unstructured chores go in\n" +
 			"`icb tasks` instead.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, itemHints...)
 	cmd.AddCommand(
 		withNotFoundHints(newItemsListCommand(), itemAndProjectHints...),

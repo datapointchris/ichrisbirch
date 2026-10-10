@@ -11,13 +11,12 @@ import (
 )
 
 func newAutotasksCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "autotasks",
 		Short: "Inspect your recurring task templates",
 		Long: "The templates behind your recurring tasks: what respawns, how often, and when\n" +
 			"each last ran. Read-only — the scheduler is what creates and completes them.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, "List every autotask: icb autotasks list")
 	cmd.AddCommand(
 		newAutotasksListCommand(),

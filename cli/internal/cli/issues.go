@@ -41,7 +41,7 @@ const (
 )
 
 func newIssuesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use: "issues",
 		// Top-level words that mean an issue: `items`, or a verb typed with no noun.
 		SuggestFor: []string{"items", "show", "search"},
@@ -60,8 +60,7 @@ func newIssuesCommand() *cobra.Command {
 			"`claim` takes the head of that queue, or a named issue, until the claim runs\n" +
 			"out. Decisions wait on a person, so the queue leaves them out.\n" +
 			"`icb issues list --type decision` lists them.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, issueHints...)
 	cmd.AddGroup(
 		&cobra.Group{ID: issueGroupRead, Title: "Reading:"},

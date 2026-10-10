@@ -12,13 +12,12 @@ import (
 )
 
 func newCookingTechniquesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "cooking-techniques",
 		Short: "List, inspect, search, and manage cooking techniques",
 		Long: "The how-and-why writeups behind the recipes — searing, emulsifying, laminating\n" +
 			"— kept separately from any one recipe that uses them.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd,
 		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")
 	cmd.AddCommand(

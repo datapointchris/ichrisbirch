@@ -14,14 +14,13 @@ import (
 )
 
 func newRecipesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "recipes",
 		Short: "List, inspect, search, cook, and AI-import recipes",
 		Long: "Your recipe catalog: what you can cook, what you have cooked, and what you\n" +
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
 	cmd.AddCommand(
 		newRecipesListCommand(),

@@ -27,7 +27,7 @@ var projectHints = []string{
 }
 
 func newProjectsCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "projects",
 		Short: "List, inspect, and manage your projects",
 		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
@@ -36,8 +36,7 @@ func newProjectsCommand() *cobra.Command {
 			"\n" +
 			"<project> and --project take a project's full name or its id, whatever its\n" +
 			"status. A name that misses is answered with the names near it.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, projectHints...)
 	cmd.AddCommand(
 		newProjectsListCommand(),

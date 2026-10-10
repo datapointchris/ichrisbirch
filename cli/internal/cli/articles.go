@@ -14,13 +14,12 @@ import (
 )
 
 func newArticlesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "articles",
 		Short: "List, inspect, search, and manage your saved articles",
 		Long: "Your saved-article reading list: what is unread, what is archived, and the\n" +
 			"favorites due for a re-read.",
-		RunE: requireSubcommand,
-	}
+	})
 	// Search matches tags only, so it cannot stand alone as the way to find an
 	// article whose tags you do not know.
 	withNotFoundHints(cmd,

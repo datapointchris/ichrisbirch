@@ -17,14 +17,13 @@ import (
 var initiativeHints = []string{"Finished initiatives are hidden: icb issues initiatives list --status all"}
 
 func newIssueInitiativesCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "initiatives",
 		Short: "Group the issues that ship one outcome",
 		Long: "An initiative is an outcome that finishes. Most issues belong to none. An\n" +
 			"issue with no priority of its own takes its active initiative's. A finished\n" +
 			"initiative takes no new issues and leaves the ones it holds as they are.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd, initiativeHints...)
 	cmd.AddCommand(
 		newInitiativesListCommand(),

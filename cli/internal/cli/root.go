@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
@@ -39,32 +38,14 @@ type exitCode int
 
 func (e exitCode) Error() string { return "" }
 
-// requireSubcommand is the RunE for group commands (root, auth) that have no
-// action of their own: a bare invocation shows help (exit 0), but an unknown
-// subcommand is a usage error (exit 2) naming the subcommands near it, rather
-// than cobra's default of silently showing help.
-func requireSubcommand(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return cmd.Help()
-	}
-	return goclikit.UnknownCommand(cmd, args[0])
-}
-
-// unknownWord refuses a word that names no subcommand of cmd, with cobra's own
-// suggestions. No help pointer: goclikit.Execute appends one to a flag error.
+// asNamespace marks a group with no action of its own, the root included. A
+// bare one shows help and exits 0. A word naming none of its subcommands exits
+// 2 naming the ones near it, with or without a flag after the word.
 //
-// The distance defaults to two exactly as cobra's own findSuggestions does.
-// Left at zero, a group would offer prefixes only, and `projects itms --json`
-// would name nothing where `projects itms` names items.
-func unknownWord(cmd *cobra.Command, word string) error {
-	if cmd.SuggestionsMinimumDistance <= 0 {
-		cmd.SuggestionsMinimumDistance = 2
-	}
-	refusal := fmt.Sprintf("unknown command %q for %q", word, cmd.CommandPath())
-	if names := cmd.SuggestionsFor(word); len(names) > 0 {
-		refusal += "\n\nDid you mean this?\n\t" + strings.Join(names, "\n\t")
-	}
-	return errors.New(refusal)
+// Here rather than in each command file for the reason withNotFoundHints is:
+// this package's files import goclikit in one place.
+func asNamespace(cmd *cobra.Command) *cobra.Command {
+	return goclikit.AsNamespace(cmd)
 }
 
 // usageArgs wraps a positional-args validator so a violation (wrong count, etc.)
@@ -106,7 +87,7 @@ func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 }
 
 func NewRootCommand() *cobra.Command {
-	root := &cobra.Command{
+	root := asNamespace(&cobra.Command{
 		Use:   "icb",
 		Short: "icb — the ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
@@ -122,26 +103,18 @@ func NewRootCommand() *cobra.Command {
 		Version:       version,
 		SilenceUsage:  true, // usage is shown deliberately, not on every runtime error
 		SilenceErrors: true, // Execute prints errors itself, to stderr
-		// ArbitraryArgs lets an unknown top-level command (`icb nope`) reach
-		// requireSubcommand → a typed usageError (exit 2). Cobra's default root
-		// validator (legacyArgs) instead returns its own untyped "unknown
-		// command" error (exit 1); subcommands, having a parent, are exempt from
-		// that validator and already route through requireSubcommand.
+		// ArbitraryArgs lets an unknown top-level command (`icb nope`) reach the
+		// namespace's own refusal, marked as a usage error (exit 2). Cobra's
+		// default root validator (legacyArgs) instead returns its own unmarked
+		// "unknown command" error (exit 1). Subcommands, having a parent, are
+		// exempt from that validator.
 		Args: cobra.ArbitraryArgs,
-		RunE: requireSubcommand,
-	}
+	})
 	// Flag mistakes become usageError → exit 2. Inherited by subcommands.
 	// goclikit.Execute composes with this rather than replacing it, and keeping
 	// it here is what makes the tree self-classifying for anything driving
 	// NewRootCommand directly.
-	// At a group, words before the bad flag mean no subcommand matched, so the
-	// first of them is the mistake and is the one answered. Every group runs
-	// requireSubcommand and takes no positional of its own, which is what makes
-	// a leftover word an unknown command rather than an argument.
-	root.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
-		if words := cmd.Flags().Args(); cmd.HasAvailableSubCommands() && len(words) > 0 {
-			return usageError{unknownWord(cmd, words[0])}
-		}
+	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return usageError{err}
 	})
 

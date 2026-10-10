@@ -38,14 +38,13 @@ type strainFlagVars struct {
 var strainFormKeys = []string{"name", "type", "status", "rating", "effect", "flavor", "terpene", "notes"}
 
 func newStrainsCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "strains",
 		Short: "List, inspect, search, and manage a catalog of strains",
 		Long: "A catalog of cannabis strains: which have been tried, which are queued, and\n" +
 			"what each one is like. `list --status want_to_try` is the queue;\n" +
 			"`list --effect sleepy` narrows to a recorded effect.",
-		RunE: requireSubcommand,
-	}
+	})
 	withNotFoundHints(cmd,
 		"Search strains by name, breeder, or lineage: icb strains search <query>",
 		"See every value a strain field accepts: icb strains vocabulary",

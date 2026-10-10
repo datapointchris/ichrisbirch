@@ -22,7 +22,7 @@ import (
 const loginTimeout = 15 * time.Minute
 
 func newAuthCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := asNamespace(&cobra.Command{
 		Use:   "auth",
 		Short: "Log in and out of the ichrisbirch API",
 		Long: "Authenticate this machine against Authelia using the OAuth 2.0 device\n" +
@@ -32,8 +32,7 @@ func newAuthCommand() *cobra.Command {
 			"With ICB_CLIENT_SECRET set, icb authenticates as the service client\n" +
 			"ICB_CLIENT_ID names, through the client-credentials grant. It requests a\n" +
 			"token per run and stores nothing, so login and logout refuse.",
-		RunE: requireSubcommand,
-	}
+	})
 	cmd.AddCommand(newAuthLoginCommand(), newAuthLogoutCommand(), newAuthStatusCommand(), newAuthTokenCommand())
 	return cmd
 }
