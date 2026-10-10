@@ -16,7 +16,7 @@ on:
 jobs:
   check-docs-sync:
     name: Check Code Snippets in Documentation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout Repository

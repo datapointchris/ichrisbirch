@@ -1,4 +1,4 @@
-# forge-toolchain: 38
+# forge-toolchain: 39
 name: CI
 
 on:
@@ -11,7 +11,7 @@ permissions:
 jobs:
 
   python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
 
       - uses: actions/checkout@v7
@@ -126,7 +126,7 @@ jobs:
           exit 1
 
   go-cli:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: cli
@@ -181,7 +181,7 @@ jobs:
           govulncheck ./...
 
   vue-frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: frontend
@@ -234,7 +234,7 @@ jobs:
       - run: npm run build
 
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
 
       - uses: actions/checkout@v7
@@ -294,7 +294,7 @@ jobs:
           exit "$status"
 
   shell:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
 
       - uses: actions/checkout@v7
@@ -468,7 +468,7 @@ jobs:
           bats tests/
 
   hooks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
 
       - uses: actions/checkout@v7
@@ -553,7 +553,7 @@ jobs:
 
   vue-unit:
     name: Vue unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     defaults:
       run:
         working-directory: frontend
@@ -579,7 +579,7 @@ jobs:
 
   e2e:
     name: Playwright E2E
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 
@@ -676,7 +676,7 @@ jobs:
 
   production-build:
     name: Production image build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Dev and test bind-mount the source, so neither exercises the COPY in the
     # production stage. A build that only breaks there breaks at deploy, which
     # is the one place there is nothing to fall back to.

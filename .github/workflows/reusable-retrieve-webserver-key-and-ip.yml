@@ -10,7 +10,7 @@ on:
 jobs:
   retrieve-webserver-key-and-ip:
     name: Retrieve Webserver Key and IP
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       webserver_ip: ${{ steps.terraform_output.outputs.ELASTIC_IP }}
 
