@@ -51,7 +51,7 @@ func newInitiativesListCommand() *cobra.Command {
 		Long: "Active initiatives by priority, then position. Completed and dropped ones are\n" +
 			"hidden until --status asks for them, and come after, latest first.",
 		Example: "  icb issues initiatives list\n  icb issues initiatives list --status all --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.InitiativeStatuses, initiativeStatus) {
 				return usageError{fmt.Errorf("unknown status %q — one of: %s", initiativeStatus, strings.Join(api.InitiativeStatuses, ", "))}
@@ -132,7 +132,7 @@ func newInitiativesCreateCommand() *cobra.Command {
 		Use:     "create --name <name> [flags]",
 		Short:   "Start an initiative",
 		Example: "  icb issues initiatives create --name \"Ship the tracker\" --priority high",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if strings.TrimSpace(name) == "" {
 				return usageError{errors.New("--name is required")}

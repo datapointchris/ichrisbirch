@@ -71,7 +71,7 @@ func newBooksListCommand() *cobra.Command {
 			"                                      owned but not started — what to pick up next\n" +
 			"  icb books list --limit 10           the ten to read next\n" +
 			"  icb books list --start 2026-01-01   what you have finished this year",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
 				return c.ListBooks(cmd.Context(), filter, api.OnOrAfter(start), api.OnOrBefore(end), limitFlag(cmd))
@@ -172,7 +172,7 @@ func newBooksCreateCommand() *cobra.Command {
 		Use:     "create --title <title> --author <author> --tag <tag> [flags]",
 		Short:   "Create a new book",
 		Example: "  icb books create --title \"DDIA\" --author Kleppmann --tag databases --tag systems",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if !f.Changed("title") || !f.Changed("author") {

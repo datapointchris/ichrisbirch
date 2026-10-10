@@ -79,6 +79,32 @@ func usageArgs(validate cobra.PositionalArgs) cobra.PositionalArgs {
 	}
 }
 
+// noArgs refuses a positional on a leaf that takes none. Cobra's NoArgs calls
+// the word an unknown command, which names a subcommand a leaf never had.
+func noArgs(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
+	refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\nRun '%s --help' for its flags.",
+		cmd.CommandPath(), args[0], cmd.CommandPath())
+	return usageError{errors.New(refusal)}
+}
+
+// argumentBelongsTo refuses a positional on a leaf that takes that value
+// through flag, and spells the command line that passes it there. It is for a
+// leaf whose siblings take the same value positionally, which is what makes
+// the positional the natural guess.
+func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return nil
+		}
+		refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\n%s: %s %s %s",
+			cmd.CommandPath(), args[0], purpose, cmd.CommandPath(), flag, shellQuote(args[0]))
+		return usageError{errors.New(refusal)}
+	}
+}
+
 func NewRootCommand() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "icb",

@@ -70,7 +70,7 @@ func newProjectsListCommand() *cobra.Command {
 		Example: "  icb projects list\n  icb projects list --repo dotfiles\n" +
 			"  icb projects list --limit 5\n" +
 			"  icb projects list --status completed\n  icb projects list --status all --json",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -300,7 +300,7 @@ func newProjectsCreateCommand() *cobra.Command {
 			"  icb projects create --name \"Sell Unused Shite\" --kind chore\n" +
 			"  icb projects create --name \"Reading backlog\" --description \"Books to finish this year\"\n" +
 			"  icb projects create --name \"Learn to sail\" --description \"$(cat plan.md)\" --json",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{errors.New("--name is required")}

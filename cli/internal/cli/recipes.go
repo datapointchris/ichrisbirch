@@ -60,7 +60,7 @@ func newRecipesListCommand() *cobra.Command {
 		Example: "  icb recipes list\n" +
 			"  icb recipes list --limit 10\n" +
 			"  icb recipes list --cuisine italian --rating-min 4 --max-total-time 45",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
@@ -198,7 +198,7 @@ func newRecipesCreateCommand() *cobra.Command {
 			"is a JSON array of {quantity,unit,item,prep_note,is_optional,ingredient_group}.",
 		Example: "  icb recipes create --name \"Chimichurri\" --instructions \"Blend all.\" \\\n" +
 			"    --ingredients-json '[{\"quantity\":1,\"unit\":\"cup\",\"item\":\"parsley\"}]' --cuisine argentine",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if name == "" || instructions == "" {
@@ -430,7 +430,7 @@ func newRecipesAISuggestCommand() *cobra.Command {
 			"candidate object to `icb recipes ai-save --candidate-json <json>` to persist.\n" +
 			"Slow (30-60s). Use --json to capture candidates for piping to ai-save.",
 		Example: "  icb recipes ai-suggest --have chicken --have lemon --want \"quick weeknight dinner\"",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if len(have) == 0 {
 				return usageError{fmt.Errorf("--have is required (repeatable)")}
@@ -467,7 +467,7 @@ func newRecipesAISaveCommand() *cobra.Command {
 		Short:   "Persist an AI recipe candidate",
 		Long:    "Save a candidate object (one element from `ai-suggest`) to the recipe catalog.",
 		Example: "  icb recipes ai-save --candidate-json \"$(cat candidate.json)\"",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
 			if err != nil {
@@ -541,7 +541,7 @@ func newRecipesAISaveImportCommand() *cobra.Command {
 		Long: "Save the candidate returned by `ai-import` (recipe and/or technique). For\n" +
 			"kind=both, the technique_mention is appended to the recipe's notes.",
 		Example: "  icb recipes ai-save-import --candidate-json \"$(cat candidate.json)\"",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
 			if err != nil {

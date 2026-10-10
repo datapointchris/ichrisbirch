@@ -40,7 +40,7 @@ func newCountdownsListCommand() *cobra.Command {
 		Long: "Countdowns come back soonest-due first, so --limit takes the ones about to\n" +
 			"arrive rather than an arbitrary slice.",
 		Example: "  icb countdowns list\n  icb countdowns list --limit 5\n  icb countdowns list --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -104,7 +104,7 @@ func newCountdownsCreateCommand() *cobra.Command {
 		Use:     "create --name <name> --due <YYYY-MM-DD> [flags]",
 		Short:   "Create a new countdown",
 		Example: "  icb countdowns create --name \"Lease ends\" --due 2027-03-01",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{fmt.Errorf("--name is required")}

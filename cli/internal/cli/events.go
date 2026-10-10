@@ -41,7 +41,7 @@ func newEventsListCommand() *cobra.Command {
 			"against its zone, so --limit takes the ones coming up rather than an\n" +
 			"arbitrary slice.",
 		Example: "  icb events list\n  icb events list --limit 5\n  icb events list --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -109,7 +109,7 @@ func newEventsCreateCommand() *cobra.Command {
 		Use:     "create --name <name> --date <when> --venue <venue> --cost <n> [flags]",
 		Short:   "Create a new event",
 		Example: "  icb events create --name \"Show\" --date \"2026-09-01 20:00\" --venue \"The Hall\" --cost 45 --attending",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{fmt.Errorf("--name is required")}

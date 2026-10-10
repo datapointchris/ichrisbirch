@@ -240,7 +240,7 @@ func newIssuesListCommand() *cobra.Command {
 			"  icb issues list --blocked\n" +
 			"  icb issues list --label area-cli --priority high\n" +
 			"  icb issues list --status completed --start 2026-10-01 --json",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := filters.filter(cmd)
 			if err != nil {
@@ -359,7 +359,7 @@ func newIssuesNextCommand() *cobra.Command {
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues next --label area-cli --json\n" +
 			"  icb issues next --type decision",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := queue.filter(cmd)
 			if err != nil {
@@ -495,7 +495,7 @@ func newIssuesVocabularyCommand() *cobra.Command {
 		Use:     "vocabulary",
 		Short:   "List the values --status, --type, --priority and --label accept",
 		Example: "  icb issues vocabulary\n  icb issues vocabulary --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

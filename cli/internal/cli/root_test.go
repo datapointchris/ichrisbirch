@@ -87,6 +87,31 @@ func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
 	}
 }
 
+// A positional on a leaf is refused as an argument, never as a command, and a
+// leaf taking that value through a flag spells the line that passes it there.
+func TestAPositionalOnALeafIsRefusedAsAnArgument(t *testing.T) {
+	for _, c := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"overview", "extra"}, `icb overview takes no arguments, and was given "extra"`},
+		{[]string{"projects", "items", "list", "ypl"}, "icb projects items list --project ypl"},
+		{[]string{"projects", "items", "list", "Kitchen remodel"}, "icb projects items list --project 'Kitchen remodel'"},
+	} {
+		root := NewRootCommand()
+		root.SetOut(&bytes.Buffer{})
+		root.SetErr(&bytes.Buffer{})
+		root.SetArgs(c.args)
+		err := root.Execute()
+		if err == nil || !strings.Contains(err.Error(), c.want) || strings.Contains(err.Error(), "unknown command") {
+			t.Errorf("%v answered %v, want it to carry %q", c.args, err, c.want)
+		}
+		if got := exitCodeFor(err); got != 2 {
+			t.Errorf("%v exit = %d, want 2", c.args, got)
+		}
+	}
+}
+
 // runTree executes the command tree with args, discarding output, and returns
 // the classified exit code — the same path Execute() takes, minus os.Args.
 func runTree(t *testing.T, args ...string) int {

@@ -64,7 +64,7 @@ func newHabitsTodayCommand() *cobra.Command {
 			"header names the zone it was read in. A machine whose zone cannot be read falls\n" +
 			"back to the timezone on your profile, which the header then names.",
 		Example: "  icb habits today\n  icb habits today --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -162,7 +162,7 @@ func newHabitsListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List habits",
 		Example: "  icb habits list\n  icb habits list --current",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -227,7 +227,7 @@ func newHabitsCreateCommand() *cobra.Command {
 		Use:     "create --name <name> --category <category-id> [flags]",
 		Short:   "Create a new habit",
 		Example: "  icb habits create --name \"Stretch\" --category 2",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
 				return usageError{fmt.Errorf("--name is required")}
@@ -447,7 +447,7 @@ func newHabitsCategoriesCommand() *cobra.Command {
 		Use:     "categories",
 		Short:   "List habit categories",
 		Example: "  icb habits categories\n  icb habits categories --current",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -482,7 +482,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 		Short:   "List habit completions",
 		Long:    "List completions. With no flags, all are returned; --first/--last give the\nsingle earliest/most-recent; --start/--end bound a date range.",
 		Example: "  icb habits completed --last",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

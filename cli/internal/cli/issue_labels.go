@@ -40,7 +40,7 @@ func newLabelsListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List every label, grouped, with its count of unclosed issues",
 		Example: "  icb issues labels list\n  icb issues labels list --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -102,7 +102,7 @@ func newLabelsCreateCommand() *cobra.Command {
 			"the other labels in that group.",
 		Example: "  icb issues labels create --slug area-db --group area\n" +
 			"  icb issues labels create --slug needs-design --description \"Waiting on a design call\"",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if slug == "" {
 				return usageError{errors.New("--slug is required")}

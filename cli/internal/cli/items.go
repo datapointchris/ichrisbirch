@@ -129,7 +129,7 @@ func newItemsListCommand() *cobra.Command {
 			"  icb projects items list --project \"Kitchen remodel\"\n" +
 			"  icb projects items list --project \"Reading backlog\" --json\n" +
 			"  icb projects items list --project \"Kitchen remodel\" --status all",
-		Args: usageArgs(cobra.NoArgs),
+		Args: argumentBelongsTo("--project", "One project's items"),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err
@@ -280,7 +280,7 @@ func newItemsNextCommand() *cobra.Command {
 			"  icb projects items next --kind chore\n" +
 			"  icb projects items next --repo dotfiles\n" +
 			"  icb projects items next --limit 1 --json",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -366,7 +366,7 @@ func newItemsBlockedCommand() *cobra.Command {
 		Use:     "blocked",
 		Short:   "List items with at least one incomplete dependency",
 		Example: "  icb projects items blocked\n  icb projects items blocked --repo homelab",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter := repoFlagValue(cmd, repo)
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
@@ -728,7 +728,7 @@ func newItemsCreateCommand() *cobra.Command {
 		Example: "  icb projects items create\n" +
 			"  icb projects items create --project \"Kitchen remodel\" --title \"Get three quotes\"\n" +
 			"  icb projects items create --project \"Kitchen remodel\" --title \"Pick tile\" --notes \"$(cat tile.md)\"",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			answers := flagAnswers(cmd, "title", "project", "repo", "notes")
 			missing := missingFlags(answers, "title", "project")

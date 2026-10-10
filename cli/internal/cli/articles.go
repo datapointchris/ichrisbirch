@@ -113,7 +113,7 @@ func newArticlesFailedImportsCommand() *cobra.Command {
 		Use:     "failed-imports",
 		Short:   "List permanently-failed article imports",
 		Example: "  icb articles failed-imports",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -202,7 +202,7 @@ func newArticlesListCommand() *cobra.Command {
 			"  icb articles list --unread --limit 5\n" +
 			"  icb articles list --archived=false\n" +
 			"  icb articles list --start 2026-08-01 --end 2026-08-31",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
@@ -276,7 +276,7 @@ func newArticlesCurrentCommand() *cobra.Command {
 		Use:     "current",
 		Short:   "Show the current article (the one being read)",
 		Example: "  icb articles current",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -313,7 +313,7 @@ func newArticlesCreateCommand() *cobra.Command {
 		Long:  "Fetch the URL and AI-summarize it into a new article (title, summary, tags\nare generated server-side).",
 		Example: "  icb articles create --url https://example.com/post\n" +
 			"  icb articles create --url https://example.com/post --notes \"for the DB deep-dive\"",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if articleURL == "" {
 				return usageError{fmt.Errorf("--url is required")}

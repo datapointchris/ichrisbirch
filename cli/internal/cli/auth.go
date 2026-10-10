@@ -43,7 +43,7 @@ func newAuthLoginCommand() *cobra.Command {
 		Use:     "login",
 		Short:   "Log in by approving a code in any browser",
 		Example: "  icb auth login",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
 			if err := cfg.CheckService(); err != nil {
@@ -101,7 +101,7 @@ func newAuthLogoutCommand() *cobra.Command {
 		Use:     "logout",
 		Short:   "Remove the stored token from this machine's keychain",
 		Example: "  icb auth logout",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
 			if err := cfg.CheckService(); err != nil {
@@ -134,7 +134,7 @@ func newAuthTokenCommand() *cobra.Command {
 			"$(icb auth token)\" …`. Exits non-zero if not logged in. With\n" +
 			"ICB_CLIENT_SECRET set, it requests a new service token instead.",
 		Example: "  icb auth token",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
 			source, err := tokenSource(cmd.Context(), cfg)
@@ -200,7 +200,7 @@ func newAuthStatusCommand() *cobra.Command {
 		Use:     "status",
 		Short:   "Show whether the CLI is logged in",
 		Example: "  icb auth status\n  icb auth status --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
 			if err := cfg.CheckService(); err != nil {

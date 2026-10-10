@@ -39,7 +39,7 @@ func newPatternsListCommand() *cobra.Command {
 		Use:     "list [flags]",
 		Short:   "List patterns, newest first",
 		Example: "  icb patterns list\n  icb patterns list --search heartburn\n  icb patterns list --limit 20 --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

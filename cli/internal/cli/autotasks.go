@@ -37,7 +37,7 @@ func newAutotasksListCommand() *cobra.Command {
 		Long: "Templates come back most recently run first, so --limit takes the ones that\n" +
 			"fired last rather than an arbitrary slice.",
 		Example: "  icb autotasks list\n  icb autotasks list --limit 5\n  icb autotasks list --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

@@ -52,7 +52,7 @@ func newCookingTechniquesListCommand() *cobra.Command {
 		Example: "  icb cooking-techniques list\n" +
 			"  icb cooking-techniques list --limit 10\n" +
 			"  icb cooking-techniques list --category flavor_development --rating-min 4",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			return runTechniqueList(cmd, asJSON, func(c *api.Client) ([]api.CookingTechnique, error) {
@@ -129,7 +129,7 @@ func newCookingTechniquesCategoriesCommand() *cobra.Command {
 		Use:     "categories",
 		Short:   "List all technique categories with counts",
 		Example: "  icb cooking-techniques categories",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -176,7 +176,7 @@ func newCookingTechniquesCreateCommand() *cobra.Command {
 		Example: "  icb cooking-techniques create --name \"Bloom Spices\" --category flavor_development \\\n" +
 			"    --summary \"Toast ground spices in fat to unlock fat-soluble aroma.\" \\\n" +
 			"    --body \"## Steps\\n1. Heat fat...\" --tag spices --rating 5",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if name == "" || category == "" || summary == "" || body == "" {

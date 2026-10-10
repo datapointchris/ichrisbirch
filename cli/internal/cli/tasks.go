@@ -85,7 +85,7 @@ func newTasksListCommand() *cobra.Command {
 			"  icb tasks list --status completed\n" +
 			"  icb tasks list --status completed --start 2026-08-17 --end 2026-08-23\n" +
 			"  icb tasks list --status all --limit 10 --json",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.TaskStatuses, taskStatus) {
 				return usageError{fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", "))}
@@ -215,7 +215,7 @@ func newTasksCreateCommand() *cobra.Command {
 			"entered is lost. Ctrl-C abandons the task.",
 		Example: "  icb tasks create\n" +
 			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fields := taskCreateFields()
 			answers := flagAnswers(cmd, "name", "category", "window-days", "notes")
@@ -495,7 +495,7 @@ func newTaskCategoriesListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List the task categories and the window a new task in each gets",
 		Example: "  icb tasks categories list",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

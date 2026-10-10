@@ -153,7 +153,7 @@ func newIssuesCreateCommand() *cobra.Command {
 			"  icb issues create --title \"Routing drops /issues\" --type bug --repo ichrisbirch --priority high\n" +
 			"  icb issues create --title \"Pick a rank scheme\" --type decision --label needs-design\n" +
 			"  icb issues create --title \"Flaky test\" --status triage --discovered-from 412 --description \"$(cat log.md)\"",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if f.Changed("status") && !slices.Contains(createStatuses, issueStatus) {

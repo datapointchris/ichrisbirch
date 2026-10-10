@@ -88,7 +88,7 @@ func newStrainsListCommand() *cobra.Command {
 			"  icb strains list --effect sleepy       narrowed to a recorded effect\n" +
 			"  icb strains list --type sativa --rating-min 8\n" +
 			"                                         the highest-rated sativas",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			// A filter has no field to empty, so an empty value here is refused
 			// rather than read as the clear it means on `edit`. It narrows
@@ -150,7 +150,7 @@ func newStrainsVocabularyCommand() *cobra.Command {
 			"how many strains carry each. A count of zero is a value nothing uses yet,\n" +
 			"not a gap.",
 		Example: "  icb strains vocabulary\n  icb strains vocabulary --json",
-		Args:    usageArgs(cobra.NoArgs),
+		Args:    noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -300,7 +300,7 @@ func newStrainsCreateCommand() *cobra.Command {
 			"  icb strains create --name \"Blue Dream\"\n" +
 			"  icb strains create --name \"Zkittlez\" --type indica_dominant --status tried \\\n" +
 			"      --rating 9 --effect happy --effect relaxed --flavor tropical",
-		Args: usageArgs(cobra.NoArgs),
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			// Every refusal that needs no server state is decided here, before
