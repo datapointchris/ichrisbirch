@@ -83,9 +83,6 @@ from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
 from ichrisbirch.schemas.pattern import Pattern
 from ichrisbirch.schemas.pattern import PatternCreate
 from ichrisbirch.schemas.pattern import PatternUpdate
-from ichrisbirch.schemas.personal_api_key import PersonalAPIKey
-from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreate
-from ichrisbirch.schemas.personal_api_key import PersonalAPIKeyCreated
 from ichrisbirch.schemas.project import Project
 from ichrisbirch.schemas.project import ProjectCreate
 from ichrisbirch.schemas.project import ProjectUpdate
@@ -227,9 +224,6 @@ __all__ = [
     'MoneyWasted',
     'MoneyWastedCreate',
     'MoneyWastedUpdate',
-    'PersonalAPIKey',
-    'PersonalAPIKeyCreate',
-    'PersonalAPIKeyCreated',
     'Pattern',
     'PatternCreate',
     'PatternUpdate',

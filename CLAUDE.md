@@ -46,7 +46,7 @@ Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every
 
 ### Authentication
 
-**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. `api.ichrisbirch.com` bypasses ForwardAuth for every request — that is the Personal API Key path, and it is being retired along with those clients. The `icb` CLI does not use it: the `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the CLI targets `ichrisbirch.com/api` and only bearer requests skip the edge. `cli/internal/config/config.go` sets that as `defaultAPIBase`.
+**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. The `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the `icb` CLI targets `ichrisbirch.com/api` and only bearer requests skip the edge. `cli/internal/config/config.go` sets that as `defaultAPIBase`, and `icbops prod apihealth` and `prod smoke` send `icb auth token` the same way.
 
 **OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `icb-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
@@ -62,7 +62,7 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 
 **`Remote-*` headers are trusted only through `api-proxy`.** The header strategy ignores them on any request carrying `Authorization`, and the prod Traefik blanks them on every other router with `strip-authelia-identity-headers`. A new prod router takes that middleware unless ForwardAuth runs in front of it. `docs/authentication-architecture.md` gives the two bypasses this closes.
 
-**FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + Personal API Keys + local JWT tokens (lifetimes in `AuthSettings`). Protected routes use `Depends(auth.get_current_user)`, and a router with a route in `SCOPE_ROUTES` uses `get_current_user_or_scoped_client`. `tests/conftest.py` overrides each by function identity. An override reaches a `Depends` on that function and not a direct call to it, so `get_current_user_or_scoped_client`, which calls `get_current_user` directly, needs its own line there.
+**FastAPI:** verified Authelia OIDC access tokens (highest priority) + Authelia `Remote-User` header + this app's own services by `X-Service-Key`. Protected routes use `Depends(auth.get_current_user)`, and a router with a route in `SCOPE_ROUTES` uses `get_current_user_or_scoped_client`. `tests/conftest.py` overrides each by function identity. An override reaches a `Depends` on that function and not a direct call to it, so `get_current_user_or_scoped_client`, which calls `get_current_user` directly, needs its own line there.
 
 ### Configuration & Secrets
 

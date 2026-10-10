@@ -194,98 +194,6 @@
           </template>
         </draggable>
       </div>
-
-      <!-- API Keys -->
-      <div class="grid__item">
-        <h3>Personal API Keys</h3>
-        <p class="setting-description">API keys allow external tools to access your data without a browser session.</p>
-
-        <div
-          v-if="newlyCreatedKey"
-          class="api-key-banner"
-        >
-          <strong>Copy this key now — it will not be shown again:</strong>
-          <code class="api-key-banner__key">{{ newlyCreatedKey }}</code>
-          <button
-            class="button button--small"
-            @click="copyKey"
-          >
-            Copy
-          </button>
-        </div>
-
-        <table
-          v-if="auth.apiKeys.length > 0"
-          class="api-keys-table"
-        >
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Key Prefix</th>
-              <th>Created</th>
-              <th>Last Used</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="key in auth.apiKeys"
-              :key="key.id"
-            >
-              <td>{{ key.name }}</td>
-              <td>
-                <code>{{ key.key_prefix }}...</code>
-              </td>
-              <td>{{ formatDate(key.created_at, 'shortDate') }}</td>
-              <td>{{ key.last_used_at ? formatDate(key.last_used_at, 'shortDate') : 'Never' }}</td>
-              <td>
-                <span :class="key.revoked_at ? 'status--revoked' : 'status--active'">
-                  {{ key.revoked_at ? 'Revoked' : 'Active' }}
-                </span>
-              </td>
-              <td>
-                <button
-                  v-if="!key.revoked_at"
-                  class="button button--small button--danger"
-                  @click="handleRevokeKey(key.id)"
-                >
-                  Revoke
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p
-          v-else
-          class="setting-description"
-        >
-          No API keys created yet.
-        </p>
-
-        <form
-          class="api-key-form"
-          @submit.prevent="handleCreateKey"
-        >
-          <label for="key-name">Key Name</label>
-          <div class="api-key-form__row">
-            <input
-              id="key-name"
-              v-model="keyName"
-              type="text"
-              class="textbox"
-              placeholder="e.g., icb CLI on macmini"
-              required
-            />
-            <button
-              type="submit"
-              class="button"
-            >
-              Create API Key
-            </button>
-          </div>
-        </form>
-      </div>
     </template>
   </div>
 </template>
@@ -330,8 +238,6 @@ const tertiaryPreview = computed(() => `oklch(0.65 0.10 ${(accentHue.value + 240
 const infoPreview = computed(() => `oklch(0.70 0.08 ${(accentHue.value + 180) % 360})`)
 const subtlePreview = computed(() => `oklch(0.55 0.04 ${baseHue.value})`)
 const availableFonts = [...fonts].sort((a, b) => a.name.localeCompare(b.name))
-const keyName = ref('')
-const newlyCreatedKey = ref<string | null>(null)
 
 // Sidebar ordering — vuedraggable mutates sidebarLinks directly via :list
 const sidebarLinks = ref<NavLink[]>([])
@@ -408,43 +314,10 @@ async function selectFont(fontId: string) {
   }
 }
 
-async function handleCreateKey() {
-  const name = keyName.value.trim()
-  if (!name) return
-  try {
-    const created = await auth.createApiKey(name)
-    newlyCreatedKey.value = created.key
-    keyName.value = ''
-    notify('API key created', 'success')
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to create API key: ${detail}`, 'error')
-  }
-}
-
-async function copyKey() {
-  if (newlyCreatedKey.value) {
-    await navigator.clipboard.writeText(newlyCreatedKey.value)
-    notify('Key copied to clipboard', 'success')
-  }
-}
-
-async function handleRevokeKey(id: number) {
-  if (!confirm('Revoke this API key? This cannot be undone.')) return
-  try {
-    await auth.revokeApiKey(id)
-    notify('API key revoked', 'success')
-  } catch (e) {
-    const detail = e instanceof ApiError ? e.userMessage : String(e)
-    notify(`Failed to revoke API key: ${detail}`, 'error')
-  }
-}
-
 onMounted(async () => {
   if (!auth.user) {
     await auth.fetchCurrentUser()
   }
-  await auth.fetchApiKeys()
   // Sync local state with loaded preferences
   if (auth.preferences) {
     selectedThemeColor.value = auth.preferences.theme_color
@@ -626,69 +499,6 @@ onMounted(async () => {
   letter-spacing: 0.05em;
   margin-bottom: var(--space-3xs);
   display: block;
-}
-
-/* API key banner */
-.api-key-banner {
-  background: var(--clr-gray-800);
-  border: 2px solid var(--clr-primary-400);
-  border-radius: 0.5rem;
-  padding: var(--space-s);
-  margin-bottom: var(--space-m);
-  display: flex;
-  align-items: center;
-  gap: var(--space-s);
-  flex-wrap: wrap;
-}
-
-.api-key-banner__key {
-  font-family: monospace;
-  background: var(--clr-gray-900);
-  padding: var(--space-3xs) var(--space-xs);
-  border-radius: 0.25rem;
-  word-break: break-all;
-}
-
-/* API keys table */
-.api-keys-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: var(--space-m);
-}
-
-.api-keys-table th,
-.api-keys-table td {
-  padding: var(--space-2xs) var(--space-xs);
-  text-align: left;
-  border-bottom: 1px solid var(--clr-gray-700);
-}
-
-.api-keys-table th {
-  color: var(--clr-gray-400);
-  font-weight: 600;
-}
-
-.status--active {
-  color: var(--clr-primary-400);
-}
-
-.status--revoked {
-  color: var(--clr-gray-500);
-}
-
-/* API key create form */
-.api-key-form {
-  margin-top: var(--space-s);
-}
-
-.api-key-form__row {
-  display: flex;
-  gap: var(--space-xs);
-  margin-top: var(--space-2xs);
-}
-
-.api-key-form__row input {
-  flex: 1;
 }
 
 /* Font selector */

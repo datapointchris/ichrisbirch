@@ -19,9 +19,7 @@ const (
 	// The `ichrisbirch-bearer` Traefik router carries a request holding an
 	// Authorization header straight to the app without meeting ForwardAuth, so
 	// this host serves the CLI without the bearer.authz scope the edge would
-	// otherwise demand. Deliberately not api.ichrisbirch.com: that host bypasses
-	// ForwardAuth for every request rather than only bearer ones, and it is
-	// being retired along with the Personal API Key clients it was built for.
+	// otherwise demand.
 	defaultAPIBase = "https://ichrisbirch.com/api"
 )
 

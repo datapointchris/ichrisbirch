@@ -1,6 +1,4 @@
 import datetime as dt
-import hashlib
-import secrets
 
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
@@ -12,21 +10,14 @@ from sqlalchemy.orm import mapped_column
 
 from ichrisbirch.database.base import Base
 
-KEY_PREFIX = 'icb_'
-KEY_RANDOM_BYTES = 16  # 32 hex chars
-
-
-def generate_api_key() -> str:
-    """Generate a new personal API key: icb_ + 32 hex chars."""
-    return KEY_PREFIX + secrets.token_hex(KEY_RANDOM_BYTES)
-
-
-def hash_api_key(key: str) -> str:
-    """SHA-256 hash of the full key for storage."""
-    return hashlib.sha256(key.encode()).hexdigest()
-
 
 class PersonalAPIKey(Base):
+    """A table nothing reads or writes, declared until the migration that drops it.
+
+    The release before the drop still reads it, so the drop waits until that release is no longer
+    the live color.
+    """
+
     __tablename__ = 'personal_api_keys'
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
@@ -37,6 +28,3 @@ class PersonalAPIKey(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
     last_used_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    def __repr__(self):
-        return f'PersonalAPIKey(name={self.name}, key_prefix={self.key_prefix}, user_id={self.user_id})'

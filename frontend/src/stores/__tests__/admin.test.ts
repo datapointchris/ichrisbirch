@@ -186,7 +186,7 @@ describe('useAdminStore', () => {
     it('fetches and stores config sections', async () => {
       const sections = [
         { name: '_general', settings: { ENVIRONMENT: 'testing' } },
-        { name: 'auth', settings: { jwt_secret_key: '***MASKED***' } },
+        { name: 'auth', settings: { internal_service_key: '***MASKED***' } },
       ]
       mockApi.get.mockResolvedValueOnce({ data: sections })
       const store = useAdminStore()

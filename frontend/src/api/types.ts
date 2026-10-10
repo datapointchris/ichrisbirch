@@ -43,25 +43,6 @@ export interface User {
   preferences: UserPreferences
 }
 
-// --- Personal API Key ---
-
-export interface PersonalApiKey {
-  id: number
-  name: string
-  key_prefix: string
-  created_at: string
-  last_used_at: string | null
-  revoked_at: string | null
-}
-
-export interface PersonalApiKeyCreate {
-  name: string
-}
-
-export interface PersonalApiKeyCreated extends PersonalApiKey {
-  key: string
-}
-
 // --- Countdown ---
 
 export interface Countdown {

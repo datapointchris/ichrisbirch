@@ -11,13 +11,14 @@ dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 | A service running `icb` | Authelia access token from the client-credentials grant | The same bearer route, with no person present |
 | The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/...` on the same origin |
 | This app's own services | `X-Service-Key`, with `X-Internal-Service` or with `X-Application-ID` and `X-User-ID` | Internal network |
-| A personal API key | `icb_` bearer token | `api.ichrisbirch.com`, which skips ForwardAuth; this path is being retired |
-| A local session | JWT this API signs, from `/auth/token/` | `Authorization: Bearer` |
 
 `authenticated_user` runs every user strategy and takes the first match. The
-order is the OIDC access token, the Authelia headers, the application headers, a
-personal API key, a local JWT, then an OAuth2 form post. FastAPI caches it per
-request, so a route that asks for the caller twice looks the user up once.
+order is the OIDC access token, the Authelia headers, then the application
+headers. FastAPI caches it per request, so a route that asks for the caller
+twice looks the user up once.
+
+The API signs no token of its own and accepts no password. A user row keeps its
+password hash, and no strategy reads it.
 
 ## An access token is verified here, not at the edge
 
@@ -40,23 +41,23 @@ header would be ignored, and the request would run as that header's user.
 
 ## Remote-User is read only where ForwardAuth set it
 
-The edge runs ForwardAuth on `ichrisbirch.com` alone, and two kinds of request
-reach the API without it. `api.ichrisbirch.com` skips ForwardAuth entirely. The
-`ichrisbirch-bearer` router carries any `ichrisbirch.com` request holding
-`Authorization: Bearer` past it. On either, a `Remote-User` header came from the
-client.
+The edge runs ForwardAuth on `ichrisbirch.com`, and one kind of request reaches
+the API without it. The `ichrisbirch-bearer` router carries any
+`ichrisbirch.com` request holding `Authorization: Bearer` past it. On such a
+request, a `Remote-User` header came from the client.
 
-Each is closed in this repo, whatever the edge does:
+Two rules close it in this repo, whatever the edge does:
 
 - The prod Traefik blanks `Remote-User`, `Remote-Email`, `Remote-Name` and
-  `Remote-Groups` on every router except `api-proxy`.
+  `Remote-Groups` on every router except `api-proxy`. A router added later
+  takes that middleware unless ForwardAuth runs in front of it.
 - The header strategy returns None for any request carrying an `Authorization`
   header, whatever that header holds.
 
 So a bearer token no strategy accepts answers 401 rather than resolving the
-headers. A valid one runs as its own user, even beside an admin's headers. The
-header strategy outranks a personal API key and a local JWT, so without the
-second rule either credential would run as the account the headers named.
+headers. A valid one runs as its own user, even beside an admin's headers. A
+bearer that is not an access token passes the OIDC strategy by. Without the
+second rule, the request would then run as the account the headers named.
 `tests/ichrisbirch/api/test_authelia_headers.py` holds both cases.
 
 ## The client_id prefix decides whether a token is a person or a scoped client

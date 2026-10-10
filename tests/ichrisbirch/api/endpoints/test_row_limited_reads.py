@@ -77,7 +77,6 @@ UNCAPPED_READS = {
     '/admin/scheduler/jobs/',
     '/admin/system/errors/',
     '/admin/system/health/',
-    '/api-keys/',
     '/articles/failed-imports/',
     '/articles/search/',
     '/autofun/',
