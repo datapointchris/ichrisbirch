@@ -24,18 +24,14 @@ setup() {
 }
 
 # Prints each service that builds under an image name this project does not own.
-# An env_file sets the container's environment and never the image a service
-# builds under, and a CI runner has no .env. Compose 5 skips env files under
-# config --no-env-resolution; the 2.x a runner ships opens them anyway. So the
-# project directory, which relative env_file paths resolve against, holds an
-# empty one.
+# An env_file only sets the container's environment, never the image it builds
+# under, so the .env a CI runner lacks is left unread. Compose 5 skips env files
+# under --no-env-resolution, and 2.x opens them anyway.
 foreign_builds() {
-  local args=() file resolved project="$BATS_TEST_TMPDIR/project"
-  mkdir -p "$project" && : >"$project/.env"
-  for file in "$@"; do args+=(-f "$PWD/$file"); done
-  resolved=$(DEPLOY_COLOR=blue docker compose --project-name icb-build-tags \
-    --project-directory "$project" "${args[@]}" \
-    config --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
+  local args=() file resolved
+  for file in "$@"; do args+=(-f "$file"); done
+  resolved=$(DEPLOY_COLOR=blue docker compose --project-name icb-build-tags "${args[@]}" \
+    config --no-env-resolution --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
     cat "$BATS_TEST_TMPDIR/compose.err"
     return 1
   }
