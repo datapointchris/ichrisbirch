@@ -20,6 +20,7 @@ InitiativeRef = UUID | str
 Priority = Annotated[int, Field(ge=0, le=4, description='0 none, 1 urgent, 2 high, 3 medium, 4 low')]
 Slug = Annotated[str, StringConstraints(pattern=r'^[a-z0-9]+(-[a-z0-9]+)*$')]
 Claimant = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+Actor = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 ClaimMinutes = Annotated[int, Field(ge=1, le=10080, description='How long the claim holds before the issue is ready again')]
 
 DEFAULT_CLAIM_MINUTES = 240
@@ -67,8 +68,10 @@ class IssueUpdate(IssueConfig):
     """Status moves through here, and the server stamps what a transition implies.
 
     `closed_ts` and the claim are never sent: closing stamps the one and clears
-    the other. `duplicate_of` is accepted only alongside `status: canceled`, and
-    `labels` replaces the issue's whole set.
+    the other. `closed_by` names who is closing it and is accepted only with the
+    status that closes an open issue; the server stamps the signed-in user's
+    email when it is left out. `duplicate_of` is accepted only alongside
+    `status: canceled`, and `labels` replaces the issue's whole set.
     """
 
     title: NotNull[str] = None
@@ -84,6 +87,7 @@ class IssueUpdate(IssueConfig):
     parent: IssueRef | None = None
     discovered_from: IssueRef | None = None
     duplicate_of: IssueRef | None = None
+    closed_by: Actor | None = None
     labels: NotNull[list[Slug]] = None
 
 
@@ -126,6 +130,7 @@ class Issue(IssueConfig):
     created_ts: dt.datetime
     updated_ts: dt.datetime
     closed_ts: dt.datetime | None = None
+    closed_by: str | None = None
 
 
 class IssueCommentCreate(IssueConfig):

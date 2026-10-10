@@ -188,6 +188,7 @@ These require two separate deploys:
 | Operation | Phase 1 | Phase 2 |
 | --- | --- | --- |
 | Make column NOT NULL | Backfill NULLs + update code to always set value | Add NOT NULL constraint |
+| Add a CHECK the outgoing code can break | Add the column + update code to keep the rule | Clear the rows the outgoing code wrote against the rule, then add the CHECK constraint |
 | Rename column | Add new column + backfill + update code to use new | Drop old column |
 | Drop column | Remove all code references | Drop column from schema |
 | Change column type | Add new column with new type + backfill + a trigger filling whichever column a row arrives without | Drop the trigger and the old column |

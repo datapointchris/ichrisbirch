@@ -3,8 +3,11 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -85,16 +88,127 @@ func TestIssueEdit_EmptyValuesClearEachFieldItsOwnWay(t *testing.T) {
 }
 
 // Two sessions on one machine must not share a claimant, because a claimant
-// extends its own claim rather than being refused.
-func TestActorIdentity_NamesTheClaudeCodeSession(t *testing.T) {
-	t.Setenv("CLAUDE_CODE_SESSION_ID", "2c3201ae")
-	if got := actorIdentity(); got != "claude-code/2c3201ae" {
-		t.Errorf("actorIdentity() = %q, want the session", got)
+// extends its own claim rather than being refused. The prefix is the kind of
+// actor, which is what a reader filters a person's work from a worker's by.
+func TestActorIdentity_NamesTheKindOfActorBeforeWhoItIs(t *testing.T) {
+	cases := []struct {
+		name, session, attended, worker, want string
+	}{
+		{"a session someone attends", "2c3201ae", "1", "", "claude-code/2c3201ae"},
+		{"an older session that does not say", "2c3201ae", "", "", "claude-code/2c3201ae"},
+		{"a session nobody attends", "2c3201ae", "0", "", "claude-code-unattended/2c3201ae"},
+		{"a session a named worker started", "2c3201ae", "0", "fix@scheduler", "claude-code-unattended/fix@scheduler/2c3201ae"},
+		{"a named worker running icb itself", "", "", "runner-update@scheduler", "worker/runner-update@scheduler"},
 	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("CLAUDE_CODE_SESSION_ID", c.session)
+			t.Setenv("CLAUDE_CODE_SESSION_ATTENDED", c.attended)
+			t.Setenv(actorWorkerEnv, c.worker)
+			if got := actorIdentity(); got != c.want {
+				t.Errorf("actorIdentity() = %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+func TestActorIdentity_IsThePersonOutsideASessionOrAWorker(t *testing.T) {
 	t.Setenv("CLAUDE_CODE_SESSION_ID", "")
+	t.Setenv(actorWorkerEnv, "")
 	t.Setenv("USER", "chris")
 	if got := actorIdentity(); !strings.HasPrefix(got, "chris") {
 		t.Errorf("actorIdentity() = %q outside a session, want the user", got)
+	}
+}
+
+// A Claude Code session closing an issue: the PATCH names the session unless
+// --closed-by names someone else or is emptied.
+func TestIssues_CompleteAndCancelSendWhoIsClosingInTheirPatch(t *testing.T) {
+	t.Setenv("CLAUDE_CODE_SESSION_ID", "2c3201ae")
+	t.Setenv("CLAUDE_CODE_SESSION_ATTENDED", "1")
+	t.Setenv(actorWorkerEnv, "")
+	idp := serviceIDP(t)
+	verbs := [][]string{{"issues", "complete", "412"}, {"issues", "cancel", "412", "--reason", "superseded"}}
+	cases := []struct {
+		flags []string
+		want  *string
+	}{
+		{nil, ptr("claude-code/2c3201ae")},
+		{[]string{"--closed-by", "chris@desk"}, ptr("chris@desk")},
+		{[]string{"--closed-by", ""}, nil},
+	}
+	for _, verb := range verbs {
+		for _, c := range cases {
+			args := append(slices.Clone(verb), c.flags...)
+			t.Run(strings.Join(args, " "), func(t *testing.T) {
+				var patch map[string]any
+				api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					if r.Method == http.MethodPatch {
+						_ = json.NewDecoder(r.Body).Decode(&patch)
+					}
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = w.Write([]byte(`{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"open"}`))
+				}))
+				t.Cleanup(api.Close)
+				asService(t, idp.URL, api.URL, serviceSecret)
+
+				if _, err := runService(t, args...); err != nil {
+					t.Fatalf("run: %v", err)
+				}
+				if patch == nil {
+					t.Fatal("sent no PATCH")
+				}
+				got, sent := patch["closed_by"]
+				switch {
+				case c.want == nil && sent:
+					t.Errorf("sent closed_by %v, want it left out", got)
+				case c.want != nil && got != *c.want:
+					t.Errorf("sent closed_by %v, want %q", got, *c.want)
+				}
+			})
+		}
+	}
+}
+
+// Reading what attended sessions finished: --closed-by reaches the API as the
+// prefix it matches on.
+func TestIssues_ListClosedBySendsThePrefixToMatch(t *testing.T) {
+	var query url.Values
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Query()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+
+	if _, err := runService(t, "issues", "list", "--status", "completed", "--closed-by", "claude-code/", "--json"); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if got := query.Get("closed_by"); got != "claude-code/" {
+		t.Errorf("sent closed_by %q, want claude-code/", got)
+	}
+}
+
+func TestClosedNote_SaysWhenAndWhoWhereEachIsKnown(t *testing.T) {
+	now := time.Date(2026, 10, 7, 12, 0, 0, 0, time.Local)
+	closed := now.Add(-time.Hour)
+	who := "claude-code/2c3201ae"
+	cases := []struct {
+		name  string
+		issue api.Issue
+		want  string
+	}{
+		{"open", api.Issue{}, ""},
+		{"closed by a known actor", api.Issue{ClosedTS: &closed, ClosedBy: &who}, "11:00 by claude-code/2c3201ae"},
+		{"closed before anyone was recorded", api.Issue{ClosedTS: &closed}, "11:00"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := closedNote(c.issue, now); got != c.want {
+				t.Errorf("closedNote() = %q, want %q", got, c.want)
+			}
+		})
 	}
 }
 

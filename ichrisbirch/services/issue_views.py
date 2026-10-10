@@ -99,6 +99,7 @@ def issue_view(issue: models.Issue, readiness: IssueReadiness, comments: dict[UU
         created_ts=issue.created_ts,
         updated_ts=issue.updated_ts,
         closed_ts=issue.closed_ts,
+        closed_by=issue.closed_by,
     )
 
 

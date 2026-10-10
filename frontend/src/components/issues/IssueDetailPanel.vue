@@ -229,7 +229,10 @@ const fields = computed(() => {
   if (issue.deferred_until_date) rows.push({ label: 'Not before', value: formatDate(issue.deferred_until_date, 'shortDate') })
   rows.push({ label: 'Filed', value: formatDate(issue.created_ts, 'dateTime') })
   rows.push({ label: 'Updated', value: formatDate(issue.updated_ts, 'dateTime') })
-  if (issue.closed_ts) rows.push({ label: 'Closed', value: formatDate(issue.closed_ts, 'dateTime') })
+  if (issue.closed_ts) {
+    rows.push({ label: 'Closed', value: formatDate(issue.closed_ts, 'dateTime') })
+    if (issue.closed_by) rows.push({ label: 'Closed by', value: issue.closed_by })
+  }
   return rows
 })
 

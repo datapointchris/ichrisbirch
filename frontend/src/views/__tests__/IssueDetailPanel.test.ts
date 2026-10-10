@@ -49,6 +49,7 @@ const issue: Issue = {
   created_ts: '2026-10-01T12:00:00Z',
   updated_ts: '2026-10-01T12:00:00Z',
   closed_ts: null,
+  closed_by: null,
 }
 
 const detail: IssueDetail = {
@@ -85,6 +86,25 @@ describe('IssueDetailPanel', () => {
 
   it('names who holds the claim and until when', () => {
     expect(mountPanel().text()).toContain('claude-code/abc until formatted:2026-10-08T06:00:00Z')
+  })
+
+  it('names who closed a closed issue', () => {
+    const closed = { ...issue, status: 'completed', closed_ts: '2026-10-08T06:00:00Z', closed_by: 'claude-code/abc' }
+    const wrapper = mount(IssueDetailPanel, {
+      props: { issue: closed, detail: { ...detail, ...closed } },
+      global: { plugins: [createTestingPinia({ stubActions: true, createSpy: vi.fn })] },
+    })
+    expect(wrapper.text()).toContain('Closed by')
+    expect(wrapper.text()).toContain('claude-code/abc')
+  })
+
+  it('names no closer on an issue reopened by code that leaves closed_by behind', () => {
+    const reopened = { ...issue, status: 'open', closed_ts: null, closed_by: 'claude-code/abc' }
+    const wrapper = mount(IssueDetailPanel, {
+      props: { issue: reopened, detail: { ...detail, ...reopened } },
+      global: { plugins: [createTestingPinia({ stubActions: true, createSpy: vi.fn })] },
+    })
+    expect(wrapper.text()).not.toContain('Closed by')
   })
 
   it('strikes a dependency that is already closed', () => {

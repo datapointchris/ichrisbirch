@@ -172,6 +172,16 @@ class TestList:
         params = {'status': 'all', 'start_date': '2026-08-31', 'end_date': '2026-09-02', 'timezone': 'UTC'}
         assert titles(ok(client.get(ISSUES, params=params))) == ['Completed feature']
 
+    def test_closed_by_reads_what_one_kind_of_closer_finished(self, client):
+        """`claude-code/` is the attended sessions, apart from the unattended ones and the signed-in user."""
+        for title, closer in (
+            ('Attended', {'closed_by': 'claude-code/a1b2'}),
+            ('Unattended', {'closed_by': 'claude-code-unattended/c3d4'}),
+            ('Browser', {}),
+        ):
+            ok(patch(client, create(client, title=title)['number'], status='completed', **closer))
+        assert titles(ok(client.get(ISSUES, params={'status': 'completed', 'closed_by': 'claude-code/'}))) == ['Attended']
+
 
 class TestReadyQueue:
     def test_the_queue_leaves_out_decisions_and_triage(self, client):
@@ -297,12 +307,39 @@ class TestStatusTransitions:
         assert done['closed_ts'] is not None
         assert done['claimed_by'] is None
 
+    def test_a_close_records_the_actor_the_caller_names(self, client):
+        bug = issue(client, 'Ready bug with high priority')
+        done = ok(patch(client, bug['number'], status='completed', closed_by='claude-code/a1b2'))
+        assert done['closed_by'] == 'claude-code/a1b2'
+
+    def test_a_close_naming_no_actor_records_the_signed_in_user(self, client):
+        """A browser close names nobody, and the session it arrives on is a person's."""
+        bug = issue(client, 'Ready bug with high priority')
+        done = ok(patch(client, bug['number'], status='completed'))
+        assert done['closed_by'] == 'testloginregular@testuser.com'
+
+    def test_a_move_between_closed_statuses_keeps_who_closed_it(self, client):
+        task = issue(client, 'Ready task without priority')
+        ok(patch(client, task['number'], status='completed', closed_by='first-closer'))
+        canceled = ok(patch(client, task['number'], status='canceled', status_reason='Not needed'))
+        assert canceled['closed_by'] == 'first-closer'
+
+    def test_closed_by_is_sent_only_with_a_close(self, client):
+        task = issue(client, 'Ready task without priority')
+        detail = refused(patch(client, task['number'], title='Renamed', closed_by='someone'), 422)
+        assert 'closed_by' in detail
+
     def test_reopening_clears_the_close_the_reason_and_the_duplicate(self, client):
         bug = issue(client, 'Ready bug with high priority')
         task = issue(client, 'Ready task without priority')
         ok(patch(client, task['number'], status='canceled', status_reason='Same bug', duplicate_of=bug['number']))
         reopened = ok(patch(client, task['number'], status='open'))
-        assert (reopened['closed_ts'], reopened['status_reason'], reopened['duplicate_of']) == (None, None, None)
+        assert (reopened['closed_ts'], reopened['closed_by'], reopened['status_reason'], reopened['duplicate_of']) == (
+            None,
+            None,
+            None,
+            None,
+        )
 
     def test_canceling_needs_a_reason_or_a_duplicate(self, client):
         task = issue(client, 'Ready task without priority')
@@ -337,7 +374,7 @@ class TestStatusTransitions:
 
         for reopened in (middle, top):
             row = ok(client.get(f'{ISSUES}{reopened["number"]}/'))
-            assert (row['status'], row['closed_ts']) == ('open', None)
+            assert (row['status'], row['closed_ts'], row['closed_by']) == ('open', None, None)
 
     def test_a_reopen_that_moves_the_child_leaves_the_old_parent_completed(self, client):
         old = create(client, title='Old parent')

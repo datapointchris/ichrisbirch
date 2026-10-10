@@ -127,6 +127,7 @@ type issueFilterFlags struct {
 	parent     string
 	priority   string
 	claimedBy  string
+	closedBy   string
 	blocked    bool
 }
 
@@ -140,6 +141,7 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 	f.StringVar(&v.parent, "parent", "", "Only the children of this issue")
 	f.StringVar(&v.priority, "priority", "", "Only issues whose own priority is this: "+priorityChoices())
 	f.StringVar(&v.claimedBy, "claimed-by", "", "Only issues held by this claimant")
+	f.StringVar(&v.closedBy, "closed-by", "", "Only issues whose closer starts with this, such as claude-code/")
 	f.BoolVar(&v.blocked, "blocked", false, "Only issues waiting on an unclosed dependency (--blocked=false for the rest)")
 }
 
@@ -160,6 +162,7 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 		Initiative: v.initiative,
 		Parent:     v.parent,
 		ClaimedBy:  v.claimedBy,
+		ClosedBy:   v.closedBy,
 	}
 	if f.Changed("priority") {
 		priority, err := parsePriority(v.priority)
@@ -231,14 +234,18 @@ func newIssuesListCommand() *cobra.Command {
 			"filters on an issue's own.\n" +
 			"\n" +
 			"--start/--end bound when an issue closed, inclusive, read in this machine's\n" +
-			"zone. Pair them with --status completed to read a week's finished work.",
+			"zone. Pair them with --status completed to read a week's finished work.\n" +
+			"\n" +
+			"--closed-by matches the start of who closed an issue, so claude-code/ is\n" +
+			"every attended Claude Code session. docs/issues.md lists the kinds.",
 		Example: "  icb issues list\n" +
 			"  icb issues list --repo ichrisbirch\n" +
 			"  icb issues list --type decision\n" +
 			"  icb issues list --status triage\n" +
 			"  icb issues list --blocked\n" +
 			"  icb issues list --label area-cli --priority high\n" +
-			"  icb issues list --status completed --start 2026-10-01 --json",
+			"  icb issues list --status completed --start 2026-10-01 --json\n" +
+			"  icb issues list --status completed --closed-by claude-code/",
 		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := filters.filter(cmd)
@@ -517,12 +524,28 @@ func newIssuesVocabularyCommand() *cobra.Command {
 
 // --- Identity ---
 
-// actorIdentity names who acts when a claim or a comment does not say: the
-// Claude Code session when run inside one, else user@host. Two sessions on one
-// machine must not share a name, because a claimant extends its own claim.
+// actorWorkerEnv names the variable a scheduler sets to say which of its
+// workers is running, so what the worker does is signed with that name.
+const actorWorkerEnv = "ICB_ACTOR"
+
+// actorIdentity names who acts when a claim, a comment or a close does not say.
+// Two sessions on one machine must not share a name, because a claimant
+// extends its own claim. The prefix is the kind of actor, so a reader can
+// filter on it. docs/issues.md lists the kinds.
 func actorIdentity() string {
+	worker := os.Getenv(actorWorkerEnv)
 	if session := os.Getenv("CLAUDE_CODE_SESSION_ID"); session != "" {
-		return "claude-code/" + session
+		switch {
+		case worker != "":
+			return "claude-code-unattended/" + worker + "/" + session
+		case os.Getenv("CLAUDE_CODE_SESSION_ATTENDED") == "0":
+			return "claude-code-unattended/" + session
+		default:
+			return "claude-code/" + session
+		}
+	}
+	if worker != "" {
+		return "worker/" + worker
 	}
 	user := os.Getenv("USER")
 	if user == "" {
@@ -610,6 +633,18 @@ func claimNote(issue api.Issue, now time.Time) string {
 	return "claimed by " + *issue.ClaimedBy + " until " + localClock(*issue.ClaimExpiresTS, now)
 }
 
+// closedNote says when the issue closed and who closed it, where each is known.
+func closedNote(issue api.Issue, now time.Time) string {
+	if issue.ClosedTS == nil {
+		return ""
+	}
+	when := localClock(*issue.ClosedTS, now)
+	if by := strValue(issue.ClosedBy); by != "" {
+		return when + " by " + by
+	}
+	return when
+}
+
 // localClock prints an instant as a time of day when it falls today here, and
 // with its day otherwise.
 func localClock(t, now time.Time) string {
@@ -667,6 +702,7 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 		status += " — ready"
 	}
 	field("status", status)
+	field("closed", closedNote(issue.Issue, now))
 	field("reason", strValue(issue.StatusReason))
 	if issue.DuplicateOf != nil {
 		field("duplicate of", summaryLine(*issue.DuplicateOf))
@@ -689,9 +725,6 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 	field("labels", strings.Join(issue.Labels, ", "))
 	field("deferred", strValue(issue.DeferredUntilDate))
 	field("created", localDay(issue.CreatedTS))
-	if issue.ClosedTS != nil {
-		field("closed", localDay(*issue.ClosedTS))
-	}
 
 	section := func(title, body string) {
 		if body != "" {

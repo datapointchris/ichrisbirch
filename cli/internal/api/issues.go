@@ -96,6 +96,7 @@ type Issue struct {
 	CreatedTS         time.Time          `json:"created_ts"`
 	UpdatedTS         time.Time          `json:"updated_ts"`
 	ClosedTS          *time.Time         `json:"closed_ts"`
+	ClosedBy          *string            `json:"closed_by"`
 }
 
 // IssueComment is a note on an issue: progress, a handoff, or what closing it shipped.
@@ -136,7 +137,9 @@ type IssueCreateInput struct {
 // IssueUpdateInput is a partial update. A field left nil is not sent. A field
 // to empty goes in the clear list UpdateIssue takes, which sends it as an
 // explicit null. Status changes through here too, and the server stamps
-// closed_ts and drops the claim as the new status requires.
+// closed_ts and drops the claim as the new status requires. ClosedBy names who
+// is closing it, and only goes with a closed status; left nil, the server
+// records the signed-in user.
 type IssueUpdateInput struct {
 	Title             *string   `json:"title,omitempty"`
 	Description       *string   `json:"description,omitempty"`
@@ -151,6 +154,7 @@ type IssueUpdateInput struct {
 	Parent            *string   `json:"parent,omitempty"`
 	DiscoveredFrom    *string   `json:"discovered_from,omitempty"`
 	DuplicateOf       *string   `json:"duplicate_of,omitempty"`
+	ClosedBy          *string   `json:"closed_by,omitempty"`
 	Labels            *[]string `json:"labels,omitempty"`
 }
 
@@ -167,6 +171,7 @@ type IssueFilter struct {
 	Priority   *int
 	Blocked    *bool
 	ClaimedBy  string
+	ClosedBy   string
 	Search     string
 }
 
@@ -179,6 +184,7 @@ func (f IssueFilter) query() url.Values {
 		"initiative": f.Initiative,
 		"parent":     f.Parent,
 		"claimed_by": f.ClaimedBy,
+		"closed_by":  f.ClosedBy,
 		"search":     f.Search,
 	} {
 		if value != "" {
