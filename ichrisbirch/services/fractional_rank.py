@@ -18,9 +18,9 @@ from sqlalchemy.orm import Session
 
 from ichrisbirch.database.fractionally_ranked import FractionallyRanked
 
-# Far above the point where doubles stop distinguishing neighbors near the
-# largest rank a table this size reaches, and far below any gap a renumber
-# leaves, which is 1.
+# Two ranks this far apart still have a double between them at any rank below
+# 10^9, and a rank grows by one each time a row is placed last. A renumber
+# leaves every gap at 1, far above this.
 MIN_GAP = 1e-6
 
 
