@@ -42,6 +42,14 @@
           </button>
           <button
             type="button"
+            class="button"
+            data-testid="recipe-detail-add-to-shopping"
+            @click="showShoppingModal = true"
+          >
+            <span class="button__text">Add to Shopping</span>
+          </button>
+          <button
+            type="button"
             class="button button--warning"
             data-testid="recipe-detail-edit"
             @click="showModal = true"
@@ -161,6 +169,15 @@
       @close="showModal = false"
       @update="handleUpdate"
     />
+
+    <AddRecipeToShoppingModal
+      v-if="recipe"
+      :visible="showShoppingModal"
+      :recipe="recipe"
+      :servings="currentServings"
+      @close="showShoppingModal = false"
+      @add="handleAddToShopping"
+    />
   </div>
 </template>
 
@@ -169,21 +186,26 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSubnav from '@/components/AppSubnav.vue'
 import AddEditRecipeModal from '@/components/recipes/AddEditRecipeModal.vue'
+import AddRecipeToShoppingModal from '@/components/shopping/AddRecipeToShoppingModal.vue'
 import { useRecipesStore } from '@/stores/recipes'
+import { useShoppingStore } from '@/stores/shopping'
 import { useNotifications } from '@/composables/useNotifications'
+import { displayQuantity, formatUnit } from '@/composables/ingredientAmount'
 import { ApiError } from '@/api/errors'
-import type { Recipe, RecipeIngredient, RecipeUpdate } from '@/api/client'
+import type { Recipe, RecipeUpdate, ShoppingItemCreate } from '@/api/client'
 import { RECIPES_SUBNAV } from '@/config/subnavLinks'
 
 const subnavLinks = RECIPES_SUBNAV
 const route = useRoute()
 const store = useRecipesStore()
+const shopping = useShoppingStore()
 const { show: notify } = useNotifications()
 
 const recipe = ref<Recipe | null>(null)
 const loading = ref(false)
 const currentServings = ref(4)
 const showModal = ref(false)
+const showShoppingModal = ref(false)
 
 const recipeId = () => Number(route.params.id)
 
@@ -241,27 +263,19 @@ async function handleUpdate(id: number, data: RecipeUpdate) {
   }
 }
 
-function displayQuantity(ing: RecipeIngredient): string {
-  const qty = ing.scaled_quantity ?? ing.quantity
-  if (qty === null || qty === undefined) return ''
-  // Prefer fractions for readability on common values
-  if (qty === 0.25) return '1/4'
-  if (qty === 0.5) return '1/2'
-  if (qty === 0.75) return '3/4'
-  if (qty === 0.125) return '1/8'
-  if (qty === 0.375) return '3/8'
-  if (qty === 0.625) return '5/8'
-  if (qty === 0.875) return '7/8'
-  // Strip trailing .0 for whole numbers
-  if (Number.isInteger(qty)) return String(qty)
-  return String(Math.round(qty * 100) / 100)
-}
-
-function formatUnit(unit: string | null): string {
-  if (!unit) return ''
-  if (unit === 'to_taste') return 'to taste'
-  if (unit === 'fl_oz') return 'fl oz'
-  return unit
+// One at a time: two ingredients naming the same item would race to create it.
+async function handleAddToShopping(items: ShoppingItemCreate[]) {
+  let added = 0
+  for (const item of items) {
+    try {
+      await shopping.addItem(item)
+      added += 1
+    } catch (e) {
+      const detail = e instanceof ApiError ? e.userMessage : String(e)
+      notify(`Could not add ${item.name}: ${detail}`, 'error')
+    }
+  }
+  if (added > 0) notify(`${added} added to the shopping list`, 'success')
 }
 </script>
 
