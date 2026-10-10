@@ -40,12 +40,21 @@ import { computed, onMounted } from 'vue'
 import { useEventsStore } from '@/stores/events'
 import type { Event } from '@/api/client'
 import { formatDate } from '@/composables/formatDate'
-import { wallClockIsPast } from '@/composables/useWallClock'
+import { compareWallClocks, wallClockInstant } from '@/composables/useWallClock'
+import { dayKeyOf, todayKey } from '@/composables/calendarDay'
 
 const store = useEventsStore()
 
-// e.date is the venue's clock, so `new Date(e.date)` would read it as the reader's.
-const upcomingEvents = computed(() => store.sortedEvents.filter((e) => !wallClockIsPast(e)).slice(0, 8))
+// Upcoming is today onward, as the API reads `when=upcoming`, so an event this
+// morning stays listed all day. e.date is the venue's clock, so it is resolved
+// before its day is read.
+const upcomingEvents = computed(() => {
+  const today = todayKey()
+  return store.events
+    .filter((e) => dayKeyOf(wallClockInstant(e)) >= today)
+    .sort(compareWallClocks)
+    .slice(0, 8)
+})
 
 async function toggleAttending(event: Event) {
   await store.update(event.id, { attending: !event.attending })
