@@ -1,0 +1,19 @@
+@use '../abstracts/touch';
+
+// A sunken well a finger taps to mark a row done. The check shows faintly
+// before the tap, so the well reads as a control rather than as a dent in the
+// row. A consumer turns it green for the moment between the tap and the row
+// leaving.
+@mixin check-circle {
+  flex-shrink: 0;
+  width: touch.$touch-target;
+  height: touch.$touch-target;
+  border-radius: 50%;
+  color: var(--clr-gray-600);
+  box-shadow: var(--floating-box-pressed);
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--clr-gray-400);
+  }
+}
