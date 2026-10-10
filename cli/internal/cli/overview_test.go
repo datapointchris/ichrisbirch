@@ -206,20 +206,24 @@ func TestActionableItems_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *te
 	}
 }
 
-func TestActionableItems_AShelvedProjectDoesNotRankAnItem(t *testing.T) {
-	shelved := api.Project{ID: "shelved", Status: api.ProjectStatusSomeday, Position: 0}
-	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
-	later := api.Project{ID: "later", Status: api.ProjectStatusActive, Position: 2}
+// A project that is not active keeps its memberships and its position 0, which
+// sorts first, so ranking by it would pull its items ahead of the whole board.
+func TestActionableItems_AProjectThatIsNotActiveDoesNotRankAnItem(t *testing.T) {
+	for _, status := range []string{api.ProjectStatusSomeday, api.ProjectStatusCompleted, api.ProjectStatusDropped} {
+		inactive := api.Project{ID: "inactive", Status: status, Position: 0}
+		first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
+		later := api.Project{ID: "later", Status: api.ProjectStatusActive, Position: 2}
 
-	all := []api.ProjectItem{
-		{ID: "also-shelved", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{shelved, later}},
-		{ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first}},
-	}
+		all := []api.ProjectItem{
+			{ID: "also-inactive", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{inactive, later}},
+			{ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first}},
+		}
 
-	next := actionableItems(all, nil, "")
+		next := actionableItems(all, nil, "")
 
-	if got := itemIDs(next); strings.Join(got, ",") != "first-only,also-shelved" {
-		t.Errorf("next = %s, want first-only then also-shelved, drawn under later", got)
+		if got := itemIDs(next); strings.Join(got, ",") != "first-only,also-inactive" {
+			t.Errorf("%s: next = %s, want first-only then also-inactive, drawn under later", status, got)
+		}
 	}
 }
 
