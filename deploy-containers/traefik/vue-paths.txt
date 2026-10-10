@@ -23,6 +23,7 @@
 /projects
 /issues
 /recipes
+/shopping
 /strains
 /tasks
 /profile

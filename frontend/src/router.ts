@@ -126,6 +126,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Tasks Stats' },
   },
   {
+    path: '/shopping',
+    name: 'shopping',
+    component: () => import('@/views/ShoppingView.vue'),
+    meta: { title: 'Shopping' },
+  },
+  {
     path: '/strains',
     name: 'strains',
     component: () => import('@/views/StrainsView.vue'),

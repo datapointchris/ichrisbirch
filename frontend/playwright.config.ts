@@ -46,5 +46,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'],
     },
+    {
+      // Pixel 7 runs on Chromium, so phone size and touch need no second browser.
+      name: 'phone',
+      use: { ...devices['Pixel 7'] },
+      testMatch: /shopping\.spec\.ts/,
+      dependencies: ['setup'],
+    },
   ],
 })
