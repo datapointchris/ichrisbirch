@@ -283,7 +283,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionEvents, "events", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			events, err := c.ListEvents(ctx, nil)
+			events, err := c.ListEvents(ctx, api.EventsUpcoming, api.DayZone(LocalZoneName()), nil)
 			d.Events = events
 			return err
 		}},
@@ -343,7 +343,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
 	countdowns := upcomingCountdowns(data.Countdowns, now)
-	events := upcomingEvents(data.Events, now)
 	queue := sortIssueQueue(data.Issues)
 
 	report := overviewReport{
@@ -390,8 +389,8 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			Total: len(countdowns),
 		},
 		Events: eventSection{
-			Items: capItems(events, limit),
-			Total: len(events),
+			Items: capItems(data.Events, limit),
+			Total: len(data.Events),
 		},
 	}
 	// Always an array, never null: consumers branch on this to mark a lane
@@ -630,20 +629,6 @@ func upcomingCountdowns(countdowns []api.Countdown, now time.Time) []api.Countdo
 		}
 	}
 	sort.SliceStable(upcoming, func(a, b int) bool { return upcoming[a].DueDate < upcoming[b].DueDate })
-	return upcoming
-}
-
-func upcomingEvents(events []api.Event, now time.Time) []api.Event {
-	year, month, day := now.Date()
-	startOfDay := time.Date(year, month, day, 0, 0, 0, 0, now.Location())
-
-	var upcoming []api.Event
-	for _, event := range events {
-		if !api.EventInstant(event).Before(startOfDay) {
-			upcoming = append(upcoming, event)
-		}
-	}
-	sort.SliceStable(upcoming, func(a, b int) bool { return api.EventInstant(upcoming[a]).Before(api.EventInstant(upcoming[b])) })
 	return upcoming
 }
 

@@ -28,7 +28,7 @@ def event_crud_tester(txn_api_logged_in):
     """Provide ApiCrudTester with transactional test data."""
     client, session = txn_api_logged_in
     insert_test_data_transactional(session, 'events')
-    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
+    crud_tester = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ, list_params={'when': 'all'})
     return client, crud_tester
 
 
@@ -261,8 +261,92 @@ class TestEventWallClock:
             )
             assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 
-        listed = client.get(ENDPOINT)
+        listed = client.get(ENDPOINT, params={'when': 'all'})
 
         assert listed.status_code == status.HTTP_200_OK, show_status_and_response(listed)
         names = [e['name'] for e in listed.json() if e['name'].endswith('morning')]
         assert names == ['Tokyo morning', 'New York morning']
+
+
+def create_event(client, name: str, reading: dt.datetime, zone: str) -> None:
+    payload = {'name': name, 'date': reading.isoformat(), 'timezone': zone, 'venue': 'V', 'cost': 0.0, 'attending': False}
+    created = client.post(ENDPOINT, json=payload)
+    assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
+
+
+def listed_names(client, **params) -> list[str]:
+    response = client.get(ENDPOINT, params=params)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    return [event['name'] for event in response.json()]
+
+
+def start_of_today(zone: str) -> dt.datetime:
+    return dt.datetime.combine(dt.datetime.now(ZoneInfo(zone)).date(), dt.time.min, tzinfo=ZoneInfo(zone))
+
+
+class TestEventScope:
+    """`when` picks upcoming, past or all, with today read in the request's zone.
+
+    Past events pile up forever and upcoming ones stay a handful, so the
+    collection read defaults to upcoming and a caller wanting history asks for it.
+    """
+
+    @pytest.fixture
+    def client_with_both_sides_of_today(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        opens = start_of_today('UTC').replace(tzinfo=None)
+        create_event(client, 'last month', opens - dt.timedelta(days=30), 'UTC')
+        create_event(client, 'last night', opens - dt.timedelta(minutes=30), 'UTC')
+        create_event(client, 'first thing today', opens + dt.timedelta(minutes=30), 'UTC')
+        create_event(client, 'next month', opens + dt.timedelta(days=30), 'UTC')
+        return client
+
+    def test_the_default_is_today_onward_soonest_first(self, client_with_both_sides_of_today):
+        """An event earlier today has not dropped off; it is still today's."""
+        names = listed_names(client_with_both_sides_of_today, timezone='UTC')
+        assert names == ['first thing today', 'next month']
+
+    def test_past_is_before_today_most_recent_first(self, client_with_both_sides_of_today):
+        """Most recent first, so a limit takes the latest rather than the oldest."""
+        names = listed_names(client_with_both_sides_of_today, when='past', timezone='UTC')
+        assert names == ['last night', 'last month']
+
+    def test_a_limit_on_past_takes_the_most_recent(self, client_with_both_sides_of_today):
+        names = listed_names(client_with_both_sides_of_today, when='past', timezone='UTC', limit=1)
+        assert names == ['last night']
+
+    def test_all_is_every_event_in_date_order(self, client_with_both_sides_of_today):
+        names = listed_names(client_with_both_sides_of_today, when='all', timezone='UTC')
+        assert names == ['last month', 'last night', 'first thing today', 'next month']
+
+    def test_an_unknown_scope_is_a_422(self, txn_api_logged_in):
+        client, _ = txn_api_logged_in
+        response = client.get(ENDPOINT, params={'when': 'soon'})
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
+
+    def test_today_is_read_in_the_request_zone(self, txn_api_logged_in):
+        """One instant falls on today in one zone and before today in another.
+
+        UTC and Kolkata are five and a half hours apart, so their midnights never
+        coincide, and an event between them is upcoming in the zone whose day
+        opened first and past in the other.
+        """
+        client, _ = txn_api_logged_in
+        utc_opens, kolkata_opens = start_of_today('UTC'), start_of_today('Asia/Kolkata')
+        earlier, later = sorted([(utc_opens, 'UTC'), (kolkata_opens, 'Asia/Kolkata')])
+        between = earlier[0] + (later[0] - earlier[0]) / 2
+        create_event(client, 'between midnights', between.astimezone(dt.UTC).replace(tzinfo=None), 'UTC')
+
+        assert 'between midnights' in listed_names(client, timezone=earlier[1])
+        assert 'between midnights' in listed_names(client, when='past', timezone=later[1])
+
+    def test_an_event_resolves_in_its_own_zone_before_it_is_compared(self, txn_api_logged_in):
+        """A Honolulu reading of 23:30 on UTC's yesterday is 09:30 UTC today, so it is upcoming.
+
+        Comparing the reading as written would put it before UTC's midnight.
+        """
+        client, _ = txn_api_logged_in
+        yesterday_late = start_of_today('UTC').replace(tzinfo=None) - dt.timedelta(minutes=30)
+        create_event(client, 'read at the venue', yesterday_late, 'Pacific/Honolulu')
+
+        assert 'read at the venue' in listed_names(client, timezone='UTC')

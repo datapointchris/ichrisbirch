@@ -34,7 +34,9 @@ export const useEventsStore = defineStore('events', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Event[]>('/events/')
+      // The page shows past events dimmed below the upcoming ones, so it asks for
+      // every event rather than the endpoint's default of today onward.
+      const response = await api.get<Event[]>('/events/', { params: { when: 'all' } })
       events.value = response.data
       logger.info('events_fetched', { count: response.data.length })
     } catch (e) {

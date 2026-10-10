@@ -78,7 +78,7 @@ describe('useEventsStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/events/')
+    expect(mockApi.get).toHaveBeenCalledWith('/events/', { params: { when: 'all' } })
     expect(store.events).toEqual(testEvents)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()

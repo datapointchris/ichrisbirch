@@ -66,7 +66,7 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 			return err
 		},
 		"ListEvents": func(c *Client) error {
-			_, err := c.ListEvents(ctx, intptr(3))
+			_, err := c.ListEvents(ctx, EventsUpcoming, "", intptr(3))
 			return err
 		},
 		"ListInitiatives": func(c *Client) error {

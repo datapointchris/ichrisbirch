@@ -48,11 +48,30 @@ type EventUpdateInput struct {
 	Notes     *string  `json:"notes,omitempty"`
 }
 
-// ListEvents returns events ordered by date (GET /events/). A nil limit fetches
-// all; a non-nil limit caps the count, so it takes the soonest rather than an
-// arbitrary slice.
-func (c *Client) ListEvents(ctx context.Context, limit *int) ([]Event, error) {
+// EventScope picks which side of today a list read returns.
+type EventScope string
+
+const (
+	// EventsUpcoming is today onward, soonest first. It is the server's default.
+	EventsUpcoming EventScope = "upcoming"
+	// EventsPast is before today, most recent first.
+	EventsPast EventScope = "past"
+	// EventsAll is every event in date order.
+	EventsAll EventScope = "all"
+)
+
+// EventScopes lists every scope, in the order help text names them.
+var EventScopes = []EventScope{EventsUpcoming, EventsPast, EventsAll}
+
+// ListEvents returns one scope of events (GET /events/). Today is read in zone,
+// or in the user's preference when zone is empty. A nil limit fetches the whole
+// scope, and a limit takes from its front: the soonest upcoming, the latest past.
+func (c *Client) ListEvents(ctx context.Context, when EventScope, zone DayZone, limit *int) ([]Event, error) {
 	params := url.Values{}
+	params.Set("when", string(when))
+	if zone != "" {
+		params.Set("timezone", string(zone))
+	}
 	applyLimit(params, limit)
 	var events []Event
 	if err := c.get(ctx, withQuery("/events/", params), &events); err != nil {

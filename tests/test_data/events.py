@@ -2,10 +2,11 @@ import datetime as dt
 
 from ichrisbirch.models import Event
 
+# Far ahead, so the collection read's default of today onward returns every one.
 BASE_DATA: list[Event] = [
     Event(
         name='Event 1',
-        date=dt.datetime(2022, 10, 1, 10, 0).isoformat(),
+        date=dt.datetime(2099, 10, 1, 10, 0).isoformat(),
         timezone='America/New_York',
         venue='Venue 1',
         url='https://example.com/event1',
@@ -15,7 +16,7 @@ BASE_DATA: list[Event] = [
     ),
     Event(
         name='Event 2',
-        date=dt.datetime(2022, 10, 2, 14, 0).isoformat(),
+        date=dt.datetime(2099, 10, 2, 14, 0).isoformat(),
         timezone='Asia/Tokyo',
         venue='Venue 2',
         url='https://example.com/event2',
@@ -25,7 +26,7 @@ BASE_DATA: list[Event] = [
     ),
     Event(
         name='Event 3',
-        date=dt.datetime(2022, 10, 3, 18, 0).isoformat(),
+        date=dt.datetime(2099, 10, 3, 18, 0).isoformat(),
         timezone='UTC',
         venue='Venue 3',
         url='https://example.com/event3',

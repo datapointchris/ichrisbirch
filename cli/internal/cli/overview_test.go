@@ -23,10 +23,6 @@ var fixedNow = time.Date(2026, 7, 24, 15, 0, 0, 0, time.Local)
 // server would send and states the zone that resolves it.
 func eventWallClock(t time.Time) string { return t.Format(api.WallClockLayout) }
 
-func habitAt(hour int, minute int) time.Time {
-	return time.Date(2026, 7, 24, hour, minute, 0, 0, time.Local)
-}
-
 func TestBuildOverview_ComposesSections(t *testing.T) {
 	data := overviewData{
 		Tasks: []api.Task{
@@ -326,7 +322,7 @@ func TestSortIssueQueue_KeepsDecisionsOutOfTheAgentQueue(t *testing.T) {
 	}
 }
 
-func TestUpcomingFiltersDropThePast(t *testing.T) {
+func TestUpcomingCountdownsDropThePast(t *testing.T) {
 	countdowns := upcomingCountdowns([]api.Countdown{
 		{ID: 1, Name: "Past", DueDate: "2026-07-01"},
 		{ID: 2, Name: "Today", DueDate: "2026-07-24"},
@@ -334,15 +330,6 @@ func TestUpcomingFiltersDropThePast(t *testing.T) {
 	}, fixedNow)
 	if len(countdowns) != 2 || countdowns[0].ID != 2 {
 		t.Errorf("countdowns = %+v, want today and future, soonest first", countdowns)
-	}
-
-	events := upcomingEvents([]api.Event{
-		{ID: 1, Name: "Yesterday", Date: eventWallClock(fixedNow.AddDate(0, 0, -1)), Timezone: "Local"},
-		{ID: 2, Name: "This morning", Date: eventWallClock(habitAt(6, 0)), Timezone: "Local"},
-		{ID: 3, Name: "Next week", Date: eventWallClock(fixedNow.AddDate(0, 0, 7)), Timezone: "Local"},
-	}, fixedNow)
-	if len(events) != 2 || events[0].ID != 2 {
-		t.Errorf("events = %+v — earlier today must survive, yesterday must not", events)
 	}
 }
 

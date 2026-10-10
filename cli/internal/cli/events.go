@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"io"
+	"slices"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -31,35 +33,57 @@ func newEventsCommand() *cobra.Command {
 func newEventsListCommand() *cobra.Command {
 	var (
 		asJSON bool
+		when   string
 		limit  int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List all events by date",
-		Long: "Events come back soonest first, each ordered by its own wall clock resolved\n" +
-			"against its zone, so --limit takes the ones coming up rather than an\n" +
-			"arbitrary slice.",
-		Example: "  icb events list\n  icb events list --limit 5\n  icb events list --json",
-		Args:    noArgs,
+		Short: "List the events from today onward",
+		Long: "Events from today onward, soonest first. Past events are hidden until --when\n" +
+			"asks for them: past is most recent first, and all is every event in date order.\n" +
+			"Each event is placed by its own wall clock resolved against its zone, and today\n" +
+			"is this machine's.\n" +
+			"\n" +
+			"--limit takes from the front of that order: the next events coming up, or\n" +
+			"the latest ones that happened.",
+		Example: "  icb events list\n  icb events list --limit 5\n" +
+			"  icb events list --when past --limit 3\n  icb events list --when all --json",
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			scope := api.EventScope(when)
+			if !slices.Contains(api.EventScopes, scope) {
+				return usageError{fmt.Errorf("--when must be one of: %s", joinEventScopes())}
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			events, err := client.ListEvents(cmd.Context(), limitFlag(cmd))
+			events, err := client.ListEvents(cmd.Context(), scope, api.DayZone(LocalZoneName()), limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), events)
 			}
-			printEventsTable(cmd.OutOrStdout(), events)
+			printEventsTable(cmd.OutOrStdout(), events, scope)
+			if scope == api.EventsUpcoming {
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nPast events are hidden: icb events list --when all")
+			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output events as JSON to stdout")
+	cmd.Flags().StringVar(&when, "when", string(api.EventsUpcoming), "One of: "+joinEventScopes())
 	addLimitFlag(cmd, &limit)
 	return cmd
+}
+
+func joinEventScopes() string {
+	names := make([]string, len(api.EventScopes))
+	for i, scope := range api.EventScopes {
+		names[i] = string(scope)
+	}
+	return strings.Join(names, ", ")
 }
 
 func newEventsShowCommand() *cobra.Command {
@@ -299,9 +323,16 @@ func newEventsDeleteCommand() *cobra.Command {
 	return cmd
 }
 
-func printEventsTable(out io.Writer, events []api.Event) {
+func printEventsTable(out io.Writer, events []api.Event, scope api.EventScope) {
 	if len(events) == 0 {
-		_, _ = fmt.Fprintln(out, "No events.")
+		switch scope {
+		case api.EventsUpcoming:
+			_, _ = fmt.Fprintln(out, "No upcoming events.")
+		case api.EventsPast:
+			_, _ = fmt.Fprintln(out, "No past events.")
+		default:
+			_, _ = fmt.Fprintln(out, "No events.")
+		}
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)

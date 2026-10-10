@@ -1,5 +1,11 @@
+import datetime as dt
+from typing import Annotated
+from typing import Literal
+from zoneinfo import ZoneInfo
+
 import structlog
 from fastapi import APIRouter
+from fastapi import Query
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import select
@@ -8,6 +14,8 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.services.date_bounds import day_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 
@@ -15,13 +23,37 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
+EventScope = Literal['upcoming', 'past', 'all']
+
+
 @router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
-def read_many(session: DbSession, limit: RowLimit = None):
-    # Ordering resolves the reading against each event's own zone. `date` alone is a
-    # wall clock somewhere else, so ordering by it puts a 09:00 in Tokyo after an
-    # 08:00 in New York, thirteen hours the wrong way.
+def read_many(
+    session: DbSession,
+    zone: RequestZone,
+    when: Annotated[
+        EventScope,
+        Query(
+            description=(
+                "'upcoming' is today onward, soonest first. 'past' is before today, most recent first. "
+                "'all' is every event in date order. Today is read in the request's zone."
+            )
+        ),
+    ] = 'upcoming',
+    limit: RowLimit = None,
+):
+    # Filtering and ordering resolve the reading against each event's own zone.
+    # `date` alone is a wall clock somewhere else, so comparing it puts a 09:00 in
+    # Tokyo after an 08:00 in New York, thirteen hours the wrong way.
     resolved = models.Event.date.op('AT TIME ZONE')(models.Event.timezone)
-    query = select(models.Event).order_by(resolved.asc())
+    request_zone = ZoneInfo(zone)
+    today_opens, _ = day_bounds(dt.datetime.now(request_zone).date(), request_zone)
+    query = select(models.Event)
+    if when == 'upcoming':
+        query = query.where(resolved >= today_opens).order_by(resolved.asc())
+    elif when == 'past':
+        query = query.where(resolved < today_opens).order_by(resolved.desc())
+    else:
+        query = query.order_by(resolved.asc())
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
