@@ -10,7 +10,7 @@ and `ANTHROPIC_AUTH_TOKEN` above the OAuth token, so `options()` blanks both on
 every call rather than trusting the environment to leave them unset.
 """
 
-import dataclasses
+import dataclasses as dc
 import datetime as dt
 import enum
 import json
@@ -118,7 +118,7 @@ class AssistantUsageLimitReached(Exception):
         self.limit_type = limit_type
 
 
-@dataclasses.dataclass
+@dc.dataclass
 class SessionSignals:
     """What a session reported on the way to its result.
 
