@@ -48,7 +48,7 @@ get_urls() {
     prod)
       # Production: hit Traefik locally with Host headers
       # Cloudflare Tunnel routes external traffic, but we can test via localhost
-      API_URL="http://localhost:80"
+      API_URL="http://localhost:80$(icb_service_path prod api)"
       APP_URL="http://localhost:80"
       DASHBOARD_URL=""
       API_HOST="$(icb_service_host prod api)"

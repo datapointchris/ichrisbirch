@@ -215,7 +215,7 @@ icbops dev stop
 
 **Services:**
 
-- **API**: `https://api.ichrisbirch.com/`
+- **API**: `https://ichrisbirch.com/api/`
 - **App**: `https://ichrisbirch.com/`
 
 **Production Commands:**
