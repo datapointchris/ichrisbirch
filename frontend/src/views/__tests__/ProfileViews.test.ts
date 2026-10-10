@@ -59,7 +59,6 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
             auth: {
               user: null,
               preferences: null,
-              apiKeys: [],
               loading: false,
               error: null,
               ...storeState,
@@ -117,10 +116,5 @@ describe('ProfileView', () => {
   it('renders font selector', () => {
     const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
     expect(wrapper.text()).toContain('Font')
-  })
-
-  it('renders API keys section', () => {
-    const wrapper = createWrapper({ user: testUser, preferences: testUser.preferences })
-    expect(wrapper.text()).toContain('Personal API Keys')
   })
 })

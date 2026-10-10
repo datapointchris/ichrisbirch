@@ -316,7 +316,7 @@ icbops test run [path] [args]              # Run pytest
 icbops prod start|stop|restart         # Manage production
 icbops prod status|health|apihealth    # Check environment
 icbops prod logs [service|deploy|build]  # View logs
-icbops prod smoke                      # Run smoke tests (requires ICHRISBIRCH_API_KEY)
+icbops prod smoke                      # Run smoke tests (requires icb auth login)
 icbops prod deploy-status              # Show blue/green state
 icbops prod rollback                   # Switch traffic to previous color
 icbops prod build-test                 # Test production Docker build locally

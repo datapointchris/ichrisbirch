@@ -389,11 +389,6 @@ def make_app_headers_for_user(user):
     }
 
 
-def make_jwt_header(token: str):
-    """Create JWT authorization header."""
-    return {'Authorization': f'Bearer {token}'}
-
-
 def make_internal_service_headers():
     """Create internal service authentication headers."""
     return {

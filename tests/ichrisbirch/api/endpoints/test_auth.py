@@ -1,15 +1,12 @@
 import pytest
 from fastapi import status
 
-from ichrisbirch.api.endpoints.auth import validate_password
 from ichrisbirch.api.endpoints.auth import validate_user_email
 from ichrisbirch.api.endpoints.auth import validate_user_id
 from ichrisbirch.api.exceptions import Refusal
-from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from tests.factories import UserFactory
 from tests.utils.database import make_internal_service_headers
 from tests.utils.database import make_invalid_internal_service_headers
-from tests.utils.database import make_jwt_header
 from tests.utils.database import test_settings
 
 TEST_USER_PASSWORD = 'test_user_password'
@@ -49,18 +46,6 @@ def test_admin_user(auth_test_context):
     return admin_user
 
 
-@pytest.fixture
-def jwt_handler(auth_test_context):
-    """Create JWT handler using the transactional session."""
-    _, session, _, _ = auth_test_context
-    return JWTTokenHandler(settings=test_settings, session=session)
-
-
-def test_validate_password(test_user):
-    assert validate_password(test_user, TEST_USER_PASSWORD)
-    assert not validate_password(test_user, 'wrong_password')
-
-
 def test_validate_user_email(auth_test_context, test_user):
     _, session, _, _ = auth_test_context
     assert validate_user_email(test_user.email, session)
@@ -71,34 +56,6 @@ def test_validate_user_id(auth_test_context, test_user):
     _, session, _, _ = auth_test_context
     assert validate_user_id(test_user.get_id(), session) is not None
     assert validate_user_id('123456', session) is None
-
-
-def test_generate_jwt(jwt_handler, test_user):
-    token = jwt_handler.create_access_token(test_user.get_id())
-    assert token
-    assert isinstance(token, str)
-
-
-def test_access_token_jwt_auth(auth_test_context, jwt_handler, test_user):
-    client, _, _, _ = auth_test_context
-    token = jwt_handler.create_access_token(test_user.get_id())
-    headers = make_jwt_header(token)
-    response = client.post('/auth/token/', headers=headers)
-    assert response.status_code == status.HTTP_201_CREATED
-
-
-def test_access_token_oauth2(auth_test_context, test_user):
-    client, _, _, _ = auth_test_context
-    data = {'username': test_user.email, 'password': TEST_USER_PASSWORD}
-    response = client.post('/auth/token/', data=data)
-    assert response.status_code == status.HTTP_201_CREATED
-
-
-def test_validate_token(auth_test_context, jwt_handler, test_user):
-    client, _, _, _ = auth_test_context
-    token = jwt_handler.create_access_token(test_user.get_id())
-    response = client.get('/auth/token/validate/', headers=make_jwt_header(token))
-    assert response.status_code == status.HTTP_200_OK
 
 
 def test_internal_service_authentication_valid(auth_test_context, test_user):

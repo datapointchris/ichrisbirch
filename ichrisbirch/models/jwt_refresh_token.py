@@ -11,15 +11,13 @@ from ichrisbirch.database.base import Base
 
 
 class JWTRefreshToken(Base):
+    """Declared so the models match the migrations while the table exists.
+
+    Nothing reads or writes it, and the migration that drops the table deletes this class.
+    """
+
     __tablename__ = 'jwt_refresh_tokens'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     user_id: Mapped[str] = mapped_column(Text, nullable=False)
     refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
     date_stored: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-    def __repr__(self):
-        return f"""
-                JWTRefreshToken(user_id={self.user_id},
-                refresh_token={self.refresh_token},
-                date_stored={self.date_stored}
-                """

@@ -1,4 +1,3 @@
-import datetime as dt
 import functools
 import os
 import sys
@@ -34,10 +33,6 @@ class AISettings:
 
 class AuthSettings:
     def __init__(self) -> None:
-        self.jwt_secret_key: str = os.environ['AUTH_JWT_SECRET_KEY']
-        self.jwt_signing_algorithm: str = os.environ['AUTH_JWT_SIGNING_ALGORITHM']
-        self.refresh_token_expire = dt.timedelta(days=30)
-        self.access_token_expire = dt.timedelta(minutes=30)
         self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
 
 
@@ -149,8 +144,6 @@ class UsersSettings:
         self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
         self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
 
-        # Service account settings removed - now using API key authentication
-
 
 class Settings:
     def __init__(self):
@@ -177,11 +170,6 @@ class Settings:
         """Internal API URL for service-to-service communication."""
         port = f':{self.fastapi.port}' if self.fastapi.port else ''
         return f'{self.protocol}://{self.fastapi.host}{port}'
-
-    @property
-    def api_url_external(self) -> str:
-        """External API URL for user-facing links."""
-        return f'https://api.{self.domain}'
 
 
 def _detect_environment() -> str:

@@ -13,7 +13,7 @@ This page covers the common cases. `--help` is the surface of record.
 | ----------- | --------------------------------- | --------------------------------- |
 | Development | `https://app.docker.localhost`    | `https://api.docker.localhost`    |
 | Testing     | `https://app.test.localhost:8443` | `https://api.test.localhost:8443` |
-| Production  | `https://ichrisbirch.com`         | `https://api.ichrisbirch.com`     |
+| Production  | `https://ichrisbirch.com`         | `https://ichrisbirch.com/api`     |
 
 Every environment goes through Traefik, so these are the addresses to use.
 Hitting a container's port on `localhost` skips the proxy. CORS and the auth

@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import HomeView from '../HomeView.vue'
 import type { User } from '@/api/client'
+import { SERVICE_LINKS } from '@/config/homeLinks'
 
 const testUser: User = {
   id: 1,
@@ -53,17 +54,15 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('git log --all --full-history')
   })
 
-  it('renders project links for non-admin users', () => {
-    const wrapper = createWrapper({ user: nonAdminUser })
-    const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'API', 'Docs'])
-  })
-
-  it('never exposes an authenticated service to a non-admin visitor', () => {
-    const wrapper = createWrapper({ user: nonAdminUser })
+  it.each([
+    ['a non-admin', { user: nonAdminUser }],
+    ['an anonymous visitor', {}],
+  ])('never shows %s an admin-only service', (_, authState) => {
+    const wrapper = createWrapper(authState)
     const hrefs = wrapper.findAll('.home-links a').map((el) => el.attributes('href'))
-    for (const href of hrefs) {
-      expect(href).not.toContain('chmod.ichrisbirch.com')
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const service of SERVICE_LINKS) {
+      expect(hrefs).not.toContain(service.url)
     }
   })
 
@@ -74,7 +73,6 @@ describe('HomeView', () => {
     expect(labels).toContain('Monitor')
     expect(labels).toContain('Files')
     expect(labels).toContain('Learning')
-    expect(labels.length).toBe(11)
   })
 
   it('all links open in new tabs', () => {
@@ -83,11 +81,5 @@ describe('HomeView', () => {
     for (const link of links) {
       expect(link.attributes('target')).toBe('_blank')
     }
-  })
-
-  it('renders 3 project links when no user loaded', () => {
-    const wrapper = createWrapper()
-    const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'API', 'Docs'])
   })
 })

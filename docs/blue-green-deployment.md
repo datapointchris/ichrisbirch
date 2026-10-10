@@ -316,7 +316,7 @@ When transitioning from the legacy single-compose deployment to blue/green:
    DEPLOY_COLOR=blue docker compose --project-name icb-blue -f docker-compose.app.yml up -d
 
    # Verify the site works through the new routing
-   curl -sf http://localhost:80/health -H "Host: api.ichrisbirch.com"
+   curl -sf http://localhost:80/api/health -H "Host: ichrisbirch.com"
 
    # Stop old containers
    docker compose --project-name icb-prod down
