@@ -98,6 +98,15 @@ describe('IssueDetailPanel', () => {
     expect(wrapper.text()).toContain('claude-code/abc')
   })
 
+  it('names no closer on an issue reopened by code that leaves closed_by behind', () => {
+    const reopened = { ...issue, status: 'open', closed_ts: null, closed_by: 'claude-code/abc' }
+    const wrapper = mount(IssueDetailPanel, {
+      props: { issue: reopened, detail: { ...detail, ...reopened } },
+      global: { plugins: [createTestingPinia({ stubActions: true, createSpy: vi.fn })] },
+    })
+    expect(wrapper.text()).not.toContain('Closed by')
+  })
+
   it('strikes a dependency that is already closed', () => {
     const dependencies = mountPanel().findAll('[data-testid="issue-dependency"]')
     expect(dependencies[0]!.classes()).toContain('issues__link--closed')
