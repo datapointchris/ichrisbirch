@@ -10,7 +10,9 @@ backfilled.
 
 The CHECK keeping `closed_by` null on an open issue waits for a later
 revision. During a deploy the outgoing color reopens an issue without clearing
-this column, and the constraint would refuse that write.
+this column, and the constraint would refuse that write. Those reopened rows
+are why that revision clears `closed_by` on every open issue before it adds
+the constraint.
 """
 
 from collections.abc import Sequence
