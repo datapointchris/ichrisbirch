@@ -931,10 +931,9 @@ function prod-health() {
   "$HEALTH_CHECK_SCRIPT" prod
 }
 
-# The edge carries a request holding a bearer token past ForwardAuth, so from
-# outside production the API answers only a request that sends the icb CLI's
-# access token. The header goes through stdin, which keeps the token out of
-# the process list.
+# The edge carries a request holding a bearer past ForwardAuth, and the API
+# verifies the token on every route that resolves a user. The header goes
+# through stdin, which keeps the token out of the process list.
 function prod-api-curl() {
   local token
   if ! command -v icb >/dev/null; then
@@ -946,10 +945,14 @@ function prod-api-curl() {
 }
 
 function prod-apihealth() {
-  # /health, not /health/ — the trailing slash 307s and --silent without
-  # --location swallowed the redirect, so this printed nothing and exited 0.
-  # --fail-with-body makes a real outage a non-zero exit rather than silence.
-  prod-api-curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health" | jq
+  # /health, not /health/: the trailing slash answers 307. The body is captured
+  # rather than piped into jq, whose exit status would replace curl's.
+  local body
+  if ! body=$(prod-api-curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health"); then
+    [[ -n "$body" ]] && echo "$body"
+    return 1
+  fi
+  jq <<<"$body"
 }
 
 function prod-smoke() {
