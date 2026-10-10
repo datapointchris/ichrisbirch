@@ -83,12 +83,9 @@ Turning a saved URL into a title and text is `read_article_page` in
 and recipe import. It refuses a redirect to the homepage, a bot check and a page
 with too little text, each as its own exception.
 
-Two callers are deliberately outside it, because they are not third-party
-page fetches:
-
-- **`api/oidc_auth.py`** — OIDC discovery against the identity provider, with its
-  own user agent and a caller-supplied timeout.
-- **`gui/`** — posts to this app's own endpoints.
+One caller is deliberately outside it, because it is not a third-party page
+fetch: OIDC discovery in `api/oidc_auth.py`, which talks to the identity provider
+with its own user agent and a caller-supplied timeout.
 
 Two subprocesses are sanctioned: the one in `scheduler/jobs.py`, and the Claude
 Code CLI that `claude-agent-sdk` starts for each call from

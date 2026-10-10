@@ -644,34 +644,12 @@ wheels = [
 ]
 
 [[package]]
-name = "customtkinter"
-version = "5.2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "darkdetect" },
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/48/c5a9d44188c44702e1e3db493c741e9c779596835a761b819fe15431d163/customtkinter-5.2.2.tar.gz", hash = "sha256:fd8db3bafa961c982ee6030dba80b4c2e25858630756b513986db19113d8d207", size = 261999, upload-time = "2024-01-10T02:24:36.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/b1/b43b33001a77256b335511e75f257d001082350b8506c8807f30c98db052/customtkinter-5.2.2-py3-none-any.whl", hash = "sha256:14ad3e7cd3cb3b9eb642b9d4e8711ae80d3f79fb82545ad11258eeffb2e6b37c", size = 296062, upload-time = "2024-01-10T02:24:33.53Z" },
-]
-
-[[package]]
 name = "cycler"
 version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a9/95/a3dbbb5028f35eafb79008e7522a75244477d2838f38cbb722248dabc2a8/cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c", size = 7615, upload-time = "2023-10-07T05:32:18.335Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30", size = 8321, upload-time = "2023-10-07T05:32:16.783Z" },
-]
-
-[[package]]
-name = "darkdetect"
-version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/45/77/7575be73bf12dee231d0c6e60ce7fb7a7be4fcd58823374fc59a6e48262e/darkdetect-0.8.0.tar.gz", hash = "sha256:b5428e1170263eb5dea44c25dc3895edd75e6f52300986353cd63533fe7df8b1", size = 7681, upload-time = "2022-12-16T14:14:42.113Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/f2/728f041460f1b9739b85ee23b45fa5a505962ea11fd85bdbe2a02b021373/darkdetect-0.8.0-py3-none-any.whl", hash = "sha256:a7509ccf517eaad92b31c214f593dbcf138ea8a43b2935406bbd565e15527a85", size = 8955, upload-time = "2022-12-16T14:14:40.92Z" },
 ]
 
 [[package]]
@@ -1223,7 +1201,6 @@ dependencies = [
 dev = [
     { name = "bandit" },
     { name = "coverage" },
-    { name = "customtkinter" },
     { name = "deptry" },
     { name = "djlint" },
     { name = "docker" },
@@ -1247,7 +1224,6 @@ dev = [
     { name = "radon" },
     { name = "refurb" },
     { name = "ruff" },
-    { name = "tkhtmlview" },
     { name = "tree-sitter" },
     { name = "types-beautifulsoup4" },
     { name = "types-markdown" },
@@ -1312,7 +1288,6 @@ requires-dist = [
 dev = [
     { name = "bandit", specifier = ">=1.7.8" },
     { name = "coverage", specifier = ">=7.5.0" },
-    { name = "customtkinter", specifier = ">=5.2.2" },
     { name = "deptry", specifier = ">=0.16.1" },
     { name = "djlint", specifier = ">=1.36.4" },
     { name = "docker", specifier = ">=7.1.0" },
@@ -1336,7 +1311,6 @@ dev = [
     { name = "radon", specifier = ">=5.1.0" },
     { name = "refurb", specifier = ">=2.2.0" },
     { name = "ruff", specifier = "==0.12.5" },
-    { name = "tkhtmlview", specifier = ">=0.3.1" },
     { name = "tree-sitter", specifier = ">=0.25.2" },
     { name = "types-beautifulsoup4", specifier = ">=4.12.0.20250204" },
     { name = "types-markdown", specifier = ">=3.7.0.20241404" },
@@ -3822,19 +3796,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7a/fd/7a5ee21fd08ff70d3d33a5781c255cbe779659bd03278feb98b19ee550f4/tinycss2-1.4.0.tar.gz", hash = "sha256:10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7", size = 87085, upload-time = "2024-10-24T14:58:29.895Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/34/ebdc18bae6aa14fbee1a08b63c015c72b64868ff7dae68808ab500c492e2/tinycss2-1.4.0-py3-none-any.whl", hash = "sha256:3a49cf47b7675da0b15d0c6e1df8df4ebd96e9394bb905a5775adb0d884c5289", size = 26610, upload-time = "2024-10-24T14:58:28.029Z" },
-]
-
-[[package]]
-name = "tkhtmlview"
-version = "0.3.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pillow" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/75/17/7e8acc5bf815f7be9639a5ffc5eaafbb7f9a3c2e6cfcc8114c7397aba9d8/tkhtmlview-0.3.2.tar.gz", hash = "sha256:e9f34def321585407a19b40a69c63cffa4e4acadff1ccf8b81a4e27afc9bace0", size = 8765, upload-time = "2026-02-12T13:26:36.586Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/a2/4b53d0d9a5eca110c774f4f3921c166f8fd4ca952f5f6b2a1d680a1a9b2d/tkhtmlview-0.3.2-py3-none-any.whl", hash = "sha256:21f4492e98e3800a7ef5db223d201430aff3d855cf1dab3e40f17c1acc2e6739", size = 9958, upload-time = "2026-02-12T13:26:35.851Z" },
 ]
 
 [[package]]
