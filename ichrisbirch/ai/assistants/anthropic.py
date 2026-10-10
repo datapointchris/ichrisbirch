@@ -93,8 +93,8 @@ class AssistantOutputError(Exception):
 
     `raw_output` carries what Claude Code actually returned, for whoever has to
     fix the prompt. `str()` stays one short line, because callers record it: the
-    bulk import worker writes it to `article_failed_imports.error_message` and
-    into a Redis batch payload it rewrites whole on every append.
+    bulk import worker writes it into a Redis batch payload it rewrites whole on
+    every append.
     """
 
     def __init__(self, reason: AssistantFailure, message: str, raw_output: str):

@@ -80,11 +80,3 @@ class ArticleSummaryAndTags(ArticleConfig):
 
     summary: str
     tags: list[str]
-
-
-class ArticleFailedImport(ArticleConfig):
-    id: int
-    url: str
-    batch_id: str | None
-    error_message: str
-    failed_at: dt.datetime

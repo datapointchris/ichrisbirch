@@ -100,17 +100,6 @@ type ArticleBulkImportStatus struct {
 	UpdatedAt   string                `json:"updated_at"`
 }
 
-// ArticleFailedImport is a permanently-failed import row (GET
-// /articles/failed-imports/). batch_id is nullable (a standalone failure has
-// none); failed_at is a tz-aware datetime.
-type ArticleFailedImport struct {
-	ID           int       `json:"id"`
-	URL          string    `json:"url"`
-	BatchID      *string   `json:"batch_id"`
-	ErrorMessage string    `json:"error_message"`
-	FailedAt     time.Time `json:"failed_at"`
-}
-
 // BulkImportArticles enqueues URLs for async fetch + AI-summarize (POST
 // /articles/bulk-import/ → 202). Returns the batch handle for polling.
 func (c *Client) BulkImportArticles(ctx context.Context, urls []string) (ArticleBulkImportBatch, error) {
@@ -129,16 +118,6 @@ func (c *Client) BulkImportStatus(ctx context.Context, batchID string) (ArticleB
 		return ArticleBulkImportStatus{}, err
 	}
 	return status, nil
-}
-
-// ListFailedArticleImports returns permanently-failed imports, newest first
-// (GET /articles/failed-imports/).
-func (c *Client) ListFailedArticleImports(ctx context.Context) ([]ArticleFailedImport, error) {
-	var failed []ArticleFailedImport
-	if err := c.get(ctx, "/articles/failed-imports/", &failed); err != nil {
-		return nil, err
-	}
-	return failed, nil
 }
 
 // ListArticles returns articles ordered by title (GET /articles/). Each of

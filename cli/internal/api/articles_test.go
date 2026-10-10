@@ -265,24 +265,3 @@ func TestBulkImportStatus_DecodesNaiveTimestamps(t *testing.T) {
 		t.Errorf("created_at = %q", status.CreatedAt)
 	}
 }
-
-func TestListFailedArticleImports_DecodesRows(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[{"id":2,"url":"https://b.com","batch_id":"abc-123","error_message":"404 Not Found\nsee docs","failed_at":"2026-07-24T14:39:52.113047Z"}]`))
-	}))
-	defer srv.Close()
-
-	client := New(srv.URL, staticTokenClient("t"))
-	failed, err := client.ListFailedArticleImports(context.Background())
-	if err != nil {
-		t.Fatalf("ListFailedArticleImports: %v", err)
-	}
-	if len(failed) != 1 {
-		t.Fatalf("failed = %+v", failed)
-	}
-	f := failed[0]
-	if f.ID != 2 || f.BatchID == nil || *f.BatchID != "abc-123" || f.FailedAt.IsZero() {
-		t.Errorf("failed[0] = %+v", f)
-	}
-}

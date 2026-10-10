@@ -609,7 +609,7 @@ def api_with_redis(txn_api_logged_in, test_redis):
 
     The test Docker container runs an ArticleImportWorker on db=0. By using db=1
     for the in-process TestClient, queued URLs are invisible to the container's
-    worker, preventing it from writing failed imports outside the test transaction.
+    worker, preventing it from saving articles outside the test transaction.
     """
     client, session = txn_api_logged_in
     client.app.state.redis_client = test_redis
@@ -652,13 +652,6 @@ class TestBulkImport:
         client, _ = api_with_redis
         response = client.get(f'{ENDPOINT}bulk-import/nonexistent-id/')
         assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_failed_imports_empty(self, api_with_redis):
-        """GET /articles/failed-imports/ returns empty list when none exist."""
-        client, _ = api_with_redis
-        response = client.get(f'{ENDPOINT}failed-imports/')
-        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert response.json() == []
 
 
 class TestBulkImportUsageLimit:

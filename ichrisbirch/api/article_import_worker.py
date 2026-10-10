@@ -21,11 +21,9 @@ import math
 import threading
 import uuid
 
-import pendulum
 import redis
 import structlog
 
-from ichrisbirch import models
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
@@ -199,8 +197,7 @@ class ArticleImportWorker:
                 )
                 self.redis_client.rpush(QUEUE_KEY, retry_item)
             else:
-                # Permanent failure — write to DB
-                self._record_permanent_failure(batch_key, url, error_msg, batch_id)
+                self._record_failure(batch_key, url, error_msg)
 
     def _batch_exists(self, batch_key: str) -> bool:
         """Whether the batch's status hash is there to update.
@@ -244,21 +241,12 @@ class ArticleImportWorker:
 
         self._check_batch_complete(batch_key)
 
-    def _record_permanent_failure(self, batch_key: str, url: str, error_msg: str, batch_id: str):
-        # Write to persistent failed_article_imports table
-        try:
-            with create_session(self.settings) as session:
-                failed = models.ArticleFailedImport(
-                    url=url,
-                    batch_id=batch_id,
-                    error_message=error_msg,
-                    failed_at=pendulum.now(),
-                )
-                session.add(failed)
-                session.commit()
-        except Exception:
-            logger.exception('failed_article_import_db_write_error', url=url)
+    def _record_failure(self, batch_key: str, url: str, error_msg: str):
+        """Count a URL that will not be tried again into its batch's status.
 
+        Nothing else keeps it. The batch expires with its errors, and a page that
+        would not import is not worth holding onto past that.
+        """
         if not self._batch_exists(batch_key):
             return
         pipeline = self.redis_client.pipeline()

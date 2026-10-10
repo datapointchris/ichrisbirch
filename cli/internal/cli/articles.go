@@ -41,9 +41,7 @@ func newArticlesCommand() *cobra.Command {
 		// tool lists batches, which is all the group's hints could offer.
 		withNotFoundHints(newArticlesImportStatusCommand(),
 			"A batch is kept for 24 hours — see what the import saved: icb articles list",
-			"Imports that failed are kept separately: icb articles failed-imports",
 		),
-		newArticlesFailedImportsCommand(),
 	)
 	return cmd
 }
@@ -106,33 +104,6 @@ func newArticlesImportStatusCommand() *cobra.Command {
 	return cmd
 }
 
-func newArticlesFailedImportsCommand() *cobra.Command {
-	var asJSON bool
-	cmd := &cobra.Command{
-		Use:     "failed-imports",
-		Short:   "List permanently-failed article imports",
-		Example: "  icb articles failed-imports",
-		Args:    noArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			client, err := newAPIClient(cmd.Context())
-			if err != nil {
-				return handleAPIError(err)
-			}
-			failed, err := client.ListFailedArticleImports(cmd.Context())
-			if err != nil {
-				return handleAPIError(err)
-			}
-			if asJSON {
-				return encodeJSON(cmd.OutOrStdout(), failed)
-			}
-			printFailedImportsTable(cmd.OutOrStdout(), failed)
-			return nil
-		},
-	}
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output failed imports as JSON to stdout")
-	return cmd
-}
-
 func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
 	_, _ = fmt.Fprintf(out, "batch %s\n", s.BatchID)
 	_, _ = fmt.Fprintf(out, "  status:    %s\n", s.Status)
@@ -148,20 +119,6 @@ func printBulkImportStatus(out io.Writer, s api.ArticleBulkImportStatus) {
 	for _, e := range s.Errors {
 		_, _ = fmt.Fprintf(out, "  x %s — %s\n", e.URL, firstLine(e.Error))
 	}
-}
-
-func printFailedImportsTable(out io.Writer, failed []api.ArticleFailedImport) {
-	if len(failed) == 0 {
-		_, _ = fmt.Fprintln(out, "No failed imports.")
-		return
-	}
-	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "ID\tFAILED\tURL\tERROR")
-	for _, f := range failed {
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
-			f.ID, localDay(f.FailedAt), f.URL, firstLine(f.ErrorMessage))
-	}
-	_ = tw.Flush()
 }
 
 // firstLine trims a multi-line error to its first line for table/summary display.

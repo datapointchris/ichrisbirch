@@ -222,13 +222,6 @@ def bulk_import_status(batch_id: str, request: Request):
     return batch
 
 
-@router.get('/failed-imports/', response_model=list[schemas.ArticleFailedImport], status_code=status.HTTP_200_OK)
-def list_failed_imports(session: DbSession):
-    """List all failed article imports."""
-    query = select(models.ArticleFailedImport).order_by(models.ArticleFailedImport.failed_at.desc())
-    return list(session.scalars(query).all())
-
-
 @router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
