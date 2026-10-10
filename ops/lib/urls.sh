@@ -44,8 +44,8 @@ icb_env_suffix() {
 }
 
 # The hostname a service answers on in one environment. Production breaks the
-# subdomain pattern three ways: the Vue app is the bare domain, the API shares
-# it under the path icb_service_path gives, and there is no Traefik dashboard.
+# subdomain pattern: the Vue app is the bare domain, the API shares it under
+# the path icb_service_path gives, and there is no Traefik dashboard.
 # Arguments:
 #   $1 - environment: dev, test or prod
 #   $2 - service: api, app, dashboard

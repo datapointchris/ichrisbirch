@@ -84,9 +84,9 @@ def is_access_token(token: str) -> bool:
     """Report whether the token declares itself an RFC 9068 access token.
 
     This routes rather than authorizes — it decides whether a bearer credential belongs to this
-    strategy at all. A bearer that is not an access token resolves no user, and the header
-    strategy ignores any request carrying one, so it answers 401. The same check runs again inside
-    `OIDCTokenVerifier.verify`, where it is load-bearing.
+    strategy at all. A bearer that is not an access token is left to the other strategies, and the
+    Authelia header strategy ignores any request carrying `Authorization`. The same check runs again
+    inside `OIDCTokenVerifier.verify`, where it is load-bearing.
     """
     try:
         header = jwt.get_unverified_header(token)
