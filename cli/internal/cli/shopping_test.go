@@ -2,7 +2,9 @@ package cli
 
 import (
 	"bytes"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
@@ -81,8 +83,16 @@ func TestEmptyShoppingList_SaysWhatWasEmpty(t *testing.T) {
 	}
 }
 
-func TestLocalMinute_KeepsWhatItCannotParse(t *testing.T) {
-	if got := localMinute("yesterday"); got != "yesterday" {
-		t.Errorf("localMinute = %q", got)
+// The API writes the instant in UTC. 15:00 UTC on the 10th is 11:00 in New York.
+func TestPrintShoppingHistory_ShowsThePurchaseOnThisMachinesClock(t *testing.T) {
+	original := time.Local
+	time.Local = newYork(t)
+	t.Cleanup(func() { time.Local = original })
+
+	var out bytes.Buffer
+	printShoppingHistory(&out, []api.ShoppingPurchase{{ItemName: "eggs", PurchasedTS: "2026-10-10T15:00:00Z"}})
+
+	if !strings.Contains(out.String(), "2026-10-10 11:00  eggs") {
+		t.Errorf("output =\n%s\nwant the row at 2026-10-10 11:00", out.String())
 	}
 }
