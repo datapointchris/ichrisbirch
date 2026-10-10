@@ -25,8 +25,6 @@ from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
-from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
-from ichrisbirch.models.user import prune_unused_preferences
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 
@@ -164,8 +162,7 @@ def create(
 def _update_user_preferences_helper(db_user: models.User, update_data: dict, session: Session) -> models.User:
     """Helper function to update user preferences with error handling."""
     try:
-        stored = prune_unused_preferences(db_user.preferences, DEFAULT_USER_PREFERENCES)
-        db_user.preferences = deep_merge(stored, update_data)
+        db_user.preferences = deep_merge(db_user.preferences, update_data)
     except ValueError as e:
         logger.error('preferences_update_failed', error=str(e))
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e

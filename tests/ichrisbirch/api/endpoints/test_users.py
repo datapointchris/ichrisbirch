@@ -363,23 +363,6 @@ def test_update_user_simple_preferences_valid(users_logged_in_context):
     assert_preference_key_equal(updated_user.preferences, DEFAULT_USER_PREFERENCES, key)
 
 
-def test_update_user_by_id_simple_preferences_valid(users_logged_in_context):
-    """Test updating the current user's preferences using the /me/ endpoint."""
-    client, _, _ = users_logged_in_context
-    # Update the logged-in user's preferences
-    new_preferences = {'theme_color': 'green', 'notifications': True}
-    response = client.patch('/users/me/preferences/', json=new_preferences)
-    assert response.status_code == status.HTTP_200_OK
-    updated_user = schemas.User(**response.json())
-    assert updated_user.preferences['theme_color'] == new_preferences['theme_color']
-    assert updated_user.preferences['notifications'] == new_preferences['notifications']
-    # Make sure defaults weren't erased
-    key = 'box_packing.pages.all.view_type'
-    assert_preference_key_equal(updated_user.preferences, DEFAULT_USER_PREFERENCES, key)
-    key = 'tasks.pages.index.view_type'
-    assert_preference_key_equal(updated_user.preferences, DEFAULT_USER_PREFERENCES, key)
-
-
 def test_update_user_preferences_deep_nested_key(users_logged_in_context):
     """Test updating user preferences with a deep nested key."""
     client, _, _ = users_logged_in_context
@@ -404,20 +387,20 @@ def test_update_user_preferences_invalid_key(users_logged_in_context):
 
 
 def test_a_preference_retired_from_the_defaults_does_not_block_the_next_save(users_admin_context):
-    """A stored key the defaults dropped, as `autofun.task_priority` was, goes with the next save."""
+    """A stored key the defaults dropped, as `autofun.task_priority` was, stays until the migration script moves it."""
     client, session, users = users_admin_context
     user = users['regular_1']
     stored = {'theme_color': 'green', 'retired_page': {'view_type': 'block'}, 'autofun': {'interval_days': 3, 'task_priority': 7}}
     # A Core update skips the model's validator, which is how a key the defaults later dropped sits in storage.
     session.execute(update(models.User).where(models.User.id == user.id).values(preferences=stored))
 
-    response = client.patch(f'/users/{user.id}/preferences/', json={'timezone': 'America/New_York'})
+    response = client.patch(f'/users/{user.id}/preferences/', json={'timezone': 'America/New_York', 'autofun': {'interval_days': 5}})
 
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     preferences = response.json()['preferences']
     assert preferences['timezone'] == 'America/New_York'
-    assert preferences['autofun'] == {'interval_days': 3}
-    assert 'retired_page' not in preferences
+    assert preferences['autofun'] == {'interval_days': 5, 'task_priority': 7}
+    assert preferences['retired_page'] == {'view_type': 'block'}
 
 
 def test_update_user_preferences_invalid_value(users_logged_in_context):

@@ -222,7 +222,7 @@ def test_model_method(test_user):
         key='preferences',
         updated_preferences={'theme_color': 'blue'}
     )
-    assert result is True  # or appropriate assertion
+    assert result == {'theme_color': 'blue'}
 ```
 
 ## Testing Authentication and Authorization
