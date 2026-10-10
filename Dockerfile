@@ -97,7 +97,7 @@ RUN groupadd --gid 1000 app && \
 # Copy the application and virtual environment from builder
 COPY --from=production-builder --chown=app:app /app /app
 
-USER app
+USER 1000:1000
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
