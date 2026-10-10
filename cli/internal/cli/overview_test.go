@@ -536,6 +536,20 @@ func TestArticlesBehindCurrent_DropsTheOneBeingRead(t *testing.T) {
 	}
 }
 
+func TestArticlesBehindCurrent_PutsTheOldestSavedFirst(t *testing.T) {
+	unread := []api.Article{
+		{ID: 1, Title: "A recent save", SaveDate: fixedNow.AddDate(0, 0, -2)},
+		{ID: 2, Title: "Zz saved years ago", SaveDate: fixedNow.AddDate(-2, 0, 0)},
+		{ID: 3, Title: "Mid", SaveDate: fixedNow.AddDate(0, -3, 0)},
+	}
+
+	queued := articlesBehindCurrent(unread, nil)
+
+	if ids := []int{queued[0].ID, queued[1].ID, queued[2].ID}; !slices.Equal(ids, []int{2, 3, 1}) {
+		t.Errorf("queue order = %v, want the oldest save first whatever its title", ids)
+	}
+}
+
 func readAt(daysAgo int) *time.Time {
 	when := fixedNow.AddDate(0, 0, -daysAgo)
 	return &when

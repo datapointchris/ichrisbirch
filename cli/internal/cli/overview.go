@@ -97,7 +97,7 @@ type bookSection struct {
 }
 
 // articleSection is the reading list, its own app with its own rhythm: Current
-// is the one being read, Unread is the queue behind it.
+// is the one being read, Unread is the queue behind it, oldest saved first.
 type articleSection struct {
 	Current     *api.Article  `json:"current"`
 	Unread      []api.Article `json:"unread"`
@@ -593,8 +593,10 @@ func articleReadActivity(read []api.Article, now time.Time) (*time.Time, int) {
 	return last, inWindow
 }
 
-// articlesBehindCurrent is the unread queue with the one being read removed, so
-// the current article is never also counted as waiting.
+// articlesBehindCurrent is the unread queue, oldest saved first, with the one
+// being read removed so it is never also counted as waiting. Oldest first keeps
+// an old article at the head until it is read or deleted, so the backlog cannot
+// silently keep what was saved years ago.
 func articlesBehindCurrent(unread []api.Article, current *api.Article) []api.Article {
 	var queued []api.Article
 	for _, article := range unread {
@@ -603,6 +605,7 @@ func articlesBehindCurrent(unread []api.Article, current *api.Article) []api.Art
 		}
 		queued = append(queued, article)
 	}
+	sort.SliceStable(queued, func(i, j int) bool { return queued[i].SaveDate.Before(queued[j].SaveDate) })
 	return queued
 }
 
