@@ -531,13 +531,7 @@ const actorWorkerEnv = "ICB_ACTOR"
 // actorIdentity names who acts when a claim, a comment or a close does not say.
 // Two sessions on one machine must not share a name, because a claimant
 // extends its own claim. The prefix is the kind of actor, so a reader can
-// filter on it:
-//
-//	claude-code/<session>                      a Claude Code session someone attends
-//	claude-code-unattended/<worker>/<session>  a session a named worker started
-//	claude-code-unattended/<session>           a session nobody attends, unnamed
-//	worker/<worker>                            a named worker running icb itself
-//	user@host                                  a person at a terminal
+// filter on it. docs/issues.md lists the kinds.
 func actorIdentity() string {
 	worker := os.Getenv(actorWorkerEnv)
 	if session := os.Getenv("CLAUDE_CODE_SESSION_ID"); session != "" {

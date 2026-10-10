@@ -351,7 +351,7 @@ the wrong package to travel with a copy of that directory.
 | `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant |
 | `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
-| `ICB_ACTOR` | unset | the worker a scheduler is running, which signs claims, comments and closes as `worker/<name>`, or inside Claude Code as `claude-code-unattended/<name>/<session>` |
+| `ICB_ACTOR` | unset | names the worker a scheduler is running; `docs/issues.md` gives the identity it signs claims, comments and closes with |
 
 The registry is the one file icb reads that other tools also read, so it resolves
 through three rungs rather than two: `$ICB_REPOS_REGISTRY`, then `repos_registry`
