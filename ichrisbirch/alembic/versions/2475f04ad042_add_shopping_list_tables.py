@@ -1,7 +1,7 @@
 """Add the shopping schema with sections, items and purchases.
 
 Revision ID: 2475f04ad042
-Revises: 816ce25c08dc
+Revises: 89d395dd685e
 Create Date: 2026-10-10
 """
 
@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = '2475f04ad042'
-down_revision = '816ce25c08dc'
+down_revision = '89d395dd685e'
 branch_labels = None
 depends_on = None
 
