@@ -1,7 +1,6 @@
 import pytest
 
 from scripts.update_user_preferences_migration import fill_missing_default_preferences
-from scripts.update_user_preferences_migration import prune_unused_preferences
 from scripts.update_user_preferences_migration import update_preference_keys
 from scripts.update_user_preferences_migration import update_preferences
 from tests.test_data.users import BASE_DATA as test_users
@@ -153,27 +152,6 @@ class TestUpdatePreferenceKeys:
         transfer_map = {}
         result = update_preference_keys(user_prefs, default_prefs, transfer_map)
         assert result == user_prefs  # No transfer if map is empty
-
-
-class TestPruneUnusedPreferences:
-    def test_prune_unused_keys(self):
-        user_prefs = {'a': 1, 'b': 2, 'c': 3}
-        default_prefs = {'a': 0, 'c': 3}
-        expected = {'a': 1, 'c': 3}
-        result = prune_unused_preferences(user_prefs, default_prefs)
-        assert result == expected
-
-    def test_no_prune_when_all_keys_used(self):
-        user_prefs = {'a': 1, 'b': 2}
-        default_prefs = {'a': 0, 'b': 2, 'c': 3}
-        result = prune_unused_preferences(user_prefs, default_prefs)
-        assert result == user_prefs  # No changes if all keys required
-
-    def test_empty_user_prefs(self):
-        user_prefs = {}
-        default_prefs = {'a': 0}
-        result = prune_unused_preferences(user_prefs, default_prefs)
-        assert result == {}  # No changes if user_prefs is empty
 
 
 class TestUpdatePreferences:

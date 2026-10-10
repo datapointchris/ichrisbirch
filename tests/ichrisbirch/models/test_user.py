@@ -85,6 +85,24 @@ class TestValidatePreferences:
             test_user.validate_preferences(key='preferences', updated_preferences={'timezone': -5})
 
 
+class TestPruneUnusedPreferences:
+    def test_prune_unused_keys(self):
+        result = models.user.prune_unused_preferences({'a': 1, 'b': 2, 'c': 3}, {'a': 0, 'c': 3})
+        assert result == {'a': 1, 'c': 3}
+
+    def test_no_prune_when_all_keys_used(self):
+        user_prefs = {'a': 1, 'b': 2}
+        assert models.user.prune_unused_preferences(user_prefs, {'a': 0, 'b': 2, 'c': 3}) == user_prefs
+
+    def test_empty_user_prefs(self):
+        assert models.user.prune_unused_preferences({}, {'a': 0}) == {}
+
+    def test_a_key_retired_inside_a_nested_preference_is_dropped_and_its_siblings_kept(self):
+        user_prefs = {'autofun': {'interval_days': 3, 'task_priority': 7}}
+        defaults = {'autofun': {'interval_days': 7, 'task_window_days': 30}}
+        assert models.user.prune_unused_preferences(user_prefs, defaults) == {'autofun': {'interval_days': 3}}
+
+
 class TestDotPreferenceToNestedDict:
     def test_single_level_key(self):
         dot_key = 'view_type'

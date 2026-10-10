@@ -172,6 +172,20 @@ DEFAULT_USER_PREFERENCES = {
 }
 
 
+def prune_unused_preferences(user_prefs: dict, default_prefs: dict) -> dict:
+    """Drop the stored keys `default_prefs` no longer defines, at every depth.
+
+    A key leaves the defaults when a preference is renamed or retired. The
+    validator refuses a key the defaults lack, so one left in storage would
+    refuse every later write to that user's preferences.
+    """
+    pruned = {key: value for key, value in user_prefs.items() if key in default_prefs}
+    for key, value in pruned.items():
+        if isinstance(value, dict) and isinstance(default_prefs[key], dict):
+            pruned[key] = prune_unused_preferences(value, default_prefs[key])
+    return pruned
+
+
 class User(Base):
     __tablename__ = 'users'
 
