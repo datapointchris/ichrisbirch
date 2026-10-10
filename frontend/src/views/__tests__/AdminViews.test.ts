@@ -114,7 +114,7 @@ const testConfig: EnvironmentConfigSection[] = [
   },
   {
     name: 'auth',
-    settings: { JWT_SECRET: '***MASKED***', TOKEN_EXPIRY: '900' },
+    settings: { internal_service_key: '***MASKED***' },
   },
 ]
 

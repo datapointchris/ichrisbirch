@@ -43,7 +43,6 @@ ENVIRONMENTS = {
         'host_names': [
             'ichrisbirch.com',
             'www.ichrisbirch.com',
-            'api.ichrisbirch.com',
         ],
         'endpoints': ['', '/tasks', '/server'],
         'ports': ['', ':80'],

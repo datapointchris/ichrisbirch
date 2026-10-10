@@ -931,25 +931,36 @@ function prod-health() {
   "$HEALTH_CHECK_SCRIPT" prod
 }
 
+# The edge carries a request holding a bearer past ForwardAuth, and the API
+# verifies the token on every route that resolves a user. The header goes
+# through stdin, which keeps the token out of the process list.
+function prod-api-curl() {
+  local token
+  if ! command -v icb >/dev/null; then
+    echo "${red}Error: the icb CLI is not installed; it holds the access token${reset}" >&2
+    return 1
+  fi
+  token=$(icb auth token) || return 1
+  printf 'Authorization: Bearer %s\n' "$token" | curl --header @- "$@"
+}
+
 function prod-apihealth() {
-  # /health, not /health/ — the trailing slash 307s and --silent without
-  # --location swallowed the redirect, so this printed nothing and exited 0.
-  # --fail-with-body makes a real outage a non-zero exit rather than silence.
-  curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health" | jq
+  # /health, not /health/: the trailing slash answers 307. The body is captured
+  # rather than piped into jq, whose exit status would replace curl's.
+  local body
+  if ! body=$(prod-api-curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health"); then
+    [[ -n "$body" ]] && echo "$body"
+    return 1
+  fi
+  jq <<<"$body"
 }
 
 function prod-smoke() {
   echo "Running smoke tests on ${magenta}PRODUCTION${reset} environment"
-  if [[ -z "${ICHRISBIRCH_API_KEY:-}" ]]; then
-    echo "${red}Error: ICHRISBIRCH_API_KEY not set${reset}"
-    echo "Set it to a personal API key (icb_...) for an admin user"
-    return 1
-  fi
   local response
-  response=$(curl --silent -X POST "$PROD_API_URL/admin/smoke-tests/" \
-    -H "Authorization: Bearer $ICHRISBIRCH_API_KEY" 2>/dev/null)
-  if [[ -z "$response" ]]; then
-    echo "${red}Error: Could not connect to $PROD_API_URL${reset}"
+  if ! response=$(prod-api-curl --silent --show-error --fail-with-body -X POST "$PROD_API_URL/admin/smoke-tests/"); then
+    echo "${red}Error: the smoke-test request to $PROD_API_URL failed${reset}"
+    [[ -n "$response" ]] && echo "$response"
     return 1
   fi
   printf "  %-6s %5s  %-40s %-30s %8s  %s\n" "RESULT" "CODE" "PATH" "NAME" "TIME" "ERROR"
@@ -994,8 +1005,8 @@ function prod-usage() {
   echo "  ${blue}prod restart${reset}           Restart production services"
   echo "  ${blue}prod status${reset}            Show container status"
   echo "  ${blue}prod health${reset}            Full diagnostic health check"
-  echo "  ${blue}prod apihealth${reset}         Check API health endpoint"
-  echo "  ${blue}prod smoke${reset}             Run smoke tests (requires ICHRISBIRCH_API_KEY)"
+  echo "  ${blue}prod apihealth${reset}         Check API health endpoint (requires icb auth login)"
+  echo "  ${blue}prod smoke${reset}             Run smoke tests (requires icb auth login)"
   echo "  ${blue}prod deploy-status${reset}     Show blue/green deployment state"
   echo "  ${blue}prod rollback${reset}          Switch traffic to previous color"
   echo "  ${blue}prod build-test${reset}        Test production Docker build locally"

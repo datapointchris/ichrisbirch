@@ -19,7 +19,6 @@ http:
         accessControlAllowOriginList:
           - "https://ichrisbirch.com"
           - "https://www.ichrisbirch.com"
-          - "https://api.ichrisbirch.com"
         accessControlAllowHeaders:
           - "Accept"
           - "Accept-Language"

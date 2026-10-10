@@ -3,13 +3,12 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import type { User, UserPreferences, PersonalApiKey, PersonalApiKeyCreated } from '@/api/client'
+import type { User, UserPreferences } from '@/api/client'
 
 const logger = createLogger('AuthStore')
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const apiKeys = ref<PersonalApiKey[]>([])
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
@@ -23,7 +22,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   function clear() {
     user.value = null
-    apiKeys.value = []
     error.value = null
   }
 
@@ -63,60 +61,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function fetchApiKeys() {
-    error.value = null
-    try {
-      const response = await api.get<PersonalApiKey[]>('/api-keys/')
-      apiKeys.value = response.data
-      logger.info('api_keys_fetched', { count: response.data.length })
-    } catch (e) {
-      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
-      error.value = apiError
-      logger.error('api_keys_fetch_failed', { detail: apiError.detail, status: apiError.status })
-      throw apiError
-    }
-  }
-
-  async function createApiKey(name: string): Promise<PersonalApiKeyCreated> {
-    error.value = null
-    try {
-      const response = await api.post<PersonalApiKeyCreated>('/api-keys/', { name })
-      // Add to local list without the full key (it's only shown once)
-      apiKeys.value.unshift({
-        id: response.data.id,
-        name: response.data.name,
-        key_prefix: response.data.key_prefix,
-        created_at: response.data.created_at,
-        last_used_at: response.data.last_used_at,
-        revoked_at: response.data.revoked_at,
-      })
-      logger.info('api_key_created', { id: response.data.id, name: response.data.name })
-      return response.data
-    } catch (e) {
-      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
-      error.value = apiError
-      logger.error('api_key_create_failed', { detail: apiError.detail, status: apiError.status })
-      throw apiError
-    }
-  }
-
-  async function revokeApiKey(id: number) {
-    error.value = null
-    try {
-      await api.delete(`/api-keys/${id}/`)
-      const key = apiKeys.value.find((k) => k.id === id)
-      if (key) {
-        key.revoked_at = new Date().toISOString()
-      }
-      logger.info('api_key_revoked', { id })
-    } catch (e) {
-      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
-      error.value = apiError
-      logger.error('api_key_revoke_failed', { id, detail: apiError.detail, status: apiError.status })
-      throw apiError
-    }
-  }
-
   async function reorderTasks(): Promise<{ message: string }> {
     error.value = null
     try {
@@ -133,7 +77,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     user,
-    apiKeys,
     loading,
     error,
     isAuthenticated,
@@ -144,9 +87,6 @@ export const useAuthStore = defineStore('auth', () => {
     clearError,
     fetchCurrentUser,
     updatePreferences,
-    fetchApiKeys,
-    createApiKey,
-    revokeApiKey,
     reorderTasks,
   }
 })

@@ -17,7 +17,6 @@ from ichrisbirch.api.endpoints import issue_labels
 from ichrisbirch.api.endpoints import issues
 from ichrisbirch.api.endpoints import money_wasted
 from ichrisbirch.api.endpoints import patterns
-from ichrisbirch.api.endpoints import personal_api_keys
 from ichrisbirch.api.endpoints import project_item_tasks
 from ichrisbirch.api.endpoints import project_items
 from ichrisbirch.api.endpoints import projects
@@ -46,7 +45,6 @@ __all__ = [
     'issue_labels',
     'issues',
     'money_wasted',
-    'personal_api_keys',
     'project_item_tasks',
     'project_items',
     'patterns',

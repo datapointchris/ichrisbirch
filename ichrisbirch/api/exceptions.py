@@ -27,9 +27,6 @@ class Refusal(enum.StrEnum):
     EMAIL_TAKEN = 'An account with that email already exists'
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_INTERNAL_CREDENTIALS = 'Invalid internal service credentials'
-    INVALID_REFRESH_TOKEN = 'Invalid refresh token'
-    INVALID_TOKEN = 'Invalid token'
-    MISSING_TOKEN = 'Missing token'
     OUTSIDE_CLIENT_SCOPES = "Route is outside this client's scopes"
     SIGNUPS_CLOSED = 'New signups for VIP users only.'
 

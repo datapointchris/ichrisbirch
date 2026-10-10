@@ -99,7 +99,6 @@ def test_no_async_function_makes_an_outbound_call_on_the_event_loop():
 
 HOLD_SECONDS = 5
 
-# The token request runs the whole login chain, which the admin client overrides.
 HELD_CALLS = [
     pytest.param(
         'ichrisbirch.api.endpoints.articles.read_article_page',
@@ -118,14 +117,6 @@ HELD_CALLS = [
         id='goodreads',
     ),
     pytest.param('docker.from_env', 'GET', '/admin/system/health/', {}, 'test_api_logged_in_admin', id='admin-health'),
-    pytest.param(
-        'ichrisbirch.api.endpoints.auth.validate_password',
-        'POST',
-        '/auth/token/',
-        {'data': {'username': 'testloginregular@testuser.com', 'password': 'held'}},
-        'test_api',
-        id='password-login',
-    ),
 ]
 
 

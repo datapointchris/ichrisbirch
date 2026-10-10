@@ -25,8 +25,14 @@ setup() {
 
 @test "the Vue app is the bare domain in production and a subdomain elsewhere" {
   [ "$(icb_service_url prod app)" = 'https://ichrisbirch.com' ]
-  [ "$(icb_service_url prod api)" = 'https://api.ichrisbirch.com' ]
   [ "$(icb_service_url dev app)" = 'https://app.docker.localhost' ]
+}
+
+@test "the production API is the app's host under /api, which the same-origin proxy strips" {
+  [ "$(icb_service_url prod api)" = 'https://ichrisbirch.com/api' ]
+  [ "$(icb_service_path prod api)" = '/api' ]
+  [ -z "$(icb_service_path dev api)" ]
+  [ -z "$(icb_service_path prod app)" ]
 }
 
 @test "production serves no dashboard, and says so rather than inventing a URL" {
@@ -43,7 +49,7 @@ setup() {
 
 @test "DOMAIN overrides the production domain" {
   DOMAIN=example.com run icb_service_url prod api
-  [ "$output" = 'https://api.example.com' ]
+  [ "$output" = 'https://example.com/api' ]
 }
 
 @test "icb_env_domain carries no port, because check_dns runs host" {
@@ -52,7 +58,7 @@ setup() {
 }
 
 @test "icb_service_host returns the header value health-check sends in prod" {
-  [ "$(icb_service_host prod api)" = 'api.ichrisbirch.com' ]
+  [ "$(icb_service_host prod api)" = 'ichrisbirch.com' ]
   [ "$(icb_service_host prod app)" = 'ichrisbirch.com' ]
 }
 
