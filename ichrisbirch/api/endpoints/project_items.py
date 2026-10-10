@@ -113,6 +113,12 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
     dependency_ids = list(
         session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == item.id)).scalars().all()
     )
+    depends_on = session.scalars(
+        select(models.ProjectItem)
+        .join(ProjectItemDependency, models.ProjectItem.id == ProjectItemDependency.depends_on_id)
+        .where(ProjectItemDependency.item_id == item.id)
+        .order_by(models.ProjectItem.number)
+    ).all()
 
     return schemas.ProjectItemDetail(
         id=item.id,
@@ -128,6 +134,7 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
         projects=[schemas.Project.model_validate(p) for p in item.projects],
         memberships=[schemas.ProjectItemMembership.model_validate(m) for m in item.memberships],
         dependency_ids=dependency_ids,
+        depends_on=[schemas.ProjectItemSummary.model_validate(dependency) for dependency in depends_on],
     )
 
 

@@ -66,6 +66,18 @@ type ProjectItemDetail struct {
 	Projects      []Project               `json:"projects"`
 	Memberships   []ProjectItemMembership `json:"memberships"`
 	DependencyIDs []string                `json:"dependency_ids"`
+	DependsOn     []ProjectItemSummary    `json:"depends_on"`
+}
+
+// ProjectItemSummary is enough of another item to print it beside this one:
+// what an item depends on, named by number rather than by UUID.
+type ProjectItemSummary struct {
+	ID        string `json:"id"`
+	Number    int    `json:"number"`
+	Title     string `json:"title"`
+	Status    string `json:"status,omitempty"`
+	Completed bool   `json:"completed"`
+	Archived  bool   `json:"archived"`
 }
 
 // ProjectItemMembership is where an item sits in one of its projects. Position

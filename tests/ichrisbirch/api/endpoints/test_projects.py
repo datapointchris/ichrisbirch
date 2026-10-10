@@ -909,6 +909,14 @@ class TestProjectItemListEmbedsDetail:
 
         return client, blocker_id, blocked_id
 
+    def test_the_detail_names_each_dependency_by_number_and_state(self, item_with_dependency_and_task):
+        client, blocker_id, blocked_id = item_with_dependency_and_task
+        blocker = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{blocker_id}/', json={'completed': True}).json()
+
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/').json()
+
+        assert [(d['number'], d['title'], d['status']) for d in detail['depends_on']] == [(blocker['number'], 'Blocker', 'completed')]
+
     def test_list_embeds_dependency_ids(self, item_with_dependency_and_task):
         client, blocker_id, blocked_id = item_with_dependency_and_task
 

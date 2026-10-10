@@ -441,8 +441,13 @@ func runItemsCollection(cmd *cobra.Command, asJSON bool, fetch func(*api.Client)
 func newItemsShowCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "show <item>",
-		Short:   "Show an item with its projects, dependencies, tasks, and blockers",
+		Use:   "show <item>",
+		Short: "Show an item with its projects, dependencies, tasks, and blockers",
+		Long: "\"Depends on\" lists every item this one waits on, by number, marked open (○),\n" +
+			"completed (✓) or archived (▪). \"Blocked by\" is the ones not yet completed,\n" +
+			"archived ones included. Under --json they are depends_on and blockers.\n" +
+			"\n" +
+			"`icb projects items tree <item>` draws the whole graph the item sits in.",
 		Example: "  icb projects items show 118\n  icb projects items show 118 --json",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1338,7 +1343,13 @@ func printItemDetail(out io.Writer, d api.ProjectItemDetail, tasks []api.Project
 		projectNames = append(projectNames, p.Name)
 	}
 	_, _ = fmt.Fprintf(out, "  projects: %s\n", orNone(strings.Join(projectNames, ", ")))
-	_, _ = fmt.Fprintf(out, "  depends on: %d item(s)\n", len(d.DependencyIDs))
+
+	if len(d.DependsOn) > 0 {
+		_, _ = fmt.Fprintf(out, "\nDepends on (%d):\n", len(d.DependsOn))
+		for _, dependency := range d.DependsOn {
+			_, _ = fmt.Fprintf(out, "  %s %d %s\n", summaryItemMark(dependency), dependency.Number, dependency.Title)
+		}
+	}
 
 	_, _ = fmt.Fprintf(out, "\nTasks (%d):\n", len(tasks))
 	if len(tasks) == 0 {
@@ -1350,6 +1361,18 @@ func printItemDetail(out io.Writer, d api.ProjectItemDetail, tasks []api.Project
 	if len(blockers) > 0 {
 		_, _ = fmt.Fprintf(out, "\nBlocked by %d incomplete item(s):\n", len(blockers))
 		printItemsTable(out, blockers)
+	}
+}
+
+// summaryItemMark is itemMark for the summary a detail carries per dependency.
+func summaryItemMark(summary api.ProjectItemSummary) string {
+	switch {
+	case summary.Archived:
+		return markArchived
+	case summary.Completed:
+		return markCompleted
+	default:
+		return markOpen
 	}
 }
 

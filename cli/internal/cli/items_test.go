@@ -143,6 +143,26 @@ func TestPrintItemDetail_ShowsTheNumberNotTheUUID(t *testing.T) {
 	}
 }
 
+func TestPrintItemDetail_NamesEachDependencyByNumberAndState(t *testing.T) {
+	var out strings.Builder
+	printItemDetail(&out, api.ProjectItemDetail{
+		Number:        585,
+		Title:         "Practical help guide: ichrisbirch",
+		DependencyIDs: []string{"01a00e3c-36ab-71b5-9c54-30a6efd4f57e"},
+		DependsOn: []api.ProjectItemSummary{{
+			ID: "01a00e3c-36ab-71b5-9c54-30a6efd4f57e", Number: 566, Title: "Practical help guide: doit", Completed: true,
+		}},
+	}, nil, nil)
+
+	rendered := out.String()
+	if !strings.Contains(rendered, "Depends on (1):\n  ✓ 566 Practical help guide: doit") {
+		t.Errorf("detail = %q, want the dependency by number, marked completed", rendered)
+	}
+	if strings.Contains(rendered, "01a00e3c") {
+		t.Errorf("detail = %q, want no UUID", rendered)
+	}
+}
+
 // --archived was a second spelling of --status archived, which cli-design.md
 // § "A lifecycle is one --status enum" rules out as a question-shaped alias
 // beside the enum. Its removal is the point, so the flag's absence is pinned.

@@ -107,8 +107,21 @@ class ProjectItemUpdate(ProjectItemConfig):
     archived: NotNull[bool] = None
 
 
+class ProjectItemSummary(ProjectItemStatusFields):
+    """Enough of another item to print it beside this one without fetching it."""
+
+    id: UUID
+    number: int
+    title: str
+
+
 class ProjectItemDetail(ProjectItemStatusFields):
-    """Extended view with membership and dependency info."""
+    """Extended view with membership and dependency info.
+
+    `depends_on` carries each dependency's number, title and status, because a
+    reader holding only `dependency_ids` needs a request per id to say what the
+    item waits on.
+    """
 
     id: UUID
     number: int
@@ -121,6 +134,7 @@ class ProjectItemDetail(ProjectItemStatusFields):
     projects: list[Project]
     memberships: list[ProjectItemMembership]
     dependency_ids: list[UUID]
+    depends_on: list[ProjectItemSummary] = []
 
 
 class ProjectItemInProject(ProjectItemStatusFields):

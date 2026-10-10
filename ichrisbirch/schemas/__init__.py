@@ -98,6 +98,7 @@ from ichrisbirch.schemas.project_item import ProjectItemInProject
 from ichrisbirch.schemas.project_item import ProjectItemMembership
 from ichrisbirch.schemas.project_item import ProjectItemMembershipCreate
 from ichrisbirch.schemas.project_item import ProjectItemReorder
+from ichrisbirch.schemas.project_item import ProjectItemSummary
 from ichrisbirch.schemas.project_item import ProjectItemUpdate
 from ichrisbirch.schemas.project_item_task import ProjectItemTask as ProjectItemTaskSchema
 from ichrisbirch.schemas.project_item_task import ProjectItemTaskCreate
@@ -244,6 +245,7 @@ __all__ = [
     'ProjectItemMembership',
     'ProjectItemMembershipCreate',
     'ProjectItemReorder',
+    'ProjectItemSummary',
     'ProjectItemUpdate',
     'ProjectItemTaskSchema',
     'ProjectItemTaskCreate',
