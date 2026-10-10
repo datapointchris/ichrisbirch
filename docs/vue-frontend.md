@@ -39,7 +39,7 @@ Traefik's `dev-authelia-sim` middleware injects `Remote-User` and `Remote-Email`
 
 ### Auth in Production
 
-Authelia ForwardAuth protects all app routes. `api.ichrisbirch.com` bypasses ForwardAuth (uses Personal API Keys / JWTs for direct programmatic access); the `icb` CLI instead targets the ForwardAuth-protected `ichrisbirch.com` host with an Authelia bearer token.
+Authelia ForwardAuth protects all app routes. The `icb` CLI targets the same `ichrisbirch.com/api` with an Authelia bearer token, which the edge carries past ForwardAuth.
 
 ## Testing
 

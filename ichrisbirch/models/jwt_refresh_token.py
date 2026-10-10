@@ -11,15 +11,14 @@ from ichrisbirch.database.base import Base
 
 
 class JWTRefreshToken(Base):
+    """A table nothing reads or writes, declared until the migration that drops it.
+
+    The release before the drop still reads it, so the drop waits until that release is no longer
+    the live color.
+    """
+
     __tablename__ = 'jwt_refresh_tokens'
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     user_id: Mapped[str] = mapped_column(Text, nullable=False)
     refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
     date_stored: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-    def __repr__(self):
-        return f"""
-                JWTRefreshToken(user_id={self.user_id},
-                refresh_token={self.refresh_token},
-                date_stored={self.date_stored}
-                """

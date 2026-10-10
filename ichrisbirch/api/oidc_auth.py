@@ -84,9 +84,9 @@ def is_access_token(token: str) -> bool:
     """Report whether the token declares itself an RFC 9068 access token.
 
     This routes rather than authorizes — it decides whether a bearer credential belongs to this
-    strategy at all, so a Personal API Key or a locally-signed HS256 JWT is left to the strategy
-    that owns it. The same check runs again inside `OIDCTokenVerifier.verify`, where it is
-    load-bearing.
+    strategy at all. A bearer that is not an access token resolves no user, and the header
+    strategy ignores any request carrying one, so it answers 401. The same check runs again inside
+    `OIDCTokenVerifier.verify`, where it is load-bearing.
     """
     try:
         header = jwt.get_unverified_header(token)
@@ -206,7 +206,7 @@ def get_oidc_identity(request: Request, settings: Settings = Depends(get_setting
     """FastAPI dependency resolving a verified `icb` CLI access token to a person or a scoped client.
 
     Returns None when the request carries no access token, which is how every other caller — the
-    browser SPA, an internal service, a Personal API Key client — passes through untouched. A
+    browser SPA, an internal service — passes through untouched. A
     request that does present an access token and fails verification raises 401 here rather than
     returning None, so it can never fall through to a strategy that would accept it.
     """

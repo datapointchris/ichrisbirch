@@ -1,18 +1,11 @@
-import datetime as dt
 from typing import Annotated
 
-import jwt
 import structlog
-from fastapi import APIRouter
-from fastapi import Cookie
 from fastapi import Depends
 from fastapi import Header
 from fastapi import HTTPException
 from fastapi import Request
-from fastapi import Response
 from fastapi import status
-from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -22,7 +15,6 @@ from ichrisbirch.api.client_scopes import reachable
 from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.exceptions import UnauthorizedException
-from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from ichrisbirch.api.oidc_auth import UNAUTHORIZED_DETAIL
 from ichrisbirch.api.oidc_auth import OIDCIdentity
 from ichrisbirch.api.oidc_auth import ScopedClient
@@ -30,11 +22,8 @@ from ichrisbirch.api.oidc_auth import get_oidc_identity
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
-from ichrisbirch.models.personal_api_key import KEY_PREFIX
-from ichrisbirch.models.personal_api_key import hash_api_key
 
 logger = structlog.get_logger()
-router = APIRouter()
 
 
 # =============================================================================
@@ -56,56 +45,6 @@ def validate_user_id(user_id: str, session: Session) -> models.User | None:
     if not (user := session.execute(query).scalars().first()):
         logger.warning('user_not_found_by_id', user_id=user_id)
     return user
-
-
-def validate_password(user: models.User, password: str) -> bool:
-    """Validate user password."""
-    if not user.check_password(password):
-        logger.warning('password_incorrect', email=user.email)
-        return False
-    return True
-
-
-# =============================================================================
-# JWT TOKEN UTILITIES
-# =============================================================================
-
-
-def get_token_from_header(authorization: Annotated[str | None, Header()] = None) -> str | None:
-    """Extract Bearer token from Authorization header."""
-    if authorization is None:
-        return None
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != 'bearer':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Authorization scheme must be Bearer')
-        return token
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid authorization header format') from e
-
-
-def validate_jwt_token(token: str, settings: Settings) -> str | None:
-    """Validate a JWT token and return the user ID if valid.
-
-    This is a pure function that can be called directly without FastAPI dependencies. Used by endpoints that need to validate tokens
-    manually.
-    """
-    if not token:
-        return None
-    try:
-        decoded_token = jwt.decode(jwt=token, key=settings.auth.jwt_secret_key, algorithms=[settings.auth.jwt_signing_algorithm])
-        return decoded_token.get('sub')
-    except jwt.ExpiredSignatureError:
-        logger.debug('jwt_token_expired')
-        return None
-    except jwt.InvalidTokenError as e:
-        logger.warning('jwt_token_invalid', error=str(e))
-        return None
-
-
-def get_token_handler(settings: Settings = Depends(get_settings), session: Session = Depends(get_sqlalchemy_session)) -> JWTTokenHandler:
-    """Factory function for JWT token handler with dependencies."""
-    return JWTTokenHandler(settings=settings, session=session)
 
 
 # =============================================================================
@@ -183,16 +122,6 @@ def authenticate_with_authelia_headers(
     return user.get_id()
 
 
-def authenticate_with_jwt(token: Annotated[str, Depends(get_token_from_header)], settings: Settings = Depends(get_settings)) -> str | None:
-    """FastAPI dependency function for JWT authentication.
-
-    Extracts token from Authorization header and validates it. Returns user ID if valid, None otherwise.
-    """
-    if token and token.startswith(KEY_PREFIX):
-        return None
-    return validate_jwt_token(token, settings)
-
-
 def authenticate_with_application_headers(
     x_application_id: str | None = Header(None),
     x_user_id: str | None = Header(None),
@@ -233,61 +162,6 @@ def authenticate_with_internal_service_headers(
     return False
 
 
-async def authenticate_with_oauth2(request: Request, session: Session = Depends(get_sqlalchemy_session)) -> str | None:
-    """FastAPI dependency for OAuth2 form authentication.
-
-    Validates username/password from form data. Returns user ID if valid, None otherwise.
-    """
-    form_data = await request.form()
-    username = form_data.get('username')
-    password = form_data.get('password')
-    if not username or not password:
-        return None
-    return await run_in_threadpool(_check_credentials, str(username), str(password), session)
-
-
-def _check_credentials(username: str, password: str, session: Session) -> str | None:
-    user = validate_user_email(username, session)
-    if not user or not validate_password(user, password):
-        return None
-    return user.get_id()
-
-
-def authenticate_with_personal_api_key(
-    token: Annotated[str | None, Depends(get_token_from_header)],
-    session: Session = Depends(get_sqlalchemy_session),
-) -> str | None:
-    """FastAPI dependency for personal API key authentication.
-
-    If the Bearer token starts with 'icb_', look up by hashed key.
-    Returns the user's alternative_id (as string) if valid, None otherwise.
-    """
-    if not token or not token.startswith(KEY_PREFIX):
-        return None
-
-    hashed = hash_api_key(token)
-    query = select(models.PersonalAPIKey).where(
-        models.PersonalAPIKey.hashed_key == hashed,
-        models.PersonalAPIKey.revoked_at.is_(None),
-    )
-    api_key = session.execute(query).scalars().first()
-    if not api_key:
-        logger.warning('personal_api_key_invalid')
-        return None
-
-    api_key.last_used_at = dt.datetime.now(dt.UTC)
-    session.commit()
-
-    # Return the user's alternative_id (what get_id() returns) for validate_user_id
-    user = session.get(models.User, api_key.user_id)
-    if not user:
-        logger.warning('personal_api_key_user_not_found', user_id=api_key.user_id)
-        return None
-
-    logger.debug('auth_method_personal_api_key', key_id=api_key.id, user_id=user.id)
-    return user.get_id()
-
-
 # =============================================================================
 # CURRENT USER DEPENDENCIES
 # =============================================================================
@@ -297,9 +171,6 @@ def authenticated_user(
     oidc_user_id=Depends(authenticate_with_oidc_bearer),
     authelia_user_id=Depends(authenticate_with_authelia_headers),
     app_headers=Depends(authenticate_with_application_headers),
-    api_key_user_id=Depends(authenticate_with_personal_api_key),
-    auth_jwt=Depends(authenticate_with_jwt),
-    auth_oauth2=Depends(authenticate_with_oauth2),
     session=Depends(get_sqlalchemy_session),
 ) -> models.User | None:
     """The user the first matching strategy established, or None.
@@ -311,9 +182,6 @@ def authenticated_user(
     0. Authelia OIDC access token (the `icb` CLI, verified in-process against Authelia's JWKS)
     1. Authelia ForwardAuth headers (browser SSO via Remote-User/Remote-Email)
     2. Application headers (internal services)
-    3. Personal API key (external tools / programmatic clients)
-    4. JWT token (API clients)
-    5. OAuth2 form data (web forms)
     """
     if oidc_user_id:
         logger.debug('auth_method_oidc_bearer')
@@ -321,13 +189,7 @@ def authenticated_user(
         logger.debug('auth_method_authelia')
     if app_headers:
         logger.debug('auth_method_app_headers')
-    if api_key_user_id:
-        logger.debug('auth_method_personal_api_key')
-    if auth_jwt:
-        logger.debug('auth_method_jwt')
-    if auth_oauth2:
-        logger.debug('auth_method_oauth2')
-    if not (user_id := oidc_user_id or authelia_user_id or app_headers or api_key_user_id or auth_jwt or auth_oauth2):
+    if not (user_id := oidc_user_id or authelia_user_id or app_headers):
         return None
     return validate_user_id(user_id, session)
 
@@ -439,86 +301,3 @@ DbSession = Annotated[Session, Depends(get_sqlalchemy_session)]
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
 AdminUser = Annotated[models.User, Depends(get_admin_user)]
 AdminOrInternalServiceAccess = Annotated[bool, Depends(get_admin_or_internal_service_access)]
-
-
-# =============================================================================
-# API ENDPOINTS
-# =============================================================================
-
-
-@router.post('/token/', response_model=None, status_code=status.HTTP_201_CREATED)
-def access_token(response: Response, user: CurrentUser, token_handler: JWTTokenHandler = Depends(get_token_handler)):
-    """Create access and refresh tokens for authenticated user.
-
-    Sets cookies and returns token data in response body.
-    """
-    access_token = token_handler.create_access_token(user.get_id())
-    refresh_token = token_handler.create_refresh_token(user.get_id())
-    token_handler.store_refresh_token(user.get_id(), refresh_token)
-
-    response.set_cookie(key='access_token', value=f'Bearer {access_token}', httponly=True)
-    response.set_cookie(key='refresh_token', value=refresh_token, httponly=True)
-
-    return {'access_token': access_token, 'refresh_token': refresh_token}
-
-
-@router.get('/token/validate/', status_code=status.HTTP_200_OK)
-def validate_token(
-    jwt_token: Annotated[str, Depends(get_token_from_header)],
-    access_token: str | None = Cookie(None),
-    settings: Settings = Depends(get_settings),
-):
-    """Validate JWT token from header or cookie.
-
-    Returns 200 if valid, raises UnauthorizedException if invalid.
-    """
-    logger.debug('token_validation', has_header=bool(jwt_token), has_cookie=bool(access_token))
-    token = jwt_token or access_token
-
-    if not token:
-        raise UnauthorizedException(Refusal.MISSING_TOKEN, logger)
-
-    if not validate_jwt_token(token, settings):
-        raise UnauthorizedException(Refusal.INVALID_TOKEN, logger)
-
-    return Response(status_code=status.HTTP_200_OK)
-
-
-@router.post('/token/refresh/', status_code=status.HTTP_201_CREATED)
-def refresh_token(
-    jwt_token: Annotated[str, Depends(get_token_from_header)],
-    refresh_token: str = Cookie(None),
-    token_handler: JWTTokenHandler = Depends(get_token_handler),
-    settings: Settings = Depends(get_settings),
-):
-    """Refresh access token using valid refresh token.
-
-    Validates the refresh token and creates a new access token.
-    """
-    logger.debug('token_refresh', has_header=bool(jwt_token), has_cookie=bool(refresh_token))
-    refresh_token = jwt_token or refresh_token
-
-    if not (user_id := validate_jwt_token(refresh_token, settings)):
-        raise UnauthorizedException(Refusal.INVALID_REFRESH_TOKEN, logger)
-
-    logger.debug('token_refresh_validating', user_id=user_id)
-    if not token_handler.verify_refresh_token(user_id, refresh_token):
-        raise UnauthorizedException(Refusal.INVALID_REFRESH_TOKEN, logger)
-
-    logger.debug('token_refresh_validated', user_id=user_id)
-    new_access_token = token_handler.create_access_token(user_id)
-    logger.debug('access_token_created', user_id=user_id)
-
-    response = JSONResponse(status_code=status.HTTP_201_CREATED, content={'access_token': new_access_token})
-    response.set_cookie(key='access_token', value=f'Bearer {new_access_token}', httponly=True)
-    return response
-
-
-@router.get('/logout/', response_model=None, status_code=status.HTTP_200_OK)
-def logout_user(x_user_id: str = Header(...), token_handler: JWTTokenHandler = Depends(get_token_handler)):
-    """Logout user by deleting their refresh token.
-
-    Requires X-User-ID header for identification.
-    """
-    token_handler.delete_refresh_token(x_user_id)
-    return Response(status_code=status.HTTP_200_OK)

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 const SUCCESS = '.flash-messages__message--success'
 
-// Smoke tests only — interaction-heavy tests (swatch count, API key CRUD)
+// Smoke tests only — interaction-heavy tests (swatch count, font choice)
 // are covered by component integration tests in
 // src/views/__tests__/ProfileViews.test.ts
 
@@ -19,7 +19,7 @@ test.describe('Profile Page', () => {
   test('settings sections are visible on profile page', async ({ page }) => {
     await page.goto('/profile')
     await expect(page.locator('h3', { hasText: 'Appearance' })).toBeVisible()
-    await expect(page.locator('h3', { hasText: 'Personal API Keys' })).toBeVisible()
+    await expect(page.locator('h3', { hasText: 'Sidebar Order' })).toBeVisible()
   })
 
   test('sidebar shows active state on profile pages', async ({ page }) => {

@@ -5,15 +5,12 @@ from sqlalchemy import select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.exceptions import Refusal
-from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
 from tests.factories import UserFactory
 from tests.util import show_status_and_response
 from tests.utils.database import get_test_login_users
 from tests.utils.database import make_app_headers_for_user
 from tests.utils.database import make_internal_service_headers
 from tests.utils.database import make_invalid_internal_service_headers
-from tests.utils.database import make_jwt_header
-from tests.utils.database import test_settings
 
 from .crud_test import ApiCrudTester
 
@@ -115,13 +112,6 @@ def test_admin_user(users_test_context):
     """Get admin test user."""
     _, _, users = users_test_context
     return users['admin']
-
-
-@pytest.fixture
-def jwt_handler(users_test_context):
-    """Create JWT handler using the transactional session."""
-    _, session, _ = users_test_context
-    return JWTTokenHandler(settings=test_settings, session=session)
 
 
 def test_read_one_requires_admin_or_internal_service(users_logged_in_context):
@@ -290,38 +280,33 @@ def test_read_one_user_by_alt_id(users_logged_in_context):
     assert me_user == alt_user
 
 
-def _log_in(client, email: str, password: str):
-    return client.post('/auth/token/', data={'username': email, 'password': password})
-
-
-def test_a_patched_password_is_stored_hashed_and_logs_in(users_test_context, test_regular_user):
+def test_a_patched_password_is_stored_hashed(users_test_context, test_regular_user):
     client, session, _ = users_test_context
     old_password, new_password = TEST_USERS[0]['password'], 'a-password-set-through-patch'
-    token = _log_in(client, test_regular_user.email, old_password).json()['access_token']
+    headers = make_app_headers_for_user(test_regular_user)
 
-    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': new_password}, headers=make_jwt_header(token))
+    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': new_password}, headers=headers)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     session.refresh(test_regular_user)
     assert test_regular_user.password != new_password
     assert test_regular_user.check_password(new_password)
-    assert _log_in(client, test_regular_user.email, new_password).status_code == status.HTTP_201_CREATED
-    assert _log_in(client, test_regular_user.email, old_password).status_code == status.HTTP_401_UNAUTHORIZED
+    assert not test_regular_user.check_password(old_password)
 
 
 def test_an_update_that_leaves_the_password_alone_keeps_its_hash(users_test_context, test_regular_user):
     client, session, _ = users_test_context
     password = TEST_USERS[0]['password']
     stored_hash = test_regular_user.password
-    token = _log_in(client, test_regular_user.email, password).json()['access_token']
+    headers = make_app_headers_for_user(test_regular_user)
 
-    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'name': 'Renamed User'}, headers=make_jwt_header(token))
+    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'name': 'Renamed User'}, headers=headers)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     session.refresh(test_regular_user)
     assert test_regular_user.name == 'Renamed User'
     assert test_regular_user.password == stored_hash
-    assert _log_in(client, test_regular_user.email, password).status_code == status.HTTP_201_CREATED
+    assert test_regular_user.check_password(password)
 
 
 def test_create_user_password_hashed(users_logged_in_context):
@@ -335,11 +320,10 @@ def test_create_user_password_hashed(users_logged_in_context):
 
 
 @pytest.mark.parametrize('user_data', TEST_USERS)
-def test_a_stored_password_logs_its_user_in(users_test_context, user_data):
-    client, _, _ = users_test_context
-    response = client.post('/auth/token/', data={'username': user_data['email'], 'password': user_data['password']})
-    assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    assert response.json()['access_token']
+def test_a_stored_password_verifies_against_its_user(users_test_context, user_data):
+    _, session, _ = users_test_context
+    stored = session.scalars(select(models.User).where(models.User.email == user_data['email'])).one()
+    assert stored.check_password(user_data['password'])
 
 
 def test_no_user_response_carries_the_password(users_admin_context):
@@ -367,23 +351,6 @@ def test_get_user_me(users_logged_in_context):
 def test_get_user_me_application_headers(users_test_context, test_regular_user):
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
-    response = client.get('/users/me/', headers=headers)
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json()['name'] == test_regular_user.name
-
-
-def test_get_user_me_jwt(users_test_context, test_regular_user):
-    """Send a request to /auth/token/ to get a token using oauth2 username and password.
-
-    Then use the token to get /me/ endpoint
-    """
-    client, _, _ = users_test_context
-    # Use the password from TEST_USERS for Regular User 1
-    user_1_password = TEST_USERS[0]['password']
-    data = {'username': test_regular_user.email, 'password': user_1_password}
-    response = client.post('/auth/token/', data=data)
-    token = response.json()['access_token']
-    headers = make_jwt_header(token)
     response = client.get('/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['name'] == test_regular_user.name
@@ -699,17 +666,6 @@ def test_no_authentication_returns_401(users_test_context, test_regular_user_2):
     client, _, _ = users_test_context
     response = client.get(f'/users/{test_regular_user_2.id}/')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-
-def test_jwt_authentication_works(users_test_context, test_regular_user_2, jwt_handler):
-    """Test that JWT authentication works for user endpoints."""
-    client, _, _ = users_test_context
-    token = jwt_handler.create_access_token(test_regular_user_2.get_id())
-    headers = make_jwt_header(token)
-    response = client.get(f'/users/{test_regular_user_2.id}/', headers=headers)
-    assert response.status_code == status.HTTP_200_OK
-    user_data = response.json()
-    assert user_data['id'] == test_regular_user_2.id
 
 
 def test_read_many_with_limit(users_test_context):

@@ -295,7 +295,7 @@ class TestGetOIDCIdentity:
         """A credential belonging to another strategy is not this one's to reject."""
         assert get_oidc_identity(make_request(authorization), oidc_settings(idp)) is None
 
-    def test_a_locally_signed_jwt_is_left_to_the_legacy_strategy(self, idp):
+    def test_a_locally_signed_jwt_is_not_an_access_token(self, idp):
         local = jwt.encode({'sub': '123'}, 'a-local-hs256-secret-of-at-least-32-bytes', algorithm='HS256')
         assert get_oidc_identity(make_request(f'Bearer {local}'), oidc_settings(idp)) is None
 

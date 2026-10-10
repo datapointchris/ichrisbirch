@@ -8,8 +8,8 @@ import jwt
 import pytest
 from fastapi import status
 
-from ichrisbirch.api.jwt_token_handler import JWTTokenHandler
-from tests.factories import UserFactory
+from ichrisbirch.api.oidc_auth import OIDCIdentity
+from ichrisbirch.api.oidc_auth import get_oidc_identity
 from tests.util import show_status_and_response
 from tests.utils.database import test_settings
 
@@ -31,7 +31,7 @@ def test_the_headers_forwardauth_sets_resolve_the_account(txn_api):
         'Bearer icb_not_a_real_key',
         'Bearer ' + jwt.encode({'sub': '1'}, 'a-secret-this-api-never-signed-with', algorithm='HS256'),
     ],
-    ids=['junk-token', 'unknown-api-key', 'foreign-jwt'],
+    ids=['junk-token', 'personal-api-key', 'locally-signed-jwt'],
 )
 def test_a_rejected_bearer_never_falls_through_to_the_headers(txn_api, authorization):
     client, _ = txn_api
@@ -40,10 +40,9 @@ def test_a_rejected_bearer_never_falls_through_to_the_headers(txn_api, authoriza
 
 
 def test_a_valid_bearer_beside_forged_headers_runs_as_the_bearer(txn_api):
-    """The header strategy outranks a local JWT, so reading the headers here would run as the admin."""
-    client, session = txn_api
-    user = UserFactory(name='Bearer Holder', email='bearer-holder@test.com', password='bearer-holder-password')
-    token = JWTTokenHandler(settings=test_settings, session=session).create_access_token(user.get_id())
-    response = client.get('/users/me/', headers=FORGED_HEADERS | {'Authorization': f'Bearer {token}'})
+    """The headers name an admin who is not the CLI user, so reading them here would run as that admin."""
+    client, _ = txn_api
+    client.app.dependency_overrides[get_oidc_identity] = lambda: OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-macmini')
+    response = client.get('/users/me/', headers=FORGED_HEADERS | {'Authorization': 'Bearer a-verified-access-token'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-    assert response.json()['email'] == user.email
+    assert response.json()['email'] == test_settings.oidc.cli_user_email

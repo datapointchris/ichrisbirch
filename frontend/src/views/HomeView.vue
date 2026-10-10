@@ -39,7 +39,6 @@ const authStore = useAuthStore()
 
 const projectLinks: HomeLink[] = [
   { label: 'Code', url: 'https://github.com/datapointchris/ichrisbirch', icon: 'fa-brands fa-github' },
-  { label: 'API', url: 'https://api.ichrisbirch.com', icon: 'fa-solid fa-server' },
   { label: 'Docs', url: 'https://docs.ichrisbirch.com', icon: 'fa-regular fa-folder-open' },
 ]
 

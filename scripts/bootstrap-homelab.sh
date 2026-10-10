@@ -312,7 +312,6 @@ print_summary() {
   fi
   echo "Configure tunnel routes in Cloudflare dashboard:"
   echo "  - ichrisbirch.com -> http://localhost:80"
-  echo "  - api.ichrisbirch.com -> http://localhost:80"
   echo "  - www.ichrisbirch.com -> http://localhost:80"
   echo ""
   echo "Documentation: $INSTALL_DIR/docs/homelab-deployment.md"

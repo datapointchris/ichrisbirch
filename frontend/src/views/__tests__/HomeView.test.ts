@@ -56,7 +56,7 @@ describe('HomeView', () => {
   it('renders project links for non-admin users', () => {
     const wrapper = createWrapper({ user: nonAdminUser })
     const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'API', 'Docs'])
+    expect(labels).toEqual(['Code', 'Docs'])
   })
 
   it('never exposes an authenticated service to a non-admin visitor', () => {
@@ -74,7 +74,7 @@ describe('HomeView', () => {
     expect(labels).toContain('Monitor')
     expect(labels).toContain('Files')
     expect(labels).toContain('Learning')
-    expect(labels.length).toBe(11)
+    expect(labels.length).toBe(10)
   })
 
   it('all links open in new tabs', () => {
@@ -85,9 +85,9 @@ describe('HomeView', () => {
     }
   })
 
-  it('renders 3 project links when no user loaded', () => {
+  it('renders only the project links when no user loaded', () => {
     const wrapper = createWrapper()
     const labels = wrapper.findAll('.home-link-label').map((el) => el.text())
-    expect(labels).toEqual(['Code', 'API', 'Docs'])
+    expect(labels).toEqual(['Code', 'Docs'])
   })
 })

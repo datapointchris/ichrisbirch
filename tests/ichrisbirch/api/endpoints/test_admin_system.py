@@ -213,7 +213,6 @@ class TestEnvironmentConfig:
         response = test_api_logged_in_admin.get(CONFIG_ENDPOINT)
         data = response.json()
         auth_section = next(s for s in data if s['name'] == 'auth')
-        assert auth_section['settings']['jwt_secret_key'] == '***MASKED***'
         assert auth_section['settings']['internal_service_key'] == '***MASKED***'
 
     def test_config_shows_non_sensitive_values(self, test_api_logged_in_admin):
