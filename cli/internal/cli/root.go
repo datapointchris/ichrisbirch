@@ -92,14 +92,23 @@ func NewRootCommand() *cobra.Command {
 		Short: "icb — the ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
 			"projects, issues, books, articles, habits, recipes, countdowns, events, and\n" +
-			"strains. Projects hold personal work; issues hold development work.\n" +
+			"strains.\n" +
 			"\n" +
-			"The noun comes first and the verb last, so moving from reading a resource\n" +
-			"to acting on it changes only the final word: `icb books list` becomes\n" +
-			"`icb books edit`. Every read verb takes --json.\n" +
+			"Start with `icb overview` for what is outstanding in every app at once.\n" +
+			"Each section stops at ten rows, so the one that caught your eye continues\n" +
+			"under its own noun: `icb tasks list`, `icb issues next`.\n" +
 			"\n" +
-			"Run any partial command with no arguments or --help to see what comes\n" +
-			"next. Authenticate once with `icb auth login`.",
+			"Development work is `icb issues`, and `icb issues next` is the order to\n" +
+			"take it in. `icb projects` holds personal projects, never development work.\n" +
+			"\n" +
+			"The noun comes first and the verb last: `icb books list` becomes\n" +
+			"`icb books edit`. Every read verb takes --json. Run any partial command\n" +
+			"bare to see what comes next. Authenticate once with `icb auth login`.",
+		Example: "  icb overview\n" +
+			"  icb issues next --repo ichrisbirch --limit 1\n" +
+			"  icb issues show 42\n" +
+			"  icb habits complete 5\n" +
+			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Version:       version,
 		SilenceUsage:  true, // usage is shown deliberately, not on every runtime error
 		SilenceErrors: true, // Execute prints errors itself, to stderr
