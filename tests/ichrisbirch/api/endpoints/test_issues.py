@@ -172,6 +172,16 @@ class TestList:
         params = {'status': 'all', 'start_date': '2026-08-31', 'end_date': '2026-09-02', 'timezone': 'UTC'}
         assert titles(ok(client.get(ISSUES, params=params))) == ['Completed feature']
 
+    def test_closed_by_reads_what_one_kind_of_closer_finished(self, client):
+        """`claude-code/` is the attended sessions, apart from the unattended ones and the signed-in user."""
+        for title, closer in (
+            ('Attended', {'closed_by': 'claude-code/a1b2'}),
+            ('Unattended', {'closed_by': 'claude-code-unattended/c3d4'}),
+            ('Browser', {}),
+        ):
+            ok(patch(client, create(client, title=title)['number'], status='completed', **closer))
+        assert titles(ok(client.get(ISSUES, params={'status': 'completed', 'closed_by': 'claude-code/'}))) == ['Attended']
+
 
 class TestReadyQueue:
     def test_the_queue_leaves_out_decisions_and_triage(self, client):

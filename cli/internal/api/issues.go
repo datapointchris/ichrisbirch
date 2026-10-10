@@ -171,6 +171,7 @@ type IssueFilter struct {
 	Priority   *int
 	Blocked    *bool
 	ClaimedBy  string
+	ClosedBy   string
 	Search     string
 }
 
@@ -183,6 +184,7 @@ func (f IssueFilter) query() url.Values {
 		"initiative": f.Initiative,
 		"parent":     f.Parent,
 		"claimed_by": f.ClaimedBy,
+		"closed_by":  f.ClosedBy,
 		"search":     f.Search,
 	} {
 		if value != "" {

@@ -127,6 +127,7 @@ type issueFilterFlags struct {
 	parent     string
 	priority   string
 	claimedBy  string
+	closedBy   string
 	blocked    bool
 }
 
@@ -140,6 +141,7 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 	f.StringVar(&v.parent, "parent", "", "Only the children of this issue")
 	f.StringVar(&v.priority, "priority", "", "Only issues whose own priority is this: "+priorityChoices())
 	f.StringVar(&v.claimedBy, "claimed-by", "", "Only issues held by this claimant")
+	f.StringVar(&v.closedBy, "closed-by", "", "Only issues whose closer starts with this, such as claude-code/")
 	f.BoolVar(&v.blocked, "blocked", false, "Only issues waiting on an unclosed dependency (--blocked=false for the rest)")
 }
 
@@ -160,6 +162,7 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 		Initiative: v.initiative,
 		Parent:     v.parent,
 		ClaimedBy:  v.claimedBy,
+		ClosedBy:   v.closedBy,
 	}
 	if f.Changed("priority") {
 		priority, err := parsePriority(v.priority)
@@ -231,14 +234,18 @@ func newIssuesListCommand() *cobra.Command {
 			"filters on an issue's own.\n" +
 			"\n" +
 			"--start/--end bound when an issue closed, inclusive, read in this machine's\n" +
-			"zone. Pair them with --status completed to read a week's finished work.",
+			"zone. Pair them with --status completed to read a week's finished work.\n" +
+			"\n" +
+			"--closed-by matches the start of who closed an issue, so claude-code/ is\n" +
+			"every attended Claude Code session. docs/issues.md lists the kinds.",
 		Example: "  icb issues list\n" +
 			"  icb issues list --repo ichrisbirch\n" +
 			"  icb issues list --type decision\n" +
 			"  icb issues list --status triage\n" +
 			"  icb issues list --blocked\n" +
 			"  icb issues list --label area-cli --priority high\n" +
-			"  icb issues list --status completed --start 2026-10-01 --json",
+			"  icb issues list --status completed --start 2026-10-01 --json\n" +
+			"  icb issues list --status completed --closed-by claude-code/",
 		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := filters.filter(cmd)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"slices"
 	"strings"
 	"testing"
@@ -166,6 +167,26 @@ func TestIssues_CompleteAndCancelSendWhoIsClosingInTheirPatch(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// Reading what attended sessions finished: --closed-by reaches the API as the
+// prefix it matches on.
+func TestIssues_ListClosedBySendsThePrefixToMatch(t *testing.T) {
+	var query url.Values
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Query()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+
+	if _, err := runService(t, "issues", "list", "--status", "completed", "--closed-by", "claude-code/", "--json"); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if got := query.Get("closed_by"); got != "claude-code/" {
+		t.Errorf("sent closed_by %q, want claude-code/", got)
 	}
 }
 

@@ -154,6 +154,10 @@ claims are signed the same way. An issue closed before the field existed has a
 null `closed_by`, which means unknown. A move between completed and canceled
 keeps the first close's stamps.
 
+A read narrows on the prefix: `icb issues list --status completed --closed-by
+claude-code/` is what attended sessions finished, and `closed_by=` is the same
+query parameter on `GET /issues/`.
+
 A completed parent never holds open children. A closed issue takes no new open
 child, whether filed under it or moved there. Reopening a child returns each
 completed ancestor to `open` in the same write.

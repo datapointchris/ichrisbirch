@@ -292,6 +292,7 @@ def read_many(
     parent: str | None = Query(None, description='A parent issue number or UUID: its children'),
     priority: int | None = Query(None, ge=0, le=4, description="The issue's own priority"),
     claimed_by: str | None = Query(None, description='Issues held by this claimant'),
+    closed_by: str | None = Query(None, description="Issues whose closer starts with this, such as 'claude-code/'"),
     search: str | None = Query(None, description='Text to find in the title or description'),
     blocked: bool | None = Query(None, description='True for issues waiting on an unclosed dependency, false for the rest'),
     start_date: str | None = None,
@@ -304,6 +305,9 @@ def read_many(
     them out. The date bounds narrow on `closed_ts`, the one date that records an
     issue finishing rather than being edited. Blocked is derived on every read,
     so it narrows after the query and before the limit.
+
+    `closed_by` matches a prefix because an actor's prefix is its kind, so
+    `claude-code/` reads every attended session's closes.
     """
     query = select(models.Issue).options(*ISSUE_LOAD_OPTIONS)
     if issue_status is None:
@@ -322,6 +326,8 @@ def read_many(
         query = query.where(models.Issue.priority == priority)
     if claimed_by is not None:
         query = query.where(models.Issue.claimed_by == claimed_by)
+    if closed_by:
+        query = query.where(models.Issue.closed_by.startswith(closed_by, autoescape=True))
     if search:
         pattern = f'%{search}%'
         query = query.where(or_(models.Issue.title.ilike(pattern), models.Issue.description.ilike(pattern)))
