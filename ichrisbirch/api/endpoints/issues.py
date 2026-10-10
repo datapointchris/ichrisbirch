@@ -224,8 +224,9 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
     target = new_status or issue.status
 
     closer = update_data.pop('closed_by', None)
-    if closer is not None and target not in CLOSED_ISSUE_STATUSES:
-        raise unprocessable('closed_by records who closes an issue. Send it with status completed or canceled.')
+    closing = target in CLOSED_ISSUE_STATUSES and not issue.is_closed
+    if closer is not None and not closing:
+        raise unprocessable('closed_by records who closes an issue. Send it with the status that closes an open one.')
 
     duplicate_id = resulting_duplicate(session, issue, update_data, target)
     reason = resulting_reason(issue, update_data, target)
@@ -241,7 +242,7 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
             )
 
     if target in CLOSED_ISSUE_STATUSES:
-        if not issue.is_closed:
+        if closing:
             issue.closed_ts = now
             issue.closed_by = closer or signed_in
         clear_claim(issue)

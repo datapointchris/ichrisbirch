@@ -68,10 +68,10 @@ class IssueUpdate(IssueConfig):
     """Status moves through here, and the server stamps what a transition implies.
 
     `closed_ts` and the claim are never sent: closing stamps the one and clears
-    the other. `closed_by` names who is closing it and is accepted only with a
-    closed status; the server stamps the signed-in user's email when it is left
-    out. `duplicate_of` is accepted only alongside `status: canceled`, and
-    `labels` replaces the issue's whole set.
+    the other. `closed_by` names who is closing it and is accepted only with the
+    status that closes an open issue; the server stamps the signed-in user's
+    email when it is left out. `duplicate_of` is accepted only alongside
+    `status: canceled`, and `labels` replaces the issue's whole set.
     """
 
     title: NotNull[str] = None

@@ -321,7 +321,7 @@ class TestStatusTransitions:
     def test_a_move_between_closed_statuses_keeps_who_closed_it(self, client):
         task = issue(client, 'Ready task without priority')
         ok(patch(client, task['number'], status='completed', closed_by='first-closer'))
-        canceled = ok(patch(client, task['number'], status='canceled', status_reason='Not needed', closed_by='second'))
+        canceled = ok(patch(client, task['number'], status='canceled', status_reason='Not needed'))
         assert canceled['closed_by'] == 'first-closer'
 
     def test_closed_by_is_sent_only_with_a_close(self, client):

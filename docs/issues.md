@@ -152,7 +152,8 @@ A scheduler names its worker in `ICB_ACTOR`. Claude Code sets
 `CLAUDE_CODE_SESSION_ATTENDED=0` in a session nobody attends. Comments and
 claims are signed the same way. An issue closed before the field existed has a
 null `closed_by`, which means unknown. A move between completed and canceled
-keeps the first close's stamps.
+keeps the first close's stamps. So `closed_by` is accepted only on the change
+that closes an open issue, and any other PATCH naming one answers 422.
 
 A read narrows on the prefix: `icb issues list --status completed --closed-by
 claude-code/` is what attended sessions finished, and `closed_by=` is the same
