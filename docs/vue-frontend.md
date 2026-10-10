@@ -103,6 +103,10 @@ A page's own sticky header sets `top: var(--page-sticky-top)`. On a phone that v
 
 The page reaches the screen edges, padded by the `env(safe-area-inset-*)` insets, because `index.html` sets `viewport-fit=cover` and a translucent status bar for the home-screen app. `public/manifest.webmanifest` and `public/icons/` make the site installable to a home screen. The manifest link carries `crossorigin="use-credentials"`. Without it the browser fetches the manifest with no cookies, and production answers a request with no session by redirecting to the login page.
 
+The installed app opens on `/today`, the manifest's `start_url`. A phone is used for quick work, so that page holds the quick actions and nothing to manage: add a task or a shopping item, complete a task, check off a habit, and see the next countdowns and events. Each list shows its head and links to the page holding the rest. A mistaken tap is undone where it happened: a completed task or habit moves under Done today, and tapping it there puts it back. The other pages keep their desktop layouts and reach a phone through the shell alone, and the dashboard is desktop-only by design.
+
+A control on a page built for the phone is at least `touch.$touch-target` (`abstracts/_touch.scss`) on each side. Its check-off circle is the `check-circle` mixin, which shows a faint check before the tap so the circle reads as a control. The `phone` Playwright project runs the specs of these pages at phone size, and the `/today` spec fails on a control under that size or a page wider than the screen.
+
 ## Pre-commit Hooks
 
 Three hooks gate Vue code quality on every commit:

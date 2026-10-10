@@ -26,6 +26,7 @@
 /shopping
 /strains
 /tasks
+/today
 /profile
 /admin
 /dashboard

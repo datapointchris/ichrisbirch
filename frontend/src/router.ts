@@ -8,6 +8,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Home' },
   },
   {
+    path: '/today',
+    name: 'today',
+    component: () => import('@/views/TodayView.vue'),
+    meta: { title: 'Today' },
+  },
+  {
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('@/views/VueDashView.vue'),

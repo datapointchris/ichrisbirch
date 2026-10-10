@@ -1,0 +1,208 @@
+@use '../abstracts/touch';
+@use '../components/buttons';
+@use '../components/check_circle';
+@use '../components/list_item';
+@use '../components/toggle_chips';
+
+// The page a phone opens on, so every control is at least `touch.$touch-target` tall.
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-s);
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-bottom: var(--space-xl);
+}
+
+.today-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-xs);
+  border-radius: var(--border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+
+  &__form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    min-height: touch.$touch-target;
+    font-size: var(--fs-500);
+  }
+
+  &__submit {
+    @include buttons.neu-button;
+
+    flex-shrink: 0;
+    width: touch.$touch-target;
+    height: touch.$touch-target;
+    font-size: var(--fs-500);
+  }
+
+  &__note {
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+}
+
+.today-modes {
+  @include toggle_chips.toggle-chips;
+
+  &__chip {
+    min-height: touch.$touch-target;
+    padding-inline: var(--space-s);
+    font-size: var(--fs-400);
+  }
+}
+
+// Twelve categories fit one row only on a wide screen, so on a phone the row
+// scrolls sideways rather than wrapping into three.
+.today-categories {
+  @include toggle_chips.toggle-chips;
+
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: var(--space-3xs);
+  scrollbar-width: none;
+
+  &__chip {
+    flex-shrink: 0;
+    min-height: touch.$touch-target;
+  }
+}
+
+.today-block {
+  border-radius: var(--border-radius);
+  background-color: var(--clr-primary);
+  box-shadow: var(--floating-box);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: touch.$touch-target;
+    padding-inline: var(--space-xs);
+    color: var(--clr-gray-400);
+    text-decoration: none;
+  }
+
+  &__title {
+    flex: 1;
+    margin: 0;
+    color: var(--clr-accent-light);
+    font-size: var(--fs-500);
+  }
+
+  &__count {
+    font-size: var(--fs-300);
+  }
+
+  &__subtitle {
+    margin: var(--space-xs) 0 var(--space-3xs);
+    padding-inline: var(--space-xs);
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+    font-weight: 500;
+  }
+
+  &__rows {
+    margin: 0;
+    padding: 0 0 var(--space-2xs);
+    list-style: none;
+  }
+
+  &__empty {
+    padding: 0 var(--space-xs) var(--space-xs);
+    color: var(--clr-gray-500);
+    font-style: italic;
+  }
+}
+
+.today-row {
+  @include list_item.list-item;
+
+  display: flex;
+  gap: var(--space-2xs);
+  padding: 0 var(--space-xs) 0 var(--space-2xs);
+
+  &__check {
+    @include check_circle.check-circle;
+  }
+
+  &--checking &__check {
+    color: var(--clr-success);
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    color: var(--clr-text);
+    font-size: var(--fs-400);
+    overflow-wrap: anywhere;
+  }
+
+  &--checking &__name {
+    color: var(--clr-gray-500);
+    text-decoration: line-through;
+  }
+
+  &__tag {
+    flex-shrink: 0;
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+  }
+}
+
+.today-done {
+  @include list_item.list-item;
+
+  display: flex;
+  gap: var(--space-xs);
+  width: 100%;
+  min-height: touch.$touch-target;
+  color: var(--clr-gray-500);
+  font-size: var(--fs-400);
+  text-align: left;
+
+  &__name {
+    flex: 1;
+    text-decoration: line-through;
+  }
+}
+
+.today-ahead {
+  @include list_item.list-item;
+
+  display: flex;
+  gap: var(--space-xs);
+  min-height: touch.$touch-target;
+  color: var(--clr-text);
+  font-size: var(--fs-400);
+  text-decoration: none;
+
+  &__icon {
+    color: var(--clr-gray-500);
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__going {
+    color: var(--clr-success);
+  }
+
+  &__when {
+    flex-shrink: 0;
+    color: var(--clr-accent-light);
+    font-size: var(--fs-300);
+  }
+}
