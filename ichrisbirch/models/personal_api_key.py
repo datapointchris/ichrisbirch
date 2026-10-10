@@ -12,10 +12,9 @@ from ichrisbirch.database.base import Base
 
 
 class PersonalAPIKey(Base):
-    """A table nothing reads or writes, declared until the migration that drops it.
+    """Declared so the models match the migrations while the table exists.
 
-    The release before the drop still reads it, so the drop waits until that release is no longer
-    the live color.
+    Nothing reads or writes it, and the migration that drops the table deletes this class.
     """
 
     __tablename__ = 'personal_api_keys'
