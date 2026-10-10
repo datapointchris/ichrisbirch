@@ -1,6 +1,5 @@
 from ichrisbirch.models.admin_settings import AdminSettings
 from ichrisbirch.models.article import Article
-from ichrisbirch.models.article import ArticleFailedImport
 from ichrisbirch.models.autofun import AutoFun
 from ichrisbirch.models.autofun import AutoFunActiveTask
 from ichrisbirch.models.autotask import AutoTask
@@ -66,7 +65,6 @@ from ichrisbirch.models.user import User
 __all__ = [
     'AdminSettings',
     'Article',
-    'ArticleFailedImport',
     'AutoFun',
     'AutoFunActiveTask',
     'AutoTask',

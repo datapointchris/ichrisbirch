@@ -8,7 +8,6 @@ from ichrisbirch.database.base import Base
 
 # Need the models imported for Base to find the tables
 from ichrisbirch.models import Article  # noqa
-from ichrisbirch.models import ArticleFailedImport  # noqa
 from ichrisbirch.models import AutoTask  # noqa
 from ichrisbirch.models import AutoTaskFrequency  # noqa
 from ichrisbirch.models import Book  # noqa
