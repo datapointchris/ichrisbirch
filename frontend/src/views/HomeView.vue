@@ -28,30 +28,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-
-interface HomeLink {
-  label: string
-  url: string
-  icon: string
-}
+import { PROJECT_LINKS, SERVICE_LINKS } from '@/config/homeLinks'
 
 const authStore = useAuthStore()
 
-const projectLinks: HomeLink[] = [
-  { label: 'Code', url: 'https://github.com/datapointchris/ichrisbirch', icon: 'fa-brands fa-github' },
-  { label: 'Docs', url: 'https://docs.ichrisbirch.com', icon: 'fa-regular fa-folder-open' },
-]
-
-const serviceLinks: HomeLink[] = [
-  { label: 'Chat', url: 'https://chmod.ichrisbirch.com', icon: 'fa-regular fa-message' },
-  { label: 'Monitor', url: 'https://monitor.ichrisbirch.com', icon: 'fa-solid fa-chart-line' },
-  { label: 'Files', url: 'https://files.ichrisbirch.com', icon: 'fa-solid fa-hard-drive' },
-  { label: 'Vault', url: 'https://vault.ichrisbirch.com', icon: 'fa-solid fa-shield-halved' },
-  { label: 'Photos', url: 'https://photos.ichrisbirch.com', icon: 'fa-solid fa-images' },
-  { label: 'RSS', url: 'https://rss.ichrisbirch.com', icon: 'fa-solid fa-rss' },
-  { label: 'Auth', url: 'https://auth.ichrisbirch.com', icon: 'fa-solid fa-lock' },
-  { label: 'Learning', url: 'https://learning.ichrisbirch.com', icon: 'fa-solid fa-graduation-cap' },
-]
-
-const allLinks = computed(() => (authStore.isAdmin ? [...projectLinks, ...serviceLinks] : projectLinks))
+const allLinks = computed(() => (authStore.isAdmin ? [...PROJECT_LINKS, ...SERVICE_LINKS] : PROJECT_LINKS))
 </script>
