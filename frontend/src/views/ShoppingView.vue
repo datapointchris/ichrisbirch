@@ -213,9 +213,9 @@
     </button>
 
     <section
-      v-if="store.boughtToday.length"
+      v-if="store.recentPurchases.length"
       class="shopping-section shopping-section--bought"
-      data-testid="shopping-bought-today"
+      data-testid="shopping-recently-bought"
     >
       <div class="shopping-section__header">
         <button
@@ -230,34 +230,44 @@
             :class="isCollapsed(BOUGHT_KEY) ? 'fa-caret-right' : 'fa-caret-down'"
           ></i>
         </button>
-        <span class="shopping-section__name shopping-section__name--unsorted">Bought today</span>
-        <span class="shopping-section__count">{{ store.boughtToday.length }}</span>
+        <span class="shopping-section__name shopping-section__name--unsorted">Recently bought</span>
+        <span class="shopping-section__count">{{ store.recentPurchases.length }}</span>
       </div>
-      <ul
-        v-show="!isCollapsed(BOUGHT_KEY)"
-        class="shopping-section__items"
-      >
-        <li
-          v-for="purchase in store.boughtToday"
-          :key="purchase.id"
+      <div v-show="!isCollapsed(BOUGHT_KEY)">
+        <template
+          v-for="day in recentDays"
+          :key="day.key"
         >
-          <button
-            type="button"
-            class="shopping-bought"
-            data-testid="shopping-bought-row"
-            :aria-label="`Put ${purchase.item_name} back on the list`"
-            @click="undoPurchase(purchase)"
+          <h3
+            class="shopping-bought__day"
+            data-testid="shopping-bought-day"
           >
-            <i class="fa-solid fa-rotate-left"></i>
-            <span class="shopping-bought__name">{{ purchase.item_name }}</span>
-            <span
-              v-if="purchase.section_name"
-              class="shopping-bought__section"
-              >{{ purchase.section_name }}</span
+            {{ day.label }}
+          </h3>
+          <ul class="shopping-section__items">
+            <li
+              v-for="purchase in day.purchases"
+              :key="purchase.id"
             >
-          </button>
-        </li>
-      </ul>
+              <button
+                type="button"
+                class="shopping-bought"
+                data-testid="shopping-bought-row"
+                :aria-label="`Put ${purchase.item_name} back on the list`"
+                @click="undoPurchase(purchase)"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="shopping-bought__name">{{ purchase.item_name }}</span>
+                <span
+                  v-if="purchase.section_name"
+                  class="shopping-bought__section"
+                  >{{ purchase.section_name }}</span
+                >
+              </button>
+            </li>
+          </ul>
+        </template>
+      </div>
     </section>
 
     <AddEditShoppingItemModal
@@ -281,7 +291,7 @@ import draggable from 'vuedraggable'
 import { ApiError } from '@/api/errors'
 import type { ShoppingItem, ShoppingItemCreate, ShoppingItemUpdate, ShoppingPurchase, ShoppingSection } from '@/api/client'
 import { useNotifications } from '@/composables/useNotifications'
-import { UNSORTED_KEY, itemMoveFor, sectionMoveFor, suggestionsFor, useShoppingStore } from '@/stores/shopping'
+import { UNSORTED_KEY, itemMoveFor, purchasesByDay, sectionMoveFor, suggestionsFor, useShoppingStore } from '@/stores/shopping'
 import AddEditShoppingItemModal from '@/components/shopping/AddEditShoppingItemModal.vue'
 import ShoppingItemRow from '@/components/shopping/ShoppingItemRow.vue'
 import ShoppingSectionHeader from '@/components/shopping/ShoppingSectionHeader.vue'
@@ -292,13 +302,14 @@ interface DraggableChange<T> {
   removed?: { element: T; oldIndex: number }
 }
 
-const BOUGHT_KEY = 'bought-today'
+const BOUGHT_KEY = 'recently-bought'
 const COLLAPSED_STORAGE_KEY = 'shopping-collapsed'
 // Long enough to see the strike-through land before the row leaves.
 const CHECK_OFF_DELAY_MS = 300
 
 const store = useShoppingStore()
 const { show: notify } = useNotifications()
+const recentDays = computed(() => purchasesByDay(store.recentPurchases))
 
 const addInput = ref<HTMLInputElement | null>(null)
 const sectionInput = ref<HTMLInputElement | null>(null)

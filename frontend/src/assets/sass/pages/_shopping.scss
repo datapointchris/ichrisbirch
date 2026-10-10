@@ -198,7 +198,9 @@ $touch-target: 44px;
   // An empty section stays a drop target.
   &__items {
     min-height: $touch-target;
-    padding-bottom: var(--space-2xs);
+    margin: 0;
+    padding: 0 0 var(--space-2xs);
+    list-style: none;
   }
 }
 
@@ -308,5 +310,13 @@ $touch-target: 44px;
 
   &__section {
     font-size: var(--fs-300);
+  }
+
+  &__day {
+    margin: var(--space-xs) 0 var(--space-3xs);
+    padding-inline: var(--space-xs);
+    color: var(--clr-gray-400);
+    font-size: var(--fs-300);
+    font-weight: 500;
   }
 }

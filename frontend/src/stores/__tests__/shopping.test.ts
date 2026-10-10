@@ -1,6 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { UNSORTED_KEY, buyAgainOf, groupBySection, itemMoveFor, sectionMoveFor, suggestionsFor, useShoppingStore } from '../shopping'
+import {
+  UNSORTED_KEY,
+  buyAgainOf,
+  groupBySection,
+  itemMoveFor,
+  purchasesByDay,
+  sectionMoveFor,
+  suggestionsFor,
+  useShoppingStore,
+} from '../shopping'
 import { ApiError } from '@/api/errors'
 import type { ShoppingItem, ShoppingPurchase, ShoppingSection } from '@/api/client'
 
@@ -13,7 +22,10 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
-vi.mock('@/composables/calendarDay', () => ({ todayKey: () => '2026-10-10' }))
+vi.mock('@/composables/calendarDay', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/composables/calendarDay')>()),
+  todayKey: () => '2026-10-10',
+}))
 
 import { api } from '@/api/client'
 const mockApi = vi.mocked(api)
@@ -134,13 +146,32 @@ describe('sectionMoveFor', () => {
   })
 })
 
+describe('purchasesByDay', () => {
+  it('heads a check-off noticed days later under the day it was made', () => {
+    const rows = [
+      purchase('eggs', { purchased_ts: '2026-10-10T12:00:00Z' }),
+      purchase('milk', { purchased_ts: '2026-10-09T12:00:00Z' }),
+      purchase('nails', { purchased_ts: '2026-10-07T13:00:00Z' }),
+      purchase('tape', { purchased_ts: '2026-10-07T12:00:00Z' }),
+    ]
+
+    const days = purchasesByDay(rows, '2026-10-10').map((day) => [day.label, day.purchases.map((row) => row.item_name)])
+
+    expect(days).toEqual([
+      ['Today', ['eggs']],
+      ['Yesterday', ['milk']],
+      ['Wednesday, Oct 7, 2026', ['nails', 'tape']],
+    ])
+  })
+})
+
 describe('useShoppingStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
   })
 
-  it('reads the sections, the whole catalog and today’s purchases', async () => {
+  it('reads the sections, the whole catalog and the last week of purchases', async () => {
     mockApi.get
       .mockResolvedValueOnce({ data: [costco, grocery] })
       .mockResolvedValueOnce({ data: catalog })
@@ -150,9 +181,9 @@ describe('useShoppingStore', () => {
     await store.fetchAll()
 
     expect(mockApi.get).toHaveBeenCalledWith('/shopping/items/', { params: { status: 'all' } })
-    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases/', { params: { start_date: '2026-10-10' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases/', { params: { start_date: '2026-10-04' } })
     expect(store.needed.map((row) => row.name)).toEqual(['eggs', 'bananas', 'yogurt', 'tape'])
-    expect(store.boughtToday).toHaveLength(1)
+    expect(store.recentPurchases).toHaveLength(1)
   })
 
   it('re-listing a known name replaces its catalog row rather than adding one', async () => {
@@ -177,7 +208,7 @@ describe('useShoppingStore', () => {
     await checking
     const after = store.catalog.find((row) => row.id === 'eggs')
     expect(after).toMatchObject({ is_needed: false, note: null, purchase_count: 1 })
-    expect(store.boughtToday[0]?.item_name).toBe('eggs')
+    expect(store.recentPurchases[0]?.item_name).toBe('eggs')
   })
 
   it('puts a checked-off item back when the purchase is refused', async () => {
@@ -192,14 +223,14 @@ describe('useShoppingStore', () => {
 
   it('undoing a purchase re-reads its item, which is back on the list', async () => {
     const store = seeded()
-    store.boughtToday = [purchase('milk')]
+    store.recentPurchases = [purchase('milk')]
     mockApi.delete.mockResolvedValueOnce({})
     mockApi.get.mockResolvedValueOnce({ data: { ...milk, is_needed: true } })
 
     await store.undoPurchase(purchase('milk'))
 
     expect(mockApi.delete).toHaveBeenCalledWith('/shopping/purchases/p-milk/')
-    expect(store.boughtToday).toEqual([])
+    expect(store.recentPurchases).toEqual([])
     expect(store.needed.map((row) => row.name)).toContain('milk')
   })
 

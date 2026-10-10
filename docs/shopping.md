@@ -69,9 +69,13 @@ the purchase copied, unless the item went back on the list in the meantime.
 A note added to an item already on the list is appended to its note once,
 joined by `; `. Two recipes asking for onions then both stay readable.
 
-The page's "Bought today" footer is a purchases read bounded to today in the
-user's zone, so it survives the app being closed. A purchases read sent without
-a limit returns the newest `PURCHASES_SHOWN` rows, because the log only grows.
+The page's "Recently bought" footer is a purchases read bounded to the last
+`RECENT_PURCHASE_DAYS` days in the user's zone, grouped under the day each was
+made, so it survives the app being closed. Tapping a row there is the undo. The
+window runs past today because a mistaken check-off is often noticed only on
+the next trip, and the page is where it gets noticed. A purchases read sent
+without a limit returns the newest `PURCHASES_SHOWN` rows, because the log only
+grows.
 
 ## The page is built for a phone
 

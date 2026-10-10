@@ -26,7 +26,7 @@ test.describe('Shopping Page', () => {
     await expect(page).toHaveTitle('Shopping | iChrisBirch')
   })
 
-  test('adds an item, then checking it off moves it to bought today', async ({ page }) => {
+  test('adds an item, then checking it off moves it to recently bought', async ({ page }) => {
     await page.goto('/shopping')
 
     const name = `e2e item ${Date.now()}`

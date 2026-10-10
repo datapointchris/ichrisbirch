@@ -3,7 +3,8 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import { todayKey } from '@/composables/calendarDay'
+import { addDays, dayKeyOf, todayKey, type DayKey } from '@/composables/calendarDay'
+import { formatDate } from '@/composables/formatDate'
 import type {
   ShoppingItem,
   ShoppingItemCreate,
@@ -20,6 +21,9 @@ export const UNSORTED_KEY = 'unsorted'
 
 const BUY_AGAIN_SHOWN = 8
 const SUGGESTIONS_SHOWN = 6
+// Today and the days before it whose purchases the page lists and can undo, so a
+// mistaken check-off noticed on the next trip is still in reach.
+export const RECENT_PURCHASE_DAYS = 7
 
 export interface ShoppingGroup {
   key: string
@@ -29,6 +33,28 @@ export interface ShoppingGroup {
 
 function byRank<T extends { rank: number }>(a: T, b: T): number {
   return a.rank - b.rank
+}
+
+export interface PurchaseDay {
+  key: DayKey
+  label: string
+  purchases: ShoppingPurchase[]
+}
+
+function dayLabel(key: DayKey, today: DayKey): string {
+  if (key === today) return 'Today'
+  if (key === addDays(today, -1)) return 'Yesterday'
+  return formatDate(key, 'weekdayDate')
+}
+
+/** Purchases under the day each fell on in the user's zone, newest day first. */
+export function purchasesByDay(purchases: ShoppingPurchase[], today: DayKey = todayKey()): PurchaseDay[] {
+  const days = new Map<DayKey, ShoppingPurchase[]>()
+  for (const purchase of purchases) {
+    const key = dayKeyOf(purchase.purchased_ts)
+    days.set(key, [...(days.get(key) ?? []), purchase])
+  }
+  return [...days].map(([key, rows]) => ({ key, label: dayLabel(key, today), purchases: rows }))
 }
 
 /** Unsorted, then every section in rank order, each holding its items in rank order. */
@@ -91,7 +117,8 @@ export const useShoppingStore = defineStore('shopping', () => {
   const sections = ref<ShoppingSection[]>([])
   // The whole catalog: what is on the list and what is not.
   const catalog = ref<ShoppingItem[]>([])
-  const boughtToday = ref<ShoppingPurchase[]>([])
+  // Newest first, from RECENT_PURCHASE_DAYS back.
+  const recentPurchases = ref<ShoppingPurchase[]>([])
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
 
@@ -119,11 +146,13 @@ export const useShoppingStore = defineStore('shopping', () => {
       const [sectionRows, itemRows, purchaseRows] = await Promise.all([
         api.get<ShoppingSection[]>('/shopping/sections/'),
         api.get<ShoppingItem[]>('/shopping/items/', { params: { status: 'all' } }),
-        api.get<ShoppingPurchase[]>('/shopping/purchases/', { params: { start_date: todayKey() } }),
+        api.get<ShoppingPurchase[]>('/shopping/purchases/', {
+          params: { start_date: addDays(todayKey(), 1 - RECENT_PURCHASE_DAYS) },
+        }),
       ])
       sections.value = sectionRows.data
       catalog.value = itemRows.data
-      boughtToday.value = purchaseRows.data
+      recentPurchases.value = purchaseRows.data
       logger.info('shopping_fetched', { sections: sectionRows.data.length, items: itemRows.data.length })
     } catch (e) {
       throw fail('shopping_fetch_failed', e)
@@ -193,7 +222,7 @@ export const useShoppingStore = defineStore('shopping', () => {
     keep({ ...item, is_needed: false })
     try {
       const response = await api.post<ShoppingPurchase>(`/shopping/items/${item.id}/purchases/`)
-      boughtToday.value.unshift(response.data)
+      recentPurchases.value.unshift(response.data)
       keep({
         ...item,
         is_needed: false,
@@ -214,7 +243,7 @@ export const useShoppingStore = defineStore('shopping', () => {
     error.value = null
     try {
       await api.delete(`/shopping/purchases/${purchase.id}/`)
-      boughtToday.value = boughtToday.value.filter((row) => row.id !== purchase.id)
+      recentPurchases.value = recentPurchases.value.filter((row) => row.id !== purchase.id)
       if (purchase.item_id) {
         const response = await api.get<ShoppingItem>(`/shopping/items/${purchase.item_id}/`)
         keep(response.data)
@@ -287,7 +316,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   return {
     sections,
     catalog,
-    boughtToday,
+    recentPurchases,
     loading,
     error,
     needed,

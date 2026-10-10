@@ -67,7 +67,7 @@ function createWrapper(state: Record<string, unknown> = {}) {
             shopping: {
               sections: [costco, grocery],
               catalog: [eggs, yogurt, bananas, coffee],
-              boughtToday: [boughtMilk],
+              recentPurchases: [boughtMilk],
               loading: false,
               error: null,
               ...state,
@@ -262,10 +262,13 @@ describe('ShoppingView', () => {
     expect(wrapper.findAll('[data-testid="shopping-buy-again-chip"]').map((chip) => chip.text())).toEqual(['coffee'])
   })
 
-  it('tapping a row in Bought today puts it back', async () => {
+  it('undoes a check-off noticed the next day from Recently bought', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-11T15:00:00Z'))
     const wrapper = createWrapper()
     const store = useShoppingStore()
 
+    expect(wrapper.get('[data-testid="shopping-bought-day"]').text()).toBe('Yesterday')
     await wrapper.get('[data-testid="shopping-bought-row"]').trigger('click')
 
     expect(store.undoPurchase).toHaveBeenCalledWith(boughtMilk)
