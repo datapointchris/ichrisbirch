@@ -22,6 +22,7 @@ from ichrisbirch.api.endpoints import project_items
 from ichrisbirch.api.endpoints import projects
 from ichrisbirch.api.endpoints import recipes
 from ichrisbirch.api.endpoints import server
+from ichrisbirch.api.endpoints import shopping
 from ichrisbirch.api.endpoints import strains
 from ichrisbirch.api.endpoints import tasks
 from ichrisbirch.api.endpoints import users
@@ -51,6 +52,7 @@ __all__ = [
     'projects',
     'recipes',
     'server',
+    'shopping',
     'strains',
     'tasks',
     'users',
