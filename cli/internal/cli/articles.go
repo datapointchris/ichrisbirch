@@ -189,6 +189,9 @@ func newArticlesListCommand() *cobra.Command {
 			"for favorites due for re-read, --favorites=false to exclude favorites, or\n" +
 			"omit it to ignore the filter. Same for --archived and --unread.\n" +
 			"\n" +
+			"A favorite is due once it was last read longer ago than its --review-days.\n" +
+			"One never read is due, and one with no --review-days drops off once read.\n" +
+			"\n" +
 			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
 			"and either works without the other. A bound with no offset is taken in this\n" +
 			"machine's zone. A never-read article has no such date, so it falls outside\n" +

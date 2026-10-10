@@ -87,6 +87,10 @@ def read_many(
 ):
     """List articles by title, narrowed by the tri-state filters and a read-date range.
 
+    `favorites=true` answers the favorites due for a re-read: never read, or last
+    read longer ago than `review_days`. A favorite with no `review_days` drops off
+    once read, because a null interval never comes due.
+
     The bounds narrow on `last_read_date`, so a never-read article is outside
     every range — the same answer `unread=false` gives, reached by the same
     column.
