@@ -151,10 +151,11 @@ the credential it checked in `type`, `authorized_user` for a person's login or
 stores no token, so its status requests one. It exits 1 unless the provider
 grants it.
 
-`icb auth token` prints the current access token for scripting:
+`icb auth token` prints the current access token for scripting. curl reads the
+header from stdin, so the token never appears in another process's arguments:
 
 ```bash
-curl -H "Authorization: Bearer $(icb auth token)" https://ichrisbirch.com/api/tasks/
+printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/tasks/
 ```
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.

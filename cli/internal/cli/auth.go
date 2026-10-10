@@ -129,11 +129,13 @@ func newAuthTokenCommand() *cobra.Command {
 		Use:   "token",
 		Short: "Print the current access token to stdout",
 		Long: "Print a valid access token to stdout, refreshing it first if it has\n" +
-			"expired. Intended for scripting, e.g. `curl -H \"Authorization: Bearer\n" +
-			"$(icb auth token)\" …`. Exits non-zero if not logged in. With\n" +
-			"ICB_CLIENT_SECRET set, it requests a new service token instead.",
-		Example: "  icb auth token",
-		Args:    noArgs,
+			"expired. Intended for scripting. Pass it to curl on stdin, as the example\n" +
+			"does, so the token never appears in another process's arguments. Exits\n" +
+			"non-zero if not logged in. With ICB_CLIENT_SECRET set, it requests a new\n" +
+			"service token instead.",
+		Example: "  icb auth token\n" +
+			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/tasks/",
+		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg := config.Load()
 			source, err := tokenSource(cmd.Context(), cfg)
