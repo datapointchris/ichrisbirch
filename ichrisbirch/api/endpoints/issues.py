@@ -20,6 +20,7 @@ from sqlalchemy.sql import Select
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.endpoints.auth import CurrentUser
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
@@ -162,6 +163,7 @@ def reopen_completed_ancestors(issue: models.Issue, now: dt.datetime) -> None:
     while parent is not None and parent.status == 'completed':
         parent.status = 'open'
         parent.closed_ts = None
+        parent.closed_by = None
         parent.updated_ts = now
         logger.info('issue_reopened_by_child', number=parent.number, child=issue.number)
         parent = parent.parent
@@ -205,19 +207,25 @@ def resulting_reason(issue: models.Issue, update_data: dict, target: str) -> str
     return reason
 
 
-def apply_status_transition(session: Session, issue: models.Issue, update_data: dict, now: dt.datetime) -> None:
+def apply_status_transition(session: Session, issue: models.Issue, update_data: dict, now: dt.datetime, *, signed_in: str) -> None:
     """Validate a status change and apply everything it implies, in one place.
 
-    Closing stamps `closed_ts` and drops the claim. Reopening clears the stamp,
-    the reason and any duplicate link, and reopens a completed parent. Leaving
-    `in_progress` for anything but a close releases the claim. The CHECK
-    constraints refuse each of these states too; this exists so a caller gets a
-    4xx naming the problem.
+    Closing stamps `closed_ts` and `closed_by` and drops the claim. `closed_by`
+    is the actor the caller named, else `signed_in`, because a token is the
+    user's whichever session or worker holds it. A move between two closed
+    statuses keeps both stamps. Reopening clears them, the reason and any
+    duplicate link, and reopens a completed parent. Leaving `in_progress` for
+    anything but a close releases the claim. The CHECK constraints refuse each
+    of these states too; this exists so a caller gets a 4xx naming the problem.
     """
     new_status = update_data.pop('status', None)
     if new_status is not None:
         validate_lookup(session, models.IssueStatus, new_status, 'issue status')
     target = new_status or issue.status
+
+    closer = update_data.pop('closed_by', None)
+    if closer is not None and target not in CLOSED_ISSUE_STATUSES:
+        raise unprocessable('closed_by records who closes an issue. Send it with status completed or canceled.')
 
     duplicate_id = resulting_duplicate(session, issue, update_data, target)
     reason = resulting_reason(issue, update_data, target)
@@ -235,11 +243,13 @@ def apply_status_transition(session: Session, issue: models.Issue, update_data: 
     if target in CLOSED_ISSUE_STATUSES:
         if not issue.is_closed:
             issue.closed_ts = now
+            issue.closed_by = closer or signed_in
         clear_claim(issue)
     else:
         if issue.is_closed:
             reopen_completed_ancestors(issue, now)
         issue.closed_ts = None
+        issue.closed_by = None
         if target != 'in_progress':
             clear_claim(issue)
     issue.status = target
@@ -495,7 +505,7 @@ def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
 
 
 @router.patch('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
-def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone):
+def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone, user: CurrentUser):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
     now = dt.datetime.now(dt.UTC)
@@ -530,7 +540,7 @@ def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession
     if 'labels' in update_data:
         set_labels(session, issue, update_data.pop('labels'))
 
-    apply_status_transition(session, issue, update_data, now)
+    apply_status_transition(session, issue, update_data, now, signed_in=user.email)
 
     for attr, value in update_data.items():
         setattr(issue, attr, value)

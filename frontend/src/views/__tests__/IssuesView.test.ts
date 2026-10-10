@@ -54,6 +54,7 @@ function makeIssue(overrides: Partial<Issue>): Issue {
     created_ts: '2026-10-01T12:00:00Z',
     updated_ts: '2026-10-01T12:00:00Z',
     closed_ts: null,
+    closed_by: null,
     ...overrides,
   }
 }

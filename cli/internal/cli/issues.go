@@ -517,12 +517,34 @@ func newIssuesVocabularyCommand() *cobra.Command {
 
 // --- Identity ---
 
-// actorIdentity names who acts when a claim or a comment does not say: the
-// Claude Code session when run inside one, else user@host. Two sessions on one
-// machine must not share a name, because a claimant extends its own claim.
+// actorWorkerEnv names the variable a scheduler sets to say which of its
+// workers is running, so what the worker does is signed with that name.
+const actorWorkerEnv = "ICB_ACTOR"
+
+// actorIdentity names who acts when a claim, a comment or a close does not say.
+// Two sessions on one machine must not share a name, because a claimant
+// extends its own claim. The prefix is the kind of actor, so a reader can
+// filter on it:
+//
+//	claude-code/<session>                      a Claude Code session someone attends
+//	claude-code-unattended/<worker>/<session>  a session a named worker started
+//	claude-code-unattended/<session>           a session nobody attends, unnamed
+//	worker/<worker>                            a named worker running icb itself
+//	user@host                                  a person at a terminal
 func actorIdentity() string {
+	worker := os.Getenv(actorWorkerEnv)
 	if session := os.Getenv("CLAUDE_CODE_SESSION_ID"); session != "" {
-		return "claude-code/" + session
+		switch {
+		case worker != "":
+			return "claude-code-unattended/" + worker + "/" + session
+		case os.Getenv("CLAUDE_CODE_SESSION_ATTENDED") == "0":
+			return "claude-code-unattended/" + session
+		default:
+			return "claude-code/" + session
+		}
+	}
+	if worker != "" {
+		return "worker/" + worker
 	}
 	user := os.Getenv("USER")
 	if user == "" {
@@ -610,6 +632,18 @@ func claimNote(issue api.Issue, now time.Time) string {
 	return "claimed by " + *issue.ClaimedBy + " until " + localClock(*issue.ClaimExpiresTS, now)
 }
 
+// closedNote says when the issue closed and who closed it, where each is known.
+func closedNote(issue api.Issue, now time.Time) string {
+	if issue.ClosedTS == nil {
+		return ""
+	}
+	when := localClock(*issue.ClosedTS, now)
+	if by := strValue(issue.ClosedBy); by != "" {
+		return when + " by " + by
+	}
+	return when
+}
+
 // localClock prints an instant as a time of day when it falls today here, and
 // with its day otherwise.
 func localClock(t, now time.Time) string {
@@ -667,6 +701,7 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 		status += " — ready"
 	}
 	field("status", status)
+	field("closed", closedNote(issue.Issue, now))
 	field("reason", strValue(issue.StatusReason))
 	if issue.DuplicateOf != nil {
 		field("duplicate of", summaryLine(*issue.DuplicateOf))

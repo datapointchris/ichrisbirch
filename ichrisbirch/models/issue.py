@@ -142,6 +142,9 @@ class Issue(Base):
     # When the issue reached completed or canceled. Null on a closed issue means
     # the time is unknown, which is never inferred from `updated_ts`.
     closed_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Who closed it: the actor the client named, else the signed-in user's email.
+    # Stamped and cleared with `closed_ts`. Null on a closed issue means unknown.
+    closed_by: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     initiative: Mapped[Initiative | None] = relationship('Initiative', back_populates='issues')
     parent: Mapped[Issue | None] = relationship('Issue', remote_side=[id], foreign_keys=[parent_id], back_populates='children')

@@ -1337,6 +1337,7 @@ export interface Issue {
   created_ts: string
   updated_ts: string
   closed_ts: string | null
+  closed_by: string | null
 }
 
 export interface IssueComment {

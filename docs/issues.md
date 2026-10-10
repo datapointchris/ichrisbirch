@@ -132,8 +132,27 @@ Closing is deliberate in both directions:
   is finished by its children.
 - **Canceled** requires a `status_reason` or a `duplicate_of`, so a closed issue
   always says why.
-- **Reopen** returns an issue to `open`, and clears when it closed, the reason
-  and the duplicate link.
+- **Reopen** returns an issue to `open`, and clears when and by whom it closed,
+  the reason and the duplicate link.
+
+A close records `closed_by` beside `closed_ts`: the actor the client names,
+else the signed-in user's email. A token is the user's whichever session or
+worker holds it, so only the client can say which one acted. The `icb` CLI
+names whoever runs it, with the kind of actor as the prefix:
+
+| `closed_by` | Who |
+| --- | --- |
+| `claude-code/<session>` | a Claude Code session someone attends |
+| `claude-code-unattended/<worker>/<session>` | a session a named worker started |
+| `claude-code-unattended/<session>` | a session nobody attends, unnamed |
+| `worker/<worker>` | a named worker running the CLI itself |
+| `user@host` | a person at a terminal |
+
+A scheduler names its worker in `ICB_ACTOR`. Claude Code sets
+`CLAUDE_CODE_SESSION_ATTENDED=0` in a session nobody attends. Comments and
+claims are signed the same way. An issue closed before the field existed has a
+null `closed_by`, which means unknown. A move between completed and canceled
+keeps the first close's stamps.
 
 A completed parent never holds open children. A closed issue takes no new open
 child, whether filed under it or moved there. Reopening a child returns each

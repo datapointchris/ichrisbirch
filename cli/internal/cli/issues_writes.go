@@ -482,20 +482,40 @@ func newIssuesAcceptCommand() *cobra.Command {
 	return cmd
 }
 
+// closedByHelp is the flag's usage line on every verb that closes an issue.
+const closedByHelp = "Who is closing it (empty records the signed-in user)"
+
+// closer is the actor a close sends. The default names whoever runs icb, so it
+// is sent unless emptied, and an empty one leaves the server to record the
+// signed-in user.
+func closer(cmd *cobra.Command, closedBy *string) *string {
+	if readFlagIntent(cmd.Flags(), "closed-by") == flagClears {
+		return nil
+	}
+	return closedBy
+}
+
 func newIssuesCompleteCommand() *cobra.Command {
-	var asJSON bool
+	var (
+		closedBy string
+		asJSON   bool
+	)
 	cmd := &cobra.Command{
 		Use:   "complete <issue>",
 		Short: "Mark an issue done",
-		Long: "Records when it closed and lets go of any claim. A parent is refused while a\n" +
-			"child is still open. Say what shipped with add-comment, so the thread holds it.",
+		Long: "Records when it closed and who closed it, and lets go of any claim. A parent\n" +
+			"is refused while a child is still open. Say what shipped with add-comment, so\n" +
+			"the thread holds it. --closed-by defaults to who is running icb: the Claude\n" +
+			"Code session, the worker $" + actorWorkerEnv + " names, or user@host.",
 		Example: "  icb issues complete 412",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			completed := api.IssueStatusCompleted
-			return runIssueTransition(cmd, args[0], unclosedStatuses, api.IssueUpdateInput{Status: &completed}, asJSON, "Completed")
+			in := api.IssueUpdateInput{Status: &completed, ClosedBy: closer(cmd, &closedBy)}
+			return runIssueTransition(cmd, args[0], unclosedStatuses, in, asJSON, "Completed")
 		},
 	}
+	cmd.Flags().StringVar(&closedBy, "closed-by", actorIdentity(), closedByHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated issue as JSON to stdout")
 	return cmd
 }
@@ -504,13 +524,15 @@ func newIssuesCancelCommand() *cobra.Command {
 	var (
 		reason      string
 		duplicateOf string
+		closedBy    string
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cancel <issue> --reason <why> | --duplicate-of <issue>",
 		Short: "Close an issue that will not be done",
 		Long: "Canceling needs a reason, the issue this one duplicates, or both. A bare\n" +
-			"cancel invites the same issue back next month.",
+			"cancel invites the same issue back next month. --closed-by defaults to who\n" +
+			"is running icb, as it does for complete.",
 		Example: "  icb issues cancel 412 --reason \"the router rewrite removed the path\"\n" +
 			"  icb issues cancel 413 --duplicate-of 412",
 		Args: usageArgs(cobra.ExactArgs(1)),
@@ -518,6 +540,7 @@ func newIssuesCancelCommand() *cobra.Command {
 			in := api.IssueUpdateInput{
 				StatusReason: valuedStrFlag(cmd.Flags(), "reason", &reason),
 				DuplicateOf:  valuedStrFlag(cmd.Flags(), "duplicate-of", &duplicateOf),
+				ClosedBy:     closer(cmd, &closedBy),
 			}
 			if in.StatusReason == nil && in.DuplicateOf == nil {
 				return usageError{errors.New("--reason or --duplicate-of is required — say why it will not be done")}
@@ -529,6 +552,7 @@ func newIssuesCancelCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&reason, "reason", "", "Why it will not be done")
 	cmd.Flags().StringVar(&duplicateOf, "duplicate-of", "", "The issue this one duplicates")
+	cmd.Flags().StringVar(&closedBy, "closed-by", actorIdentity(), closedByHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated issue as JSON to stdout")
 	return cmd
 }
@@ -538,7 +562,7 @@ func newIssuesReopenCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "reopen <issue>",
 		Short:   "Return a completed or canceled issue to the queue",
-		Long:    "Clears when it closed, the cancel reason, and the duplicate link.",
+		Long:    "Clears when and by whom it closed, the cancel reason, and the duplicate link.",
 		Example: "  icb issues reopen 412",
 		Args:    usageArgs(cobra.ExactArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -829,8 +853,8 @@ func newIssuesAddCommentCommand() *cobra.Command {
 		Use:   "add-comment <issue> --body <text>",
 		Short: "Leave a comment on an issue",
 		Long: "Progress, a handoff, or what completing it shipped. The body is markdown and\n" +
-			"usually arrives from a file. --author defaults to the Claude Code session\n" +
-			"when run inside one, else user@host.",
+			"usually arrives from a file. --author defaults to who is running icb: the\n" +
+			"Claude Code session, the worker $" + actorWorkerEnv + " names, or user@host.",
 		Example: "  icb issues add-comment 412 --body \"Root cause: the router order\"\n" +
 			"  icb issues add-comment 412 --body \"$(cat handoff.md)\"",
 		Args: usageArgs(cobra.ExactArgs(1)),

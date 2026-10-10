@@ -85,16 +85,85 @@ func TestIssueEdit_EmptyValuesClearEachFieldItsOwnWay(t *testing.T) {
 }
 
 // Two sessions on one machine must not share a claimant, because a claimant
-// extends its own claim rather than being refused.
-func TestActorIdentity_NamesTheClaudeCodeSession(t *testing.T) {
-	t.Setenv("CLAUDE_CODE_SESSION_ID", "2c3201ae")
-	if got := actorIdentity(); got != "claude-code/2c3201ae" {
-		t.Errorf("actorIdentity() = %q, want the session", got)
+// extends its own claim rather than being refused. The prefix is the kind of
+// actor, which is what a reader filters a person's work from a worker's by.
+func TestActorIdentity_NamesTheKindOfActorBeforeWhoItIs(t *testing.T) {
+	cases := []struct {
+		name, session, attended, worker, want string
+	}{
+		{"a session someone attends", "2c3201ae", "1", "", "claude-code/2c3201ae"},
+		{"an older session that does not say", "2c3201ae", "", "", "claude-code/2c3201ae"},
+		{"a session nobody attends", "2c3201ae", "0", "", "claude-code-unattended/2c3201ae"},
+		{"a session a named worker started", "2c3201ae", "0", "fix@scheduler", "claude-code-unattended/fix@scheduler/2c3201ae"},
+		{"a named worker running icb itself", "", "", "runner-update@scheduler", "worker/runner-update@scheduler"},
 	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Setenv("CLAUDE_CODE_SESSION_ID", c.session)
+			t.Setenv("CLAUDE_CODE_SESSION_ATTENDED", c.attended)
+			t.Setenv(actorWorkerEnv, c.worker)
+			if got := actorIdentity(); got != c.want {
+				t.Errorf("actorIdentity() = %q, want %q", got, c.want)
+			}
+		})
+	}
+}
+
+func TestActorIdentity_IsThePersonOutsideASessionOrAWorker(t *testing.T) {
 	t.Setenv("CLAUDE_CODE_SESSION_ID", "")
+	t.Setenv(actorWorkerEnv, "")
 	t.Setenv("USER", "chris")
 	if got := actorIdentity(); !strings.HasPrefix(got, "chris") {
 		t.Errorf("actorIdentity() = %q outside a session, want the user", got)
+	}
+}
+
+func TestCloser_SendsWhoIsRunningIcbUnlessEmptied(t *testing.T) {
+	t.Setenv("CLAUDE_CODE_SESSION_ID", "2c3201ae")
+	t.Setenv("CLAUDE_CODE_SESSION_ATTENDED", "1")
+	t.Setenv(actorWorkerEnv, "")
+	for _, command := range []func() *cobra.Command{newIssuesCompleteCommand, newIssuesCancelCommand} {
+		cases := []struct {
+			args []string
+			want *string
+		}{
+			{nil, ptr("claude-code/2c3201ae")},
+			{[]string{"--closed-by", "chris@desk"}, ptr("chris@desk")},
+			{[]string{"--closed-by", ""}, nil},
+		}
+		for _, c := range cases {
+			cmd := command()
+			if err := cmd.ParseFlags(c.args); err != nil {
+				t.Fatalf("%s %v: %v", cmd.Name(), c.args, err)
+			}
+			value, _ := cmd.Flags().GetString("closed-by")
+			got := closer(cmd, &value)
+			if (got == nil) != (c.want == nil) || (got != nil && *got != *c.want) {
+				t.Errorf("%s %v sends %v, want %v", cmd.Name(), c.args, strValue(got), strValue(c.want))
+			}
+		}
+	}
+}
+
+func TestClosedNote_SaysWhenAndWhoWhereEachIsKnown(t *testing.T) {
+	now := time.Date(2026, 10, 7, 12, 0, 0, 0, time.Local)
+	closed := now.Add(-time.Hour)
+	who := "claude-code/2c3201ae"
+	cases := []struct {
+		name  string
+		issue api.Issue
+		want  string
+	}{
+		{"open", api.Issue{}, ""},
+		{"closed by a known actor", api.Issue{ClosedTS: &closed, ClosedBy: &who}, "11:00 by claude-code/2c3201ae"},
+		{"closed before anyone was recorded", api.Issue{ClosedTS: &closed}, "11:00"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := closedNote(c.issue, now); got != c.want {
+				t.Errorf("closedNote() = %q, want %q", got, c.want)
+			}
+		})
 	}
 }
 
