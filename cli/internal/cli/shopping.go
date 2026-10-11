@@ -35,16 +35,17 @@ func newShoppingCommand() *cobra.Command {
 		"List what is on the list: icb shopping list",
 		"List the whole catalog: icb shopping list --status all",
 		"List every section: icb shopping sections list")
-	cmd.AddCommand(
-		newShoppingListCommand(),
+	splitReadingFromChanging(cmd)
+	cmd.AddGroup(&cobra.Group{ID: groupShoppingSections, Title: "Section commands:"})
+	cmd.AddCommand(inGroup(groupReading, newShoppingListCommand(), newShoppingHistoryCommand())...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newShoppingAddCommand(),
 		newShoppingCheckCommand(),
 		newShoppingEditCommand(),
 		newShoppingRemoveCommand(),
 		newShoppingDeleteCommand(),
-		newShoppingHistoryCommand(),
-		newShoppingSectionsCommand(),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupShoppingSections, newShoppingSectionsCommand())...)
 	return cmd
 }
 
@@ -449,13 +450,14 @@ func newShoppingSectionsCommand() *cobra.Command {
 		Long: "A section is a part of the list such as a store or an aisle. Deleting one\n" +
 			"moves its items to Unsorted.",
 	})
-	cmd.AddCommand(
-		newShoppingSectionsListCommand(),
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading, newShoppingSectionsListCommand())...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newShoppingSectionsCreateCommand(),
 		newShoppingSectionsRenameCommand(),
 		newShoppingSectionsMoveCommand(),
 		newShoppingSectionsDeleteCommand(),
-	)
+	)...)
 	return cmd
 }
 

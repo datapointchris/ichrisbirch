@@ -1243,7 +1243,7 @@ export interface StrainVocabulary {
   terpenes: StrainVocabularyEntry[]
 }
 
-/** The filters `GET /strains/` takes. Narrowing happens there, not on the page. */
+/** The filters `GET /strains` takes. Narrowing happens there, not on the page. */
 export interface StrainFilters {
   strain_type?: string
   status?: string
@@ -1375,7 +1375,7 @@ export interface IssueRankMove {
   after?: number
 }
 
-/** The filters `GET /issues/` takes. Omitting `status` reads every unclosed issue. */
+/** The filters `GET /issues` takes. Omitting `status` reads every unclosed issue. */
 export interface IssueFilters {
   status?: IssueStatus | 'all'
   repo?: string

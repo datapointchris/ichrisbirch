@@ -92,7 +92,7 @@ def project_with_counts(project: models.Project, item_count, open_count, complet
     )
 
 
-@router.get('/', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.ProjectWithItemCount], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     repo: str | None = Query(None, description='Only projects holding at least one item tagged with this repo'),
@@ -183,7 +183,7 @@ def ensure_active_name_available(session: Session, name: str, exclude_id: UUID |
         )
 
 
-@router.post('/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
 def create(project: schemas.ProjectCreate, session: DbSession):
     validate_kind(project.kind, session)
     validate_status(project.status, session)
@@ -208,10 +208,10 @@ def create(project: schemas.ProjectCreate, session: DbSession):
 
 # `{id:path}` on every route below, because a project name may hold a slash and
 # the path reaches routing already decoded, so `%2F` arrives as `/`. This route
-# is declared first: `/{id:path}/` would otherwise read `x/items/` as a project
+# is declared first: `/{id:path}` would otherwise read `x/items` as a project
 # named `x/items`, and `ProjectCreate` refuses that name so the reading stays
 # unambiguous.
-@router.get('/{id:path}/items/', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
+@router.get('/{id:path}/items', response_model=list[schemas.ProjectItemInProject], status_code=status.HTTP_200_OK)
 def list_items(
     project: ProjectFromPath,
     session: DbSession,
@@ -228,7 +228,7 @@ def list_items(
     """List one project's open items, in project order.
 
     Scoping to a project selects which rows come back, not which states, so the
-    default matches the flat `/project-items/` list rather than widening because
+    default matches the flat `/project-items` list rather than widening because
     the caller named a project. Completed items pile up inside one project for the
     same reason they pile up across all of them. Measured 2026-08-14, before this
     existed: one 29-row project list carried 6 finished items. See `cli-design.md`
@@ -270,7 +270,7 @@ def list_items(
     ]
 
 
-@router.get('/{id:path}/', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
+@router.get('/{id:path}', response_model=schemas.ProjectWithItemCount, status_code=status.HTTP_200_OK)
 def read_one(project: ProjectFromPath, session: DbSession):
     counts = (
         select(*item_count_columns())
@@ -312,7 +312,7 @@ def apply_status_transition(project: models.Project, update_data: dict, session:
         update_data['closed_at'] = dt.datetime.now(dt.UTC)
 
 
-@router.patch('/{id:path}/', response_model=schemas.Project, status_code=status.HTTP_200_OK)
+@router.patch('/{id:path}', response_model=schemas.Project, status_code=status.HTTP_200_OK)
 def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_update', project_id=project.id, update_data=update_data)
@@ -336,7 +336,7 @@ def update(project: ProjectFromPath, update: schemas.ProjectUpdate, session: DbS
     return project
 
 
-@router.delete('/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id:path}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(project: ProjectFromPath, session: DbSession):
     # Find items that only belong to this project (would become orphans)
     multi_project_items = select(ProjectItemMembership.item_id).where(ProjectItemMembership.project_id != project.id)

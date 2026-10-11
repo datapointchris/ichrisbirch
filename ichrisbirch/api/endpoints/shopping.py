@@ -51,7 +51,7 @@ def path_section(id: str, session: DbSession) -> models.ShoppingSection:
 
     The segment is a path, not a single segment, because a name may hold a
     slash ("Fruit/Veg"): the client escapes it, and the path is decoded before
-    routing. The `/rank/` and `/purchases/` routes are POST alone and end in
+    routing. The `/rank` and `/purchases` routes are POST alone and end in
     their own segment, so the routes that end at the reference never take
     their requests.
     """
@@ -154,14 +154,14 @@ def item_view(session: Session, item: models.ShoppingItem) -> schemas.ShoppingIt
 # --- Sections ---------------------------------------------------------------
 
 
-@router.get('/sections/', response_model=list[schemas.ShoppingSection], status_code=status.HTTP_200_OK)
+@router.get('/sections', response_model=list[schemas.ShoppingSection], status_code=status.HTTP_200_OK)
 def read_sections(session: DbSession, limit: RowLimit = None):
     """Every section in list order. Unsorted is not a row, so it is not listed."""
     query = select(models.ShoppingSection).order_by(models.ShoppingSection.rank)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/sections/', response_model=schemas.ShoppingSection, status_code=status.HTTP_201_CREATED)
+@router.post('/sections', response_model=schemas.ShoppingSection, status_code=status.HTTP_201_CREATED)
 def create_section(section: schemas.ShoppingSectionCreate, session: DbSession):
     refuse_taken_section_name(session, section.name)
     created = models.ShoppingSection(name=section.name, rank=rank_at_end(session, models.ShoppingSection))
@@ -172,7 +172,7 @@ def create_section(section: schemas.ShoppingSectionCreate, session: DbSession):
     return created
 
 
-@router.patch('/sections/{id:path}/', response_model=schemas.ShoppingSection, status_code=status.HTTP_200_OK)
+@router.patch('/sections/{id:path}', response_model=schemas.ShoppingSection, status_code=status.HTTP_200_OK)
 def update_section(section: SectionFromPath, update: schemas.ShoppingSectionUpdate, session: DbSession):
     data = update.model_dump(exclude_unset=True)
     if 'name' in data:
@@ -184,7 +184,7 @@ def update_section(section: SectionFromPath, update: schemas.ShoppingSectionUpda
     return section
 
 
-@router.delete('/sections/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/sections/{id:path}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_section(section: SectionFromPath, session: DbSession):
     """Delete a section. Its items, on the list or off it, fall to Unsorted."""
     logger.info('shopping_section_deleted', name=section.name)
@@ -193,7 +193,7 @@ def delete_section(section: SectionFromPath, session: DbSession):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post('/sections/{id:path}/rank/', response_model=schemas.ShoppingSection, status_code=status.HTTP_200_OK)
+@router.post('/sections/{id:path}/rank', response_model=schemas.ShoppingSection, status_code=status.HTTP_200_OK)
 def rank_section(section: SectionFromPath, move: schemas.ShoppingSectionRankMove, session: DbSession):
     """Place this section directly before or after another."""
     before = resolve_section(session, move.before) if move.before is not None else None
@@ -209,7 +209,7 @@ def rank_section(section: SectionFromPath, move: schemas.ShoppingSectionRankMove
 # --- Items ------------------------------------------------------------------
 
 
-@router.get('/items/', response_model=list[schemas.ShoppingItem], status_code=status.HTTP_200_OK)
+@router.get('/items', response_model=list[schemas.ShoppingItem], status_code=status.HTTP_200_OK)
 def read_items(
     session: DbSession,
     limit: RowLimit = None,
@@ -248,7 +248,7 @@ def read_items(
     return item_views(session, list(session.scalars(apply_row_limit(query, limit)).all()))
 
 
-@router.post('/items/', response_model=schemas.ShoppingItem, status_code=status.HTTP_201_CREATED)
+@router.post('/items', response_model=schemas.ShoppingItem, status_code=status.HTTP_201_CREATED)
 def add_item(new: schemas.ShoppingItemCreate, response: Response, session: DbSession):
     """Put a name on the list. A new name is created (201); a known one is listed again (200).
 
@@ -289,12 +289,12 @@ def add_item(new: schemas.ShoppingItemCreate, response: Response, session: DbSes
     return item_view(session, item)
 
 
-@router.get('/items/{id:path}/', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
+@router.get('/items/{id:path}', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
 def read_item(item: ItemFromPath, session: DbSession):
     return item_views(session, [item])[0]
 
 
-@router.patch('/items/{id:path}/', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
+@router.patch('/items/{id:path}', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
 def update_item(item: ItemFromPath, update: schemas.ShoppingItemUpdate, session: DbSession):
     data = update.model_dump(exclude_unset=True)
     if 'name' in data:
@@ -312,7 +312,7 @@ def update_item(item: ItemFromPath, update: schemas.ShoppingItemUpdate, session:
     return item_view(session, item)
 
 
-@router.delete('/items/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/items/{id:path}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(item: ItemFromPath, session: DbSession):
     """Forget an item. Its purchases stay in the log under the name they were bought as."""
     logger.info('shopping_item_deleted', name=item.name)
@@ -321,7 +321,7 @@ def delete_item(item: ItemFromPath, session: DbSession):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post('/items/{id:path}/rank/', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
+@router.post('/items/{id:path}/rank', response_model=schemas.ShoppingItem, status_code=status.HTTP_200_OK)
 def rank_item(item: ItemFromPath, move: schemas.ShoppingItemRankMove, session: DbSession):
     """Move an item into a section, directly before or after a neighbor there, or last."""
     section = section_or_unsorted(session, move.section)
@@ -345,7 +345,7 @@ def rank_item(item: ItemFromPath, move: schemas.ShoppingItemRankMove, session: D
     return item_view(session, item)
 
 
-@router.post('/items/{id:path}/purchases/', response_model=schemas.ShoppingPurchase, status_code=status.HTTP_201_CREATED)
+@router.post('/items/{id:path}/purchases', response_model=schemas.ShoppingPurchase, status_code=status.HTTP_201_CREATED)
 def check_off(item: ItemFromPath, session: DbSession):
     """Record buying an item, which takes it off the list.
 
@@ -372,7 +372,7 @@ def check_off(item: ItemFromPath, session: DbSession):
 # --- Purchases --------------------------------------------------------------
 
 
-@router.get('/purchases/', response_model=list[schemas.ShoppingPurchase], status_code=status.HTTP_200_OK)
+@router.get('/purchases', response_model=list[schemas.ShoppingPurchase], status_code=status.HTTP_200_OK)
 def read_purchases(
     session: DbSession,
     zone: RequestZone,
@@ -387,7 +387,7 @@ def read_purchases(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.delete('/purchases/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/purchases/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def undo_purchase(id: UUID, session: DbSession):
     """Undo a check-off: the record goes, and the item returns to the list with its note.
 

@@ -156,7 +156,7 @@ const frequentlyRead = computed(() =>
 onMounted(async () => {
   loading.value = true
   try {
-    const response = await api.get<Article[]>('/articles/')
+    const response = await api.get<Article[]>('/articles')
     articles.value = response.data
     logger.info('article_stats_loaded', { count: response.data.length })
   } catch (e) {

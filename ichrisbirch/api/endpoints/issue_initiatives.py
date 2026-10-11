@@ -111,7 +111,7 @@ def counted(session: Session, initiative: models.Initiative) -> schemas.Initiati
     return initiative_view(initiative, *session.execute(counts).one())
 
 
-@router.get('/', response_model=list[schemas.Initiative], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Initiative], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     initiative_status: str = Query(
@@ -144,7 +144,7 @@ def read_many(
     return [initiative_view(*row) for row in session.execute(apply_row_limit(query, limit)).all()]
 
 
-@router.post('/', response_model=schemas.Initiative, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Initiative, status_code=status.HTTP_201_CREATED)
 def create(initiative: schemas.InitiativeCreate, session: DbSession):
     validate_status(initiative.status, session)
     require_reason_when_dropped(initiative.status, initiative.status_reason)
@@ -170,7 +170,7 @@ def create(initiative: schemas.InitiativeCreate, session: DbSession):
     return counted(session, db_obj)
 
 
-@router.get('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
+@router.get('/{id:path}', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 def read_one(initiative: InitiativeFromPath, session: DbSession):
     return counted(session, initiative)
 
@@ -191,7 +191,7 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
         update_data['closed_ts'] = dt.datetime.now(dt.UTC)
 
 
-@router.patch('/{id:path}/', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
+@router.patch('/{id:path}', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     resulting_status = update_data.get('status', initiative.status)
@@ -206,7 +206,7 @@ def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, ses
     return counted(session, initiative)
 
 
-@router.delete('/{id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id:path}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(initiative: InitiativeFromPath, session: DbSession):
     """Delete the initiative. Its issues stay, and stop inheriting its priority."""
     session.delete(initiative)

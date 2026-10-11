@@ -10,8 +10,8 @@ from fastapi import status
 
 from tests.util import show_status_and_response
 
-PROJECTS_ENDPOINT = '/projects/'
-PROJECT_ITEMS_ENDPOINT = '/project-items/'
+PROJECTS_ENDPOINT = '/projects'
+PROJECT_ITEMS_ENDPOINT = '/project-items'
 
 
 def create_project(client, **overrides):
@@ -29,7 +29,7 @@ def create_project_item(client, project_id, **overrides):
 def create_task(client, item_id, **overrides):
     """Helper to create a project item task, returning the response."""
     payload = {'title': f'Test Task {uuid7()}'} | overrides
-    return client.post(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/tasks/', json=payload)
+    return client.post(f'{PROJECT_ITEMS_ENDPOINT}/{item_id}/tasks', json=payload)
 
 
 # --- Projects ---

@@ -81,7 +81,7 @@ type RecipeIngredientInput struct {
 	IngredientGroup *string  `json:"ingredient_group"`
 }
 
-// RecipeCreateInput is the body for POST /recipes/. name and instructions are
+// RecipeCreateInput is the body for POST /recipes. name and instructions are
 // required; servings defaults to 4 (always sent). ingredients may be empty.
 type RecipeCreateInput struct {
 	Name             string                  `json:"name"`
@@ -102,7 +102,7 @@ type RecipeCreateInput struct {
 	Rating           *int                    `json:"rating,omitempty"`
 }
 
-// RecipeUpdateInput is a partial update (PATCH /recipes/{id}/): only set fields
+// RecipeUpdateInput is a partial update (PATCH /recipes/{id}): only set fields
 // are sent. Ingredients, when non-nil, replaces the whole ingredient list.
 type RecipeUpdateInput struct {
 	Name             *string                  `json:"name,omitempty"`
@@ -151,7 +151,7 @@ type UrlImportSaveResult struct {
 	Technique *CookingTechnique `json:"technique"`
 }
 
-// ListRecipes returns recipes ordered by name (GET /recipes/). Non-nil filters
+// ListRecipes returns recipes ordered by name (GET /recipes). Non-nil filters
 // add query params. A nil limit fetches all; a non-nil limit caps the count.
 func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty *string, ratingMin, maxTotalTime, limit *int) ([]Recipe, error) {
 	params := url.Values{}
@@ -171,7 +171,7 @@ func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty 
 		params.Set("max_total_time", strconv.Itoa(*maxTotalTime))
 	}
 	applyLimit(params, limit)
-	path := "/recipes/"
+	path := "/recipes"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded
 	}
@@ -182,10 +182,10 @@ func (c *Client) ListRecipes(ctx context.Context, cuisine, mealType, difficulty 
 	return recipes, nil
 }
 
-// GetRecipe returns a single recipe (GET /recipes/{id}/). A non-nil servings
+// GetRecipe returns a single recipe (GET /recipes/{id}). A non-nil servings
 // scales each ingredient's scaled_quantity. Missing is 404.
 func (c *Client) GetRecipe(ctx context.Context, id int, servings *int) (Recipe, error) {
-	path := fmt.Sprintf("/recipes/%d/", id)
+	path := fmt.Sprintf("/recipes/%d", id)
 	if servings != nil {
 		path += "?" + url.Values{"servings": {strconv.Itoa(*servings)}}.Encode()
 	}
@@ -197,9 +197,9 @@ func (c *Client) GetRecipe(ctx context.Context, id int, servings *int) (Recipe, 
 }
 
 // SearchRecipes returns recipes matching q across name, instructions, and tags
-// (GET /recipes/search/?q=).
+// (GET /recipes/search?q=).
 func (c *Client) SearchRecipes(ctx context.Context, q string) ([]Recipe, error) {
-	path := "/recipes/search/?" + url.Values{"q": {q}}.Encode()
+	path := "/recipes/search?" + url.Values{"q": {q}}.Encode()
 	var recipes []Recipe
 	if err := c.get(ctx, path, &recipes); err != nil {
 		return nil, err
@@ -208,10 +208,10 @@ func (c *Client) SearchRecipes(ctx context.Context, q string) ([]Recipe, error) 
 }
 
 // SearchRecipesByIngredients ranks recipes by how many of the have-list
-// ingredients they contain (GET /recipes/search-by-ingredients/). match is
+// ingredients they contain (GET /recipes/search-by-ingredients). match is
 // "any" (rank by coverage) or "all" (require every ingredient).
 func (c *Client) SearchRecipesByIngredients(ctx context.Context, have, match string) ([]RecipeIngredientSearchResult, error) {
-	path := "/recipes/search-by-ingredients/?" + url.Values{"have": {have}, "match": {match}}.Encode()
+	path := "/recipes/search-by-ingredients?" + url.Values{"have": {have}, "match": {match}}.Encode()
 	var results []RecipeIngredientSearchResult
 	if err := c.get(ctx, path, &results); err != nil {
 		return nil, err
@@ -219,16 +219,16 @@ func (c *Client) SearchRecipesByIngredients(ctx context.Context, have, match str
 	return results, nil
 }
 
-// CreateRecipe creates a recipe with structured ingredients (POST /recipes/).
+// CreateRecipe creates a recipe with structured ingredients (POST /recipes).
 func (c *Client) CreateRecipe(ctx context.Context, in RecipeCreateInput) (Recipe, error) {
 	var recipe Recipe
-	if err := c.send(ctx, http.MethodPost, "/recipes/", in, &recipe); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes", in, &recipe); err != nil {
 		return Recipe{}, err
 	}
 	return recipe, nil
 }
 
-// UpdateRecipe applies a partial update (PATCH /recipes/{id}/). Each field named
+// UpdateRecipe applies a partial update (PATCH /recipes/{id}). Each field named
 // in clear is sent as an explicit null (the API's null_fields capability),
 // covering numeric fields that an empty string cannot clear.
 func (c *Client) UpdateRecipe(ctx context.Context, id int, in RecipeUpdateInput, clear []string) (Recipe, error) {
@@ -237,29 +237,29 @@ func (c *Client) UpdateRecipe(ctx context.Context, id int, in RecipeUpdateInput,
 		return Recipe{}, err
 	}
 	var recipe Recipe
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/%d/", id), body, &recipe); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/%d", id), body, &recipe); err != nil {
 		return Recipe{}, err
 	}
 	return recipe, nil
 }
 
-// DeleteRecipe removes a recipe (DELETE /recipes/{id}/ → 204).
+// DeleteRecipe removes a recipe (DELETE /recipes/{id} → 204).
 func (c *Client) DeleteRecipe(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/recipes/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/recipes/%d", id), nil, nil)
 }
 
 // MarkRecipeMade increments times_made and stamps last_made_date now (POST
-// /recipes/{id}/mark-made/).
+// /recipes/{id}/mark-made).
 func (c *Client) MarkRecipeMade(ctx context.Context, id int) (Recipe, error) {
 	var recipe Recipe
-	if err := c.send(ctx, http.MethodPost, fmt.Sprintf("/recipes/%d/mark-made/", id), nil, &recipe); err != nil {
+	if err := c.send(ctx, http.MethodPost, fmt.Sprintf("/recipes/%d/mark-made", id), nil, &recipe); err != nil {
 		return Recipe{}, err
 	}
 	return recipe, nil
 }
 
 // AISuggestRecipes asks the server-side Claude (with web search) for recipe
-// candidates matching the have-list (POST /recipes/ai-suggest/). Nothing is
+// candidates matching the have-list (POST /recipes/ai-suggest). Nothing is
 // saved — feed a candidate to AISaveRecipe to persist. Slow (web search).
 func (c *Client) AISuggestRecipes(ctx context.Context, have []string, want *string, count int) (RecipeSuggestionResponse, error) {
 	body := map[string]any{"have": have, "count": count}
@@ -267,39 +267,39 @@ func (c *Client) AISuggestRecipes(ctx context.Context, have []string, want *stri
 		body["want"] = *want
 	}
 	var resp RecipeSuggestionResponse
-	if err := c.send(ctx, http.MethodPost, "/recipes/ai-suggest/", body, &resp); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes/ai-suggest", body, &resp); err != nil {
 		return RecipeSuggestionResponse{}, err
 	}
 	return resp, nil
 }
 
-// AISaveRecipe persists an AI candidate (POST /recipes/ai-save/). candidate is
+// AISaveRecipe persists an AI candidate (POST /recipes/ai-save). candidate is
 // the raw candidate JSON, sent verbatim.
 func (c *Client) AISaveRecipe(ctx context.Context, candidate json.RawMessage) (Recipe, error) {
 	var recipe Recipe
-	if err := c.send(ctx, http.MethodPost, "/recipes/ai-save/", candidate, &recipe); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes/ai-save", candidate, &recipe); err != nil {
 		return Recipe{}, err
 	}
 	return recipe, nil
 }
 
 // AIImportFromURL classifies a URL and returns recipe/technique candidate(s)
-// without saving (POST /recipes/import-from-url/). hint is auto/recipe/
+// without saving (POST /recipes/import-from-url). hint is auto/recipe/
 // technique/both.
 func (c *Client) AIImportFromURL(ctx context.Context, importURL, hint string) (UrlImportResponse, error) {
 	body := map[string]any{"url": importURL, "hint": hint}
 	var resp UrlImportResponse
-	if err := c.send(ctx, http.MethodPost, "/recipes/import-from-url/", body, &resp); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes/import-from-url", body, &resp); err != nil {
 		return UrlImportResponse{}, err
 	}
 	return resp, nil
 }
 
 // AISaveURLImport persists a reviewed URL-import candidate (POST
-// /recipes/save-url-import/). candidate is the raw candidate JSON, sent verbatim.
+// /recipes/save-url-import). candidate is the raw candidate JSON, sent verbatim.
 func (c *Client) AISaveURLImport(ctx context.Context, candidate json.RawMessage) (UrlImportSaveResult, error) {
 	var result UrlImportSaveResult
-	if err := c.send(ctx, http.MethodPost, "/recipes/save-url-import/", candidate, &result); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes/save-url-import", candidate, &result); err != nil {
 		return UrlImportSaveResult{}, err
 	}
 	return result, nil

@@ -153,7 +153,7 @@ services:
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     environment: !override
-      - VITE_API_URL=https://api.docker.localhost
+      - VITE_API_URL=https://api.docker.localhost/api/v1
     ports: !override
       - "5173:5173"
     restart: on-failure:3

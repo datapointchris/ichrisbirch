@@ -144,9 +144,9 @@ export const useShoppingStore = defineStore('shopping', () => {
     error.value = null
     try {
       const [sectionRows, itemRows, purchaseRows] = await Promise.all([
-        api.get<ShoppingSection[]>('/shopping/sections/'),
-        api.get<ShoppingItem[]>('/shopping/items/', { params: { status: 'all' } }),
-        api.get<ShoppingPurchase[]>('/shopping/purchases/', {
+        api.get<ShoppingSection[]>('/shopping/sections'),
+        api.get<ShoppingItem[]>('/shopping/items', { params: { status: 'all' } }),
+        api.get<ShoppingPurchase[]>('/shopping/purchases', {
           params: { start_date: addDays(todayKey(), 1 - RECENT_PURCHASE_DAYS) },
         }),
       ])
@@ -162,14 +162,14 @@ export const useShoppingStore = defineStore('shopping', () => {
   }
 
   async function fetchItems() {
-    const response = await api.get<ShoppingItem[]>('/shopping/items/', { params: { status: 'all' } })
+    const response = await api.get<ShoppingItem[]>('/shopping/items', { params: { status: 'all' } })
     catalog.value = response.data
   }
 
   async function addItem(input: ShoppingItemCreate) {
     error.value = null
     try {
-      const response = await api.post<ShoppingItem>('/shopping/items/', input)
+      const response = await api.post<ShoppingItem>('/shopping/items', input)
       keep(response.data)
       logger.info('shopping_item_added', { name: response.data.name, created: response.status === 201 })
       return response.data
@@ -181,7 +181,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function updateItem(id: string, input: ShoppingItemUpdate) {
     error.value = null
     try {
-      const response = await api.patch<ShoppingItem>(`/shopping/items/${id}/`, input)
+      const response = await api.patch<ShoppingItem>(`/shopping/items/${id}`, input)
       keep(response.data)
       logger.info('shopping_item_updated', { id })
       return response.data
@@ -193,7 +193,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function deleteItem(id: string) {
     error.value = null
     try {
-      await api.delete(`/shopping/items/${id}/`)
+      await api.delete(`/shopping/items/${id}`)
       catalog.value = catalog.value.filter((item) => item.id !== id)
       logger.info('shopping_item_deleted', { id })
     } catch (e) {
@@ -205,7 +205,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function moveItem(id: string, move: ShoppingItemRankMove) {
     error.value = null
     try {
-      const response = await api.post<ShoppingItem>(`/shopping/items/${id}/rank/`, move)
+      const response = await api.post<ShoppingItem>(`/shopping/items/${id}/rank`, move)
       keep(response.data)
       logger.info('shopping_item_moved', { id, section: move.section })
       return response.data
@@ -221,7 +221,7 @@ export const useShoppingStore = defineStore('shopping', () => {
     error.value = null
     keep({ ...item, is_needed: false })
     try {
-      const response = await api.post<ShoppingPurchase>(`/shopping/items/${item.id}/purchases/`)
+      const response = await api.post<ShoppingPurchase>(`/shopping/items/${item.id}/purchases`)
       recentPurchases.value.unshift(response.data)
       keep({
         ...item,
@@ -242,10 +242,10 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function undoPurchase(purchase: ShoppingPurchase) {
     error.value = null
     try {
-      await api.delete(`/shopping/purchases/${purchase.id}/`)
+      await api.delete(`/shopping/purchases/${purchase.id}`)
       recentPurchases.value = recentPurchases.value.filter((row) => row.id !== purchase.id)
       if (purchase.item_id) {
-        const response = await api.get<ShoppingItem>(`/shopping/items/${purchase.item_id}/`)
+        const response = await api.get<ShoppingItem>(`/shopping/items/${purchase.item_id}`)
         keep(response.data)
       }
       logger.info('shopping_purchase_undone', { name: purchase.item_name })
@@ -257,7 +257,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function createSection(name: string) {
     error.value = null
     try {
-      const response = await api.post<ShoppingSection>('/shopping/sections/', { name })
+      const response = await api.post<ShoppingSection>('/shopping/sections', { name })
       sections.value.push(response.data)
       logger.info('shopping_section_created', { name })
       return response.data
@@ -269,7 +269,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function renameSection(id: string, name: string) {
     error.value = null
     try {
-      const response = await api.patch<ShoppingSection>(`/shopping/sections/${id}/`, { name })
+      const response = await api.patch<ShoppingSection>(`/shopping/sections/${id}`, { name })
       sections.value = sections.value.map((section) => (section.id === id ? response.data : section))
       for (const item of catalog.value) {
         if (item.section_id === id) item.section_name = response.data.name
@@ -284,7 +284,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function deleteSection(id: string) {
     error.value = null
     try {
-      await api.delete(`/shopping/sections/${id}/`)
+      await api.delete(`/shopping/sections/${id}`)
       sections.value = sections.value.filter((section) => section.id !== id)
       for (const item of catalog.value) {
         if (item.section_id === id) {
@@ -301,13 +301,13 @@ export const useShoppingStore = defineStore('shopping', () => {
   async function moveSection(id: string, neighbor: { before: string } | { after: string }) {
     error.value = null
     try {
-      const response = await api.post<ShoppingSection>(`/shopping/sections/${id}/rank/`, neighbor)
+      const response = await api.post<ShoppingSection>(`/shopping/sections/${id}/rank`, neighbor)
       sections.value = sections.value.map((section) => (section.id === id ? response.data : section))
       logger.info('shopping_section_moved', { id })
       return response.data
     } catch (e) {
       const apiError = fail('shopping_section_move_failed', e, { id })
-      const response = await api.get<ShoppingSection[]>('/shopping/sections/').catch(() => null)
+      const response = await api.get<ShoppingSection[]>('/shopping/sections').catch(() => null)
       if (response) sections.value = response.data
       throw apiError
     }

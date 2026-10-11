@@ -21,7 +21,7 @@ func TestListAutoTasks_DecodesRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListAutoTasks: %v", err)
 	}
-	if gotPath != "/autotasks/" {
+	if gotPath != "/api/v1/autotasks" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if len(autotasks) != 1 {
@@ -56,7 +56,7 @@ func TestGetAutoTask_ByID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAutoTask: %v", err)
 	}
-	if gotPath != "/autotasks/7/" {
+	if gotPath != "/api/v1/autotasks/7" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if autotask.RunCount != 3 || autotask.Notes == nil || *autotask.Notes != "balcony only" || autotask.WindowDays == nil || *autotask.WindowDays != 3 {

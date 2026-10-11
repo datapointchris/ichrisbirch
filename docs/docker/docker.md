@@ -65,7 +65,7 @@ checks both.
 
 `VITE_API_URL` is a build argument, not a runtime variable. Vite substitutes it
 into the bundle at build time, so changing it means rebuilding the image.
-Production passes `/api`, which is the same-origin path Traefik proxies.
+Production passes `/api/v1`, on the same origin, which Traefik proxies to FastAPI unchanged.
 
 Dev and test never build this image. Their `vue` service runs
 `npm install && npm run dev`, dev on `node:24-alpine` and test on Playwright's

@@ -119,7 +119,7 @@ Before switching traffic, the deploy script runs the full smoke test suite again
 ```bash
 # Admin email is read from the decrypted .env (USERS_DEFAULT_ADMIN_USER_EMAIL)
 docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
-    -X POST http://localhost:8000/admin/smoke-tests/ \
+    -X POST http://localhost:8000/api/v1/admin/smoke-tests \
     -H "Remote-User: ${admin_email}" \
     -H "Remote-Email: ${admin_email}"
 ```

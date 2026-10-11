@@ -23,7 +23,7 @@ export const useIssueLabelsStore = defineStore('issueLabels', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<IssueLabel[]>('/issues/labels/')
+      const response = await api.get<IssueLabel[]>('/issues/labels')
       items.value = response.data
       logger.info('issue_labels_fetched', { count: response.data.length })
     } catch (e) {
@@ -57,16 +57,16 @@ export const useIssueLabelsStore = defineStore('issueLabels', () => {
   }
 
   function create(input: IssueLabelCreate) {
-    return write('create', input.slug, async () => (await api.post<IssueLabel>('/issues/labels/', input)).data)
+    return write('create', input.slug, async () => (await api.post<IssueLabel>('/issues/labels', input)).data)
   }
 
   function update(slug: string, input: IssueLabelUpdate) {
-    return write('update', slug, async () => (await api.patch<IssueLabel>(`/issues/labels/${slug}/`, input)).data)
+    return write('update', slug, async () => (await api.patch<IssueLabel>(`/issues/labels/${slug}`, input)).data)
   }
 
   function remove(slug: string) {
     return write('delete', slug, async () => {
-      await api.delete(`/issues/labels/${slug}/`)
+      await api.delete(`/issues/labels/${slug}`)
     })
   }
 

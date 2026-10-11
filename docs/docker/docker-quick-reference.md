@@ -9,11 +9,13 @@ This page covers the common cases. `--help` is the surface of record.
 
 ## URLs
 
-| Environment | App                               | API                               |
+| Environment | App                               | API host                          |
 | ----------- | --------------------------------- | --------------------------------- |
 | Development | `https://app.docker.localhost`    | `https://api.docker.localhost`    |
 | Testing     | `https://app.test.localhost:8443` | `https://api.test.localhost:8443` |
-| Production  | `https://ichrisbirch.com`         | `https://ichrisbirch.com/api`     |
+| Production  | `https://ichrisbirch.com`         | `https://ichrisbirch.com`         |
+
+Every resource route is under `/api/v1` on the API host; `/health` is at its root.
 
 The testing addresses resolve only inside a checkout's test stack, where the
 e2e suite runs. The stack publishes no ports to the host.

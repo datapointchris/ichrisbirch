@@ -111,7 +111,7 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValueOnce({ data: testIssues })
     const store = useIssuesStore()
     await store.fetchAll()
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/', { params: {} })
+    expect(mockApi.get).toHaveBeenCalledWith('/issues', { params: {} })
     expect(store.items).toHaveLength(5)
   })
 
@@ -121,7 +121,7 @@ describe('useIssuesStore', () => {
     store.setFilters({ status: 'all', repo: 'dotfiles', type: 'bug', label: 'area-cli', initiative: 'Ship it', priority: '1' })
     store.search = '  router  '
     await store.fetchAll()
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/', {
+    expect(mockApi.get).toHaveBeenCalledWith('/issues', {
       params: { status: 'all', repo: 'dotfiles', type: 'bug', label: 'area-cli', initiative: 'Ship it', priority: 1, search: 'router' },
     })
   })
@@ -132,7 +132,7 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssuesStore()
     await store.setFilter('repo', '')
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/', { params: { repo: '' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/issues', { params: { repo: '' } })
   })
 
   it('counts each lens from the loaded rows', async () => {
@@ -184,7 +184,7 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValue({ data: detailOf(ready) })
     const store = useIssuesStore()
     await store.toggleDetail(ready)
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/10/')
+    expect(mockApi.get).toHaveBeenCalledWith('/issues/10')
     expect(store.expandedId).toBe(ready.id)
     expect(store.detail?.number).toBe(10)
 
@@ -197,11 +197,11 @@ describe('useIssuesStore', () => {
   // one-row patch would leave the other rows' flags and priorities stale.
   it('reads the list again after a write', async () => {
     mockApi.patch.mockResolvedValueOnce({ data: detailOf({ ...ready, status: 'completed' }) })
-    mockApi.get.mockImplementation(async (url: string) => ({ data: url === '/issues/vocabulary/' ? testVocabulary : [blocked] }))
+    mockApi.get.mockImplementation(async (url: string) => ({ data: url === '/issues/vocabulary' ? testVocabulary : [blocked] }))
     const store = useIssuesStore()
     store.items = testIssues
     await store.setStatus(ready, 'completed')
-    expect(mockApi.patch).toHaveBeenCalledWith('/issues/10/', { status: 'completed' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/issues/10', { status: 'completed' })
     expect(store.items.map((issue) => issue.number)).toEqual([12])
   })
 
@@ -210,13 +210,13 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssuesStore()
     await store.setStatus(ready, 'canceled', { status_reason: 'Covered elsewhere' })
-    expect(mockApi.patch).toHaveBeenCalledWith('/issues/10/', { status_reason: 'Covered elsewhere', status: 'canceled' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/issues/10', { status_reason: 'Covered elsewhere', status: 'canceled' })
   })
 
   it('re-reads an open detail after a write so its comments stay current', async () => {
     mockApi.get.mockImplementation(async (url: string) => {
-      if (url === '/issues/vocabulary/') return { data: testVocabulary }
-      if (url === '/issues/10/') return { data: detailOf(ready) }
+      if (url === '/issues/vocabulary') return { data: testVocabulary }
+      if (url === '/issues/10') return { data: detailOf(ready) }
       return { data: testIssues }
     })
     mockApi.post.mockResolvedValueOnce({
@@ -228,17 +228,17 @@ describe('useIssuesStore', () => {
     mockApi.get.mockClear()
 
     await store.addComment(ready, 'Found it', 'Chris')
-    expect(mockApi.post).toHaveBeenCalledWith('/issues/10/comments/', { body: 'Found it', author: 'Chris' })
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/10/')
+    expect(mockApi.post).toHaveBeenCalledWith('/issues/10/comments', { body: 'Found it', author: 'Chris' })
+    expect(mockApi.get).toHaveBeenCalledWith('/issues/10')
   })
 
   it('closes the detail of an issue it deletes', async () => {
-    mockApi.get.mockImplementation(async (url: string) => ({ data: url === '/issues/10/' ? detailOf(ready) : [] }))
+    mockApi.get.mockImplementation(async (url: string) => ({ data: url === '/issues/10' ? detailOf(ready) : [] }))
     mockApi.delete.mockResolvedValueOnce({ data: null })
     const store = useIssuesStore()
     await store.toggleDetail(ready)
     await store.remove(ready)
-    expect(mockApi.delete).toHaveBeenCalledWith('/issues/10/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/issues/10')
     expect(store.expandedId).toBeNull()
   })
 
@@ -247,7 +247,7 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssuesStore()
     await store.removeDependency(blocked, blocked.depends_on[0]!)
-    expect(mockApi.delete).toHaveBeenCalledWith('/issues/12/dependencies/10/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/issues/12/dependencies/10')
   })
 
   it('places an issue beside a neighbor through the rank endpoint', async () => {
@@ -255,15 +255,7 @@ describe('useIssuesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssuesStore()
     await store.move(ready, { before: 14 })
-    expect(mockApi.post).toHaveBeenCalledWith('/issues/10/rank/', { before: 14 })
-  })
-
-  it('releases a claim with a DELETE on the claim', async () => {
-    mockApi.delete.mockResolvedValueOnce({ data: claimed })
-    mockApi.get.mockResolvedValue({ data: [] })
-    const store = useIssuesStore()
-    await store.release(claimed)
-    expect(mockApi.delete).toHaveBeenCalledWith('/issues/11/claim/')
+    expect(mockApi.post).toHaveBeenCalledWith('/issues/10/rank', { before: 14 })
   })
 
   it('surfaces a refused write as an ApiError and reads nothing after it', async () => {

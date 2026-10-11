@@ -64,7 +64,7 @@ describe('useTasksStore', () => {
 
     await store.fetchTodo()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/todo/')
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/todo')
     expect(store.tasks).toEqual(testTasks)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -105,7 +105,7 @@ describe('useTasksStore', () => {
 
     await store.fetchCompleted()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed/', { params: {} })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: {} })
     expect(store.completedTasks).toEqual(testCompletedTasks)
   })
 
@@ -115,7 +115,7 @@ describe('useTasksStore', () => {
 
     await store.fetchCompleted('2026-01-01', '2026-03-01')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed/', {
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', {
       params: { start_date: '2026-01-01', end_date: '2026-03-01' },
     })
   })
@@ -139,7 +139,7 @@ describe('useTasksStore', () => {
 
     await store.search('paint')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/search/', { params: { q: 'paint' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/search', { params: { q: 'paint' } })
     // Task without complete_date goes to tasks
     expect(store.tasks).toHaveLength(1)
     expect(store.tasks[0]!.id).toBe(1)
@@ -179,7 +179,7 @@ describe('useTasksStore', () => {
 
     const result = await store.create({ name: 'New Task', category: 'Chore', window_days: 10 })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/tasks/', { name: 'New Task', category: 'Chore', window_days: 10 })
+    expect(mockApi.post).toHaveBeenCalledWith('/tasks', { name: 'New Task', category: 'Chore', window_days: 10 })
     expect(result).toEqual(newTask)
     expect(store.tasks).toContainEqual(newTask)
   })
@@ -204,7 +204,7 @@ describe('useTasksStore', () => {
 
     const result = await store.complete(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/3/complete/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/3/complete')
     expect(result).toEqual(completed)
     expect(store.tasks.find((t) => t.id === 3)).toBeUndefined()
     expect(store.tasks).toHaveLength(4)
@@ -231,7 +231,7 @@ describe('useTasksStore', () => {
 
     await store.snooze(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/1/snooze/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/1/snooze')
     expect(store.sortedTasks.at(-1)!.id).toBe(1)
   })
 
@@ -253,7 +253,7 @@ describe('useTasksStore', () => {
 
     await store.drop(2, 'Sold the car')
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/drop/', { reason: 'Sold the car' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/drop', { reason: 'Sold the car' })
     expect(store.tasks.find((t) => t.id === 2)).toBeUndefined()
   })
 
@@ -264,7 +264,7 @@ describe('useTasksStore', () => {
 
     await store.drop(2)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/drop/', undefined)
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/drop', undefined)
   })
 
   it('keeps the task on drop failure', async () => {
@@ -285,7 +285,7 @@ describe('useTasksStore', () => {
 
     await store.fetchDropped('2026-03-01', '2026-03-31')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/', {
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks', {
       params: { status: 'dropped', start_date: '2026-03-01', end_date: '2026-03-31' },
     })
     expect(store.droppedTasks).toEqual([dropped])
@@ -299,7 +299,7 @@ describe('useTasksStore', () => {
 
     const result = await store.reopen(2)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/reopen/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/2/reopen')
     expect(result).toEqual(testTasks[1])
     expect(store.droppedTasks).toEqual([])
     expect(store.tasks.map((t) => t.id)).toEqual([2])
@@ -327,7 +327,7 @@ describe('useTasksStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/tasks/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/tasks/2')
     expect(store.tasks.find((t) => t.id === 2)).toBeUndefined()
     expect(store.tasks).toHaveLength(4)
   })
@@ -363,7 +363,7 @@ describe('useTasksStore', () => {
 
     await store.setPinned(5, true)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/5/', { pinned: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/5', { pinned: true })
     expect(store.sortedTasks[0]!.id).toBe(5)
   })
 
@@ -373,10 +373,10 @@ describe('useTasksStore', () => {
     store.tasks = [...testTasks]
 
     await store.move(1, '2026-03-20T00:00:00Z')
-    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1/', { rank_at: '2026-03-20T00:00:00Z' })
+    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1', { rank_at: '2026-03-20T00:00:00Z' })
 
     await store.move(1, '2026-03-20T00:00:00Z', true)
-    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1/', { rank_at: '2026-03-20T00:00:00Z', pinned: true })
+    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1', { rank_at: '2026-03-20T00:00:00Z', pinned: true })
   })
 
   it('sets error on update failure', async () => {

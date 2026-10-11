@@ -10,7 +10,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/books/'
+ENDPOINT = '/books'
 NEW_OBJ = schemas.BookCreate(
     isbn='9780743273565',
     title='The Great Gatsby',
@@ -62,25 +62,25 @@ def test_search_book(book_crud_tester):
     client, _ = book_crud_tester
     # Test searching by title
     search_term = 'hobbit'
-    search_results = client.get('/books/search/', params={'q': search_term})
+    search_results = client.get('/books/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     # Test searching by author
     search_term = 'orwell'
-    search_results = client.get('/books/search/', params={'q': search_term})
+    search_results = client.get('/books/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     # Test searching by tag
     search_term = 'fantasy'
-    search_results = client.get('/books/search/', params={'q': search_term})
+    search_results = client.get('/books/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     # Test searching by multiple tags
     search_term = 'classic'
-    search_results = client.get('/books/search/', params={'q': search_term})
+    search_results = client.get('/books/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     # All 3 books have the "Classic" tag
     assert len(search_results.json()) == 3
@@ -90,13 +90,13 @@ def test_get_book_by_isbn(book_crud_tester):
     client, _ = book_crud_tester
     # Test getting a book by ISBN that exists
     isbn = '9780451524935'  # 1984
-    response = client.get(f'/books/isbn/{isbn}/')
+    response = client.get(f'/books/isbn/{isbn}')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['title'] == '1984'
 
     # Test getting a book by ISBN that doesn't exist returns 404
     isbn = '9999999999999'
-    response = client.get(f'/books/isbn/{isbn}/')
+    response = client.get(f'/books/isbn/{isbn}')
     assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -108,11 +108,11 @@ def test_update_book(book_crud_tester):
     """
     client, crud_tester = book_crud_tester
     book_id = crud_tester.item_id_by_position(client, position=1)
-    original = client.get(f'/books/{book_id}/').json()
+    original = client.get(f'/books/{book_id}').json()
 
     # Round 1: Update simple fields
     update_data = {'rating': 3, 'notes': 'Updated notes', 'location': 'Office', 'review': 'Great book'}
-    response = client.patch(f'/books/{book_id}/', json=update_data)
+    response = client.patch(f'/books/{book_id}', json=update_data)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
     assert book['rating'] == 3
@@ -122,7 +122,7 @@ def test_update_book(book_crud_tester):
     assert book['tags'] == original['tags'], 'Tags should not change when not sent'
 
     # Round 2: Update tags and set progress to abandoned
-    response = client.patch(f'/books/{book_id}/', json={'tags': ['NewTag1', 'NewTag2'], 'progress': 'abandoned'})
+    response = client.patch(f'/books/{book_id}', json={'tags': ['NewTag1', 'NewTag2'], 'progress': 'abandoned'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
     assert book['tags'] == ['NewTag1', 'NewTag2']
@@ -132,14 +132,14 @@ def test_update_book(book_crud_tester):
     assert book['review'] == 'Great book', 'Previous update should persist'
 
     # Round 3: Set progress back to unread
-    response = client.patch(f'/books/{book_id}/', json={'progress': 'unread'})
+    response = client.patch(f'/books/{book_id}', json={'progress': 'unread'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     book = response.json()
     assert book['progress'] == 'unread'
     assert book['tags'] == ['NewTag1', 'NewTag2'], 'Tags should not change when not sent'
 
     # Final verification: read fresh and check all accumulated changes
-    final = client.get(f'/books/{book_id}/').json()
+    final = client.get(f'/books/{book_id}').json()
     assert final['rating'] == 3
     assert final['notes'] == 'Updated notes'
     assert final['review'] == 'Great book'
@@ -153,7 +153,7 @@ def test_read_many_filtered_by_progress(book_crud_tester):
     """The progress filter is what answers 'what am I reading right now'."""
     client, crud_tester = book_crud_tester
     book_id = crud_tester.item_id_by_position(client, position=1)
-    client.patch(f'/books/{book_id}/', json={'progress': 'reading'})
+    client.patch(f'/books/{book_id}', json={'progress': 'reading'})
 
     response = client.get(ENDPOINT, params={'progress': 'reading'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -170,7 +170,7 @@ def test_read_many_filters_combine(book_crud_tester):
     """ownership and progress narrow together, not one overriding the other."""
     client, crud_tester = book_crud_tester
     book_id = crud_tester.item_id_by_position(client, position=1)
-    client.patch(f'/books/{book_id}/', json={'progress': 'reading', 'ownership': 'sold'})
+    client.patch(f'/books/{book_id}', json={'progress': 'reading', 'ownership': 'sold'})
 
     response = client.get(ENDPOINT, params={'progress': 'reading', 'ownership': 'owned'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -203,7 +203,7 @@ def test_goodreads_info(mock_get, book_crud_tester):
     mock_get.return_value = mock_response
 
     # Test the Goodreads endpoint
-    response = client.post('/books/goodreads/', json={'isbn': '9780743273565'})
+    response = client.post('/books/goodreads', json={'isbn': '9780743273565'})
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
 
     # Verify the response
@@ -221,7 +221,7 @@ def test_goodreads_info(mock_get, book_crud_tester):
 @patch('ichrisbirch.api.endpoints.books.get_page')
 def test_goodreads_without_an_isbn_never_searches(mock_get, book_crud_tester, payload):
     client, _ = book_crud_tester
-    response = client.post('/books/goodreads/', json=payload)
+    response = client.post('/books/goodreads', json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
     mock_get.assert_not_called()
 
@@ -276,11 +276,11 @@ class TestBookWithoutISBN:
         client, crud_tester = book_crud_tester
         book_id = crud_tester.item_id_by_position(client, position=1)
         # Verify the book currently has an ISBN
-        book = client.get(f'{ENDPOINT}{book_id}/')
+        book = client.get(f'{ENDPOINT}/{book_id}')
         assert book.json()['isbn'] is not None
 
         # Clear the ISBN
-        response = client.patch(f'{ENDPOINT}{book_id}/', json={'isbn': None})
+        response = client.patch(f'{ENDPOINT}/{book_id}', json={'isbn': None})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['isbn'] is None
 
@@ -316,19 +316,19 @@ class TestBooksNotFound:
     """Test 404 responses for non-existent books."""
 
     def test_read_one_not_found(self, book_crud_tester):
-        """GET /{id}/ returns 404 for non-existent book."""
+        """GET /{id} returns 404 for non-existent book."""
         client, _ = book_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, book_crud_tester):
-        """DELETE /{id}/ returns 404 for non-existent book."""
+        """DELETE /{id} returns 404 for non-existent book."""
         client, _ = book_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, book_crud_tester):
-        """PATCH /{id}/ returns 404 for non-existent book."""
+        """PATCH /{id} returns 404 for non-existent book."""
         client, _ = book_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'title': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'title': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

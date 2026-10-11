@@ -25,54 +25,54 @@ type CountdownCreateInput struct {
 	DueDate string  `json:"due_date"`
 }
 
-// CountdownUpdateInput is a partial update (PATCH /countdowns/{id}/).
+// CountdownUpdateInput is a partial update (PATCH /countdowns/{id}).
 type CountdownUpdateInput struct {
 	Name    *string `json:"name,omitempty"`
 	Notes   *string `json:"notes,omitempty"`
 	DueDate *string `json:"due_date,omitempty"`
 }
 
-// ListCountdowns returns countdowns ordered by due date (GET /countdowns/).
+// ListCountdowns returns countdowns ordered by due date (GET /countdowns).
 // A nil limit fetches all; a non-nil limit caps the count, so it takes the
 // soonest due rather than an arbitrary slice.
 func (c *Client) ListCountdowns(ctx context.Context, limit *int) ([]Countdown, error) {
 	params := url.Values{}
 	applyLimit(params, limit)
 	var countdowns []Countdown
-	if err := c.get(ctx, withQuery("/countdowns/", params), &countdowns); err != nil {
+	if err := c.get(ctx, withQuery("/countdowns", params), &countdowns); err != nil {
 		return nil, err
 	}
 	return countdowns, nil
 }
 
-// GetCountdown returns a single countdown (GET /countdowns/{id}/). Missing is 404.
+// GetCountdown returns a single countdown (GET /countdowns/{id}). Missing is 404.
 func (c *Client) GetCountdown(ctx context.Context, id int) (Countdown, error) {
 	var countdown Countdown
-	if err := c.get(ctx, fmt.Sprintf("/countdowns/%d/", id), &countdown); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/countdowns/%d", id), &countdown); err != nil {
 		return Countdown{}, err
 	}
 	return countdown, nil
 }
 
-// CreateCountdown creates a countdown (POST /countdowns/).
+// CreateCountdown creates a countdown (POST /countdowns).
 func (c *Client) CreateCountdown(ctx context.Context, in CountdownCreateInput) (Countdown, error) {
 	var countdown Countdown
-	if err := c.send(ctx, http.MethodPost, "/countdowns/", in, &countdown); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/countdowns", in, &countdown); err != nil {
 		return Countdown{}, err
 	}
 	return countdown, nil
 }
 
-// UpdateCountdown applies a partial update (PATCH /countdowns/{id}/).
+// UpdateCountdown applies a partial update (PATCH /countdowns/{id}).
 func (c *Client) UpdateCountdown(ctx context.Context, id int, in CountdownUpdateInput) (Countdown, error) {
 	var countdown Countdown
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/countdowns/%d/", id), in, &countdown); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/countdowns/%d", id), in, &countdown); err != nil {
 		return Countdown{}, err
 	}
 	return countdown, nil
 }
 
-// DeleteCountdown removes a countdown (DELETE /countdowns/{id}/ → 204).
+// DeleteCountdown removes a countdown (DELETE /countdowns/{id} → 204).
 func (c *Client) DeleteCountdown(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/countdowns/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/countdowns/%d", id), nil, nil)
 }

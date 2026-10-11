@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<User>('/users/me/')
+      const response = await api.get<User>('/users/me')
       user.value = response.data
       logger.info('user_fetched', { id: response.data.id, email: response.data.email })
     } catch (e) {
@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function updatePreferences(patch: Partial<UserPreferences>) {
     error.value = null
     try {
-      const response = await api.patch<User>('/users/me/preferences/', patch)
+      const response = await api.patch<User>('/users/me/preferences', patch)
       user.value = response.data
       logger.info('preferences_updated', { keys: Object.keys(patch) })
       return response.data
@@ -64,7 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function reorderTasks(): Promise<{ message: string }> {
     error.value = null
     try {
-      const response = await api.post<{ message: string }>('/tasks/reorder/')
+      const response = await api.post<{ message: string }>('/tasks/reorder')
       logger.info('tasks_reordered', { message: response.data.message })
       return response.data
     } catch (e) {

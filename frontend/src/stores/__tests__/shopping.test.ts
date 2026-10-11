@@ -180,8 +180,8 @@ describe('useShoppingStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/shopping/items/', { params: { status: 'all' } })
-    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases/', { params: { start_date: '2026-10-04' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/shopping/items', { params: { status: 'all' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases', { params: { start_date: '2026-10-04' } })
     expect(store.needed.map((row) => row.name)).toEqual(['eggs', 'bananas', 'yogurt', 'tape'])
     expect(store.recentPurchases).toHaveLength(1)
   })
@@ -229,7 +229,7 @@ describe('useShoppingStore', () => {
 
     await store.undoPurchase(purchase('milk'))
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/shopping/purchases/p-milk/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/shopping/purchases/p-milk')
     expect(store.recentPurchases).toEqual([])
     expect(store.needed.map((row) => row.name)).toContain('milk')
   })
@@ -241,7 +241,7 @@ describe('useShoppingStore', () => {
 
     await expect(store.moveItem('eggs', { section: 'Costco', after: 'bananas' })).rejects.toBeInstanceOf(ApiError)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/shopping/items/', { params: { status: 'all' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/shopping/items', { params: { status: 'all' } })
   })
 
   it('renaming a section renames it on its items', async () => {

@@ -45,14 +45,14 @@ type HabitCreateInput struct {
 	IsCurrent  *bool  `json:"is_current,omitempty"`
 }
 
-// HabitUpdateInput is a partial update (PATCH /habits/{id}/).
+// HabitUpdateInput is a partial update (PATCH /habits/{id}).
 type HabitUpdateInput struct {
 	Name       *string `json:"name,omitempty"`
 	CategoryID *int    `json:"category_id,omitempty"`
 	IsCurrent  *bool   `json:"is_current,omitempty"`
 }
 
-// HabitCompletedCreateInput records a completion (POST /habits/completed/).
+// HabitCompletedCreateInput records a completion (POST /habits/completed).
 // CompleteDate is the YYYY-MM-DD day it was done. HabitID is optional —
 // omitted, the completion is still recorded, just unlinkable to a live habit.
 type HabitCompletedCreateInput struct {
@@ -73,7 +73,7 @@ type HabitsDay struct {
 	CurrentTotal int              `json:"current_total"`
 }
 
-// GetHabitsDay returns one day's board (GET /habits/day/). An empty day asks for
+// GetHabitsDay returns one day's board (GET /habits/day). An empty day asks for
 // today in the zone given. The client names the zone and the server names the
 // day, so the two cannot disagree about where the day ends.
 //
@@ -87,7 +87,7 @@ func (c *Client) GetHabitsDay(ctx context.Context, day string, zone string) (Hab
 	if zone != "" {
 		params.Set("timezone", zone)
 	}
-	path := "/habits/day/"
+	path := "/habits/day"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded
 	}
@@ -98,62 +98,62 @@ func (c *Client) GetHabitsDay(ctx context.Context, day string, zone string) (Hab
 	return board, nil
 }
 
-// ListHabits returns habits (GET /habits/). current filters to current-only
+// ListHabits returns habits (GET /habits). current filters to current-only
 // (true) or non-current-only (false); nil returns all. limit caps the count.
 func (c *Client) ListHabits(ctx context.Context, current *bool, limit *int) ([]Habit, error) {
 	var habits []Habit
-	if err := c.get(ctx, "/habits/"+currentLimitQuery(current, limit), &habits); err != nil {
+	if err := c.get(ctx, "/habits"+currentLimitQuery(current, limit), &habits); err != nil {
 		return nil, err
 	}
 	return habits, nil
 }
 
-// GetHabit returns a single habit (GET /habits/{id}/). Missing is 404.
+// GetHabit returns a single habit (GET /habits/{id}). Missing is 404.
 func (c *Client) GetHabit(ctx context.Context, id int) (Habit, error) {
 	var habit Habit
-	if err := c.get(ctx, fmt.Sprintf("/habits/%d/", id), &habit); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/habits/%d", id), &habit); err != nil {
 		return Habit{}, err
 	}
 	return habit, nil
 }
 
-// CreateHabit creates a habit (POST /habits/).
+// CreateHabit creates a habit (POST /habits).
 func (c *Client) CreateHabit(ctx context.Context, in HabitCreateInput) (Habit, error) {
 	var habit Habit
-	if err := c.send(ctx, http.MethodPost, "/habits/", in, &habit); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/habits", in, &habit); err != nil {
 		return Habit{}, err
 	}
 	return habit, nil
 }
 
-// UpdateHabit applies a partial update (PATCH /habits/{id}/).
+// UpdateHabit applies a partial update (PATCH /habits/{id}).
 func (c *Client) UpdateHabit(ctx context.Context, id int, in HabitUpdateInput) (Habit, error) {
 	var habit Habit
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/habits/%d/", id), in, &habit); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/habits/%d", id), in, &habit); err != nil {
 		return Habit{}, err
 	}
 	return habit, nil
 }
 
-// DeleteHabit removes a habit (DELETE /habits/{id}/ → 204).
+// DeleteHabit removes a habit (DELETE /habits/{id} → 204).
 func (c *Client) DeleteHabit(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/habits/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/habits/%d", id), nil, nil)
 }
 
-// ListHabitCategories returns habit categories (GET /habits/categories/), with
+// ListHabitCategories returns habit categories (GET /habits/categories), with
 // the same current/limit filters as habits.
 func (c *Client) ListHabitCategories(ctx context.Context, current *bool, limit *int) ([]HabitCategory, error) {
 	var categories []HabitCategory
-	if err := c.get(ctx, "/habits/categories/"+currentLimitQuery(current, limit), &categories); err != nil {
+	if err := c.get(ctx, "/habits/categories"+currentLimitQuery(current, limit), &categories); err != nil {
 		return nil, err
 	}
 	return categories, nil
 }
 
-// CompleteHabit records a habit completion (POST /habits/completed/).
+// CompleteHabit records a habit completion (POST /habits/completed).
 func (c *Client) CompleteHabit(ctx context.Context, in HabitCompletedCreateInput) (HabitCompleted, error) {
 	var completed HabitCompleted
-	if err := c.send(ctx, http.MethodPost, "/habits/completed/", in, &completed); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/habits/completed", in, &completed); err != nil {
 		return HabitCompleted{}, err
 	}
 	return completed, nil
@@ -171,7 +171,7 @@ const (
 	LastCompletion
 )
 
-// ListCompletedHabits returns habit completions (GET /habits/completed/). start
+// ListCompletedHabits returns habit completions (GET /habits/completed). start
 // and end bound an inclusive range of days. FirstCompletion and LastCompletion
 // ignore the range and return one completion from the whole history.
 //
@@ -186,7 +186,7 @@ func (c *Client) ListCompletedHabits(ctx context.Context, start OnOrAfter, end O
 		params.Set("last", "true")
 	case AllCompletions:
 	}
-	path := "/habits/completed/"
+	path := "/habits/completed"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded
 	}

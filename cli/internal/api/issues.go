@@ -115,7 +115,7 @@ type IssueDetail struct {
 	Comments []IssueComment `json:"comments"`
 }
 
-// IssueCreateInput is the body for POST /issues/. Only Title is required. The
+// IssueCreateInput is the body for POST /issues. Only Title is required. The
 // references take a number or a UUID for an issue, and a name or a UUID for an
 // initiative; the API resolves either.
 type IssueCreateInput struct {
@@ -248,9 +248,9 @@ type IssueRankMove struct {
 // An empty zone leaves the server to read it in the user's preference.
 
 func issuePath(ref string, rest ...string) string {
-	path := "/issues/" + url.PathEscape(ref) + "/"
+	path := "/issues/" + url.PathEscape(ref)
 	for _, segment := range rest {
-		path += url.PathEscape(segment) + "/"
+		path += "/" + url.PathEscape(segment)
 	}
 	return path
 }
@@ -277,7 +277,7 @@ func (c *Client) ListIssues(ctx context.Context, filter IssueFilter, start OnOrA
 	setZone(query, zone)
 	applyLimit(query, limit)
 	var issues []Issue
-	if err := c.get(ctx, withQuery("/issues/", query), &issues); err != nil {
+	if err := c.get(ctx, withQuery("/issues", query), &issues); err != nil {
 		return nil, err
 	}
 	return issues, nil
@@ -290,7 +290,7 @@ func (c *Client) ListReadyIssues(ctx context.Context, filter ReadyFilter, zone D
 	setZone(query, zone)
 	applyLimit(query, limit)
 	var issues []Issue
-	if err := c.get(ctx, withQuery("/issues/ready/", query), &issues); err != nil {
+	if err := c.get(ctx, withQuery("/issues/ready", query), &issues); err != nil {
 		return nil, err
 	}
 	return issues, nil
@@ -300,7 +300,7 @@ func (c *Client) ListReadyIssues(ctx context.Context, filter ReadyFilter, zone D
 // agents asking at once never hold the same issue.
 func (c *Client) ClaimNextIssue(ctx context.Context, claim IssueClaimInput, filter ReadyFilter, zone DayZone) (IssueClaimResult, error) {
 	var result IssueClaimResult
-	path := withQuery("/issues/ready/claim/", zoneQuery(zone))
+	path := withQuery("/issues/ready/claim", zoneQuery(zone))
 	if err := c.send(ctx, http.MethodPost, path, readyClaimInput{claim, filter}, &result); err != nil {
 		return IssueClaimResult{}, err
 	}
@@ -319,7 +319,7 @@ func (c *Client) GetIssue(ctx context.Context, ref string, zone DayZone) (IssueD
 // CreateIssue files an issue and returns it.
 func (c *Client) CreateIssue(ctx context.Context, in IssueCreateInput, zone DayZone) (IssueDetail, error) {
 	var issue IssueDetail
-	if err := c.send(ctx, http.MethodPost, withQuery("/issues/", zoneQuery(zone)), in, &issue); err != nil {
+	if err := c.send(ctx, http.MethodPost, withQuery("/issues", zoneQuery(zone)), in, &issue); err != nil {
 		return IssueDetail{}, err
 	}
 	return issue, nil
@@ -436,7 +436,7 @@ type IssueVocabulary struct {
 // GetIssueVocabulary returns the values each closed issue field accepts.
 func (c *Client) GetIssueVocabulary(ctx context.Context) (IssueVocabulary, error) {
 	var vocabulary IssueVocabulary
-	if err := c.get(ctx, "/issues/vocabulary/", &vocabulary); err != nil {
+	if err := c.get(ctx, "/issues/vocabulary", &vocabulary); err != nil {
 		return IssueVocabulary{}, err
 	}
 	return vocabulary, nil
@@ -462,7 +462,7 @@ type Initiative struct {
 	Repos          []string   `json:"repos"`
 }
 
-// InitiativeCreateInput is the body for POST /issues/initiatives/. A nil
+// InitiativeCreateInput is the body for POST /issues/initiatives. A nil
 // Position puts the initiative last.
 type InitiativeCreateInput struct {
 	Name        string  `json:"name"`
@@ -482,7 +482,7 @@ type InitiativeUpdateInput struct {
 }
 
 func initiativePath(ref string) string {
-	return "/issues/initiatives/" + url.PathEscape(ref) + "/"
+	return "/issues/initiatives/" + url.PathEscape(ref)
 }
 
 // ListInitiatives returns initiatives in the order to work them. An empty
@@ -494,7 +494,7 @@ func (c *Client) ListInitiatives(ctx context.Context, initiativeStatus string, l
 	}
 	applyLimit(query, limit)
 	var initiatives []Initiative
-	if err := c.get(ctx, withQuery("/issues/initiatives/", query), &initiatives); err != nil {
+	if err := c.get(ctx, withQuery("/issues/initiatives", query), &initiatives); err != nil {
 		return nil, err
 	}
 	return initiatives, nil
@@ -512,7 +512,7 @@ func (c *Client) GetInitiative(ctx context.Context, ref string) (Initiative, err
 // CreateInitiative starts an initiative.
 func (c *Client) CreateInitiative(ctx context.Context, in InitiativeCreateInput) (Initiative, error) {
 	var initiative Initiative
-	if err := c.send(ctx, http.MethodPost, "/issues/initiatives/", in, &initiative); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/issues/initiatives", in, &initiative); err != nil {
 		return Initiative{}, err
 	}
 	return initiative, nil
@@ -545,7 +545,7 @@ type IssueLabel struct {
 	OpenIssueCount int     `json:"open_issue_count"`
 }
 
-// IssueLabelCreateInput is the body for POST /issues/labels/.
+// IssueLabelCreateInput is the body for POST /issues/labels.
 type IssueLabelCreateInput struct {
 	Slug        string  `json:"slug"`
 	GroupSlug   *string `json:"group_slug,omitempty"`
@@ -560,13 +560,13 @@ type IssueLabelUpdateInput struct {
 }
 
 func labelPath(slug string) string {
-	return "/issues/labels/" + url.PathEscape(slug) + "/"
+	return "/issues/labels/" + url.PathEscape(slug)
 }
 
 // ListIssueLabels returns the whole label vocabulary, grouped.
 func (c *Client) ListIssueLabels(ctx context.Context) ([]IssueLabel, error) {
 	var labels []IssueLabel
-	if err := c.get(ctx, "/issues/labels/", &labels); err != nil {
+	if err := c.get(ctx, "/issues/labels", &labels); err != nil {
 		return nil, err
 	}
 	return labels, nil
@@ -584,7 +584,7 @@ func (c *Client) GetIssueLabel(ctx context.Context, slug string) (IssueLabel, er
 // CreateIssueLabel adds a label to the vocabulary.
 func (c *Client) CreateIssueLabel(ctx context.Context, in IssueLabelCreateInput) (IssueLabel, error) {
 	var label IssueLabel
-	if err := c.send(ctx, http.MethodPost, "/issues/labels/", in, &label); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/issues/labels", in, &label); err != nil {
 		return IssueLabel{}, err
 	}
 	return label, nil

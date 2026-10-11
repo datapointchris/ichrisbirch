@@ -49,7 +49,7 @@ export const ISSUE_STATUS_LABELS: Record<IssueStatus, string> = {
   canceled: 'Canceled',
 }
 
-/** The filters a page sets, each naming the `GET /issues/` parameter it becomes. */
+/** The filters a page sets, each naming the `GET /issues` parameter it becomes. */
 export type IssueFilterKey = 'status' | 'repo' | 'type' | 'label' | 'initiative' | 'priority'
 
 /** A repo filter of this value asks for the issues that name no repo. */
@@ -148,7 +148,7 @@ export const useIssuesStore = defineStore('issues', () => {
     return active
   })
 
-  /** The filters currently set, in the shape `GET /issues/` takes. */
+  /** The filters currently set, in the shape `GET /issues` takes. */
   function filters(): IssueFilters {
     const selected: IssueFilters = {}
     if (statusFilter.value !== 'unclosed') selected.status = statusFilter.value
@@ -174,7 +174,7 @@ export const useIssuesStore = defineStore('issues', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Issue[]>('/issues/', { params: filters() })
+      const response = await api.get<Issue[]>('/issues', { params: filters() })
       items.value = response.data
       if (repoFilter.value === 'all') {
         knownRepos.value = [...new Set(response.data.flatMap((issue) => (issue.repo ? [issue.repo] : [])))].sort()
@@ -192,7 +192,7 @@ export const useIssuesStore = defineStore('issues', () => {
 
   async function fetchVocabulary() {
     try {
-      const response = await api.get<IssueVocabulary>('/issues/vocabulary/')
+      const response = await api.get<IssueVocabulary>('/issues/vocabulary')
       vocabulary.value = response.data
       logger.info('issue_vocabulary_fetched', { labels: response.data.labels.length })
       return response.data
@@ -205,7 +205,7 @@ export const useIssuesStore = defineStore('issues', () => {
   }
 
   async function fetchDetail(number: number) {
-    const response = await api.get<IssueDetail>(`/issues/${number}/`)
+    const response = await api.get<IssueDetail>(`/issues/${number}`)
     detail.value = response.data
     return response.data
   }
@@ -298,14 +298,14 @@ export const useIssuesStore = defineStore('issues', () => {
   }
 
   function create(input: IssueCreate) {
-    return write('create', { title: input.title }, async () => (await api.post<IssueDetail>('/issues/', input)).data)
+    return write('create', { title: input.title }, async () => (await api.post<IssueDetail>('/issues', input)).data)
   }
 
   function update(issue: Issue, input: IssueUpdate) {
     return write(
       'update',
       { number: issue.number, fields: Object.keys(input) },
-      async () => (await api.patch<IssueDetail>(`/issues/${issue.number}/`, input)).data
+      async () => (await api.patch<IssueDetail>(`/issues/${issue.number}`, input)).data
     )
   }
 
@@ -315,14 +315,14 @@ export const useIssuesStore = defineStore('issues', () => {
   }
 
   function release(issue: Issue) {
-    return write('release', { number: issue.number }, async () => (await api.delete<Issue>(`/issues/${issue.number}/claim/`)).data)
+    return write('release', { number: issue.number }, async () => (await api.delete<Issue>(`/issues/${issue.number}/claim`)).data)
   }
 
   function move(issue: Issue, placement: IssueRankMove) {
     return write(
       'rank',
       { number: issue.number, ...placement },
-      async () => (await api.post<Issue>(`/issues/${issue.number}/rank/`, placement)).data
+      async () => (await api.post<Issue>(`/issues/${issue.number}/rank`, placement)).data
     )
   }
 
@@ -330,13 +330,13 @@ export const useIssuesStore = defineStore('issues', () => {
     return write(
       'add_dependency',
       { number: issue.number, depends_on: dependsOn },
-      async () => (await api.post<IssueDetail>(`/issues/${issue.number}/dependencies/`, { depends_on: dependsOn })).data
+      async () => (await api.post<IssueDetail>(`/issues/${issue.number}/dependencies`, { depends_on: dependsOn })).data
     )
   }
 
   function removeDependency(issue: Issue, dependsOn: IssueSummary) {
     return write('remove_dependency', { number: issue.number, depends_on: dependsOn.number }, async () => {
-      await api.delete(`/issues/${issue.number}/dependencies/${dependsOn.number}/`)
+      await api.delete(`/issues/${issue.number}/dependencies/${dependsOn.number}`)
     })
   }
 
@@ -344,13 +344,13 @@ export const useIssuesStore = defineStore('issues', () => {
     return write(
       'add_comment',
       { number: issue.number },
-      async () => (await api.post<IssueComment>(`/issues/${issue.number}/comments/`, { body, author })).data
+      async () => (await api.post<IssueComment>(`/issues/${issue.number}/comments`, { body, author })).data
     )
   }
 
   function removeComment(issue: Issue, comment: IssueComment) {
     return write('remove_comment', { number: issue.number, comment: comment.id }, async () => {
-      await api.delete(`/issues/${issue.number}/comments/${comment.id}/`)
+      await api.delete(`/issues/${issue.number}/comments/${comment.id}`)
     })
   }
 
@@ -360,7 +360,7 @@ export const useIssuesStore = defineStore('issues', () => {
       detail.value = null
     }
     return write('delete', { number: issue.number }, async () => {
-      await api.delete(`/issues/${issue.number}/`)
+      await api.delete(`/issues/${issue.number}`)
     })
   }
 

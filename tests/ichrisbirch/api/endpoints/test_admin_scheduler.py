@@ -12,8 +12,8 @@ from fastapi import status
 
 from tests.util import show_status_and_response
 
-SCHEDULER_ENDPOINT = '/admin/scheduler/jobs/'
-HISTORY_ENDPOINT = '/admin/scheduler/history/'
+SCHEDULER_ENDPOINT = '/admin/scheduler/jobs'
+HISTORY_ENDPOINT = '/admin/scheduler/history'
 
 
 def make_mock_job(job_id='test_job', name='test_job', next_run_time=None, trigger_str='cron[day="*", hour="1"]'):
@@ -83,7 +83,7 @@ class TestSchedulerJobPause:
         mock_jobstore.lookup_job.return_value = mock_job
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}daily_task/pause/')
+        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}/daily_task/pause')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['is_paused'] is True
@@ -96,7 +96,7 @@ class TestSchedulerJobPause:
         mock_jobstore.lookup_job.return_value = None
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}nonexistent/pause/')
+        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}/nonexistent/pause')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -110,7 +110,7 @@ class TestSchedulerJobResume:
         mock_jobstore.lookup_job.return_value = mock_job
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}paused_task/resume/')
+        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}/paused_task/resume')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['is_paused'] is False
@@ -122,7 +122,7 @@ class TestSchedulerJobResume:
         mock_jobstore.lookup_job.return_value = None
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}nonexistent/resume/')
+        response = test_api_logged_in_admin.post(f'{SCHEDULER_ENDPOINT}/nonexistent/resume')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -136,7 +136,7 @@ class TestSchedulerJobDelete:
         mock_jobstore.lookup_job.return_value = mock_job
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.delete(f'{SCHEDULER_ENDPOINT}temp_job/')
+        response = test_api_logged_in_admin.delete(f'{SCHEDULER_ENDPOINT}/temp_job')
         assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
         mock_jobstore.remove_job.assert_called_once_with('temp_job')
 
@@ -146,7 +146,7 @@ class TestSchedulerJobDelete:
         mock_jobstore.lookup_job.return_value = None
         mock_get_jobstore.return_value = mock_jobstore
 
-        response = test_api_logged_in_admin.delete(f'{SCHEDULER_ENDPOINT}nonexistent/')
+        response = test_api_logged_in_admin.delete(f'{SCHEDULER_ENDPOINT}/nonexistent')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 

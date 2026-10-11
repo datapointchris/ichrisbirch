@@ -7,8 +7,8 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-SHOPS_ENDPOINT = '/coffee/shops/'
-BEANS_ENDPOINT = '/coffee/beans/'
+SHOPS_ENDPOINT = '/coffee/shops'
+BEANS_ENDPOINT = '/coffee/beans'
 NEW_OBJ = schemas.CoffeeBeanCreate(
     name='Guatemala Antigua',
     roaster='Counter Culture',
@@ -91,9 +91,9 @@ def test_create_bean_without_any_source(bean_crud_tester):
 def test_update_bean_fields(bean_crud_tester):
     client, crud_tester = bean_crud_tester
     bean_id = crud_tester.item_id_by_position(client, position=1)
-    original = client.get(f'{BEANS_ENDPOINT}{bean_id}/').json()
+    original = client.get(f'{BEANS_ENDPOINT}/{bean_id}').json()
 
-    response = client.patch(f'{BEANS_ENDPOINT}{bean_id}/', json={'rating': 4.9, 'review': 'Exceptional.'})
+    response = client.patch(f'{BEANS_ENDPOINT}/{bean_id}', json={'rating': 4.9, 'review': 'Exceptional.'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert data['rating'] == 4.9
@@ -119,7 +119,7 @@ def test_update_bean_nulls_coffee_shop_id(bean_crud_tester):
 
     # Detach from shop, add purchase_source
     response = client.patch(
-        f'{BEANS_ENDPOINT}{bean_id}/',
+        f'{BEANS_ENDPOINT}/{bean_id}',
         json={'coffee_shop_id': None, 'purchase_source': 'Online store'},
     )
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -154,15 +154,15 @@ def test_filter_beans_no_results(bean_crud_tester):
 class TestCoffeeBeansNotFound:
     def test_read_one_not_found(self, bean_crud_tester):
         client, _ = bean_crud_tester
-        response = client.get(f'{BEANS_ENDPOINT}99999/')
+        response = client.get(f'{BEANS_ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, bean_crud_tester):
         client, _ = bean_crud_tester
-        response = client.patch(f'{BEANS_ENDPOINT}99999/', json={'name': 'Ghost Bean'})
+        response = client.patch(f'{BEANS_ENDPOINT}/99999', json={'name': 'Ghost Bean'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, bean_crud_tester):
         client, _ = bean_crud_tester
-        response = client.delete(f'{BEANS_ENDPOINT}99999/')
+        response = client.delete(f'{BEANS_ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

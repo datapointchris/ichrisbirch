@@ -7,7 +7,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/strains/'
+ENDPOINT = '/strains'
 NEW_OBJ = schemas.StrainCreate(
     name='Wedding Cake',
     breeder='Seed Junky Genetics',
@@ -153,9 +153,9 @@ class TestUpdate:
     def test_a_patch_leaves_untouched_fields_alone(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        original = client.get(f'{ENDPOINT}{strain_id}/').json()
+        original = client.get(f'{ENDPOINT}/{strain_id}').json()
 
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'rating': 10, 'review': 'Revised upward.'})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'rating': 10, 'review': 'Revised upward.'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['rating'] == 10
@@ -168,9 +168,9 @@ class TestUpdate:
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
 
-        client.patch(f'{ENDPOINT}{strain_id}/', json={'rating': 9})
-        client.patch(f'{ENDPOINT}{strain_id}/', json={'source': 'Trailhead Provisions'})
-        final = client.patch(f'{ENDPOINT}{strain_id}/', json={'status': 'want_to_try'})
+        client.patch(f'{ENDPOINT}/{strain_id}', json={'rating': 9})
+        client.patch(f'{ENDPOINT}/{strain_id}', json={'source': 'Trailhead Provisions'})
+        final = client.patch(f'{ENDPOINT}/{strain_id}', json={'status': 'want_to_try'})
 
         assert final.status_code == status.HTTP_200_OK, show_status_and_response(final)
         data = final.json()
@@ -181,14 +181,14 @@ class TestUpdate:
     def test_an_array_can_be_replaced(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'effects': ['focused']})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'effects': ['focused']})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['effects'] == ['focused']
 
     def test_an_array_can_be_emptied(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'effects': []})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'effects': []})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['effects'] == []
 
@@ -206,17 +206,17 @@ class TestARequiredColumnCannotBeBlanked:
     def test_blanking_it_is_a_422_not_a_500(self, strain_crud_tester, field, value):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={field: value})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={field: value})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
     def test_the_row_is_untouched_afterwards(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        before = client.get(f'{ENDPOINT}{strain_id}/').json()
+        before = client.get(f'{ENDPOINT}/{strain_id}').json()
 
-        client.patch(f'{ENDPOINT}{strain_id}/', json={'name': None})
+        client.patch(f'{ENDPOINT}/{strain_id}', json={'name': None})
 
-        after = client.get(f'{ENDPOINT}{strain_id}/').json()
+        after = client.get(f'{ENDPOINT}/{strain_id}').json()
         assert after['name'] == before['name']
         assert after['status'] == before['status']
 
@@ -224,9 +224,9 @@ class TestARequiredColumnCannotBeBlanked:
         """Omission is how a field is left unchanged, and it stays that way."""
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        before = client.get(f'{ENDPOINT}{strain_id}/').json()
+        before = client.get(f'{ENDPOINT}/{strain_id}').json()
 
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'notes': 'only this'})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'notes': 'only this'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['name'] == before['name']
 
@@ -235,7 +235,7 @@ class TestARequiredColumnCannotBeBlanked:
         """The refusal reaches the two NOT NULL columns and no others."""
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={field: ''})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={field: ''})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()[field] is None
 
@@ -257,12 +257,12 @@ class TestAFilterTypoIsRefusedRatherThanAnsweredEmpty:
         client, _ = strain_crud_tester
         response = client.get(ENDPOINT, params={param: value})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert value in response.json()['detail']
+        assert value in response.json()['message']
 
     def test_the_rejection_names_what_would_have_worked(self, strain_crud_tester):
         client, _ = strain_crud_tester
         response = client.get(ENDPOINT, params={'effect': 'sleepyy'})
-        assert 'sleepy' in response.json()['detail']
+        assert 'sleepy' in response.json()['message']
 
     def test_a_known_value_with_no_rows_is_still_an_empty_list(self, strain_crud_tester):
         """The refusal separates a typo from a real negative; it does not replace it."""
@@ -288,7 +288,7 @@ class TestTheNaturalKeyRefusesADuplicate:
 
         second = client.post(ENDPOINT, json={'name': 'Gelato', 'breeder': 'Cookie Fam'})
         assert second.status_code == status.HTTP_409_CONFLICT, show_status_and_response(second)
-        assert str(first.json()['id']) in second.json()['detail'], 'The refusal names the row holding the key'
+        assert str(first.json()['id']) in second.json()['message'], 'The refusal names the row holding the key'
 
     def test_the_same_name_with_no_breeder_twice_is_a_409(self, strain_crud_tester):
         """NULLS NOT DISTINCT — the unknown breeder is the common case.
@@ -314,14 +314,14 @@ class TestTheNaturalKeyRefusesADuplicate:
     def test_a_rename_onto_another_rows_key_is_a_409(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=2)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'name': 'Blue Dream', 'breeder': 'Humboldt Seed Company'})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'name': 'Blue Dream', 'breeder': 'Humboldt Seed Company'})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
     def test_a_patch_that_keeps_its_own_key_is_not_a_conflict_with_itself(self, strain_crud_tester):
         """The row holding the key is excluded, or every rename would refuse."""
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'name': 'Blue Dream', 'notes': 'unchanged key'})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'name': 'Blue Dream', 'notes': 'unchanged key'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
@@ -332,12 +332,12 @@ class TestVocabularyIsEnforcedOnWrite:
         client, _ = strain_crud_tester
         response = client.post(ENDPOINT, json={'name': 'Typo Kush', 'effects': ['sedative']})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'sedative' in response.json()['detail']
+        assert 'sedative' in response.json()['message']
 
     def test_the_rejection_names_what_would_have_worked(self, strain_crud_tester):
         client, _ = strain_crud_tester
         response = client.post(ENDPOINT, json={'name': 'Typo Kush', 'effects': ['sedative']})
-        assert 'sleepy' in response.json()['detail'], 'A rejection that does not say the valid values is a dead end'
+        assert 'sleepy' in response.json()['message'], 'A rejection that does not say the valid values is a dead end'
 
     def test_an_unknown_flavor_is_rejected(self, strain_crud_tester):
         client, _ = strain_crud_tester
@@ -362,21 +362,21 @@ class TestVocabularyIsEnforcedOnWrite:
     def test_an_update_is_checked_too(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{strain_id}/', json={'effects': ['sedative']})
+        response = client.patch(f'{ENDPOINT}/{strain_id}', json={'effects': ['sedative']})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
     def test_a_rejected_update_changes_nothing(self, strain_crud_tester):
         client, crud_tester = strain_crud_tester
         strain_id = crud_tester.item_id_by_position(client, position=1)
-        before = client.get(f'{ENDPOINT}{strain_id}/').json()
+        before = client.get(f'{ENDPOINT}/{strain_id}').json()
 
-        rejected = client.patch(f'{ENDPOINT}{strain_id}/', json={'notes': 'changed', 'effects': ['sedative']})
+        rejected = client.patch(f'{ENDPOINT}/{strain_id}', json={'notes': 'changed', 'effects': ['sedative']})
         # Asserted, because a 500 raised inside the check would also leave notes
         # alone and satisfy the assertion below on its own.
         assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(rejected)
-        assert 'sedative' in rejected.json()['detail']
+        assert 'sedative' in rejected.json()['message']
 
-        after = client.get(f'{ENDPOINT}{strain_id}/').json()
+        after = client.get(f'{ENDPOINT}/{strain_id}').json()
         assert after['notes'] == before['notes'], 'The valid half of a rejected patch must not land'
 
     @pytest.mark.parametrize('rating', [0, 11, -1])
@@ -390,7 +390,7 @@ class TestVocabularyEndpoint:
     def test_it_carries_every_defined_value(self, strain_crud_tester):
         """Counted outward from the lookup tables, so an unused value is still listed."""
         client, _ = strain_crud_tester
-        response = client.get(f'{ENDPOINT}vocabulary/')
+        response = client.get(f'{ENDPOINT}/vocabulary')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         vocabulary = response.json()
 
@@ -402,15 +402,15 @@ class TestVocabularyEndpoint:
     def test_each_list_is_keyed_by_the_field_it_constrains(self, strain_crud_tester):
         """A client matching a 422 detail to its vocabulary should not learn a rename."""
         client, _ = strain_crud_tester
-        vocabulary = client.get(f'{ENDPOINT}vocabulary/').json()
+        vocabulary = client.get(f'{ENDPOINT}/vocabulary').json()
         assert set(vocabulary) == {'strain_type', 'status', 'effects', 'flavors', 'terpenes'}
 
         rejection = client.post(ENDPOINT, json={'name': 'Typo Kush', 'strain_type': 'indicaa'})
-        assert rejection.json()['detail'].startswith('strain_type:')
+        assert rejection.json()['message'].startswith('strain_type:')
 
     def test_an_unused_value_counts_zero_rather_than_going_missing(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        vocabulary = client.get(f'{ENDPOINT}vocabulary/').json()
+        vocabulary = client.get(f'{ENDPOINT}/vocabulary').json()
         counts = {entry['name']: entry['count'] for entry in vocabulary['effects']}
         assert counts['giggly'] == 0
         assert counts['relaxed'] == 2, 'Blue Dream and Granddaddy Purple'
@@ -418,7 +418,7 @@ class TestVocabularyEndpoint:
 
     def test_scalar_counts_come_from_the_strains(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        vocabulary = client.get(f'{ENDPOINT}vocabulary/').json()
+        vocabulary = client.get(f'{ENDPOINT}/vocabulary').json()
         statuses = {entry['name']: entry['count'] for entry in vocabulary['status']}
         assert statuses == {'tried': 2, 'want_to_try': 1}
 
@@ -434,13 +434,13 @@ class TestVocabularyEndpoint:
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['effects'] == ['giggly'], 'A repeat is dropped on write'
 
-        vocabulary = client.get(f'{ENDPOINT}vocabulary/').json()
+        vocabulary = client.get(f'{ENDPOINT}/vocabulary').json()
         counts = {entry['name']: entry['count'] for entry in vocabulary['effects']}
         assert counts['giggly'] == 1
 
     def test_every_list_is_sorted_by_name(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        vocabulary = client.get(f'{ENDPOINT}vocabulary/').json()
+        vocabulary = client.get(f'{ENDPOINT}/vocabulary').json()
         for key in ('strain_type', 'status', 'effects', 'flavors', 'terpenes'):
             names = [entry['name'] for entry in vocabulary[key]]
             assert names == sorted(names), f'{key} came back unsorted'
@@ -487,15 +487,15 @@ class TestSearch:
 class TestStrainsNotFound:
     def test_read_one_not_found(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Ghost Kush'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Ghost Kush'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, strain_crud_tester):
         client, _ = strain_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

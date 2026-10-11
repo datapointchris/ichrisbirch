@@ -79,7 +79,7 @@ describe('useHabitsStore', () => {
 
     const result = await store.createHabit({ name: 'Yoga', category_id: 1 })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/habits/', { name: 'Yoga', category_id: 1 })
+    expect(mockApi.post).toHaveBeenCalledWith('/habits', { name: 'Yoga', category_id: 1 })
     expect(result).toEqual(created)
     expect(store.habits).toHaveLength(1)
   })
@@ -103,7 +103,7 @@ describe('useHabitsStore', () => {
 
     await store.updateHabit(1, { name: 'Deep Meditate' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/1/', { name: 'Deep Meditate' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/1', { name: 'Deep Meditate' })
     expect(store.habits.find((h) => h.id === 1)!.name).toBe('Deep Meditate')
   })
 
@@ -116,7 +116,7 @@ describe('useHabitsStore', () => {
 
     await store.deleteHabit(1)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/habits/1/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/habits/1')
     expect(store.habits.find((h) => h.id === 1)).toBeUndefined()
   })
 
@@ -140,7 +140,7 @@ describe('useHabitsStore', () => {
 
     await store.hibernateHabit(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/1/', { is_current: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/1', { is_current: false })
   })
 
   it('revives a habit by patching is_current to true', async () => {
@@ -151,7 +151,7 @@ describe('useHabitsStore', () => {
 
     await store.reviveHabit(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/3/', { is_current: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/3', { is_current: true })
   })
 
   // --- createCategory ---
@@ -163,7 +163,7 @@ describe('useHabitsStore', () => {
 
     const result = await store.createCategory({ name: 'Productivity' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/habits/categories/', { name: 'Productivity' })
+    expect(mockApi.post).toHaveBeenCalledWith('/habits/categories', { name: 'Productivity' })
     expect(result).toEqual(created)
     expect(store.categories).toHaveLength(1)
   })
@@ -178,7 +178,7 @@ describe('useHabitsStore', () => {
 
     await store.updateCategory(1, { name: 'Wellness' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/1/', { name: 'Wellness' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/1', { name: 'Wellness' })
     expect(store.categories.find((c) => c.id === 1)!.name).toBe('Wellness')
   })
 
@@ -191,7 +191,7 @@ describe('useHabitsStore', () => {
 
     await store.deleteCategory(1)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/habits/categories/1/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/habits/categories/1')
     expect(store.categories.find((c) => c.id === 1)).toBeUndefined()
   })
 
@@ -216,7 +216,7 @@ describe('useHabitsStore', () => {
 
     await store.hibernateCategory(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/1/', { is_current: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/1', { is_current: false })
   })
 
   it('revives a category', async () => {
@@ -227,7 +227,7 @@ describe('useHabitsStore', () => {
 
     await store.reviveCategory(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/3/', { is_current: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/habits/categories/3', { is_current: true })
   })
 
   // --- completeHabit ---
@@ -251,7 +251,7 @@ describe('useHabitsStore', () => {
     const result = await store.completeHabit(testHabits[0]!)
 
     expect(mockApi.post).toHaveBeenCalledWith(
-      '/habits/completed/',
+      '/habits/completed',
       expect.objectContaining({
         name: 'Meditate',
         category_id: 1,
@@ -288,7 +288,7 @@ describe('useHabitsStore', () => {
 
     await store.completeHabit(testHabits[0]!)
 
-    expect(mockApi.post).toHaveBeenCalledWith('/habits/completed/', expect.objectContaining({ habit_id: 1 }))
+    expect(mockApi.post).toHaveBeenCalledWith('/habits/completed', expect.objectContaining({ habit_id: 1 }))
   })
 
   // `complete_date` is a day column. Sent as an instant, a late-evening completion
@@ -355,7 +355,7 @@ describe('useHabitsStore', () => {
 
     expect(store.selectedDate).toBe('2026-03-13')
     expect(store.isToday).toBe(false)
-    const dayCall = mockApi.get.mock.calls.find((c) => c[0] === '/habits/day/')!
+    const dayCall = mockApi.get.mock.calls.find((c) => c[0] === '/habits/day')!
     expect((dayCall[1] as { params: { date: string } }).params.date).toBe('2026-03-13')
     vi.useRealTimers()
   })
@@ -541,7 +541,7 @@ describe('useHabitsStore', () => {
 
     await store.deleteCompleted(10)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/habits/completed/10/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/habits/completed/10')
     expect(store.completedHabits.find((c) => c.id === 10)).toBeUndefined()
     expect(mockApi.get).not.toHaveBeenCalled()
   })
@@ -702,7 +702,7 @@ describe('useHabitsStore', () => {
     await store.fetchDailyData()
 
     expect(mockApi.get).toHaveBeenCalledTimes(1)
-    expect(mockApi.get.mock.calls[0]![0]).toBe('/habits/day/')
+    expect(mockApi.get.mock.calls[0]![0]).toBe('/habits/day')
     expect(store.dayDue).toHaveLength(2)
     expect(store.dayCompleted).toHaveLength(1)
     expect(store.loading).toBe(false)

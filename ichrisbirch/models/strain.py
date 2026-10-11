@@ -7,7 +7,7 @@ while `api/endpoints/strains.py` enforces it on both reads and writes.
 
 **Four of the five vocabularies are open sets served to the clients**, so adding
 a value is an insert here plus a line in `LOOKUP_DATA`, with no client release.
-The Vue store and the `icb` CLI both read `GET /strains/vocabulary/`.
+The Vue store and the `icb` CLI both read `GET /strains/vocabulary`.
 
 **`status` is the exception and is a closed lifecycle.** Its two values are
 compiled into both clients, because each one needs a counter, a filter, a row

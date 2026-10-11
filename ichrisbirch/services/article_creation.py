@@ -1,6 +1,6 @@
 """Save an article from its URL: read the page, summarize and tag it, persist it.
 
-Used by `POST /articles/create-from-url/` and the bulk import worker, which the
+Used by `POST /articles/create-from-url` and the bulk import worker, which the
 endpoint module also enqueues into. Both import this module, so neither has to
 import the other.
 """

@@ -154,19 +154,19 @@ func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 	}
 }
 
-func TestService_ARouteOutsideTheScopeReportsTheAPIsDetail(t *testing.T) {
-	detail := "Access denied: Route is outside this client's scopes; they reach only GET /project-items/"
+func TestService_ARouteOutsideTheScopeReportsTheAPIsMessage(t *testing.T) {
+	message := "Access denied: Route is outside this client's scopes; they reach only GET /api/v1/project-items"
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
-		_ = json.NewEncoder(w).Encode(map[string]string{"detail": detail})
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Forbidden", "message": message})
 	}))
 	t.Cleanup(api.Close)
 	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
 
 	_, err := runService(t, "projects", "items", "search", "sync")
-	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), detail) || strings.Contains(err.Error(), "auth login") {
-		t.Errorf("got %v, want the client and the API's detail whole, and no login suggested", err)
+	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), message) || strings.Contains(err.Error(), "auth login") {
+		t.Errorf("got %v, want the client and the API's message whole, and no login suggested", err)
 	}
 }
 
@@ -185,8 +185,8 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	}
 
 	// A {name} in these templates is a UUID, or for an issue its number. Matched
-	// as any segment, /project-items/{id}/ would also take /project-items/search/
-	// and /issues/{id}/ would take /issues/vocabulary/, both of which FastAPI
+	// as any segment, /project-items/{id} would also take /project-items/search
+	// and /issues/{id} would take /issues/vocabulary, both of which FastAPI
 	// routes to another handler.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)

@@ -2,7 +2,7 @@
 
 Two stored booleans, `completed` and `archived`, present as three mutually
 exclusive states plus `all`. Both list endpoints read through here — the flat
-`/project-items/` and the project-scoped `/projects/{id}/items/` — because a
+`/project-items` and the project-scoped `/projects/{id}/items` — because a
 scope selects which rows it returns and not which states, so the two paths
 answer `status` identically. See `cli-design.md` § "A scope selects which rows,
 not which states".

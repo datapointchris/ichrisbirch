@@ -33,10 +33,14 @@ func newTasksCommand() *cobra.Command {
 		"Search tasks by name or notes: icb tasks search <query>",
 		"Completed and dropped tasks are hidden: icb tasks list --status all",
 	)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddGroup(&cobra.Group{ID: groupTaskCategories, Title: "Category commands:"})
+	cmd.AddCommand(inGroup(groupReading,
 		newTasksListCommand(),
 		newTasksSearchCommand(),
 		newTasksShowCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newTasksCreateCommand(),
 		newTasksEditCommand(),
 		newTasksCompleteCommand(),
@@ -46,8 +50,8 @@ func newTasksCommand() *cobra.Command {
 		newTasksDropCommand(),
 		newTasksReopenCommand(),
 		newTasksDeleteCommand(),
-		newTaskCategoriesCommand(),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupTaskCategories, newTaskCategoriesCommand())...)
 	return cmd
 }
 
@@ -483,7 +487,9 @@ func newTaskCategoriesCommand() *cobra.Command {
 		Use:   "categories",
 		Short: "List and tune the categories --category accepts, with each one's window",
 	})
-	cmd.AddCommand(newTaskCategoriesListCommand(), newTaskCategoriesEditCommand())
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading, newTaskCategoriesListCommand())...)
+	cmd.AddCommand(inGroup(groupChanging, newTaskCategoriesEditCommand())...)
 	return cmd
 }
 

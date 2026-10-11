@@ -23,13 +23,16 @@ func newIssueLabelsCommand() *cobra.Command {
 			"one issue.",
 	})
 	withNotFoundHints(cmd, labelHints...)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newLabelsListCommand(),
 		newLabelsShowCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newLabelsCreateCommand(),
 		newLabelsEditCommand(),
 		newLabelsDeleteCommand(),
-	)
+	)...)
 	return cmd
 }
 

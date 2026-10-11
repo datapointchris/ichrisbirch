@@ -36,7 +36,7 @@ export const useEventsStore = defineStore('events', () => {
     try {
       // The page shows past events dimmed below the upcoming ones, so it asks for
       // every event rather than the endpoint's default of today onward.
-      const response = await api.get<Event[]>('/events/', { params: { when: 'all' } })
+      const response = await api.get<Event[]>('/events', { params: { when: 'all' } })
       events.value = response.data
       logger.info('events_fetched', { count: response.data.length })
     } catch (e) {
@@ -52,7 +52,7 @@ export const useEventsStore = defineStore('events', () => {
   async function create(input: EventCreate) {
     error.value = null
     try {
-      const response = await api.post<Event>('/events/', input)
+      const response = await api.post<Event>('/events', input)
       events.value.push(response.data)
       logger.info('event_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -67,7 +67,7 @@ export const useEventsStore = defineStore('events', () => {
   async function update(id: number, input: EventUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Event>(`/events/${id}/`, input)
+      const response = await api.patch<Event>(`/events/${id}`, input)
       const index = events.value.findIndex((e) => e.id === id)
       if (index !== -1) {
         events.value[index] = response.data
@@ -85,7 +85,7 @@ export const useEventsStore = defineStore('events', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/events/${id}/`)
+      await api.delete(`/events/${id}`)
       events.value = events.value.filter((e) => e.id !== id)
       logger.info('event_deleted', { id })
     } catch (e) {
@@ -101,7 +101,7 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const event = events.value.find((e) => e.id === id)
       if (!event) return
-      const response = await api.patch<Event>(`/events/${id}/`, { attending: !event.attending })
+      const response = await api.patch<Event>(`/events/${id}`, { attending: !event.attending })
       const index = events.value.findIndex((e) => e.id === id)
       if (index !== -1) {
         events.value[index] = response.data

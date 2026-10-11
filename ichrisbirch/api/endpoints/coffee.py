@@ -16,7 +16,7 @@ logger = structlog.get_logger()
 shops_router = APIRouter()
 
 
-@shops_router.get('/', response_model=list[schemas.CoffeeShop], status_code=status.HTTP_200_OK)
+@shops_router.get('', response_model=list[schemas.CoffeeShop], status_code=status.HTTP_200_OK)
 def read_many_shops(session: DbSession, city: str | None = Query(None)):
     query = select(models.CoffeeShop).order_by(models.CoffeeShop.name.asc())
     if city:
@@ -24,7 +24,7 @@ def read_many_shops(session: DbSession, city: str | None = Query(None)):
     return list(session.scalars(query).all())
 
 
-@shops_router.post('/', response_model=schemas.CoffeeShop, status_code=status.HTTP_201_CREATED)
+@shops_router.post('', response_model=schemas.CoffeeShop, status_code=status.HTTP_201_CREATED)
 def create_shop(shop: schemas.CoffeeShopCreate, session: DbSession):
     obj = models.CoffeeShop(**shop.model_dump())
     session.add(obj)
@@ -34,14 +34,14 @@ def create_shop(shop: schemas.CoffeeShopCreate, session: DbSession):
     return obj
 
 
-@shops_router.get('/{id}/', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
+@shops_router.get('/{id}', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
 def read_one_shop(id: int, session: DbSession):
     if shop := session.get(models.CoffeeShop, id):
         return shop
     raise NotFoundException('coffee shop', id, logger)
 
 
-@shops_router.patch('/{id}/', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
+@shops_router.patch('/{id}', response_model=schemas.CoffeeShop, status_code=status.HTTP_200_OK)
 def update_shop(id: int, shop_update: schemas.CoffeeShopUpdate, session: DbSession):
     update_data = shop_update.model_dump(exclude_unset=True)
     logger.debug('coffee_shop_update', shop_id=id, update_data=update_data)
@@ -54,7 +54,7 @@ def update_shop(id: int, shop_update: schemas.CoffeeShopUpdate, session: DbSessi
     raise NotFoundException('coffee shop', id, logger)
 
 
-@shops_router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@shops_router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_shop(id: int, session: DbSession):
     if shop := session.get(models.CoffeeShop, id):
         session.delete(shop)
@@ -67,7 +67,7 @@ def delete_shop(id: int, session: DbSession):
 beans_router = APIRouter()
 
 
-@beans_router.get('/', response_model=list[schemas.CoffeeBean], status_code=status.HTTP_200_OK)
+@beans_router.get('', response_model=list[schemas.CoffeeBean], status_code=status.HTTP_200_OK)
 def read_many_beans(
     session: DbSession,
     roast_level: str | None = Query(None),
@@ -84,7 +84,7 @@ def read_many_beans(
     return list(session.scalars(query).all())
 
 
-@beans_router.post('/', response_model=schemas.CoffeeBean, status_code=status.HTTP_201_CREATED)
+@beans_router.post('', response_model=schemas.CoffeeBean, status_code=status.HTTP_201_CREATED)
 def create_bean(bean: schemas.CoffeeBeanCreate, session: DbSession):
     obj = models.CoffeeBean(**bean.model_dump())
     session.add(obj)
@@ -94,14 +94,14 @@ def create_bean(bean: schemas.CoffeeBeanCreate, session: DbSession):
     return obj
 
 
-@beans_router.get('/{id}/', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
+@beans_router.get('/{id}', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
 def read_one_bean(id: int, session: DbSession):
     if bean := session.get(models.CoffeeBean, id):
         return bean
     raise NotFoundException('coffee bean', id, logger)
 
 
-@beans_router.patch('/{id}/', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
+@beans_router.patch('/{id}', response_model=schemas.CoffeeBean, status_code=status.HTTP_200_OK)
 def update_bean(id: int, bean_update: schemas.CoffeeBeanUpdate, session: DbSession):
     update_data = bean_update.model_dump(exclude_unset=True)
     logger.debug('coffee_bean_update', bean_id=id, update_data=update_data)
@@ -114,7 +114,7 @@ def update_bean(id: int, bean_update: schemas.CoffeeBeanUpdate, session: DbSessi
     raise NotFoundException('coffee bean', id, logger)
 
 
-@beans_router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@beans_router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_bean(id: int, session: DbSession):
     if bean := session.get(models.CoffeeBean, id):
         session.delete(bean)

@@ -1,7 +1,7 @@
 """Project item position compaction service.
 
 Dense-ranks a project's item memberships to contiguous positions 0..N-1. Used
-by the `/project-items/{id}/reorder/` endpoint so that moving one item shifts
+by the `/project-items/{id}/reorder` endpoint so that moving one item shifts
 its siblings instead of colliding with them.
 """
 

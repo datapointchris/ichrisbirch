@@ -49,15 +49,14 @@ func newStrainsCommand() *cobra.Command {
 		"Search strains by name, breeder, or lineage: icb strains search <query>",
 		"See every value a strain field accepts: icb strains vocabulary",
 	)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newStrainsListCommand(),
 		newStrainsShowCommand(),
 		newStrainsSearchCommand(),
 		newStrainsVocabularyCommand(),
-		newStrainsCreateCommand(),
-		newStrainsEditCommand(),
-		newStrainsDeleteCommand(),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupChanging, newStrainsCreateCommand(), newStrainsEditCommand(), newStrainsDeleteCommand())...)
 	return cmd
 }
 

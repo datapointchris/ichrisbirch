@@ -22,13 +22,6 @@ setup() {
   [ "$(icb_service_url dev app)" = 'https://app.docker.localhost' ]
 }
 
-@test "the production API is the app's host under /api, which the same-origin proxy strips" {
-  [ "$(icb_service_url prod api)" = 'https://ichrisbirch.com/api' ]
-  [ "$(icb_service_path prod api)" = '/api' ]
-  [ -z "$(icb_service_path dev api)" ]
-  [ -z "$(icb_service_path prod app)" ]
-}
-
 @test "production serves no dashboard, and says so rather than inventing a URL" {
   run icb_service_url prod dashboard
   [ "$status" -ne 0 ]
@@ -43,7 +36,7 @@ setup() {
 
 @test "DOMAIN overrides the production domain" {
   DOMAIN=example.com run icb_service_url prod api
-  [ "$output" = 'https://example.com/api' ]
+  [ "$output" = 'https://example.com' ]
 }
 
 @test "icb_service_host returns the header value health-check sends in prod" {

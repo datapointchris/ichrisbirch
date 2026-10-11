@@ -713,7 +713,7 @@ async function handleBlockerClick(blockerId: string) {
 
   // Blocker is in another project — fade out, switch, fade in, then flash
   try {
-    const response = await api.get<Project[]>(`/project-items/${blockerId}/projects/`)
+    const response = await api.get<Project[]>(`/project-items/${blockerId}/projects`)
     const targetProject = response.data[0]
     if (!targetProject) return
 

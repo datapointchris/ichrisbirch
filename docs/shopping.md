@@ -16,7 +16,7 @@ row while it was off the list. So "eggs" comes back beside "milk" in Costco
 without being placed there again. A new name lands in Unsorted, which is a null
 `section_id`.
 
-`POST /shopping/items/` answers 201 for a new name and 200 for a known one.
+`POST /shopping/items` answers 201 for a new name and 200 for a known one.
 Sending a different `section` moves the item to the end of that section, and a
 null `section` moves it to Unsorted. Omitting `section`, or sending the one it
 is in, keeps it where it was.
@@ -54,7 +54,7 @@ the next rank anywhere in the table. Rows of other sections can sit in that
 gap, but nothing of A's section can, because the next rank in the table is at
 least as close as the next rank in A's section. So one rank space keeps every
 section's order, and a cross-section drag is one request:
-`POST /shopping/items/{ref}/rank/` with the section and one neighbor.
+`POST /shopping/items/{ref}/rank` with the section and one neighbor.
 
 ## A purchase copies what it needs to read the same later
 

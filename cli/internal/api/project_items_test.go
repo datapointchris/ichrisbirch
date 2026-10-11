@@ -47,7 +47,7 @@ func TestCreateItem_SendsProjectIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateItem: %v", err)
 	}
-	if gotPath != "/project-items/" {
+	if gotPath != "/api/v1/project-items" {
 		t.Errorf("path = %s, want /project-items/", gotPath)
 	}
 	ids, ok := gotBody["project_ids"].([]any)
@@ -102,7 +102,7 @@ func TestReorderItem_PathAndBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReorderItem: %v", err)
 	}
-	if gotPath != "/project-items/item-1/reorder/" {
+	if gotPath != "/api/v1/project-items/item-1/reorder" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotBody["project_id"] != "p1" || gotBody["position"] != float64(3) {
@@ -117,7 +117,7 @@ func TestRemoveItemFromProject_LastProjectConflict(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
-		_, _ = w.Write([]byte(`{"detail":"Cannot remove item from its last project. Delete the item instead."}`))
+		_, _ = w.Write([]byte(`{"error":"Conflict","message":"Cannot remove item from its last project. Delete the item instead."}`))
 	}))
 	defer srv.Close()
 
@@ -133,47 +133,5 @@ func TestRemoveItemFromProject_LastProjectConflict(t *testing.T) {
 	}
 	if apiErr.Message == "" {
 		t.Error("expected the 409 message to be surfaced")
-	}
-}
-
-func TestItemTasks_ListCreateUpdateDelete(t *testing.T) {
-	var lastMethod string
-	var lastPath string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lastMethod = r.Method
-		lastPath = r.URL.Path
-		w.Header().Set("Content-Type", "application/json")
-		switch r.Method {
-		case http.MethodDelete:
-			w.WriteHeader(http.StatusNoContent)
-		default:
-			_, _ = w.Write([]byte(`{"id":"task-1","item_id":"item-1","title":"t","completed":false,"position":0,"created_at":"2026-07-24T00:00:00Z"}`))
-		}
-	}))
-	defer srv.Close()
-
-	client := New(srv.URL, staticTokenClient("t"))
-	ctx := context.Background()
-
-	if _, err := client.CreateItemTask(ctx, "item-1", ProjectItemTaskCreateInput{Title: "t"}); err != nil {
-		t.Fatalf("CreateItemTask: %v", err)
-	}
-	if lastPath != "/project-items/item-1/tasks/" || lastMethod != http.MethodPost {
-		t.Errorf("create: %s %s", lastMethod, lastPath)
-	}
-
-	done := true
-	if _, err := client.UpdateItemTask(ctx, "item-1", "task-1", ProjectItemTaskUpdateInput{Completed: &done}); err != nil {
-		t.Fatalf("UpdateItemTask: %v", err)
-	}
-	if lastPath != "/project-items/item-1/tasks/task-1/" || lastMethod != http.MethodPatch {
-		t.Errorf("update: %s %s", lastMethod, lastPath)
-	}
-
-	if err := client.DeleteItemTask(ctx, "item-1", "task-1"); err != nil {
-		t.Fatalf("DeleteItemTask: %v", err)
-	}
-	if lastPath != "/project-items/item-1/tasks/task-1/" || lastMethod != http.MethodDelete {
-		t.Errorf("delete: %s %s", lastMethod, lastPath)
 	}
 }

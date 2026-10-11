@@ -190,7 +190,7 @@ const longestOutstanding = computed(() =>
 onMounted(async () => {
   loading.value = true
   try {
-    const [todoRes, completedRes] = await Promise.all([api.get<Task[]>('/tasks/todo/'), api.get<Task[]>('/tasks/completed/')])
+    const [todoRes, completedRes] = await Promise.all([api.get<Task[]>('/tasks/todo'), api.get<Task[]>('/tasks/completed')])
     todoTasks.value = todoRes.data
     completedTasks.value = completedRes.data
     logger.info('task_stats_loaded', { todo: todoRes.data.length, completed: completedRes.data.length })

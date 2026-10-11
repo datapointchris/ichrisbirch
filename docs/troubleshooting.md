@@ -30,9 +30,9 @@
     E        +  where 307 = <Response [307]\>.status_code
 
 !!! success "Solution"
-    The trailing `/` is missing from the endpoint being called in the test, resulting in a 307 Temporary Redirect
+    The endpoint being called in the test ends in `/`, and no route does, resulting in a 307 Temporary Redirect
     To fix:
-    `/endpoint` --> `/endpoint/`
+    `/endpoint/` --> `/endpoint`
 
 ## Alembic
 
@@ -51,13 +51,13 @@
      Request Error: Client error '405 Method Not Allowed' for url xxx
 
 !!! success "Solution"
-    Make sure that the `id` is being passed correctly for routes like `/endpoint/{id}/`
+    Make sure that the `id` is being passed correctly for routes like `/endpoint/{id}`
     The error will not say `id` is not found, it will give a 405 error because the url is not correct
 
 ---
 
 !!! failure "Error"
-    `PATCH` endpoint giving: 422 Unprocessable Entity: {"detail":[{"type":"missing","loc":["body","id"],"msg":"Field required"
+    `PATCH` endpoint giving: 422 Unprocessable Content: {"error":"Unprocessable Content","message":"id: Field required","errors":[{"type":"missing","loc":["body","id"],"msg":"Field required"
 
 !!! success "Solution"
     `PATCH` endpoints require the ID in the endpoint, but *also* the ID must be passed in the payload for the model so it can update the record in the DB by ID.

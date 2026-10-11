@@ -1,6 +1,6 @@
 """URL → classifier pipeline for the recipes/techniques import flow.
 
-Used by `POST /recipes/import-from-url/`. Orchestrates content extraction
+Used by `POST /recipes/import-from-url`. Orchestrates content extraction
 (YouTube description + transcript, or article HTML text) and passes the
 labeled content to a Claude classifier that returns a UrlImportCandidate.
 """

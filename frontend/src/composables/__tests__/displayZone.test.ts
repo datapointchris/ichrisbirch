@@ -57,6 +57,6 @@ describe('useDisplayZone', () => {
     useDisplayZone()
 
     expect(displayZone()).toBe(browserTimezone())
-    expect(mockApi.patch).toHaveBeenCalledWith('/users/me/preferences/', { timezone: browserTimezone() })
+    expect(mockApi.patch).toHaveBeenCalledWith('/users/me/preferences', { timezone: browserTimezone() })
   })
 })

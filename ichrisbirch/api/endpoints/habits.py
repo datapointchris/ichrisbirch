@@ -22,7 +22,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.post('/', response_model=schemas.Habit, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Habit, status_code=status.HTTP_201_CREATED)
 def create_habit(habit: schemas.HabitCreate, session: DbSession):
     db_obj = models.Habit(**habit.model_dump())
     session.add(db_obj)
@@ -31,7 +31,7 @@ def create_habit(habit: schemas.HabitCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
 def read_many_habits(session: DbSession, current: bool | None = None, limit: RowLimit = None):
     query = select(models.Habit)
     if current is True:
@@ -41,7 +41,7 @@ def read_many_habits(session: DbSession, current: bool | None = None, limit: Row
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/categories/', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
+@router.post('/categories', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
 def create_category(category: schemas.HabitCategoryCreate, session: DbSession):
     db_obj = models.HabitCategory(**category.model_dump())
     session.add(db_obj)
@@ -50,7 +50,7 @@ def create_category(category: schemas.HabitCategoryCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/categories/', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
+@router.get('/categories', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
 def read_many_categories(session: DbSession, current: bool | None = None, limit: RowLimit = None):
     query = select(models.HabitCategory)
     if current is True:
@@ -60,7 +60,7 @@ def read_many_categories(session: DbSession, current: bool | None = None, limit:
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/completed/', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)
+@router.post('/completed', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)
 def create_completed(habit: schemas.HabitCompletedCreate, session: DbSession):
     db_obj = models.HabitCompleted(**habit.model_dump())
     session.add(db_obj)
@@ -69,7 +69,7 @@ def create_completed(habit: schemas.HabitCompletedCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/completed/', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
+@router.get('/completed', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 def read_many_completed(
     session: DbSession,
     start_date: str | None = None,
@@ -101,7 +101,7 @@ def read_many_completed(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.get('/day/', response_model=schemas.HabitsDay, status_code=status.HTTP_200_OK)
+@router.get('/day', response_model=schemas.HabitsDay, status_code=status.HTTP_200_OK)
 def read_day(session: DbSession, zone: RequestZone, date: dt.date | None = None):
     """One day's habits: which are still due, and which were done.
 
@@ -116,7 +116,7 @@ def read_day(session: DbSession, zone: RequestZone, date: dt.date | None = None)
 
     # `placement` ties every completion carrying no `habit_id`, and `list.sort`
     # is stable, so an unordered SELECT would leave their order to the planner.
-    # Newest first is what `/habits/completed/` already answers.
+    # Newest first is what `/habits/completed` already answers.
     current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True)).order_by(models.Habit.id)).all())
     completed = list(
         session.scalars(
@@ -135,14 +135,14 @@ def read_day(session: DbSession, zone: RequestZone, date: dt.date | None = None)
     )
 
 
-@router.get('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if habit := session.get(models.Habit, id):
         return habit
     raise NotFoundException('habit', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
 def update(id: int, update: schemas.HabitUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('habit_update', habit_id=id, update_data=update_data)
@@ -157,7 +157,7 @@ def update(id: int, update: schemas.HabitUpdate, session: DbSession):
     raise NotFoundException('habit', id, logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if habit := session.get(models.Habit, id):
         session.delete(habit)
@@ -167,14 +167,14 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('habit', id, logger)
 
 
-@router.get('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
+@router.get('/categories/{category_id}', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
 def read_one_category(category_id: int, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         return category
     raise NotFoundException('habit category', category_id, logger)
 
 
-@router.patch('/categories/{category_id}/', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
+@router.patch('/categories/{category_id}', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
 def update_habit_category(category_id: int, category_update: schemas.HabitCategoryUpdate, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         for attr, value in category_update.model_dump().items():
@@ -187,7 +187,7 @@ def update_habit_category(category_id: int, category_update: schemas.HabitCatego
     raise NotFoundException('habit category', category_id, logger)
 
 
-@router.delete('/categories/{category_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/categories/{category_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_category(category_id: int, session: DbSession):
     if category := session.get(models.HabitCategory, category_id):
         try:
@@ -202,14 +202,14 @@ def delete_category(category_id: int, session: DbSession):
     raise NotFoundException('habit category', category_id, logger)
 
 
-@router.get('/completed/{completed_id}/', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
+@router.get('/completed/{completed_id}', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
 def read_one_completed(completed_id: int, session: DbSession):
     if completed := session.get(models.HabitCompleted, completed_id):
         return completed
     raise NotFoundException('habit completed', completed_id, logger)
 
 
-@router.delete('/completed/{completed_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/completed/{completed_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_completed(completed_id: int, session: DbSession):
     if completed := session.get(models.HabitCompleted, completed_id):
         session.delete(completed)

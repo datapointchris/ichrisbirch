@@ -155,8 +155,8 @@ onMounted(async () => {
   loading.value = true
   try {
     const [completedRes, categoriesRes] = await Promise.all([
-      api.get<HabitCompleted[]>('/habits/completed/'),
-      api.get<HabitCategory[]>('/habits/categories/'),
+      api.get<HabitCompleted[]>('/habits/completed'),
+      api.get<HabitCategory[]>('/habits/categories'),
     ])
     completedHabits.value = completedRes.data
     categories.value = categoriesRes.data

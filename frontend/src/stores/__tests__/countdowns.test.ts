@@ -47,7 +47,7 @@ describe('useCountdownsStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/countdowns/')
+    expect(mockApi.get).toHaveBeenCalledWith('/countdowns')
     expect(store.countdowns).toEqual(testCountdowns)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -99,7 +99,7 @@ describe('useCountdownsStore', () => {
 
     const result = await store.create({ name: 'New Year', due_date: '2027-01-01' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/countdowns/', { name: 'New Year', due_date: '2027-01-01' })
+    expect(mockApi.post).toHaveBeenCalledWith('/countdowns', { name: 'New Year', due_date: '2027-01-01' })
     expect(result).toEqual(newCountdown)
     expect(store.countdowns).toContainEqual(newCountdown)
   })
@@ -130,7 +130,7 @@ describe('useCountdownsStore', () => {
 
     const result = await store.update(1, { name: 'Updated Birthday', notes: 'New notes' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/countdowns/1/', { name: 'Updated Birthday', notes: 'New notes' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/countdowns/1', { name: 'Updated Birthday', notes: 'New notes' })
     expect(result).toEqual(updated)
     expect(store.countdowns.find((c) => c.id === 1)!.name).toBe('Updated Birthday')
   })
@@ -153,7 +153,7 @@ describe('useCountdownsStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/countdowns/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/countdowns/2')
     expect(store.countdowns).toHaveLength(2)
     expect(store.countdowns.find((c) => c.id === 2)).toBeUndefined()
   })

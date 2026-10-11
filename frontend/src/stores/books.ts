@@ -105,7 +105,7 @@ export const useBooksStore = defineStore('books', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Book[]>('/books/')
+      const response = await api.get<Book[]>('/books')
       books.value = response.data
       logger.info('books_fetched', { count: response.data.length })
     } catch (e) {
@@ -121,7 +121,7 @@ export const useBooksStore = defineStore('books', () => {
   async function create(input: BookCreate) {
     error.value = null
     try {
-      const response = await api.post<Book>('/books/', input)
+      const response = await api.post<Book>('/books', input)
       books.value.push(response.data)
       logger.info('book_created', { id: response.data.id, title: response.data.title })
       return response.data
@@ -136,7 +136,7 @@ export const useBooksStore = defineStore('books', () => {
   async function update(id: number, input: BookUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Book>(`/books/${id}/`, input)
+      const response = await api.patch<Book>(`/books/${id}`, input)
       const index = books.value.findIndex((b) => b.id === id)
       if (index !== -1) {
         books.value[index] = response.data
@@ -154,7 +154,7 @@ export const useBooksStore = defineStore('books', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/books/${id}/`)
+      await api.delete(`/books/${id}`)
       books.value = books.value.filter((b) => b.id !== id)
       logger.info('book_deleted', { id })
     } catch (e) {
@@ -168,7 +168,7 @@ export const useBooksStore = defineStore('books', () => {
   async function fetchGoodreadsInfo(isbn: string): Promise<BookGoodreadsInfo> {
     error.value = null
     try {
-      const response = await api.post<BookGoodreadsInfo>('/books/goodreads/', { isbn })
+      const response = await api.post<BookGoodreadsInfo>('/books/goodreads', { isbn })
       logger.info('goodreads_info_fetched', { isbn })
       return response.data
     } catch (e) {
@@ -183,7 +183,7 @@ export const useBooksStore = defineStore('books', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Book[]>('/books/search/', { params: { q: query } })
+      const response = await api.get<Book[]>('/books/search', { params: { q: query } })
       books.value = response.data
       searchQuery.value = query
       isSearchActive.value = true

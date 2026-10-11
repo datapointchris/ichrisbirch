@@ -49,11 +49,17 @@ func newItemsCommand() *cobra.Command {
 			"`icb tasks` instead.",
 	})
 	withNotFoundHints(cmd, itemHints...)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		withNotFoundHints(newItemsListCommand(), itemAndProjectHints...),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
 		withNotFoundHints(newItemsShowCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsBlockersCommand(), itemNumberHints...),
+		withNotFoundHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
+		withNotFoundHints(newItemsTasksCommand(), itemNumberHints...),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		withNotFoundHints(newItemsCreateCommand(), itemAndProjectHints...),
 		withNotFoundHints(newItemsEditCommand(), itemNumberHints...),
 		withNotFoundHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemNumberHints...),
@@ -68,14 +74,11 @@ func newItemsCommand() *cobra.Command {
 		withNotFoundHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
 		withNotFoundHints(newItemsAddDependencyCommand(), itemNumberHints...),
 		withNotFoundHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsBlockersCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
-		withNotFoundHints(newItemsTasksCommand(), itemNumberHints...),
 		withNotFoundHints(newItemsAddTaskCommand(), itemNumberHints...),
 		withNotFoundHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
 		withNotFoundHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
 		withNotFoundHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
-	)
+	)...)
 	return cmd
 }
 

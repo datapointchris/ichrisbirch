@@ -10,10 +10,26 @@
 http:
   routers:
     # Same-origin API proxy for Vue frontend
-    # Requests to ichrisbirch.com/api/* get Remote-User headers from Authelia,
-    # then the /api prefix is stripped before reaching FastAPI. This is the one
-    # router that keeps Remote-* headers. The edge sends a bearer request past
-    # ForwardAuth, and the API ignores Remote-* beside an Authorization header.
+    # Requests to ichrisbirch.com/api/v1/* get Remote-User headers from
+    # Authelia and reach FastAPI with the path unchanged. api-v1 and api-proxy
+    # are the routers that keep Remote-* headers. The edge sends a bearer
+    # request past ForwardAuth, and the API ignores Remote-* beside an
+    # Authorization header.
+    api-v1:
+      rule: "Host(`ichrisbirch.com`) && PathPrefix(`/api/v1`)"
+      service: api
+      priority: 210
+      middlewares:
+        - security-headers-prod@file
+        - rate-limit-prod@file
+      entrypoints:
+        - web
+
+    # The unversioned routes, with /api stripped, for an API that still serves
+    # them at its root. An API serving /api/v1 answers the stripped path 410.
+    # The deploy pulls this file before the new color is live, so the color
+    # still serving traffic keeps working until the switch, and after a deploy
+    # that fails before it.
     api-proxy:
       rule: "Host(`ichrisbirch.com`) && PathPrefix(`/api`)"
       service: api
@@ -25,11 +41,24 @@ http:
       entrypoints:
         - web
 
-    # RFC 9728 metadata for the API at /api, which `icb auth login <url>` reads
-    # before it holds a token. RFC 9728 puts it outside /api, so nothing strips
-    # the path, and the API serves it at this path itself.
+    # RFC 9728 metadata at the path a CLI configured with `/api` reads. An API
+    # serving /api/v1 answers it 410, which tells that CLI to update.
     api-protected-resource:
       rule: "Host(`ichrisbirch.com`) && Path(`/.well-known/oauth-protected-resource/api`)"
+      service: api
+      priority: 200
+      middlewares:
+        - strip-authelia-identity-headers@file
+        - security-headers-prod@file
+        - rate-limit-prod@file
+      entrypoints:
+        - web
+
+    # The API's two unauthenticated paths at the host root: the health check,
+    # and the RFC 9728 metadata `icb auth login <url>` reads before it holds a
+    # token.
+    api-root:
+      rule: "Host(`ichrisbirch.com`) && (Path(`/health`) || Path(`/.well-known/oauth-protected-resource`))"
       service: api
       priority: 200
       middlewares:

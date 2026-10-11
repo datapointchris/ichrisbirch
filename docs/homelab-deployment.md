@@ -126,7 +126,7 @@ All routes point to Traefik on port 80, which handles internal routing:
 
 | Hostname | Service | Notes |
 | --- | --- | --- |
-| ichrisbirch.com | <http://localhost:80> | Vue app, and the FastAPI backend under `/api` |
+| ichrisbirch.com | <http://localhost:80> | Vue app, and the FastAPI backend under `/api/v1` |
 | <www.ichrisbirch.com> | <http://localhost:80> | Vue app (www redirect) |
 
 Traefik routes based on the `Host` header to the appropriate service.
@@ -191,7 +191,7 @@ icbops prod rollback    # Switch traffic back to previous color
 Once tunnel is configured:
 
 - **App**: <https://ichrisbirch.com> (also <www.ichrisbirch.com>)
-- **API**: <https://ichrisbirch.com/api>
+- **API**: <https://ichrisbirch.com/api/v1>
 
 ## Configuration
 

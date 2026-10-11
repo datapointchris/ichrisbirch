@@ -7,7 +7,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/patterns/'
+ENDPOINT = '/patterns'
 NEW_OBJ = schemas.PatternCreate(message='Pattern 4, skipped breakfast and was snappy by 11am')
 
 

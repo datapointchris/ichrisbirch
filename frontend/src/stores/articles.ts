@@ -31,7 +31,7 @@ export const useArticlesStore = defineStore('articles', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Article[]>('/articles/', { params: { archived: showArchived.value } })
+      const response = await api.get<Article[]>('/articles', { params: { archived: showArchived.value } })
       articles.value = response.data
       logger.info('articles_fetched', { count: response.data.length })
     } catch (e) {
@@ -47,7 +47,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function fetchCurrent() {
     error.value = null
     try {
-      const response = await api.get<Article | null>('/articles/current/')
+      const response = await api.get<Article | null>('/articles/current')
       currentArticle.value = response.data
       logger.info('current_article_fetched', { id: response.data?.id ?? null })
     } catch (e) {
@@ -61,7 +61,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function create(input: ArticleCreate) {
     error.value = null
     try {
-      const response = await api.post<Article>('/articles/', input)
+      const response = await api.post<Article>('/articles', input)
       articles.value.push(response.data)
       logger.info('article_created', { id: response.data.id, title: response.data.title })
       return response.data
@@ -76,7 +76,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function update(id: number, input: ArticleUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Article>(`/articles/${id}/`, input)
+      const response = await api.patch<Article>(`/articles/${id}`, input)
       const index = articles.value.findIndex((a) => a.id === id)
       if (index !== -1) {
         articles.value[index] = response.data
@@ -97,7 +97,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/articles/${id}/`)
+      await api.delete(`/articles/${id}`)
       articles.value = articles.value.filter((a) => a.id !== id)
       if (currentArticle.value?.id === id) {
         currentArticle.value = null
@@ -164,7 +164,7 @@ export const useArticlesStore = defineStore('articles', () => {
     summarizing.value = true
     error.value = null
     try {
-      const response = await api.post<ArticleSummary>('/articles/summarize/', { url })
+      const response = await api.post<ArticleSummary>('/articles/summarize', { url })
       logger.info('article_summarized', { url })
       return response.data
     } catch (e) {
@@ -180,7 +180,7 @@ export const useArticlesStore = defineStore('articles', () => {
   async function search(query: string) {
     error.value = null
     try {
-      const response = await api.get<Article[]>('/articles/search/', { params: { q: query } })
+      const response = await api.get<Article[]>('/articles/search', { params: { q: query } })
       searchQuery.value = query
       searchResults.value = response.data
       logger.info('articles_searched', { query, count: response.data.length })

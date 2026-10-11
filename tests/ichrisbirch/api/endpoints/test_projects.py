@@ -12,8 +12,8 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-PROJECTS_ENDPOINT = '/projects/'
-PROJECT_ITEMS_ENDPOINT = '/project-items/'
+PROJECTS_ENDPOINT = '/projects'
+PROJECT_ITEMS_ENDPOINT = '/project-items'
 
 NEW_PROJECT = schemas.ProjectCreate(
     name='Delta Project new',
@@ -55,13 +55,13 @@ def test_lifecycle(project_crud_tester):
 
 
 class TestProjectUpdate:
-    """PATCH /projects/{id}/ — field update and null-clearing behavior."""
+    """PATCH /projects/{id} — field update and null-clearing behavior."""
 
     def test_update_name(self, project_crud_tester):
         client, crud_tester = project_crud_tester
         project_id = crud_tester.item_id_by_position(client, position=1)
 
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json={'name': 'Renamed Project'})
+        response = client.patch(f'{PROJECTS_ENDPOINT}/{project_id}', json={'name': 'Renamed Project'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['name'] == 'Renamed Project'
 
@@ -72,7 +72,7 @@ class TestProjectUpdate:
         all_projects = client.get(PROJECTS_ENDPOINT).json()
         project = next(p for p in all_projects if p['description'] is not None)
 
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'name': 'Renamed Only'})
+        response = client.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'name': 'Renamed Only'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['description'] == project['description'], 'Description must not change when not included in patch'
 
@@ -82,7 +82,7 @@ class TestProjectUpdate:
         all_projects = client.get(PROJECTS_ENDPOINT).json()
         project = next(p for p in all_projects if p['description'] is None)
 
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'description': 'Newly added description'})
+        response = client.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'description': 'Newly added description'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['description'] == 'Newly added description'
 
@@ -98,7 +98,7 @@ class TestProjectUpdate:
         project = next(p for p in all_projects if p['description'] is not None)
         assert project['description'] is not None, 'Precondition: project must have a description'
 
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'description': None})
+        response = client.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'description': None})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['description'] is None, 'description must be null after explicit null patch'
 
@@ -127,7 +127,7 @@ class TestProjectKind:
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['kind'] == 'chore', 'create response must echo the kind it stored'
 
-        fetched = client_with_projects.get(f'{PROJECTS_ENDPOINT}{created.json()["id"]}/')
+        fetched = client_with_projects.get(f'{PROJECTS_ENDPOINT}/{created.json()["id"]}')
         assert fetched.json()['kind'] == 'chore', 'read must return the stored kind'
 
     def test_read_many_carries_kind(self, client_with_projects):
@@ -137,26 +137,26 @@ class TestProjectKind:
     def test_kind_can_be_changed_by_patch(self, client_with_projects):
         project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
 
-        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'kind': 'chore'})
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'kind': 'chore'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['kind'] == 'chore'
 
     def test_partial_patch_leaves_kind_unchanged(self, client_with_projects):
         project = next(p for p in client_with_projects.get(PROJECTS_ENDPOINT).json() if p['kind'] == 'life')
 
-        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'name': 'Renamed'})
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'name': 'Renamed'})
         assert response.json()['kind'] == 'life', 'omitting kind must not reset it to the default'
 
     def test_unknown_kind_is_rejected_on_create(self, client_with_projects):
         """422 rather than the foreign key's 500, and the message names the valid kinds."""
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad kind', 'kind': 'errand'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'build' in response.json()['detail']
+        assert 'build' in response.json()['message']
 
     def test_unknown_kind_is_rejected_on_patch(self, client_with_projects):
         project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
 
-        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{project["id"]}/', json={'kind': 'errand'})
+        response = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{project["id"]}', json={'kind': 'errand'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
@@ -182,7 +182,7 @@ class TestProjectStatus:
         return response.json()
 
     def patch(self, client, project_id, **body):
-        return client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json=body)
+        return client.patch(f'{PROJECTS_ENDPOINT}/{project_id}', json=body)
 
     def names(self, client, **params):
         response = client.get(PROJECTS_ENDPOINT, params=params)
@@ -219,7 +219,7 @@ class TestProjectStatus:
         response = self.patch(client_with_projects, project['id'], status='dropped')
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'reason' in response.json()['detail'].lower()
+        assert 'reason' in response.json()['message'].lower()
 
     def test_dropping_with_a_reason_stores_it(self, client_with_projects):
         project = self.create(client_with_projects, name='Abandoned effort')
@@ -269,7 +269,7 @@ class TestProjectStatus:
     def test_unknown_status_is_rejected_on_create(self, client_with_projects):
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad status', 'status': 'finished'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'dropped' in response.json()['detail']
+        assert 'dropped' in response.json()['message']
 
     def test_unknown_status_is_rejected_on_patch(self, client_with_projects):
         project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
@@ -295,11 +295,11 @@ class TestProjectStatus:
         for title, done in (('shipped', True), ('never started', False)):
             item = client_with_projects.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [project['id']]}).json()
             if done:
-                client_with_projects.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+                client_with_projects.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True})
 
         self.patch(client_with_projects, project['id'], status='dropped', status_reason='Ran out of road')
 
-        closed = client_with_projects.get(f'{PROJECTS_ENDPOINT}{project["id"]}/').json()
+        closed = client_with_projects.get(f'{PROJECTS_ENDPOINT}/{project["id"]}').json()
         assert (closed['open_count'], closed['completed_count']) == (1, 1), (
             'the open item was open when the project closed, and that is the useful fact'
         )
@@ -323,7 +323,7 @@ class TestProjectNameOwnership:
         return client.post(PROJECTS_ENDPOINT, json=body)
 
     def close(self, client, project_id, **body):
-        response = client.patch(f'{PROJECTS_ENDPOINT}{project_id}/', json={'status': 'completed', **body})
+        response = client.patch(f'{PROJECTS_ENDPOINT}/{project_id}', json={'status': 'completed', **body})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         return response.json()
 
@@ -334,7 +334,7 @@ class TestProjectNameOwnership:
         second = self.create(client_with_projects, name='clisteno')
 
         assert second.status_code == status.HTTP_409_CONFLICT, show_status_and_response(second)
-        assert first.json()['id'] in second.json()['detail'], 'the conflict must name what already holds it'
+        assert first.json()['id'] in second.json()['message'], 'the conflict must name what already holds it'
 
     def test_a_finished_project_gives_its_name_back(self, client_with_projects):
         first = self.create(client_with_projects, name='clisteno').json()
@@ -350,7 +350,7 @@ class TestProjectNameOwnership:
         self.close(client_with_projects, finished['id'])
         live = self.create(client_with_projects, name='clisteno').json()
 
-        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}clisteno/')
+        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}/clisteno')
 
         assert resolved.status_code == status.HTTP_200_OK, show_status_and_response(resolved)
         assert resolved.json()['id'] == live['id']
@@ -360,7 +360,7 @@ class TestProjectNameOwnership:
         finished = self.create(client_with_projects, name='ifiles').json()
         self.close(client_with_projects, finished['id'])
 
-        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}ifiles/', json={'status': 'active'})
+        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/ifiles', json={'status': 'active'})
 
         assert reopened.status_code == status.HTTP_200_OK, show_status_and_response(reopened)
         assert reopened.json()['id'] == finished['id']
@@ -372,28 +372,28 @@ class TestProjectNameOwnership:
             self.close(client_with_projects, project['id'])
             ids.append(project['id'])
 
-        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}clisteno/')
+        resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}/clisteno')
 
         assert resolved.status_code == status.HTTP_409_CONFLICT, show_status_and_response(resolved)
-        detail = resolved.json()['detail']
-        assert all(project_id in detail for project_id in ids), 'the caller needs the ids to disambiguate'
+        message = resolved.json()['message']
+        assert all(project_id in message for project_id in ids), 'the caller needs the ids to disambiguate'
 
     def test_reopening_into_a_taken_name_is_refused(self, client_with_projects):
         finished = self.create(client_with_projects, name='clisteno').json()
         self.close(client_with_projects, finished['id'])
         self.create(client_with_projects, name='clisteno')
 
-        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{finished["id"]}/', json={'status': 'active'})
+        reopened = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{finished["id"]}', json={'status': 'active'})
 
         assert reopened.status_code == status.HTTP_409_CONFLICT, show_status_and_response(reopened)
 
     def test_resuming_a_someday_project_into_a_taken_name_is_refused(self, client_with_projects):
         """A `someday` project holds no name, so a new project can take it while the first waits."""
         parked = self.create(client_with_projects, name='clisteno').json()
-        client_with_projects.patch(f'{PROJECTS_ENDPOINT}{parked["id"]}/', json={'status': 'someday'})
+        client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{parked["id"]}', json={'status': 'someday'})
         assert self.create(client_with_projects, name='clisteno').status_code == status.HTTP_201_CREATED
 
-        resumed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{parked["id"]}/', json={'status': 'active'})
+        resumed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{parked["id"]}', json={'status': 'active'})
 
         assert resumed.status_code == status.HTTP_409_CONFLICT, show_status_and_response(resumed)
 
@@ -401,7 +401,7 @@ class TestProjectNameOwnership:
         self.create(client_with_projects, name='clisteno')
         other = self.create(client_with_projects, name='theme').json()
 
-        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{other["id"]}/', json={'name': 'clisteno'})
+        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{other["id"]}', json={'name': 'clisteno'})
 
         assert renamed.status_code == status.HTTP_409_CONFLICT, show_status_and_response(renamed)
 
@@ -410,7 +410,7 @@ class TestProjectNameOwnership:
         self.close(client_with_projects, finished['id'])
         other = self.create(client_with_projects, name='theme').json()
 
-        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}{other["id"]}/', json={'name': 'clisteno'})
+        renamed = client_with_projects.patch(f'{PROJECTS_ENDPOINT}/{other["id"]}', json={'name': 'clisteno'})
 
         assert renamed.status_code == status.HTTP_200_OK, show_status_and_response(renamed)
 
@@ -436,7 +436,7 @@ class TestProjectItemCounts:
             created[title] = response.json()['id']
 
         for title, patch in (('completed one', {'completed': True}), ('archived one', {'archived': True})):
-            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created[title]}/', json=patch)
+            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{created[title]}', json=patch)
             assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
         return client, project_id
@@ -467,7 +467,7 @@ class TestProjectItemCounts:
         client, project_id = project_with_mixed_items
 
         listed = self.project_from_list(client, project_id)
-        detail = client.get(f'{PROJECTS_ENDPOINT}{project_id}/').json()
+        detail = client.get(f'{PROJECTS_ENDPOINT}/{project_id}').json()
 
         counts = ('item_count', 'open_count', 'completed_count')
         assert {k: detail[k] for k in counts} == {k: listed[k] for k in counts}
@@ -482,7 +482,7 @@ class TestProjectItemCounts:
         assert (project['item_count'], project['open_count'], project['completed_count']) == (0, 0, 0)
 
     def scoped_titles(self, client, project_id, query=''):
-        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/{query}')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items{query}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         return {row['title'] for row in response.json()}
 
@@ -514,10 +514,10 @@ class TestProjectItemCounts:
         """A 422 naming the vocabulary, rather than an empty list that reads as no data."""
         client, project_id = project_with_mixed_items
 
-        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/?status=finished')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items?status=finished')
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'finished' in response.json()['detail']
+        assert 'finished' in response.json()['message']
 
     def test_scoped_and_flat_lists_agree_on_every_status(self, project_with_mixed_items):
         """One filter implementation behind both reads, so they cannot drift apart."""
@@ -531,7 +531,7 @@ class TestProjectItemCounts:
 
 
 class TestProjectItemUpdate:
-    """PATCH /project-items/{id}/ — null-clearing behavior for optional fields."""
+    """PATCH /project-items/{id} — null-clearing behavior for optional fields."""
 
     @pytest.fixture
     def project_with_item(self, txn_api_logged_in):
@@ -553,7 +553,7 @@ class TestProjectItemUpdate:
         """Patching only title must not touch notes."""
         client, item = project_with_item
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'title': 'Renamed item'})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'title': 'Renamed item'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['notes'] == 'Original notes text', 'Notes must not change when not included in patch'
 
@@ -566,7 +566,7 @@ class TestProjectItemUpdate:
         client, item = project_with_item
         assert item['notes'] == 'Original notes text', 'Precondition: item must have notes'
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'notes': None})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'notes': None})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['notes'] is None, 'notes must be null after explicit null patch'
 
@@ -593,7 +593,7 @@ class TestProjectItemRepoLink:
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['repo'] == 'forge', 'create response must echo the repo it stored'
 
-        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created.json()["id"]}/')
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{created.json()["id"]}')
         assert fetched.json()['repo'] == 'forge', 'read must return the stored repo'
 
     def test_repo_defaults_to_null_for_non_repo_work(self, project_id):
@@ -609,11 +609,11 @@ class TestProjectItemRepoLink:
         client, pid = project_id
         item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Link me', 'project_ids': [pid]}).json()
 
-        linked = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'repo': 'indy'})
+        linked = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'repo': 'indy'})
         assert linked.status_code == status.HTTP_200_OK, show_status_and_response(linked)
         assert linked.json()['repo'] == 'indy'
 
-        cleared = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'repo': None})
+        cleared = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'repo': None})
         assert cleared.json()['repo'] is None, 'null must unlink, matching how notes clears'
 
     def test_partial_patch_leaves_repo_unchanged(self, project_id):
@@ -623,7 +623,7 @@ class TestProjectItemRepoLink:
             json={'title': 'Keep my repo', 'repo': 'forge', 'project_ids': [pid]},
         ).json()
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'title': 'Renamed'})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'title': 'Renamed'})
         assert response.json()['repo'] == 'forge', 'omitting repo must not clear it'
 
 
@@ -678,20 +678,20 @@ class TestRepoAsAReadAxis:
 
     def test_search_narrows_by_repo(self, seeded):
         client, _, _ = seeded
-        both = client.get(f'{PROJECT_ITEMS_ENDPOINT}search/', params={'q': 'the'})
-        narrowed = client.get(f'{PROJECT_ITEMS_ENDPOINT}search/', params={'q': 'the', 'repo': 'indy'})
+        both = client.get(f'{PROJECT_ITEMS_ENDPOINT}/search', params={'q': 'the'})
+        narrowed = client.get(f'{PROJECT_ITEMS_ENDPOINT}/search', params={'q': 'the', 'repo': 'indy'})
         assert narrowed.status_code == status.HTTP_200_OK, show_status_and_response(narrowed)
         assert {item['repo'] for item in narrowed.json()} == {'indy'}
         assert len(narrowed.json()) < len(both.json())
 
     def test_project_reports_the_repos_its_items_touch(self, seeded):
         client, first, _ = seeded
-        project = client.get(f'{PROJECTS_ENDPOINT}{first}/').json()
+        project = client.get(f'{PROJECTS_ENDPOINT}/{first}').json()
         assert project['repos'] == ['forge'], 'deduplicated, and never the null of untagged work'
 
     def test_a_project_with_no_repo_work_reports_no_repos(self, seeded):
         client, _, second = seeded
-        project = client.get(f'{PROJECTS_ENDPOINT}{second}/').json()
+        project = client.get(f'{PROJECTS_ENDPOINT}/{second}').json()
         assert project['repos'] == ['indy'], 'the untagged sibling item must not add a null entry'
 
     def test_project_list_filters_to_projects_touching_a_repo(self, seeded):
@@ -702,7 +702,7 @@ class TestRepoAsAReadAxis:
 
     def test_filtering_projects_by_repo_does_not_shrink_their_counts(self, seeded):
         client, first, _ = seeded
-        unfiltered = client.get(f'{PROJECTS_ENDPOINT}{first}/').json()
+        unfiltered = client.get(f'{PROJECTS_ENDPOINT}/{first}').json()
         filtered = next(p for p in client.get(PROJECTS_ENDPOINT, params={'repo': 'forge'}).json() if p['id'] == first)
         assert filtered['item_count'] == unfiltered['item_count'], 'HAVING must not double as a row filter'
         assert filtered['open_count'] == unfiltered['open_count']
@@ -724,7 +724,7 @@ class TestProjectItemMembershipOnLists:
 
     def test_read_many_names_each_items_projects(self, project_id):
         client, pid = project_id
-        project_name = client.get(f'{PROJECTS_ENDPOINT}{pid}/').json()['name']
+        project_name = client.get(f'{PROJECTS_ENDPOINT}/{pid}').json()['name']
         client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Glove 80', 'project_ids': [pid]})
 
         response = client.get(PROJECT_ITEMS_ENDPOINT)
@@ -737,7 +737,7 @@ class TestProjectItemMembershipOnLists:
         client, pid = project_id
         other = client.post(PROJECTS_ENDPOINT, json={'name': 'A Second Project'}).json()
         item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Shared work', 'project_ids': [pid]}).json()
-        client.post(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/projects/', json={'project_id': other['id']})
+        client.post(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}/projects', json={'project_id': other['id']})
 
         response = client.get(PROJECT_ITEMS_ENDPOINT)
 
@@ -747,7 +747,7 @@ class TestProjectItemMembershipOnLists:
 
 
 class TestProjectItemCompletionGuard:
-    """PATCH /project-items/{id}/ — cannot complete an item with incomplete tasks."""
+    """PATCH /project-items/{id} — cannot complete an item with incomplete tasks."""
 
     @pytest.fixture
     def item_with_tasks(self, txn_api_logged_in):
@@ -764,7 +764,7 @@ class TestProjectItemCompletionGuard:
         assert item_resp.status_code == status.HTTP_201_CREATED, show_status_and_response(item_resp)
         item_id = item_resp.json()['id']
 
-        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item_id}/tasks/'
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}/{item_id}/tasks'
         t1 = client.post(tasks_endpoint, json={'title': 'Task 1'})
         t2 = client.post(tasks_endpoint, json={'title': 'Task 2'})
         assert t1.status_code == status.HTTP_201_CREATED
@@ -772,7 +772,7 @@ class TestProjectItemCompletionGuard:
         task1_id = t1.json()['id']
 
         # Complete only one of the two tasks
-        client.patch(f'{tasks_endpoint}{task1_id}/', json={'completed': True})
+        client.patch(f'{tasks_endpoint}/{task1_id}', json={'completed': True})
 
         return client, item_id
 
@@ -780,27 +780,27 @@ class TestProjectItemCompletionGuard:
         """Completing an item with outstanding tasks returns 400."""
         client, item_id = item_with_tasks
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/', json={'completed': True})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item_id}', json={'completed': True})
         assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
-        assert 'incomplete task' in response.json()['detail'].lower()
+        assert 'incomplete task' in response.json()['message'].lower()
 
     def test_can_complete_item_when_all_tasks_done(self, item_with_tasks):
         """Completing an item succeeds once all tasks are finished."""
         client, item_id = item_with_tasks
 
-        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item_id}/tasks/'
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}/{item_id}/tasks'
         all_tasks = client.get(tasks_endpoint).json()
         for task in all_tasks:
             if not task['completed']:
-                client.patch(f'{tasks_endpoint}{task["id"]}/', json={'completed': True})
+                client.patch(f'{tasks_endpoint}/{task["id"]}', json={'completed': True})
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/', json={'completed': True})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item_id}', json={'completed': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed'] is True
 
 
 class TestProjectItemStatusFilter:
-    """GET /project-items/?status= — three derived states over two booleans.
+    """GET /project-items?status= — three derived states over two booleans.
 
     An item stores `completed` and `archived` independently. The status filter
     collapses them with archived beating completed, which is the precedence the
@@ -828,7 +828,7 @@ class TestProjectItemStatusFilter:
             ('abandoned', {'archived': True}),
             ('finished then filed', {'completed': True, 'archived': True}),
         ):
-            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created[title]}/', json=patch)
+            response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{created[title]}', json=patch)
             assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
         return client
@@ -869,7 +869,7 @@ class TestProjectItemStatusFilter:
         response = one_of_each_state.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'done'})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'completed' in response.json()['detail'], 'the error must name the word that was meant'
+        assert 'completed' in response.json()['message'], 'the error must name the word that was meant'
 
     def test_status_composes_with_repo(self, one_of_each_state):
         """Two narrowing filters both apply, rather than the last one winning."""
@@ -878,7 +878,7 @@ class TestProjectItemStatusFilter:
 
 
 class TestProjectItemListEmbedsDetail:
-    """GET /project-items/ — one request carries everything a sync needs.
+    """GET /project-items — one request carries everything a sync needs.
 
     A client reconciling the whole list previously issued two follow-up requests
     per item to collect dependencies and tasks. At 60 items that was 122 serial
@@ -899,21 +899,21 @@ class TestProjectItemListEmbedsDetail:
         blocked_id = blocked.json()['id']
 
         dependency = client.post(
-            f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/dependencies/',
+            f'{PROJECT_ITEMS_ENDPOINT}/{blocked_id}/dependencies',
             json={'depends_on_id': blocker_id},
         )
         assert dependency.status_code in (status.HTTP_200_OK, status.HTTP_201_CREATED), show_status_and_response(dependency)
 
-        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/tasks/', json={'title': 'Embedded task'})
+        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}/{blocked_id}/tasks', json={'title': 'Embedded task'})
         assert task.status_code == status.HTTP_201_CREATED, show_status_and_response(task)
 
         return client, blocker_id, blocked_id
 
     def test_the_detail_names_each_dependency_by_number_and_state(self, item_with_dependency_and_task):
         client, blocker_id, blocked_id = item_with_dependency_and_task
-        blocker = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{blocker_id}/', json={'completed': True}).json()
+        blocker = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{blocker_id}', json={'completed': True}).json()
 
-        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/').json()
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{blocked_id}').json()
 
         assert [(d['number'], d['title'], d['status']) for d in detail['depends_on']] == [(blocker['number'], 'Blocker', 'completed')]
 
@@ -955,7 +955,7 @@ class TestProjectItemListEmbedsDetail:
         client, _, blocked_id = item_with_dependency_and_task
 
         listed = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}[blocked_id]
-        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{blocked_id}/').json()
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{blocked_id}').json()
 
         assert listed['dependency_ids'] == detail['dependency_ids']
         assert [p['id'] for p in listed['projects']] == [p['id'] for p in detail['projects']]
@@ -971,7 +971,7 @@ class TestProjectItemListEmbedsDetail:
         item_id = created.json()['id']
 
         listed = {item['id']: item for item in client.get(PROJECT_ITEMS_ENDPOINT).json()}[item_id]
-        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{item_id}/').json()
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{item_id}').json()
 
         assert [project['id'] for project in listed['projects']] == [project['id'] for project in detail['projects']]
         assert listed['memberships'] == detail['memberships']
@@ -1009,14 +1009,14 @@ class TestProjectItemListEmbedsDetail:
         for n in range(8):
             created = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': f'Extra {n}', 'project_ids': [project_id]})
             assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
-            client.post(f'{PROJECT_ITEMS_ENDPOINT}{created.json()["id"]}/tasks/', json={'title': f'task {n}'})
+            client.post(f'{PROJECT_ITEMS_ENDPOINT}/{created.json()["id"]}/tasks', json={'title': f'task {n}'})
 
         grown = selects_issued_listing_items()
         assert grown == baseline, f'{baseline} SELECTs became {grown} after adding 8 items — eager loading is not applied'
 
 
 class TestProjectItemReorder:
-    """PATCH /project-items/{id}/reorder/ — moving an item shifts its siblings.
+    """PATCH /project-items/{id}/reorder — moving an item shifts its siblings.
 
     `position` carries no unique constraint, so a bare assignment left two items
     claiming the same slot and the list order fell back to whatever the database
@@ -1034,16 +1034,16 @@ class TestProjectItemReorder:
         return client, project_id
 
     def titles_in_order(self, client, project_id):
-        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         return [row['title'] for row in response.json()]
 
     def positions_in_order(self, client, project_id):
-        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items')
         return [row['position'] for row in response.json()]
 
     def item_id_by_title(self, client, project_id, title):
-        rows = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/').json()
+        rows = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items').json()
         return next(row['id'] for row in rows if row['title'] == title)
 
     def test_moving_to_the_front_shifts_everything_else_back(self, project_with_ordered_items):
@@ -1051,7 +1051,7 @@ class TestProjectItemReorder:
         before = self.titles_in_order(client, project_id)
         target = self.item_id_by_title(client, project_id, before[-1])
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 0})
 
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert self.titles_in_order(client, project_id) == [before[-1], *before[:-1]]
@@ -1060,7 +1060,7 @@ class TestProjectItemReorder:
         client, project_id = project_with_ordered_items
         target = self.item_id_by_title(client, project_id, self.titles_in_order(client, project_id)[2])
 
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 0})
 
         positions = self.positions_in_order(client, project_id)
         assert positions == list(range(len(positions))), f'expected a dense 0..N-1 sequence, got {positions}'
@@ -1070,7 +1070,7 @@ class TestProjectItemReorder:
         # The reported bug: three moves to position 0 left three items at 0.
         for title in ('Second', 'Third', 'Fourth'):
             target = self.item_id_by_title(client, project_id, title)
-            client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+            client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 0})
 
         positions = self.positions_in_order(client, project_id)
         assert len(set(positions)) == len(positions), f'positions collided: {positions}'
@@ -1080,7 +1080,7 @@ class TestProjectItemReorder:
         client, project_id = project_with_ordered_items
         target = self.item_id_by_title(client, project_id, 'First')
 
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 2})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 2})
 
         assert self.titles_in_order(client, project_id) == ['Second', 'Third', 'First', 'Fourth']
         assert self.positions_in_order(client, project_id) == [0, 1, 2, 3]
@@ -1089,7 +1089,7 @@ class TestProjectItemReorder:
         client, project_id = project_with_ordered_items
         target = self.item_id_by_title(client, project_id, 'First')
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 99})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 99})
 
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert self.titles_in_order(client, project_id) == ['Second', 'Third', 'Fourth', 'First']
@@ -1102,7 +1102,7 @@ class TestProjectItemReorder:
             client.post(PROJECT_ITEMS_ENDPOINT, json={'title': title, 'project_ids': [other['id']]})
 
         target = self.item_id_by_title(client, project_id, 'Fourth')
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 0})
 
         assert self.titles_in_order(client, other['id']) == ['Alpha', 'Beta']
         assert self.positions_in_order(client, other['id']) == [0, 1]
@@ -1110,7 +1110,7 @@ class TestProjectItemReorder:
     def test_the_item_list_reports_the_position_the_project_orders_by(self, project_with_ordered_items):
         client, project_id = project_with_ordered_items
         target = self.item_id_by_title(client, project_id, 'Third')
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{target}/reorder/', json={'project_id': project_id, 'position': 0})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{target}/reorder', json={'project_id': project_id, 'position': 0})
 
         position_by_title = {}
         for item in client.get(PROJECT_ITEMS_ENDPOINT).json():
@@ -1157,9 +1157,9 @@ class TestProjectItemNumber:
         client, project = project_and_client
         created = self.create_item(client, project['id'], 'Visible everywhere')
 
-        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/').json()
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{created["id"]}').json()
         listed = next(row for row in client.get(PROJECT_ITEMS_ENDPOINT).json() if row['id'] == created['id'])
-        in_project = next(row for row in client.get(f'{PROJECTS_ENDPOINT}{project["id"]}/items/').json() if row['id'] == created['id'])
+        in_project = next(row for row in client.get(f'{PROJECTS_ENDPOINT}/{project["id"]}/items').json() if row['id'] == created['id'])
 
         assert detail['number'] == created['number']
         assert listed['number'] == created['number']
@@ -1170,24 +1170,24 @@ class TestProjectItemNumber:
         created = self.create_item(client, project['id'], 'Reachable by number')
         number = created['number']
 
-        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/')
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{number}')
         assert fetched.status_code == status.HTTP_200_OK, show_status_and_response(fetched)
         assert fetched.json()['id'] == created['id']
 
-        patched = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{number}/', json={'title': 'Renamed by number'})
+        patched = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{number}', json={'title': 'Renamed by number'})
         assert patched.status_code == status.HTTP_200_OK, show_status_and_response(patched)
         assert patched.json()['title'] == 'Renamed by number'
 
-        deleted = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{number}/')
+        deleted = client.delete(f'{PROJECT_ITEMS_ENDPOINT}/{number}')
         assert deleted.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted)
-        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/').status_code == status.HTTP_404_NOT_FOUND
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}/{created["id"]}').status_code == status.HTTP_404_NOT_FOUND
 
     def test_the_uuid_still_works_everywhere_the_number_does(self, project_and_client):
         """Agents hold UUIDs from --json and pass them straight back."""
         client, project = project_and_client
         created = self.create_item(client, project['id'], 'Reachable by uuid')
 
-        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["id"]}/')
+        fetched = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{created["id"]}')
         assert fetched.status_code == status.HTTP_200_OK, show_status_and_response(fetched)
         assert fetched.json()['number'] == created['number']
 
@@ -1196,15 +1196,15 @@ class TestProjectItemNumber:
         created = self.create_item(client, project['id'], 'Has sub-resources')
         number = created['number']
 
-        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}{number}/tasks/', json={'title': 'A sub-task'})
+        task = client.post(f'{PROJECT_ITEMS_ENDPOINT}/{number}/tasks', json={'title': 'A sub-task'})
         assert task.status_code == status.HTTP_201_CREATED, show_status_and_response(task)
-        listed = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/tasks/')
+        listed = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{number}/tasks')
         assert [row['title'] for row in listed.json()] == ['A sub-task']
 
-        reordered = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{number}/reorder/', json={'project_id': project['id'], 'position': 0})
+        reordered = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{number}/reorder', json={'project_id': project['id'], 'position': 0})
         assert reordered.status_code == status.HTTP_200_OK, show_status_and_response(reordered)
 
-        projects = client.get(f'{PROJECT_ITEMS_ENDPOINT}{number}/projects/')
+        projects = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{number}/projects')
         assert projects.status_code == status.HTTP_200_OK, show_status_and_response(projects)
 
     def test_a_dependency_can_be_named_by_number_on_both_sides(self, project_and_client):
@@ -1213,13 +1213,13 @@ class TestProjectItemNumber:
         blocker = self.create_item(client, project['id'], 'Blocker')
 
         linked = client.post(
-            f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/',
+            f'{PROJECT_ITEMS_ENDPOINT}/{blocked["number"]}/dependencies',
             json={'depends_on_id': blocker['number']},
         )
         assert linked.status_code == status.HTTP_201_CREATED, show_status_and_response(linked)
         assert linked.json()['dependency_ids'] == [blocker['id']]
 
-        unlinked = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/{blocker["number"]}/')
+        unlinked = client.delete(f'{PROJECT_ITEMS_ENDPOINT}/{blocked["number"]}/dependencies/{blocker["number"]}')
         assert unlinked.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(unlinked)
 
     def test_a_body_reference_may_arrive_as_a_string(self, project_and_client):
@@ -1229,7 +1229,7 @@ class TestProjectItemNumber:
         blocker = self.create_item(client, project['id'], 'Blocker named by string')
 
         linked = client.post(
-            f'{PROJECT_ITEMS_ENDPOINT}{blocked["number"]}/dependencies/',
+            f'{PROJECT_ITEMS_ENDPOINT}/{blocked["number"]}/dependencies',
             json={'depends_on_id': str(blocker['number'])},
         )
         assert linked.status_code == status.HTTP_201_CREATED, show_status_and_response(linked)
@@ -1237,8 +1237,8 @@ class TestProjectItemNumber:
 
     def test_an_unknown_number_is_a_404_and_a_non_reference_is_a_422(self, project_and_client):
         client, _ = project_and_client
-        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}999999999/').status_code == status.HTTP_404_NOT_FOUND
-        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}not-an-item/').status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}/999999999').status_code == status.HTTP_404_NOT_FOUND
+        assert client.get(f'{PROJECT_ITEMS_ENDPOINT}/not-an-item').status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestProjectNameAsReference:
@@ -1256,16 +1256,16 @@ class TestProjectNameAsReference:
 
     def test_read_one_accepts_the_name(self, project_and_client):
         client, project = project_and_client
-        response = client.get(f'{PROJECTS_ENDPOINT}{project["name"]}/')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project["name"]}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['id'] == project['id']
 
     def test_items_and_patch_accept_the_name(self, project_and_client):
         client, project = project_and_client
-        items = client.get(f'{PROJECTS_ENDPOINT}{project["name"]}/items/')
+        items = client.get(f'{PROJECTS_ENDPOINT}/{project["name"]}/items')
         assert items.status_code == status.HTTP_200_OK, show_status_and_response(items)
 
-        patched = client.patch(f'{PROJECTS_ENDPOINT}{project["name"]}/', json={'description': 'Named, not keyed'})
+        patched = client.patch(f'{PROJECTS_ENDPOINT}/{project["name"]}', json={'description': 'Named, not keyed'})
         assert patched.status_code == status.HTTP_200_OK, show_status_and_response(patched)
         assert patched.json()['description'] == 'Named, not keyed'
 
@@ -1274,7 +1274,7 @@ class TestProjectNameAsReference:
         other = client.post(PROJECTS_ENDPOINT, json={'name': 'Named Target'}).json()
         item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Moves by name', 'project_ids': [project['id']]}).json()
 
-        added = client.post(f'{PROJECT_ITEMS_ENDPOINT}{item["number"]}/projects/', json={'project_id': 'Named Target'})
+        added = client.post(f'{PROJECT_ITEMS_ENDPOINT}/{item["number"]}/projects', json={'project_id': 'Named Target'})
         assert added.status_code == status.HTTP_201_CREATED, show_status_and_response(added)
         assert added.json()['id'] == other['id']
 
@@ -1297,21 +1297,21 @@ class TestProjectNameAsReference:
 
     def test_an_unknown_name_is_a_404(self, project_and_client):
         client, _ = project_and_client
-        assert client.get(f'{PROJECTS_ENDPOINT}no-such-project/').status_code == status.HTTP_404_NOT_FOUND
+        assert client.get(f'{PROJECTS_ENDPOINT}/no-such-project').status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize('typed', ['ypl', 'YPL', 'ypl — YouTube playlst CLI'])
     def test_a_short_or_mistyped_name_is_answered_with_the_one_it_meant(self, project_and_client, typed):
         client, _ = project_and_client
         client.post(PROJECTS_ENDPOINT, json={'name': 'ypl — YouTube playlist CLI'})
 
-        response = client.get(f'{PROJECTS_ENDPOINT}{quote(typed, safe="")}/')
+        response = client.get(f'{PROJECTS_ENDPOINT}/{quote(typed, safe="")}')
 
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
-        assert "'ypl — YouTube playlist CLI'" in response.json()['detail']
+        assert "'ypl — YouTube playlist CLI'" in response.json()['message']
 
     def test_a_name_near_nothing_names_nothing(self, project_and_client):
         client, _ = project_and_client
-        assert client.get(f'{PROJECTS_ENDPOINT}zzqx/').json()['detail'] == 'project zzqx not found'
+        assert client.get(f'{PROJECTS_ENDPOINT}/zzqx').json()['message'] == 'project zzqx not found'
 
 
 class TestProjectNameHoldingASlash:
@@ -1325,7 +1325,7 @@ class TestProjectNameHoldingASlash:
         insert_test_data_transactional(session, 'projects')
         created = client.post(PROJECTS_ENDPOINT, json={'name': self.NAME})
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
-        return client, f'{PROJECTS_ENDPOINT}{quote(self.NAME, safe="")}/'
+        return client, f'{PROJECTS_ENDPOINT}/{quote(self.NAME, safe="")}'
 
     def test_every_project_route_resolves_it(self, client_and_path):
         client, path = client_and_path
@@ -1333,10 +1333,10 @@ class TestProjectNameHoldingASlash:
         item = client.post(PROJECT_ITEMS_ENDPOINT, json={'title': 'Leave the big clouds', 'project_ids': [self.NAME, other]}).json()
 
         assert client.get(path).json()['name'] == self.NAME
-        assert [row['number'] for row in client.get(f'{path}items/').json()] == [item['number']]
+        assert [row['number'] for row in client.get(f'{path}/items').json()] == [item['number']]
         assert client.patch(path, json={'description': 'Named with a slash'}).json()['description'] == 'Named with a slash'
 
-        removed = client.delete(f'{PROJECT_ITEMS_ENDPOINT}{item["number"]}/projects/{quote(self.NAME, safe="")}/')
+        removed = client.delete(f'{PROJECT_ITEMS_ENDPOINT}/{item["number"]}/projects/{quote(self.NAME, safe="")}')
         assert removed.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(removed)
 
         assert client.delete(path).status_code == status.HTTP_204_NO_CONTENT
@@ -1380,7 +1380,7 @@ class TestProjectItemCompletedAt:
         client, pid = project_id
         item = self.new_item(client, pid)
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed_at'] is not None, 'completing must record when'
         dt.datetime.fromisoformat(response.json()['completed_at'])
@@ -1388,9 +1388,9 @@ class TestProjectItemCompletedAt:
     def test_reopening_clears_it(self, project_id):
         client, pid = project_id
         item = self.new_item(client, pid)
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True})
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': False})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': False})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['completed_at'] is None, 'reopening un-finishes the item, so the date goes with it'
 
@@ -1398,17 +1398,17 @@ class TestProjectItemCompletedAt:
         """The second call finished nothing, so it must not move the record."""
         client, pid = project_id
         item = self.new_item(client, pid)
-        first = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True}).json()['completed_at']
+        first = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True}).json()['completed_at']
 
-        again = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        again = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True})
         assert again.json()['completed_at'] == first
 
     def test_an_unrelated_patch_leaves_it_alone(self, project_id):
         client, pid = project_id
         item = self.new_item(client, pid)
-        stamped = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True}).json()['completed_at']
+        stamped = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True}).json()['completed_at']
 
-        renamed = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'title': 'Renamed after finishing'})
+        renamed = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'title': 'Renamed after finishing'})
         assert renamed.json()['completed_at'] == stamped, 'editing a finished item does not re-finish it'
 
     def test_archiving_does_not_stamp_it(self, project_id):
@@ -1416,46 +1416,46 @@ class TestProjectItemCompletedAt:
         client, pid = project_id
         item = self.new_item(client, pid)
 
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'archived': True})
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'archived': True})
         assert response.json()['completed_at'] is None
 
     def test_every_item_read_carries_it(self, project_id):
         """The list, the detail, and the project-scoped list answer the same question."""
         client, pid = project_id
         item = self.new_item(client, pid)
-        client.patch(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/', json={'completed': True})
+        client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}', json={'completed': True})
 
         listed = client.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'completed'}).json()
         assert listed[0]['completed_at'] is not None
 
-        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/').json()
+        detail = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}').json()
         assert detail['completed_at'] == listed[0]['completed_at']
 
-        in_project = client.get(f'{PROJECTS_ENDPOINT}{pid}/items/', params={'status': 'completed'}).json()
+        in_project = client.get(f'{PROJECTS_ENDPOINT}/{pid}/items', params={'status': 'completed'}).json()
         assert in_project[0]['completed_at'] == listed[0]['completed_at']
 
     def test_a_task_records_when_it_was_finished(self, project_id):
         client, pid = project_id
         item = self.new_item(client, pid)
-        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/tasks/'
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}/tasks'
 
         created = client.post(tasks_endpoint, json={'title': 'Step one'})
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         assert created.json()['completed_at'] is None
 
-        done = client.patch(f'{tasks_endpoint}{created.json()["id"]}/', json={'completed': True})
+        done = client.patch(f'{tasks_endpoint}/{created.json()["id"]}', json={'completed': True})
         assert done.status_code == status.HTTP_200_OK, show_status_and_response(done)
         assert done.json()['completed_at'] is not None
 
-        reopened = client.patch(f'{tasks_endpoint}{created.json()["id"]}/', json={'completed': False})
+        reopened = client.patch(f'{tasks_endpoint}/{created.json()["id"]}', json={'completed': False})
         assert reopened.json()['completed_at'] is None
 
     def test_a_tasks_date_rides_along_on_the_item_list(self, project_id):
         client, pid = project_id
         item = self.new_item(client, pid)
-        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}{item["id"]}/tasks/'
+        tasks_endpoint = f'{PROJECT_ITEMS_ENDPOINT}/{item["id"]}/tasks'
         task = client.post(tasks_endpoint, json={'title': 'Step one'}).json()
-        client.patch(f'{tasks_endpoint}{task["id"]}/', json={'completed': True})
+        client.patch(f'{tasks_endpoint}/{task["id"]}', json={'completed': True})
 
         listed = client.get(PROJECT_ITEMS_ENDPOINT).json()
         embedded = next(i for i in listed if i['id'] == item['id'])

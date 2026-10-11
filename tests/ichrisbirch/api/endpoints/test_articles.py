@@ -41,7 +41,7 @@ NEW_OBJ = schemas.ArticleCreate(
     save_date=dt.datetime.now(dt.UTC),
 )
 
-ENDPOINT = '/articles/'
+ENDPOINT = '/articles'
 
 PAGE = ArticlePage(url='https://example.com/test-article', title='Test Article', text='Test content')
 
@@ -91,7 +91,7 @@ def test_lifecycle(article_crud_tester):
 
 def test_read_current(article_crud_tester):
     client, _ = article_crud_tester
-    response = client.get(f'{ENDPOINT}current/')
+    response = client.get(f'{ENDPOINT}/current')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json() is not None
 
@@ -100,7 +100,7 @@ def test_read_one_url(article_crud_tester):
     client, _ = article_crud_tester
     response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    response = client.get(f'{ENDPOINT}url/', params={'url': NEW_OBJ.url})
+    response = client.get(f'{ENDPOINT}/url', params={'url': NEW_OBJ.url})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     article = response.json()
     assert article is not None
@@ -118,7 +118,7 @@ def test_search(article_crud_tester):
     )
     response = client.post(ENDPOINT, json=searchable_article.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'test-search'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'test-search'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     articles = response.json()
     assert len(articles) > 0
@@ -144,7 +144,7 @@ def test_summarize(mock_text_formatter, mock_yt_api, mock_get_page, article_crud
     mock_assistant.generate_structured = AsyncMock(return_value=schemas.ArticleSummaryAndTags(summary=expected_summary, tags=expected_tags))
 
     with patched_assistant(mock_assistant):
-        response = client.post(f'{ENDPOINT}summarize/', json={'url': 'https://ichrisbirch.com/test-article'})
+        response = client.post(f'{ENDPOINT}/summarize', json={'url': 'https://ichrisbirch.com/test-article'})
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
         assert data['title'] == 'Test Article'
@@ -166,7 +166,7 @@ def test_insights(mock_youtube_transcript_fetch, mock_get_page, article_crud_tes
     mock_assistant.generate = AsyncMock(return_value='## Insights\n\nThis is a test insight.')
 
     with patched_assistant(mock_assistant):
-        response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+        response = client.post(f'{ENDPOINT}/insights', json={'url': 'https://example.com/test-article'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         content = response.content.decode('utf-8')
         assert '<h1>Test Article</h1>' in content
@@ -191,10 +191,10 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
     )
 
     with patched_assistant(mock_assistant):
-        response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+        response = client.post(f'{ENDPOINT}/insights', json={'url': 'https://example.com/test-article'})
 
     assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-    assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
+    assert response.json()['reason'] == AssistantFailure.TRUNCATED
 
 
 @patch('ichrisbirch.api.endpoints.articles.read_article_page')
@@ -213,7 +213,7 @@ def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_f
     mock_assistant.generate = AsyncMock(return_value='## Insights\n\n<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>')
 
     with patched_assistant(mock_assistant):
-        response = client.post(f'{ENDPOINT}insights/', json={'url': 'https://example.com/test-article'})
+        response = client.post(f'{ENDPOINT}/insights', json={'url': 'https://example.com/test-article'})
 
     content = response.content.decode('utf-8')
     # The angle brackets are what make a tag a tag. Escaped, the payload is
@@ -229,37 +229,37 @@ def test_insights_neutralizes_html_in_the_model_output(mock_youtube_transcript_f
 def test_archive(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': True})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'is_archived': True})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_unarchive(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_archived': False})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'is_archived': False})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_favorite(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': True})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'is_favorite': True})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_unfavorite(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'is_favorite': False})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'is_favorite': False})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_read(article_crud_tester):
     client, crud_tester = article_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    article = client.get(f'{ENDPOINT}{first_id}/').json()
+    article = client.get(f'{ENDPOINT}/{first_id}').json()
     response = client.patch(
-        f'{ENDPOINT}{first_id}/',
+        f'{ENDPOINT}/{first_id}',
         json={
             'is_current': False,
             'is_archived': True,
@@ -271,7 +271,7 @@ def test_read(article_crud_tester):
 
 
 class TestArticleQueryParameters:
-    """Test query parameter filtering on /articles/ endpoint.
+    """Test query parameter filtering on /articles endpoint.
 
     Test data (from tests/test_data/articles.py):
     - Article 1: is_favorite=False, is_archived=False, last_read_date=None
@@ -313,7 +313,7 @@ class TestArticleQueryParameters:
         client, crud_tester = article_crud_tester
         # First mark one article as read
         first_id = crud_tester.item_id_by_position(client, position=1)
-        client.patch(f'{ENDPOINT}{first_id}/', json={'last_read_date': str(dt.datetime.now(dt.UTC))})
+        client.patch(f'{ENDPOINT}/{first_id}', json={'last_read_date': str(dt.datetime.now(dt.UTC))})
 
         response = client.get(ENDPOINT, params={'unread': False})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -350,7 +350,7 @@ class TestArticleQueryParameters:
 
         # Mark as read with review_days set
         client.patch(
-            f'{ENDPOINT}{favorite_article["id"]}/',
+            f'{ENDPOINT}/{favorite_article["id"]}',
             json={'last_read_date': str(dt.datetime.now(dt.UTC)), 'review_days': 30},
         )
 
@@ -382,14 +382,14 @@ class TestArticleQueryParameters:
     def test_url_not_found_returns_404(self, article_crud_tester):
         """Getting article by non-existent URL returns 404."""
         client, _ = article_crud_tester
-        response = client.get(f'{ENDPOINT}url/', params={'url': 'http://nonexistent.com'})
+        response = client.get(f'{ENDPOINT}/url', params={'url': 'http://nonexistent.com'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
 def test_read_current_returns_null_when_no_articles(txn_api_logged_in):
-    """Verify /current/ returns null (not error) when no articles exist."""
+    """Verify /current returns null (not error) when no articles exist."""
     client, _ = txn_api_logged_in
-    response = client.get(f'{ENDPOINT}current/')
+    response = client.get(f'{ENDPOINT}/current')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json() is None
 
@@ -408,7 +408,7 @@ def test_read_many_returns_empty_list_when_no_articles(txn_api_logged_in):
 
 
 def test_create_article_without_summary_returns_422(txn_api_logged_in):
-    """POST /articles/ without summary returns 422 (summary is required)."""
+    """POST /articles without summary returns 422 (summary is required)."""
     client, _ = txn_api_logged_in
     payload = {'title': 'No Summary', 'url': 'http://nosummary.com', 'save_date': str(dt.datetime.now(dt.UTC))}
     response = client.post(ENDPOINT, json=payload)
@@ -416,7 +416,7 @@ def test_create_article_without_summary_returns_422(txn_api_logged_in):
 
 
 def test_create_article_without_save_date_returns_422(txn_api_logged_in):
-    """POST /articles/ without save_date returns 422 (save_date is required)."""
+    """POST /articles without save_date returns 422 (save_date is required)."""
     client, _ = txn_api_logged_in
     payload = {'title': 'No Date', 'url': 'http://nodate.com', 'summary': 'Some summary'}
     response = client.post(ENDPOINT, json=payload)
@@ -437,7 +437,7 @@ def test_a_title_is_stored_on_one_line(txn_api_logged_in):
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
     assert created.json()['title'] == 'Deciphering Glyph :: Software Needs More'
 
-    updated = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'title': '  Renamed\n\ttitle '})
+    updated = client.patch(f'{ENDPOINT}/{created.json()["id"]}', json={'title': '  Renamed\n\ttitle '})
     assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
     assert updated.json()['title'] == 'Renamed title'
 
@@ -449,13 +449,13 @@ def test_a_title_that_is_only_whitespace_is_refused(txn_api_logged_in):
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
-@pytest.mark.parametrize('route', ['summarize/', 'insights/'])
+@pytest.mark.parametrize('route', ['summarize', 'insights'])
 @pytest.mark.parametrize('payload', [{}, {'link': 'https://a.example'}])
 def test_a_page_request_without_a_url_names_the_field(txn_api_logged_in, route, payload):
     client, _ = txn_api_logged_in
-    response = client.post(f'{ENDPOINT}{route}', json=payload)
+    response = client.post(f'{ENDPOINT}/{route}', json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-    assert response.json()['detail'][0]['loc'] == ['body', 'url']
+    assert response.json()['errors'][0]['loc'] == ['body', 'url']
 
 
 # ---------------------------------------------------------------------------
@@ -464,7 +464,7 @@ def test_a_page_request_without_a_url_names_the_field(txn_api_logged_in, route, 
 
 
 class TestCreateFromUrl:
-    """Tests for POST /articles/create-from-url/ endpoint."""
+    """Tests for POST /articles/create-from-url endpoint."""
 
     def _mock_externals(self, generate_raises: Exception | None = None):
         """Return the page-fetch and assistant patch context managers."""
@@ -483,7 +483,7 @@ class TestCreateFromUrl:
         client, _ = txn_api_logged_in
         get_page_patch, assistant_patch = self._mock_externals()
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/test'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/test'})
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
         assert data['title'] == 'Test Article'
@@ -496,9 +496,9 @@ class TestCreateFromUrl:
         client, _ = txn_api_logged_in
         get_page_patch, assistant_patch = self._mock_externals()
         with get_page_patch, assistant_patch:
-            response1 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
+            response1 = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/dup'})
             assert response1.status_code == status.HTTP_201_CREATED
-            response2 = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dup'})
+            response2 = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/dup'})
             assert response2.status_code == status.HTTP_409_CONFLICT
 
     def test_create_from_url_with_notes(self, txn_api_logged_in):
@@ -507,7 +507,7 @@ class TestCreateFromUrl:
         get_page_patch, assistant_patch = self._mock_externals()
         with get_page_patch, assistant_patch:
             response = client.post(
-                f'{ENDPOINT}create-from-url/',
+                f'{ENDPOINT}/create-from-url',
                 json={'url': 'https://example.com/noted', 'notes': 'Read later'},
             )
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
@@ -527,9 +527,9 @@ class TestCreateFromUrl:
         client, _ = txn_api_logged_in
         _, assistant_patch = self._mock_externals()
         with patch(f'{CREATION_MODULE}.read_article_page', side_effect=failure), assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dead'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/dead'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        assert response.json()['detail'] == str(failure)
+        assert response.json()['message'] == str(failure)
 
     def test_create_from_url_reports_invalid_output_as_a_failed_dependency(self, txn_api_logged_in):
         """The raw output comes back, so prompt drift is diagnosable without the logs."""
@@ -539,11 +539,11 @@ class TestCreateFromUrl:
         )
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=invalid)
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/prose'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/prose'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
-        assert detail['raw_assistant_output'] == 'I could not summarize that page.'
+        body = response.json()
+        assert body['reason'] == AssistantFailure.INVALID_OUTPUT
+        assert body['raw_assistant_output'] == 'I could not summarize that page.'
 
     def test_create_from_url_reports_a_truncated_reply_as_a_failed_dependency(self, txn_api_logged_in):
         """A reply stopped at the cap is a fragment, and must not be saved as an article."""
@@ -551,9 +551,9 @@ class TestCreateFromUrl:
         truncated = AssistantOutputError(AssistantFailure.TRUNCATED, 'cap reached', '{"summary": "half a sum')
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=truncated)
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/truncated'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/truncated'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
+        assert response.json()['reason'] == AssistantFailure.TRUNCATED
 
     def test_an_unusable_reply_gives_the_bulk_worker_a_short_message(self, txn_api_logged_in):
         """The worker records str(e) in a database column and a Redis payload.
@@ -577,7 +577,7 @@ class TestCreateFromUrl:
         limit = AssistantUsageLimitReached('Article Summary with Tags', resets_at, 'five_hour')
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=limit)
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/limited'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/limited'})
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, show_status_and_response(response)
         assert response.headers['Retry-After'] == 'Fri, 18 Sep 2026 03:00:00 GMT'
 
@@ -586,7 +586,7 @@ class TestCreateFromUrl:
         limit = AssistantUsageLimitReached('Article Summary with Tags', None, None)
         get_page_patch, assistant_patch = self._mock_externals(generate_raises=limit)
         with get_page_patch, assistant_patch:
-            response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/limited'})
+            response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/limited'})
         assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE, show_status_and_response(response)
         assert 'Retry-After' not in response.headers
 
@@ -619,9 +619,9 @@ class TestBulkImport:
     """Tests for bulk import API endpoints."""
 
     def test_bulk_import_submit(self, api_with_redis):
-        """POST /articles/bulk-import/ returns 202 with batch_id."""
+        """POST /articles/bulk-import returns 202 with batch_id."""
         client, _ = api_with_redis
-        response = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://a.com', 'https://b.com']})
+        response = client.post(f'{ENDPOINT}/bulk-import', json={'urls': ['https://a.com', 'https://b.com']})
         assert response.status_code == status.HTTP_202_ACCEPTED, show_status_and_response(response)
         data = response.json()
         assert 'batch_id' in data
@@ -629,17 +629,17 @@ class TestBulkImport:
         assert data['status'] == 'queued'
 
     def test_bulk_import_no_urls_returns_400(self, api_with_redis):
-        """POST /articles/bulk-import/ with empty urls returns 400."""
+        """POST /articles/bulk-import with empty urls returns 400."""
         client, _ = api_with_redis
-        response = client.post(f'{ENDPOINT}bulk-import/', json={'urls': []})
+        response = client.post(f'{ENDPOINT}/bulk-import', json={'urls': []})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_bulk_import_status(self, api_with_redis):
-        """GET /articles/bulk-import/{batch_id}/ returns batch status."""
+        """GET /articles/bulk-import/{batch_id} returns batch status."""
         client, _ = api_with_redis
-        submit = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://c.com']})
+        submit = client.post(f'{ENDPOINT}/bulk-import', json={'urls': ['https://c.com']})
         batch_id = submit.json()['batch_id']
-        response = client.get(f'{ENDPOINT}bulk-import/{batch_id}/')
+        response = client.get(f'{ENDPOINT}/bulk-import/{batch_id}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['batch_id'] == batch_id
@@ -647,9 +647,9 @@ class TestBulkImport:
         assert data['status'] == 'queued'
 
     def test_bulk_import_nonexistent_batch_returns_404(self, api_with_redis):
-        """GET /articles/bulk-import/{bad_id}/ returns 404."""
+        """GET /articles/bulk-import/{bad_id} returns 404."""
         client, _ = api_with_redis
-        response = client.get(f'{ENDPOINT}bulk-import/nonexistent-id/')
+        response = client.get(f'{ENDPOINT}/bulk-import/nonexistent-id')
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -739,22 +739,22 @@ class TestBulkImportUsageLimit:
 
     def test_a_paused_batch_reports_when_it_resumes(self, api_with_redis, test_redis):
         client, _ = api_with_redis
-        batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/held']}).json()['batch_id']
+        batch_id = client.post(f'{ENDPOINT}/bulk-import', json={'urls': ['https://example.com/held']}).json()['batch_id']
         resumes_at = (dt.datetime.now(dt.UTC) + dt.timedelta(hours=1)).isoformat()
         test_redis.set(PAUSE_KEY, resumes_at, ex=3600)
 
-        data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
+        data = client.get(f'{ENDPOINT}/bulk-import/{batch_id}').json()
 
         assert data['status'] == 'paused'
         assert data['resumes_at'] == resumes_at
 
     def test_a_completed_batch_is_not_reported_paused(self, api_with_redis, test_redis):
         client, _ = api_with_redis
-        batch_id = client.post(f'{ENDPOINT}bulk-import/', json={'urls': ['https://example.com/done']}).json()['batch_id']
+        batch_id = client.post(f'{ENDPOINT}/bulk-import', json={'urls': ['https://example.com/done']}).json()['batch_id']
         test_redis.hset(f'{BATCH_KEY_PREFIX}{batch_id}', 'status', 'completed')
         test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(hours=1)).isoformat(), ex=3600)
 
-        data = client.get(f'{ENDPOINT}bulk-import/{batch_id}/').json()
+        data = client.get(f'{ENDPOINT}/bulk-import/{batch_id}').json()
 
         assert data['status'] == 'completed'
         assert data['resumes_at'] is None

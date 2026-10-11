@@ -128,7 +128,7 @@ describe('useStrainsStore', () => {
     mockApi.get.mockResolvedValue({ data: testStrains })
     const store = useStrainsStore()
     await store.fetchAll()
-    expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: {} })
+    expect(mockApi.get).toHaveBeenCalledWith('/strains', { params: {} })
     expect(store.items).toEqual(testStrains)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -171,7 +171,7 @@ describe('useStrainsStore', () => {
     mockApi.get.mockResolvedValue({ data: testVocabulary })
     const store = useStrainsStore()
     await store.fetchVocabulary()
-    expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+    expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary')
     expect(store.vocabulary.effects).toHaveLength(4)
   })
 
@@ -213,21 +213,21 @@ describe('useStrainsStore', () => {
       mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
       await store.setStatusFilter('want_to_try')
-      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { status: 'want_to_try' } })
+      expect(mockApi.get).toHaveBeenCalledWith('/strains', { params: { status: 'want_to_try' } })
     })
 
     it('sends the type filter as a query parameter', async () => {
       mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
       await store.setTypeFilter('indica')
-      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { strain_type: 'indica' } })
+      expect(mockApi.get).toHaveBeenCalledWith('/strains', { params: { strain_type: 'indica' } })
     })
 
     it('sends the effect filter as a query parameter', async () => {
       mockApi.get.mockResolvedValue({ data: [] })
       const store = useStrainsStore()
       await store.setEffectFilter('relaxed')
-      expect(mockApi.get).toHaveBeenCalledWith('/strains/', { params: { effect: 'relaxed' } })
+      expect(mockApi.get).toHaveBeenCalledWith('/strains', { params: { effect: 'relaxed' } })
     })
 
     it('sends every set filter together rather than the last one winning', async () => {
@@ -285,7 +285,7 @@ describe('useStrainsStore', () => {
       mockApi.get.mockResolvedValue({ data: testVocabulary })
       const store = useStrainsStore()
       const result = await store.create({ name: 'MAC 1' })
-      expect(mockApi.post).toHaveBeenCalledWith('/strains/', { name: 'MAC 1' })
+      expect(mockApi.post).toHaveBeenCalledWith('/strains', { name: 'MAC 1' })
       expect(result).toEqual(created)
       expect(store.items).toContainEqual(created)
     })
@@ -298,7 +298,7 @@ describe('useStrainsStore', () => {
         mockApi.get.mockResolvedValue({ data: testVocabulary })
         const store = useStrainsStore()
         await store.create({ name: 'MAC 1' })
-        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary')
       })
 
       it('after an update', async () => {
@@ -306,7 +306,7 @@ describe('useStrainsStore', () => {
         mockApi.get.mockResolvedValue({ data: testVocabulary })
         const store = useStrainsStore()
         await store.update(1, { rating: 10 })
-        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary')
       })
 
       it('after a delete', async () => {
@@ -314,7 +314,7 @@ describe('useStrainsStore', () => {
         mockApi.get.mockResolvedValue({ data: testVocabulary })
         const store = useStrainsStore()
         await store.remove(1)
-        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary/')
+        expect(mockApi.get).toHaveBeenCalledWith('/strains/vocabulary')
       })
 
       it('and a failed refresh does not fail the write', async () => {
@@ -329,7 +329,7 @@ describe('useStrainsStore', () => {
     // One blanket mock would hand the vocabulary a list of strains.
     function routeGetByPath() {
       mockApi.get.mockImplementation((url: string) =>
-        Promise.resolve({ data: url === '/strains/vocabulary/' ? testVocabulary : testStrains })
+        Promise.resolve({ data: url === '/strains/vocabulary' ? testVocabulary : testStrains })
       )
     }
 
@@ -341,7 +341,7 @@ describe('useStrainsStore', () => {
       const updated = { ...testStrains[0]!, rating: 10 }
       mockApi.patch.mockResolvedValue({ data: updated })
       await store.update(1, { rating: 10 })
-      expect(mockApi.patch).toHaveBeenCalledWith('/strains/1/', { rating: 10 })
+      expect(mockApi.patch).toHaveBeenCalledWith('/strains/1', { rating: 10 })
       expect(store.items[0]!.rating).toBe(10)
       expect(store.items).toHaveLength(3)
     })
@@ -353,7 +353,7 @@ describe('useStrainsStore', () => {
 
       mockApi.delete.mockResolvedValue({ data: null })
       await store.remove(1)
-      expect(mockApi.delete).toHaveBeenCalledWith('/strains/1/')
+      expect(mockApi.delete).toHaveBeenCalledWith('/strains/1')
       expect(store.items.map((s) => s.id)).toEqual([2, 3])
     })
 

@@ -39,7 +39,7 @@ type Strain struct {
 	UpdatedAt     string   `json:"updated_at"`
 }
 
-// StrainCreateInput is the body for creating a strain (POST /strains/). Only
+// StrainCreateInput is the body for creating a strain (POST /strains). Only
 // Name is required; a strain written down off a menu board has nothing else.
 // Status defaults to want_to_try server-side.
 type StrainCreateInput struct {
@@ -61,7 +61,7 @@ type StrainCreateInput struct {
 	LastTriedDate *string  `json:"last_tried_date,omitempty"`
 }
 
-// StrainUpdateInput is a partial update (PATCH /strains/{id}/): only changed
+// StrainUpdateInput is a partial update (PATCH /strains/{id}): only changed
 // fields are sent. Emptying a field is `--clear <field>`, which mergeClearNulls
 // writes as an explicit null after this struct is marshaled — the same grammar
 // `icb recipes edit` and `icb cooking-techniques edit` take.
@@ -174,13 +174,13 @@ func VocabularyNames(entries []StrainVocabularyEntry) []string {
 	return names
 }
 
-// ListStrains returns strains by name (GET /strains/), narrowed by filter. A
+// ListStrains returns strains by name (GET /strains), narrowed by filter. A
 // nil limit fetches all; a non-nil limit caps the count, so it takes the first
 // names of whatever the filters left.
 func (c *Client) ListStrains(ctx context.Context, filter StrainFilter, limit *int) ([]Strain, error) {
 	params := filter.query()
 	applyLimit(params, limit)
-	path := withQuery("/strains/", params)
+	path := withQuery("/strains", params)
 	var strains []Strain
 	if err := c.get(ctx, path, &strains); err != nil {
 		return nil, err
@@ -198,34 +198,34 @@ func (c *Client) SearchStrains(ctx context.Context, q string, limit *int) ([]Str
 }
 
 // GetStrainVocabulary returns every defined value of every strain vocabulary
-// (GET /strains/vocabulary/), whether or not a strain carries it.
+// (GET /strains/vocabulary), whether or not a strain carries it.
 func (c *Client) GetStrainVocabulary(ctx context.Context) (StrainVocabulary, error) {
 	var vocabulary StrainVocabulary
-	if err := c.get(ctx, "/strains/vocabulary/", &vocabulary); err != nil {
+	if err := c.get(ctx, "/strains/vocabulary", &vocabulary); err != nil {
 		return StrainVocabulary{}, err
 	}
 	return vocabulary, nil
 }
 
-// GetStrain returns a single strain (GET /strains/{id}/). Missing is 404.
+// GetStrain returns a single strain (GET /strains/{id}). Missing is 404.
 func (c *Client) GetStrain(ctx context.Context, id int) (Strain, error) {
 	var strain Strain
-	if err := c.get(ctx, fmt.Sprintf("/strains/%d/", id), &strain); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/strains/%d", id), &strain); err != nil {
 		return Strain{}, err
 	}
 	return strain, nil
 }
 
-// CreateStrain creates a strain (POST /strains/).
+// CreateStrain creates a strain (POST /strains).
 func (c *Client) CreateStrain(ctx context.Context, in StrainCreateInput) (Strain, error) {
 	var strain Strain
-	if err := c.send(ctx, http.MethodPost, "/strains/", in, &strain); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/strains", in, &strain); err != nil {
 		return Strain{}, err
 	}
 	return strain, nil
 }
 
-// UpdateStrain applies a partial update (PATCH /strains/{id}/). Each field in
+// UpdateStrain applies a partial update (PATCH /strains/{id}). Each field in
 // clear is sent as an explicit null, which the API reads as "empty this" — for
 // an array column that means the empty list.
 func (c *Client) UpdateStrain(ctx context.Context, id int, in StrainUpdateInput, clear []string) (Strain, error) {
@@ -234,13 +234,13 @@ func (c *Client) UpdateStrain(ctx context.Context, id int, in StrainUpdateInput,
 		return Strain{}, err
 	}
 	var strain Strain
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/strains/%d/", id), body, &strain); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/strains/%d", id), body, &strain); err != nil {
 		return Strain{}, err
 	}
 	return strain, nil
 }
 
-// DeleteStrain removes a strain (DELETE /strains/{id}/ → 204).
+// DeleteStrain removes a strain (DELETE /strains/{id} → 204).
 func (c *Client) DeleteStrain(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/strains/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/strains/%d", id), nil, nil)
 }

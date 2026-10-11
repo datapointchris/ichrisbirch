@@ -29,22 +29,22 @@ type AutoTask struct {
 }
 
 // ListAutoTasks returns recurring task templates, most recently run first
-// (GET /autotasks/). A nil limit fetches all; a non-nil limit caps the count.
+// (GET /autotasks). A nil limit fetches all; a non-nil limit caps the count.
 func (c *Client) ListAutoTasks(ctx context.Context, limit *int) ([]AutoTask, error) {
 	params := url.Values{}
 	applyLimit(params, limit)
 	var autotasks []AutoTask
-	if err := c.get(ctx, withQuery("/autotasks/", params), &autotasks); err != nil {
+	if err := c.get(ctx, withQuery("/autotasks", params), &autotasks); err != nil {
 		return nil, err
 	}
 	return autotasks, nil
 }
 
-// GetAutoTask returns a single recurring task template (GET /autotasks/{id}/).
+// GetAutoTask returns a single recurring task template (GET /autotasks/{id}).
 // Missing is 404.
 func (c *Client) GetAutoTask(ctx context.Context, id int) (AutoTask, error) {
 	var autotask AutoTask
-	if err := c.get(ctx, fmt.Sprintf("/autotasks/%d/", id), &autotask); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/autotasks/%d", id), &autotask); err != nil {
 		return AutoTask{}, err
 	}
 	return autotask, nil

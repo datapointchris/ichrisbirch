@@ -7,7 +7,7 @@ import type { CookingTechnique, CookingTechniqueCreate, CookingTechniqueUpdate, 
 
 const logger = createLogger('CookingTechniquesStore')
 
-const ENDPOINT = '/recipes/cooking-techniques/'
+const ENDPOINT = '/recipes/cooking-techniques'
 
 export const useCookingTechniquesStore = defineStore('cookingTechniques', () => {
   const techniques = ref<CookingTechnique[]>([])
@@ -91,7 +91,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
   async function fetchOne(id: number): Promise<CookingTechnique> {
     error.value = null
     try {
-      const response = await api.get<CookingTechnique>(`${ENDPOINT}${id}/`)
+      const response = await api.get<CookingTechnique>(`${ENDPOINT}/${id}`)
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -104,7 +104,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
   async function fetchBySlug(slug: string): Promise<CookingTechnique> {
     error.value = null
     try {
-      const response = await api.get<CookingTechnique>(`${ENDPOINT}slug/${slug}/`)
+      const response = await api.get<CookingTechnique>(`${ENDPOINT}/slug/${slug}`)
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -117,7 +117,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
   async function fetchCategories() {
     error.value = null
     try {
-      const response = await api.get<CookingTechniqueCategoryBreakdown[]>(`${ENDPOINT}categories/`)
+      const response = await api.get<CookingTechniqueCategoryBreakdown[]>(`${ENDPOINT}/categories`)
       categories.value = response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -145,7 +145,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
   async function update(id: number, input: CookingTechniqueUpdate) {
     error.value = null
     try {
-      const response = await api.patch<CookingTechnique>(`${ENDPOINT}${id}/`, input)
+      const response = await api.patch<CookingTechnique>(`${ENDPOINT}/${id}`, input)
       const index = techniques.value.findIndex((t) => t.id === id)
       if (index !== -1) {
         techniques.value[index] = response.data
@@ -163,7 +163,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`${ENDPOINT}${id}/`)
+      await api.delete(`${ENDPOINT}/${id}`)
       techniques.value = techniques.value.filter((t) => t.id !== id)
       logger.info('cooking_technique_deleted', { id })
     } catch (e) {
@@ -178,7 +178,7 @@ export const useCookingTechniquesStore = defineStore('cookingTechniques', () => 
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<CookingTechnique[]>(`${ENDPOINT}search/`, { params: { q: query } })
+      const response = await api.get<CookingTechnique[]>(`${ENDPOINT}/search`, { params: { q: query } })
       techniques.value = response.data
       searchQuery.value = query
       isSearchActive.value = true

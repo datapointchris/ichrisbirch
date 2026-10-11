@@ -32,7 +32,7 @@ for every issue in one pass on each read. The API returns it as `is_ready`
 and `is_blocked`, and every client filters on those rather than re-deriving
 them.
 
-`GET /issues/ready/` is the queue, in the order to take it. `icb issues next`
+`GET /issues/ready` is the queue, in the order to take it. `icb issues next`
 prints it.
 
 ## A decision waits on a person, so the ready queue leaves it out
@@ -109,7 +109,7 @@ the claim.
 
 A person can also move an issue to `in_progress` by hand. That carries no
 claim and never expires, because a person working on something does not
-vanish the way a process does. `DELETE /issues/{n}/claim/` returns either kind
+vanish the way a process does. `DELETE /issues/{n}/claim` returns either kind
 to `open`.
 
 Claiming a named issue applies the readiness conditions listed under the ready
@@ -160,7 +160,7 @@ that closes an open issue, and any other PATCH naming one answers 422.
 
 A read narrows on the prefix: `icb issues list --status completed --closed-by
 claude-code/` is what attended sessions finished, and `closed_by=` is the same
-query parameter on `GET /issues/`.
+query parameter on `GET /issues`.
 
 A completed parent never holds open children. A closed issue takes no new open
 child, whether filed under it or moved there. Reopening a child returns each

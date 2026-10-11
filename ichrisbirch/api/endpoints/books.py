@@ -22,7 +22,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     ownership: str | None = Query(None),
@@ -49,7 +49,7 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
 def create(book: schemas.BookCreate, session: DbSession):
     obj = models.Book(**book.model_dump())
     session.add(obj)
@@ -58,7 +58,7 @@ def create(book: schemas.BookCreate, session: DbSession):
     return obj
 
 
-@router.get('/search/', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
+@router.get('/search', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 def search(q: str, session: DbSession):
     """Search books by title, author, or tags.
 
@@ -86,7 +86,7 @@ def search(q: str, session: DbSession):
     return list(results)
 
 
-@router.post('/goodreads/', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
+@router.post('/goodreads', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
 def goodreads(lookup: schemas.BookGoodreadsLookup):
     """Get book information from Goodreads using the ISBN."""
     isbn = lookup.isbn
@@ -116,21 +116,21 @@ def goodreads(lookup: schemas.BookGoodreadsLookup):
     return schemas.BookGoodreadsInfo(title=title, author=author, tags=tags, goodreads_url=str(response.url))
 
 
-@router.get('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         return book
     raise NotFoundException('book', id, logger)
 
 
-@router.get('/isbn/{isbn}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+@router.get('/isbn/{isbn}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 def get_book_by_isbn(isbn: str, session: DbSession):
     if book := session.scalar(select(models.Book).where(models.Book.isbn == isbn)):
         return book
     raise NotFoundException('book', f'isbn={isbn}', logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if book := session.get(models.Book, id):
         session.delete(book)
@@ -140,7 +140,7 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('book', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
 def update(id: int, book_update: schemas.BookUpdate, session: DbSession):
     update_data = book_update.model_dump(exclude_unset=True)
     logger.debug('book_update', book_id=id, update_data=update_data)

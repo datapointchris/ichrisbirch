@@ -60,7 +60,7 @@ type BookCreateInput struct {
 	Review         *string  `json:"review,omitempty"`
 }
 
-// BookUpdateInput is a partial update (PATCH /books/{id}/): only changed fields
+// BookUpdateInput is a partial update (PATCH /books/{id}): only changed fields
 // are sent. Tags omitempty means an empty list is not sent (leaving tags as-is).
 type BookUpdateInput struct {
 	Title          *string  `json:"title,omitempty"`
@@ -104,7 +104,7 @@ func (f BookFilter) query() url.Values {
 	return params
 }
 
-// ListBooks returns books ordered by priority (GET /books/), narrowed by filter
+// ListBooks returns books ordered by priority (GET /books), narrowed by filter
 // and by start and end, an inclusive range over the day a book was finished. A
 // finish date is a calendar day, so no zone goes with the bounds. A nil limit
 // fetches all; a non-nil limit caps the count, so it takes the highest-priority
@@ -113,7 +113,7 @@ func (c *Client) ListBooks(ctx context.Context, filter BookFilter, start OnOrAft
 	params := filter.query()
 	applyDateBounds(params, start, end, "")
 	applyLimit(params, limit)
-	path := withQuery("/books/", params)
+	path := withQuery("/books", params)
 	var books []Book
 	if err := c.get(ctx, path, &books); err != nil {
 		return nil, err
@@ -122,9 +122,9 @@ func (c *Client) ListBooks(ctx context.Context, filter BookFilter, start OnOrAft
 }
 
 // SearchBooks returns books matching q across title, author, and tags
-// (GET /books/search/?q=). Comma-separated terms preserve phrases.
+// (GET /books/search?q=). Comma-separated terms preserve phrases.
 func (c *Client) SearchBooks(ctx context.Context, q string) ([]Book, error) {
-	path := "/books/search/?" + url.Values{"q": {q}}.Encode()
+	path := "/books/search?" + url.Values{"q": {q}}.Encode()
 	var books []Book
 	if err := c.get(ctx, path, &books); err != nil {
 		return nil, err
@@ -132,43 +132,43 @@ func (c *Client) SearchBooks(ctx context.Context, q string) ([]Book, error) {
 	return books, nil
 }
 
-// GetBook returns a single book (GET /books/{id}/). Missing is 404.
+// GetBook returns a single book (GET /books/{id}). Missing is 404.
 func (c *Client) GetBook(ctx context.Context, id int) (Book, error) {
 	var book Book
-	if err := c.get(ctx, fmt.Sprintf("/books/%d/", id), &book); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/books/%d", id), &book); err != nil {
 		return Book{}, err
 	}
 	return book, nil
 }
 
-// GetBookByISBN returns a book by ISBN (GET /books/isbn/{isbn}/). Missing is 404.
+// GetBookByISBN returns a book by ISBN (GET /books/isbn/{isbn}). Missing is 404.
 func (c *Client) GetBookByISBN(ctx context.Context, isbn string) (Book, error) {
 	var book Book
-	if err := c.get(ctx, "/books/isbn/"+url.PathEscape(isbn)+"/", &book); err != nil {
+	if err := c.get(ctx, "/books/isbn/"+url.PathEscape(isbn), &book); err != nil {
 		return Book{}, err
 	}
 	return book, nil
 }
 
-// CreateBook creates a book (POST /books/).
+// CreateBook creates a book (POST /books).
 func (c *Client) CreateBook(ctx context.Context, in BookCreateInput) (Book, error) {
 	var book Book
-	if err := c.send(ctx, http.MethodPost, "/books/", in, &book); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/books", in, &book); err != nil {
 		return Book{}, err
 	}
 	return book, nil
 }
 
-// UpdateBook applies a partial update (PATCH /books/{id}/).
+// UpdateBook applies a partial update (PATCH /books/{id}).
 func (c *Client) UpdateBook(ctx context.Context, id int, in BookUpdateInput) (Book, error) {
 	var book Book
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/books/%d/", id), in, &book); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/books/%d", id), in, &book); err != nil {
 		return Book{}, err
 	}
 	return book, nil
 }
 
-// DeleteBook removes a book (DELETE /books/{id}/ → 204).
+// DeleteBook removes a book (DELETE /books/{id} → 204).
 func (c *Client) DeleteBook(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/books/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/books/%d", id), nil, nil)
 }

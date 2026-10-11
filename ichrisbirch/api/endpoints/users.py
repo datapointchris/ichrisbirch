@@ -75,7 +75,7 @@ def require_admin_or_internal_service(
     return access_granted
 
 
-@router.get('/', response_model=list[schemas.User], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.User], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession, _: bool = Depends(require_admin_or_internal_service), limit: RowLimit = None):
     """List all users.
 
@@ -116,13 +116,13 @@ def require_user_access_or_admin_or_internal_service(
     raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
 
 
-@router.get('/me/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get('/me', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def me(user: CurrentUser):
     """The user the request authenticated as."""
     return user
 
 
-@router.get('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def read_one(
     id: int,
     session: DbSession,
@@ -137,7 +137,7 @@ def read_one(
     raise NotFoundException('user', id, logger)
 
 
-@router.post('/', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
+@router.post('', response_model=schemas.User, status_code=status.HTTP_201_CREATED, dependencies=None)
 def create(
     user: schemas.UserCreate,
     session: DbSession,
@@ -175,7 +175,7 @@ def merge_user_preferences(db_user: models.User, update_data: dict, session: Ses
     return db_user
 
 
-@router.patch('/me/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.patch('/me/preferences', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def update_my_preferences(update_data: dict[str, Any], user: CurrentUser, session: DbSession):
     """Update the current user's preferences."""
     logger.debug('user_preferences_update', update_data=update_data)
@@ -185,7 +185,7 @@ def update_my_preferences(update_data: dict[str, Any], user: CurrentUser, sessio
     return merge_user_preferences(db_user, update_data, session)
 
 
-@router.patch('/{id}/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.patch('/{id}/preferences', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def update_user_preferences(
     id: int,
     update_data: dict[str, Any],
@@ -205,7 +205,7 @@ def update_user_preferences(
     return merge_user_preferences(db_user, update_data, session)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession, admin_user: models.User = Depends(get_admin_user)):
     """Delete a user (admin only).
 
@@ -254,7 +254,7 @@ def require_update_access(
     raise UnauthorizedException(Refusal.AUTH_REQUIRED, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def update(
     id: int,
     update: schemas.UserUpdate,
@@ -283,7 +283,7 @@ def update(
     raise NotFoundException('user', id, logger)
 
 
-@router.get('/alt/{alternative_id}/', response_model=schemas.User, status_code=status.HTTP_200_OK)
+@router.get('/alt/{alternative_id}', response_model=schemas.User, status_code=status.HTTP_200_OK)
 def read_by_alternative_id(
     alternative_id: int,
     session: DbSession,
@@ -317,7 +317,7 @@ def read_by_alternative_id(
     raise NotFoundException('user with alternative_id', alternative_id, logger)
 
 
-@router.get('/email/{email}/', response_model=schemas.User | None, status_code=status.HTTP_200_OK)
+@router.get('/email/{email}', response_model=schemas.User | None, status_code=status.HTTP_200_OK)
 def read_by_email(
     email: str,
     _: AdminOrInternalServiceAccess,

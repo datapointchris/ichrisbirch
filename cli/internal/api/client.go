@@ -16,6 +16,10 @@ import (
 	"strings"
 )
 
+// prefix is where the API serves every resource route on its host; a path
+// passed to get or send is below it.
+const prefix = "/api/v1"
+
 // Client talks to the ichrisbirch API at baseURL. The http.Client is expected to
 // inject the Authorization: Bearer header itself (via an oauth2 token-source
 // transport), so the api package never handles tokens directly.
@@ -59,7 +63,7 @@ func (e *APIError) Forbidden() bool { return e.StatusCode == http.StatusForbidde
 // NotFound reports whether the error is a 404.
 func (e *APIError) NotFound() bool { return e.StatusCode == http.StatusNotFound }
 
-// get issues a GET to path (e.g. "/projects/") and decodes a 2xx JSON body into
+// get issues a GET to path (e.g. "/projects") and decodes a 2xx JSON body into
 // out. A non-2xx response becomes an *APIError.
 func (c *Client) get(ctx context.Context, path string, out any) error {
 	return c.send(ctx, http.MethodGet, path, nil, out)
@@ -79,7 +83,7 @@ func (c *Client) send(ctx context.Context, method, path string, body, out any) e
 		reader = bytes.NewReader(encoded)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
+	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+prefix+path, reader)
 	if err != nil {
 		return err
 	}
@@ -108,62 +112,25 @@ func (c *Client) send(ctx context.Context, method, path string, body, out any) e
 }
 
 // decodeAPIError builds an *APIError from a non-2xx response, best-effort
-// decoding the ichrisbirch/FastAPI error envelope. FastAPI's HTTPException yields
-// {"detail": "..."} (a string); request validation (422) yields
-// {"detail": [{"loc": [...], "msg": "..."}]}; the API's 500 handler yields
-// {"message": "..."}. A body that is none of these (a proxy error page, an
-// Authelia redirect) still yields a usable status-only error.
+// decoding the error envelope. The API writes errors as
+// {"error": "<status phrase>", "message": "<reason>"}, and the reason is always
+// a string; a body that is not that shape (a proxy error page, an Authelia
+// redirect) still yields a usable status-only error.
 func decodeAPIError(resp *http.Response) error {
 	apiErr := &APIError{StatusCode: resp.StatusCode, Status: resp.Status}
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 16<<10))
 
 	var envelope struct {
-		Detail  json.RawMessage `json:"detail"`
-		Message string          `json:"message"`
+		Error   string `json:"error"`
+		Message string `json:"message"`
 	}
 	if json.Unmarshal(body, &envelope) == nil {
-		apiErr.Message = messageFromEnvelope(envelope.Detail, envelope.Message)
+		switch {
+		case envelope.Message != "":
+			apiErr.Message = envelope.Message
+		case envelope.Error != "":
+			apiErr.Message = envelope.Error
+		}
 	}
 	return apiErr
-}
-
-// messageFromEnvelope extracts a human message from the decoded error body:
-// a string `detail`, a validation-error array `detail`, or the 500 `message`.
-func messageFromEnvelope(detail json.RawMessage, message string) string {
-	if len(detail) > 0 {
-		var asString string
-		if json.Unmarshal(detail, &asString) == nil && asString != "" {
-			return asString
-		}
-		var validation []struct {
-			Loc []any  `json:"loc"`
-			Msg string `json:"msg"`
-		}
-		if json.Unmarshal(detail, &validation) == nil && len(validation) > 0 {
-			parts := make([]string, 0, len(validation))
-			for _, v := range validation {
-				if field := validationField(v.Loc); field != "" {
-					parts = append(parts, field+": "+v.Msg)
-				} else {
-					parts = append(parts, v.Msg)
-				}
-			}
-			return strings.Join(parts, "; ")
-		}
-	}
-	return message
-}
-
-// validationField renders a FastAPI error `loc` (e.g. ["body","name"]) as a
-// dotted field path, dropping the leading "body"/"query" scope for brevity.
-func validationField(loc []any) string {
-	parts := make([]string, 0, len(loc))
-	for i, seg := range loc {
-		s := fmt.Sprintf("%v", seg)
-		if i == 0 && (s == "body" || s == "query" || s == "path") {
-			continue
-		}
-		parts = append(parts, s)
-	}
-	return strings.Join(parts, ".")
 }

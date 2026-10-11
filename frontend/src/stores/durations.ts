@@ -22,7 +22,7 @@ export const useDurationsStore = defineStore('durations', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Duration[]>('/durations/')
+      const response = await api.get<Duration[]>('/durations')
       durations.value = response.data
       logger.info('durations_fetched', { count: response.data.length })
     } catch (e) {
@@ -38,7 +38,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function create(input: DurationCreate) {
     error.value = null
     try {
-      const response = await api.post<Duration>('/durations/', input)
+      const response = await api.post<Duration>('/durations', input)
       durations.value.push(response.data)
       logger.info('duration_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -53,7 +53,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function update(id: number, input: DurationUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Duration>(`/durations/${id}/`, input)
+      const response = await api.patch<Duration>(`/durations/${id}`, input)
       const index = durations.value.findIndex((d) => d.id === id)
       if (index !== -1) {
         durations.value[index] = response.data
@@ -71,7 +71,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/durations/${id}/`)
+      await api.delete(`/durations/${id}`)
       durations.value = durations.value.filter((d) => d.id !== id)
       logger.info('duration_deleted', { id })
     } catch (e) {
@@ -85,7 +85,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function addNote(durationId: number, input: DurationNoteCreate) {
     error.value = null
     try {
-      const response = await api.post<DurationNote>(`/durations/${durationId}/notes/`, input)
+      const response = await api.post<DurationNote>(`/durations/${durationId}/notes`, input)
       const duration = durations.value.find((d) => d.id === durationId)
       if (duration) {
         duration.duration_notes.push(response.data)
@@ -104,7 +104,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function updateNote(durationId: number, noteId: number, input: DurationNoteUpdate) {
     error.value = null
     try {
-      const response = await api.patch<DurationNote>(`/durations/${durationId}/notes/${noteId}/`, input)
+      const response = await api.patch<DurationNote>(`/durations/${durationId}/notes/${noteId}`, input)
       const duration = durations.value.find((d) => d.id === durationId)
       if (duration) {
         const noteIndex = duration.duration_notes.findIndex((n) => n.id === noteId)
@@ -126,7 +126,7 @@ export const useDurationsStore = defineStore('durations', () => {
   async function removeNote(durationId: number, noteId: number) {
     error.value = null
     try {
-      await api.delete(`/durations/${durationId}/notes/${noteId}/`)
+      await api.delete(`/durations/${durationId}/notes/${noteId}`)
       const duration = durations.value.find((d) => d.id === durationId)
       if (duration) {
         duration.duration_notes = duration.duration_notes.filter((n) => n.id !== noteId)

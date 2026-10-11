@@ -25,16 +25,19 @@ func newIssueInitiativesCommand() *cobra.Command {
 			"initiative takes no new issues and leaves the ones it holds as they are.",
 	})
 	withNotFoundHints(cmd, initiativeHints...)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newInitiativesListCommand(),
 		newInitiativesShowCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newInitiativesCreateCommand(),
 		newInitiativesEditCommand(),
 		newInitiativesCompleteCommand(),
 		newInitiativesDropCommand(),
 		newInitiativesReopenCommand(),
 		newInitiativesDeleteCommand(),
-	)
+	)...)
 	return cmd
 }
 

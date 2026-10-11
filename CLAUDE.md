@@ -29,7 +29,7 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 
 ### Issues and Projects Are Separate Stores
 
-Issues (`/issues/`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects/`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
+Issues (`/issues`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
 The two share the item number sequence, so a bare number is never ambiguous between them.
 Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every read in `services/issue_readiness.py`; a client filters on those flags and never re-derives them.
 `docs/issues.md` explains the ready queue, the order and the claim.
@@ -46,11 +46,13 @@ Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every
 
 ### Authentication
 
-**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. The `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the `icb` CLI targets `ichrisbirch.com/api` and only bearer requests skip the edge. That address is the `api` key of the CLI's config file, and `icbops prod apihealth` and `prod smoke` send `icb auth token` the same way.
+**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. The `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the `icb` CLI targets `https://ichrisbirch.com` and only bearer requests skip the edge. That address is the `api` key of the CLI's config file, and `icbops prod apihealth` and `prod smoke` send `icb auth token` the same way.
 
 **OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `icb-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
-**RFC 9728 metadata:** `/.well-known/oauth-protected-resource/api` is served without authentication, only where `PUBLIC_URL` is set, and the prod router `api-protected-resource` reaches it outside `/api`. `docs/authentication-architecture.md` says why the address is configured rather than derived.
+**API paths:** every resource route is under `/api/v1` (`API_PREFIX` in `ichrisbirch/api/__init__.py`), and nothing between the edge and FastAPI rewrites the path. `/`, `/health` and `/.well-known/oauth-protected-resource` are at the root, and the prod router `api-root` carries the last two. Vue and pytest take the prefix in their base URL and name routes below it; the CLI adds it in `cli/internal/api/client.go`.
+
+**RFC 9728 metadata:** `/.well-known/oauth-protected-resource` is served without authentication, only where `PUBLIC_URL` is set. `docs/authentication-architecture.md` says why the address is configured rather than derived.
 
 **OIDC bearer (a service running the CLI):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
@@ -58,9 +60,9 @@ Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every
 
 The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Released versions of `icb` already write `$XDG_STATE_HOME/icb/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
 
-**Vue (Production):** Same-origin proxy — Vue calls `/api/...`, Traefik `api-proxy` router (priority 200) strips `/api` prefix and forwards to FastAPI. No CORS needed.
+**Vue (Production):** Same-origin proxy — Vue calls `/api/v1/...`, and Traefik's `api-proxy` router (priority 200) forwards `/api` to FastAPI unchanged. No CORS needed.
 
-**Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
+**Vue (Dev):** Cross-origin — Vue calls `https://api.docker.localhost/api/v1` directly. Traefik `dev-authelia-sim` middleware injects `Remote-User: admin@icb.com`.
 
 **`Remote-*` headers are trusted only through `api-proxy`.** The header strategy ignores them on any request carrying `Authorization`, and the prod Traefik blanks them on every other router with `strip-authelia-identity-headers`. A new prod router takes that middleware unless ForwardAuth runs in front of it. `docs/authentication-architecture.md` gives the two bypasses this closes.
 
@@ -181,9 +183,9 @@ Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `
 
 ### `icb` CLI — dev vs prod (data access)
 
-The `icb` CLI is the programmatic data surface. The installed binary is **not** repo-aware: it targets its config file's `api`, which is **production** (`https://ichrisbirch.com/api`, Authelia OIDC bearer token), regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
+The `icb` CLI is the programmatic data surface. The installed binary is **not** repo-aware: it targets its config file's `api`, which is **production** (`https://ichrisbirch.com`, Authelia OIDC bearer token), regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
 
-To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/tasks/`. Pass `--api https://api.docker.localhost` if you need `icb` itself pointed at dev.
+To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/api/v1/tasks`. Pass `--api https://api.docker.localhost` if you need `icb` itself pointed at dev.
 
 ### Always "Cooking Technique", never the bare word "technique"
 

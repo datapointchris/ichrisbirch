@@ -6,7 +6,7 @@ flag names lie. Both bounds are inclusive, either narrows without the other, an
 unparsable value is a 422 rather than a silently dropped filter, and a row whose
 date is null is outside every range.
 
-`/habits/completed/` is where those semantics come from, and it runs through the
+`/habits/completed` is where those semantics come from, and it runs through the
 same helper as the rest.
 
 A day is a day on every one of them. `--start X --end X` answers with what is
@@ -23,15 +23,16 @@ from fastapi import status
 from fastapi.routing import APIRoute
 
 from ichrisbirch import models
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api.request_zone import request_zone
 from tests.util import show_status_and_response
 
-ARTICLES_ENDPOINT = '/articles/'
-BOOKS_ENDPOINT = '/books/'
-TASKS_ENDPOINT = '/tasks/'
-PROJECT_ITEMS_ENDPOINT = '/project-items/'
-PROJECTS_ENDPOINT = '/projects/'
-HABITS_COMPLETED_ENDPOINT = '/habits/completed/'
+ARTICLES_ENDPOINT = '/articles'
+BOOKS_ENDPOINT = '/books'
+TASKS_ENDPOINT = '/tasks'
+PROJECT_ITEMS_ENDPOINT = '/project-items'
+PROJECTS_ENDPOINT = '/projects'
+HABITS_COMPLETED_ENDPOINT = '/habits/completed'
 
 
 def titles(response) -> set[str]:
@@ -40,7 +41,7 @@ def titles(response) -> set[str]:
 
 
 class TestArticleReadDateBounds:
-    """GET /articles/ bounds on `last_read_date`."""
+    """GET /articles bounds on `last_read_date`."""
 
     @pytest.fixture
     def client_with_read_dates(self, txn_api_logged_in):
@@ -91,7 +92,7 @@ class TestArticleReadDateBounds:
         assert titles(response) == {'read in july'}
 
     def test_the_bounds_are_inclusive(self, client_with_read_dates):
-        """A bound carrying a time keeps the row stamped at it, matching /habits/completed/.
+        """A bound carrying a time keeps the row stamped at it, matching /habits/completed.
 
         The test user has no zone, so the time is read in UTC.
         """
@@ -128,11 +129,11 @@ class TestArticleReadDateBounds:
         """An empty list would read as a real answer to a question nobody asked."""
         response = client_with_read_dates.get(ARTICLES_ENDPOINT, params={'start_date': 'last tuesday'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'date' in response.json()['detail'].lower()
+        assert 'date' in response.json()['message'].lower()
 
 
 class TestBookFinishDateBounds:
-    """GET /books/ bounds on `read_finish_date`."""
+    """GET /books bounds on `read_finish_date`."""
 
     @pytest.fixture
     def client_with_finish_dates(self, txn_api_logged_in):
@@ -182,10 +183,10 @@ class TestBookFinishDateBounds:
 
 
 class TestTaskCompleteDateBounds:
-    """GET /tasks/ bounds on `complete_date`.
+    """GET /tasks bounds on `complete_date`.
 
-    The bounds live on this endpoint rather than only on `/tasks/completed/`
-    because this is the read the CLI makes: `/tasks/completed/` answers a
+    The bounds live on this endpoint rather than only on `/tasks/completed`
+    because this is the read the CLI makes: `/tasks/completed` answers a
     different response model and ignores `limit`, so routing a bounded question
     there would change what the caller got back.
     """
@@ -233,13 +234,13 @@ class TestTaskCompleteDateBounds:
         assert self.names(response) == {'done in august'}
 
     def test_the_completed_read_takes_the_same_single_day_window(self, client_with_completed_tasks):
-        """`/tasks/completed/` carried its own copy of the bounds and its own defect.
+        """`/tasks/completed` carried its own copy of the bounds and its own defect.
 
         Nothing in this fleet calls it, so it is fixed by folding rather than by
         being found: another client reaching for it gets what the CLI gets.
         """
         response = client_with_completed_tasks.get(
-            f'{TASKS_ENDPOINT}completed/',
+            f'{TASKS_ENDPOINT}/completed',
             params={'start_date': '2026-08-15', 'end_date': '2026-08-15'},
         )
         assert self.names(response) == {'done in august'}
@@ -305,7 +306,7 @@ class TestTheRequestZoneDecidesTheDay:
 
 
 class TestProjectItemCompletedAtBounds:
-    """GET /project-items/ and /projects/{id}/items/ bound on `completed_at`.
+    """GET /project-items and /projects/{id}/items bound on `completed_at`.
 
     A scope selects which rows come back, never what a filter means, so both
     paths take the same two parameters against the same column.
@@ -324,7 +325,7 @@ class TestProjectItemCompletedAtBounds:
             assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
             created[title] = response.json()['id']
 
-        completed = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created["finished today"]}/', json={'completed': True})
+        completed = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{created["finished today"]}', json={'completed': True})
         assert completed.status_code == status.HTTP_200_OK, show_status_and_response(completed)
         return client, project_id
 
@@ -359,7 +360,7 @@ class TestProjectItemCompletedAtBounds:
 
     def test_the_project_scoped_list_takes_the_same_bounds(self, seeded):
         client, project_id = seeded
-        response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/', params={'status': 'completed', 'start_date': '2000-01-01'})
+        response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items', params={'status': 'completed', 'start_date': '2000-01-01'})
         assert titles(response) == {'finished today'}
 
     def test_the_bounds_compose_with_repo(self, seeded):
@@ -374,7 +375,7 @@ class TestProjectItemCompletedAtBounds:
 
 
 class TestHabitCompleteDateBounds:
-    """GET /habits/completed/ bounds on `complete_date`.
+    """GET /habits/completed bounds on `complete_date`.
 
     This endpoint wrote the contract and kept its own copy of the comparison,
     which is how it ended up with the defect the contract was meant to prevent.
@@ -488,7 +489,7 @@ def bounded_reads(api) -> dict[str, APIRoute]:
         if not isinstance(route, APIRoute) or 'GET' not in route.methods:
             continue
         if {param.name for param in route.dependant.query_params} & {'start_date', 'end_date'}:
-            found[route.path] = route
+            found[route.path.removeprefix(API_PREFIX)] = route
     return found
 
 
@@ -499,7 +500,7 @@ def declares_request_zone(dependant) -> bool:
 def test_every_bounded_read_over_an_instant_column_takes_the_request_zone(txn_api_logged_in):
     """`timezone=None` type-checks whatever the column.
 
-    A new read copied from `/books/` onto a timestamp column passes mypy, then
+    A new read copied from `/books` onto a timestamp column passes mypy, then
     answers its first bare day with a 500 from `apply_date_bounds`.
     """
     reads = bounded_reads(txn_api_logged_in[0].app)

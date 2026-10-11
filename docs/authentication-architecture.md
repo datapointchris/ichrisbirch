@@ -7,9 +7,9 @@ dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 
 | Caller | Credential | How it reaches the API |
 | --- | --- | --- |
-| A person running `icb` | Authelia access token from the device grant | `Authorization: Bearer` to `ichrisbirch.com/api`, which the `ichrisbirch-bearer` router carries past ForwardAuth |
+| A person running `icb` | Authelia access token from the device grant | `Authorization: Bearer` to `ichrisbirch.com/api/v1`, which the `ichrisbirch-bearer` router carries past ForwardAuth |
 | A service running `icb` | Authelia access token from the client-credentials grant | The same bearer route, with no person present |
-| The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/...` on the same origin |
+| The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/v1/...` on the same origin |
 | This app's own services | `X-Service-Key`, with `X-Internal-Service` or with `X-Application-ID` and `X-User-ID` | Internal network |
 
 `authenticated_user` runs every user strategy and takes the first match. The
@@ -48,11 +48,10 @@ authentication, and serves nothing while `PUBLIC_URL` is unset. The CLI refuses
 the document unless `resource` matches the URL it was given exactly, so
 `PUBLIC_URL` is set per deployment rather than derived from a request.
 
-RFC 9728 puts the document for `https://ichrisbirch.com/api` at
-`/.well-known/oauth-protected-resource/api`, outside `/api`. The prod router
-`api-protected-resource` carries that one path to the API unstripped, and the
-edge needs a router of its own for it, since a request without a token otherwise
-meets ForwardAuth.
+The resource is `https://ichrisbirch.com`, so RFC 9728 puts its document at
+`/.well-known/oauth-protected-resource`, beside `/api`. The prod router
+`api-root` carries that path to the API, and the edge needs a router of its own
+for it, since a request without a token otherwise meets ForwardAuth.
 
 ## Remote-User is read only where ForwardAuth set it
 
@@ -93,7 +92,7 @@ acts as the account owner.
 
 `ichrisbirch/api/client_scopes.py` maps each scope to the
 `(method, route template)` pairs it reaches. A template includes the router
-prefix, so `/project-items/{id}/` covers every item.
+prefix, so `/api/v1/project-items/{id}` covers every item.
 
 A router with a route in `SCOPE_ROUTES` takes
 `get_current_user_or_scoped_client`. It admits a scoped client only on a listed
@@ -112,7 +111,7 @@ reason, and a scoped client that names no `timezone` gets UTC.
 requests every listed route as a scoped client and requires 200, so a renamed
 path parameter fails it with 403.
 
-A refused scoped client's 403 detail names the routes its scopes reach. The same
+A refused scoped client's 403 message names the routes its scopes reach. The same
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
 The CLI's suite runs each read a scheduled job makes as a service:
 `icb projects items search`, and `icb issues list`, `list --blocked`, `search`,

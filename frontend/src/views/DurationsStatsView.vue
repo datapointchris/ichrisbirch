@@ -119,7 +119,7 @@ const byLengthOptions = computed(() => horizontalBarOptions('Duration Lengths (D
 onMounted(async () => {
   loading.value = true
   try {
-    const response = await api.get<Duration[]>('/durations/')
+    const response = await api.get<Duration[]>('/durations')
     durations.value = response.data
     logger.info('duration_stats_loaded', { count: response.data.length })
   } catch (e) {

@@ -72,7 +72,7 @@ describe('useProjectsStore', () => {
     vi.clearAllMocks()
     // Default: blocker fetches return empty (most tests don't need blockers)
     mockApi.get.mockImplementation((url: string) => {
-      if (typeof url === 'string' && url.includes('/blockers/')) {
+      if (typeof url === 'string' && url.includes('/blockers')) {
         return Promise.resolve({ data: [] })
       }
       return Promise.resolve({ data: [] })
@@ -126,8 +126,8 @@ describe('useProjectsStore', () => {
 
     await store.createProject({ name: 'New' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/projects/', { name: 'New' })
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
+    expect(mockApi.post).toHaveBeenCalledWith('/projects', { name: 'New' })
+    expect(mockApi.get).toHaveBeenCalledWith('/projects', { params: { status: 'active' } })
   })
 
   it('sets error on create failure', async () => {
@@ -148,7 +148,7 @@ describe('useProjectsStore', () => {
 
     await store.updateProject(1, { name: 'Renamed' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { name: 'Renamed' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1', { name: 'Renamed' })
   })
 
   // --- removeProject ---
@@ -160,7 +160,7 @@ describe('useProjectsStore', () => {
 
     await store.removeProject(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/projects/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/projects/2')
     expect(store.projects).toHaveLength(2)
     expect(store.projects.find((p) => p.id === 2)).toBeUndefined()
   })
@@ -218,7 +218,7 @@ describe('useProjectsStore', () => {
 
   it('fetches items for a project and sets state', async () => {
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -232,7 +232,7 @@ describe('useProjectsStore', () => {
 
   it('clears blockers when fetching new items', async () => {
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
+      if (url === '/projects/1/items?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -272,8 +272,8 @@ describe('useProjectsStore', () => {
     const newItemDetail = { ...testItemDetail, id: 20, title: 'New item', dependency_ids: [], projects: [] }
     mockApi.post.mockResolvedValue({ data: newItemDetail })
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/') return Promise.resolve({ data: testProjects })
-      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
+      if (url === '/projects') return Promise.resolve({ data: testProjects })
+      if (url === '/projects/1/items?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -281,7 +281,7 @@ describe('useProjectsStore', () => {
 
     const result = await store.createItem({ title: 'New item', project_ids: [1] })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/project-items/', { title: 'New item', project_ids: [1] })
+    expect(mockApi.post).toHaveBeenCalledWith('/project-items', { title: 'New item', project_ids: [1] })
     expect(result.id).toBe(20)
   })
 
@@ -303,7 +303,7 @@ describe('useProjectsStore', () => {
 
     await store.updateItem(10, { title: 'Updated', notes: 'New' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10/', { title: 'Updated', notes: 'New' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10', { title: 'Updated', notes: 'New' })
     const item = store.items.find((i) => i.id === 10)
     expect(item!.title).toBe('Updated')
     expect(item!.position).toBe(0) // position preserved from original
@@ -319,7 +319,7 @@ describe('useProjectsStore', () => {
 
     await store.removeItem(11)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/project-items/11/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/project-items/11')
     expect(store.items).toHaveLength(2)
     expect(store.items.find((i) => i.id === 11)).toBeUndefined()
   })
@@ -338,8 +338,8 @@ describe('useProjectsStore', () => {
     // Item 10 moved from position 0 → 1, item 11 from 1 → 0
     // Item 12 stays at position 2 (no call)
     expect(mockApi.patch).toHaveBeenCalledTimes(2)
-    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/11/reorder/', { project_id: 1, position: 0 })
-    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10/reorder/', { project_id: 1, position: 1 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/11/reorder', { project_id: 1, position: 0 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10/reorder', { project_id: 1, position: 1 })
   })
 
   it('does nothing when no project is selected', async () => {
@@ -360,9 +360,9 @@ describe('useProjectsStore', () => {
 
     await store.reorderProjects([3, 1, 2])
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/3/', { position: 0 })
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { position: 1 })
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/2/', { position: 2 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/3', { position: 0 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1', { position: 1 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/2', { position: 2 })
   })
 
   // --- completeItem / archiveItem ---
@@ -375,7 +375,7 @@ describe('useProjectsStore', () => {
 
     await store.completeItem(10)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10/', { completed: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10', { completed: true })
   })
 
   it('archiveItem calls updateItem with archived: true', async () => {
@@ -386,7 +386,7 @@ describe('useProjectsStore', () => {
 
     await store.archiveItem(10)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10/', { archived: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/project-items/10', { archived: true })
   })
 
   // --- fetchItemBlockers ---
@@ -394,8 +394,8 @@ describe('useProjectsStore', () => {
   it('fetches blockers for all items in project', async () => {
     const blockerItem = { id: 10, title: 'Decide budget', completed: false, archived: false, created_at: '', updated_at: '' }
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/project-items/11/blockers/') return Promise.resolve({ data: [blockerItem] })
-      if (url.includes('/blockers/')) return Promise.resolve({ data: [] })
+      if (url === '/project-items/11/blockers') return Promise.resolve({ data: [blockerItem] })
+      if (url.includes('/blockers')) return Promise.resolve({ data: [] })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -416,7 +416,7 @@ describe('useProjectsStore', () => {
 
     const result = await store.fetchItemDetail(10)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/project-items/10/')
+    expect(mockApi.get).toHaveBeenCalledWith('/project-items/10')
     expect(result.projects).toHaveLength(1)
     expect(result.dependency_ids).toEqual([11])
   })
@@ -430,7 +430,7 @@ describe('useProjectsStore', () => {
 
     const result = await store.addDependency(10, { depends_on_id: 12 })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/project-items/10/dependencies/', { depends_on_id: 12 })
+    expect(mockApi.post).toHaveBeenCalledWith('/project-items/10/dependencies', { depends_on_id: 12 })
     expect(result.dependency_ids).toEqual([11, 12])
   })
 
@@ -452,15 +452,15 @@ describe('useProjectsStore', () => {
 
     await store.addToProject(10, { project_id: 2 })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/project-items/10/projects/', { project_id: 2 })
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'active' } })
+    expect(mockApi.post).toHaveBeenCalledWith('/project-items/10/projects', { project_id: 2 })
+    expect(mockApi.get).toHaveBeenCalledWith('/projects', { params: { status: 'active' } })
   })
 
   it('removes item from project and refetches', async () => {
     mockApi.delete.mockResolvedValue({})
     mockApi.get.mockImplementation((url: string) => {
-      if (url === '/projects/') return Promise.resolve({ data: testProjects })
-      if (url === '/projects/1/items/?status=all') return Promise.resolve({ data: testItems })
+      if (url === '/projects') return Promise.resolve({ data: testProjects })
+      if (url === '/projects/1/items?status=all') return Promise.resolve({ data: testItems })
       return Promise.resolve({ data: [] })
     })
     const store = useProjectsStore()
@@ -468,7 +468,7 @@ describe('useProjectsStore', () => {
 
     await store.removeFromProject(10, 2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/project-items/10/projects/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/project-items/10/projects/2')
   })
 
   it('sets error when removing from last project', async () => {
@@ -489,7 +489,7 @@ describe('useProjectsStore', () => {
 
     const result = await store.searchItems('budget')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/project-items/search/', { params: { q: 'budget' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/project-items/search', { params: { q: 'budget' } })
     expect(result).toHaveLength(2)
   })
 
@@ -527,7 +527,7 @@ describe('useProjectsStore', () => {
     await store.setStatusFilter('all')
 
     expect(store.statusFilter).toBe('all')
-    expect(mockApi.get).toHaveBeenCalledWith('/projects/', { params: { status: 'all' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/projects', { params: { status: 'all' } })
   })
 
   it('does not refetch when the filter is already what was asked for', async () => {
@@ -560,7 +560,7 @@ describe('useProjectsStore', () => {
 
     await store.setProjectStatus(1 as never, 'completed')
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', { status: 'completed' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1', { status: 'completed' })
   })
 
   it('sends the reason when dropping', async () => {
@@ -570,7 +570,7 @@ describe('useProjectsStore', () => {
 
     await store.setProjectStatus(1 as never, 'dropped', 'Go covers it')
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1/', {
+    expect(mockApi.patch).toHaveBeenCalledWith('/projects/1', {
       status: 'dropped',
       status_reason: 'Go covers it',
     })

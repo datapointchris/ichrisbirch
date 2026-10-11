@@ -61,7 +61,7 @@ describe('useAutoFunStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/autofun/')
+    expect(mockApi.get).toHaveBeenCalledWith('/autofun')
     expect(store.items).toEqual(testItems)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -113,7 +113,7 @@ describe('useAutoFunStore', () => {
 
     await store.create({ name: 'New activity' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/autofun/', { name: 'New activity' })
+    expect(mockApi.post).toHaveBeenCalledWith('/autofun', { name: 'New activity' })
     expect(store.items[0]).toEqual(created)
     expect(store.items).toHaveLength(4)
   })
@@ -138,7 +138,7 @@ describe('useAutoFunStore', () => {
 
     await store.update(1, { name: 'Updated name' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/autofun/1/', { name: 'Updated name' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/autofun/1', { name: 'Updated name' })
     expect(store.items.find((i) => i.id === 1)!.name).toBe('Updated name')
   })
 
@@ -151,7 +151,7 @@ describe('useAutoFunStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/autofun/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/autofun/2')
     expect(store.items).toHaveLength(2)
     expect(store.items.find((i) => i.id === 2)).toBeUndefined()
   })

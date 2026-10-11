@@ -79,7 +79,7 @@ export const useCoffeeBeansStore = defineStore('coffeeBeans', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<CoffeeBean[]>('/coffee/beans/')
+      const response = await api.get<CoffeeBean[]>('/coffee/beans')
       items.value = response.data
       logger.info('coffee_beans_fetched', { count: response.data.length })
     } catch (e) {
@@ -95,7 +95,7 @@ export const useCoffeeBeansStore = defineStore('coffeeBeans', () => {
   async function create(input: CoffeeBeanCreate) {
     error.value = null
     try {
-      const response = await api.post<CoffeeBean>('/coffee/beans/', input)
+      const response = await api.post<CoffeeBean>('/coffee/beans', input)
       items.value.push(response.data)
       logger.info('coffee_bean_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -110,7 +110,7 @@ export const useCoffeeBeansStore = defineStore('coffeeBeans', () => {
   async function update(id: number, input: CoffeeBeanUpdate) {
     error.value = null
     try {
-      const response = await api.patch<CoffeeBean>(`/coffee/beans/${id}/`, input)
+      const response = await api.patch<CoffeeBean>(`/coffee/beans/${id}`, input)
       const index = items.value.findIndex((b) => b.id === id)
       if (index !== -1) {
         items.value[index] = response.data
@@ -128,7 +128,7 @@ export const useCoffeeBeansStore = defineStore('coffeeBeans', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/coffee/beans/${id}/`)
+      await api.delete(`/coffee/beans/${id}`)
       items.value = items.value.filter((b) => b.id !== id)
       logger.info('coffee_bean_deleted', { id })
     } catch (e) {

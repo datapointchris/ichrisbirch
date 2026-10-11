@@ -26,23 +26,26 @@ func newArticlesCommand() *cobra.Command {
 		"List every article: icb articles list",
 		"Search articles by tag: icb articles search <tag>",
 	)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newArticlesListCommand(),
 		newArticlesShowCommand(),
 		newArticlesCurrentCommand(),
 		newArticlesSearchCommand(),
-		newArticlesCreateCommand(),
-		newArticlesEditCommand(),
-		newArticlesReadCommand(),
-		newArticlesDeleteCommand(),
-		newArticlesImportCommand(),
 		// A batch id is Redis-backed and expires 24 hours after its import, so
 		// a 404 here is usually age rather than a wrong id — and nothing in the
 		// tool lists batches, which is all the group's hints could offer.
 		withNotFoundHints(newArticlesImportStatusCommand(),
 			"A batch is kept for 24 hours — see what the import saved: icb articles list",
 		),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
+		newArticlesCreateCommand(),
+		newArticlesEditCommand(),
+		newArticlesReadCommand(),
+		newArticlesDeleteCommand(),
+		newArticlesImportCommand(),
+	)...)
 	return cmd
 }
 

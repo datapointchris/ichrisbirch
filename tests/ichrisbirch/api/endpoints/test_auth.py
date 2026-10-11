@@ -62,7 +62,7 @@ def test_internal_service_authentication_valid(auth_test_context, test_user):
     """Test valid internal service authentication allows access to email endpoint."""
     client, _, _, _ = auth_test_context
     headers = make_internal_service_headers()
-    response = client.get(f'/users/email/{test_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['email'] == test_user.email
@@ -73,32 +73,32 @@ def test_internal_service_authentication_invalid_key(auth_test_context, test_use
     """Test invalid internal service key returns 401."""
     client, _, _, _ = auth_test_context
     headers = make_invalid_internal_service_headers()
-    response = client.get(f'/users/email/{test_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_headers(auth_test_context, test_user):
     """Test missing internal service headers returns 401."""
     client, _, _, _ = auth_test_context
-    response = client.get(f'/users/email/{test_user.email}/')
+    response = client.get(f'/users/email/{test_user.email}')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_service_header(auth_test_context, test_user):
     """Test missing X-Internal-Service header returns 401."""
     client, _, _, _ = auth_test_context
     headers = {'X-Service-Key': test_settings.auth.internal_service_key}
-    response = client.get(f'/users/email/{test_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_key_header(auth_test_context, test_user):
     """Test missing X-Service-Key header returns 401."""
     client, _, _, _ = auth_test_context
     headers = {'X-Internal-Service': 'internal-service'}
-    response = client.get(f'/users/email/{test_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']

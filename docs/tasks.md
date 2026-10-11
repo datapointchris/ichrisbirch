@@ -19,7 +19,7 @@ from the request when one is given, and from the task's category otherwise.
 `icb tasks categories list` prints each category's window.
 `TASK_CATEGORY_WINDOW_DAYS` holds the defaults a new database starts with.
 The deployed values live in `task_categories.window_days` and change through
-`PATCH /tasks/categories/{name}/`. A changed window applies to the next task
+`PATCH /tasks/categories/{name}`. A changed window applies to the next task
 in that category. Tasks already open keep the window they were made with.
 
 The window is how fast a kind of task climbs. A nail trim with a 7-day window
@@ -42,13 +42,13 @@ something that should be done sooner, which a shorter window already says.
 between two neighbors to drag into.
 
 A dropped task is one let go of. It stays on record, leaves the open list, and
-does not count as completed. `PATCH /tasks/{id}/reopen/` puts a completed or
+does not count as completed. `PATCH /tasks/{id}/reopen` puts a completed or
 dropped task back on the list at the `rank_at` it had.
 
 ## The table enforces what each state allows
 
 A task is open, completed or dropped. Three checks hold the fields to the
-state, so neither a verb nor a raw `PATCH /tasks/{id}/` can break them.
+state, so neither a verb nor a raw `PATCH /tasks/{id}` can break them.
 
 | Check | Rule |
 | --- | --- |

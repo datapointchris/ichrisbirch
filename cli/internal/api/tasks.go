@@ -12,7 +12,7 @@ import (
 // Task mirrors the standalone Tasks app JSON (the flat maintenance list, distinct
 // from project items). IDs are integers here. CompleteDate and DropDate are
 // pointers so an open task (both null) is distinct from a closed one. The
-// /completed/ endpoint returns a subset of the same shape, so this one DTO
+// /completed endpoint returns a subset of the same shape, so this one DTO
 // covers every read.
 //
 // RankAt is when the task should reach the top of the open list. The server
@@ -49,7 +49,7 @@ type TaskCreateInput struct {
 	Pinned     *bool   `json:"pinned,omitempty"`
 }
 
-// TaskUpdateInput is a partial update (PATCH /tasks/{id}/): only changed fields
+// TaskUpdateInput is a partial update (PATCH /tasks/{id}): only changed fields
 // are sent. Completing, dropping, reopening and snoozing have dedicated calls.
 type TaskUpdateInput struct {
 	Name       *string `json:"name,omitempty"`
@@ -98,7 +98,7 @@ type TaskCategory struct {
 	WindowDays int    `json:"window_days"`
 }
 
-// ListTasks returns tasks in one status (GET /tasks/). A nil limit fetches all;
+// ListTasks returns tasks in one status (GET /tasks). A nil limit fetches all;
 // a non-nil limit caps the count. An empty status takes the API's default, open.
 // An empty category lists every category. start and end narrow to tasks
 // closed within an inclusive range, read in zone.
@@ -123,15 +123,15 @@ func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category
 	}
 	applyDateBounds(query, start, end, zone)
 	var tasks []Task
-	if err := c.get(ctx, withQuery("/tasks/", query), &tasks); err != nil {
+	if err := c.get(ctx, withQuery("/tasks", query), &tasks); err != nil {
 		return nil, err
 	}
 	return tasks, nil
 }
 
-// SearchTasks returns tasks whose name or notes match q (GET /tasks/search/?q=).
+// SearchTasks returns tasks whose name or notes match q (GET /tasks/search?q=).
 func (c *Client) SearchTasks(ctx context.Context, q string) ([]Task, error) {
-	path := "/tasks/search/?" + url.Values{"q": {q}}.Encode()
+	path := "/tasks/search?" + url.Values{"q": {q}}.Encode()
 	var tasks []Task
 	if err := c.get(ctx, path, &tasks); err != nil {
 		return nil, err
@@ -139,28 +139,28 @@ func (c *Client) SearchTasks(ctx context.Context, q string) ([]Task, error) {
 	return tasks, nil
 }
 
-// GetTask returns a single task (GET /tasks/{id}/). A missing id is a 404.
+// GetTask returns a single task (GET /tasks/{id}). A missing id is a 404.
 func (c *Client) GetTask(ctx context.Context, id int) (Task, error) {
 	var task Task
-	if err := c.get(ctx, fmt.Sprintf("/tasks/%d/", id), &task); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/tasks/%d", id), &task); err != nil {
 		return Task{}, err
 	}
 	return task, nil
 }
 
-// CreateTask creates a task (POST /tasks/) and returns the created row.
+// CreateTask creates a task (POST /tasks) and returns the created row.
 func (c *Client) CreateTask(ctx context.Context, in TaskCreateInput) (Task, error) {
 	var task Task
-	if err := c.send(ctx, http.MethodPost, "/tasks/", in, &task); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/tasks", in, &task); err != nil {
 		return Task{}, err
 	}
 	return task, nil
 }
 
-// UpdateTask applies a partial update (PATCH /tasks/{id}/).
+// UpdateTask applies a partial update (PATCH /tasks/{id}).
 func (c *Client) UpdateTask(ctx context.Context, id int, in TaskUpdateInput) (Task, error) {
 	var task Task
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d/", id), in, &task); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d", id), in, &task); err != nil {
 		return Task{}, err
 	}
 	return task, nil
@@ -172,24 +172,24 @@ func (c *Client) SetTaskPinned(ctx context.Context, id int, pinned bool) (Task, 
 	return c.UpdateTask(ctx, id, TaskUpdateInput{Pinned: &pinned})
 }
 
-// DeleteTask removes a task (DELETE /tasks/{id}/ → 204).
+// DeleteTask removes a task (DELETE /tasks/{id} → 204).
 func (c *Client) DeleteTask(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/tasks/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/tasks/%d", id), nil, nil)
 }
 
-// CompleteTask stamps a task's completion time (PATCH /tasks/{id}/complete/).
+// CompleteTask stamps a task's completion time (PATCH /tasks/{id}/complete).
 // A task already closed answers 409.
 func (c *Client) CompleteTask(ctx context.Context, id int) (Task, error) {
 	return c.taskAction(ctx, id, "complete", nil)
 }
 
 // SnoozeTask restarts the task's window from now and unpins it
-// (PATCH /tasks/{id}/snooze/), which moves it back down the list.
+// (PATCH /tasks/{id}/snooze), which moves it back down the list.
 func (c *Client) SnoozeTask(ctx context.Context, id int) (Task, error) {
 	return c.taskAction(ctx, id, "snooze", nil)
 }
 
-// DropTask closes a task that is being let go (PATCH /tasks/{id}/drop/). It
+// DropTask closes a task that is being let go (PATCH /tasks/{id}/drop). It
 // stays on record and does not count as completed. An empty reason sends none.
 func (c *Client) DropTask(ctx context.Context, id int, reason string) (Task, error) {
 	body := struct {
@@ -202,7 +202,7 @@ func (c *Client) DropTask(ctx context.Context, id int, reason string) (Task, err
 }
 
 // ReopenTask returns a completed or dropped task to the open list
-// (PATCH /tasks/{id}/reopen/), clearing its closing date and drop reason
+// (PATCH /tasks/{id}/reopen), clearing its closing date and drop reason
 // together. A task already open answers 409.
 func (c *Client) ReopenTask(ctx context.Context, id int) (Task, error) {
 	return c.taskAction(ctx, id, "reopen", nil)
@@ -210,30 +210,30 @@ func (c *Client) ReopenTask(ctx context.Context, id int) (Task, error) {
 
 func (c *Client) taskAction(ctx context.Context, id int, action string, body any) (Task, error) {
 	var task Task
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d/%s/", id, action), body, &task); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/tasks/%d/%s", id, action), body, &task); err != nil {
 		return Task{}, err
 	}
 	return task, nil
 }
 
 // ListTaskCategories returns every task category with its window
-// (GET /tasks/categories/).
+// (GET /tasks/categories).
 func (c *Client) ListTaskCategories(ctx context.Context) ([]TaskCategory, error) {
 	var categories []TaskCategory
-	if err := c.get(ctx, "/tasks/categories/", &categories); err != nil {
+	if err := c.get(ctx, "/tasks/categories", &categories); err != nil {
 		return nil, err
 	}
 	return categories, nil
 }
 
-// UpdateTaskCategory sets a category's window (PATCH /tasks/categories/{name}/).
+// UpdateTaskCategory sets a category's window (PATCH /tasks/categories/{name}).
 // Tasks already open keep the window they were made with.
 func (c *Client) UpdateTaskCategory(ctx context.Context, name string, windowDays int) (TaskCategory, error) {
 	body := struct {
 		WindowDays int `json:"window_days"`
 	}{windowDays}
 	var category TaskCategory
-	if err := c.send(ctx, http.MethodPatch, "/tasks/categories/"+url.PathEscape(name)+"/", body, &category); err != nil {
+	if err := c.send(ctx, http.MethodPatch, "/tasks/categories/"+url.PathEscape(name), body, &category); err != nil {
 		return TaskCategory{}, err
 	}
 	return category, nil

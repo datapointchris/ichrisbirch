@@ -11,7 +11,7 @@ import (
 
 // CookingTechnique mirrors the cooking-techniques JSON — a durable how-and-why
 // writeup nested under the recipes domain (endpoints live at
-// /recipes/cooking-techniques/). Nullable prose fields are pointers; slug is
+// /recipes/cooking-techniques). Nullable prose fields are pointers; slug is
 // server-generated from the name.
 type CookingTechnique struct {
 	ID             int       `json:"id"`
@@ -30,7 +30,7 @@ type CookingTechnique struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
-// CookingTechniqueCreateInput is the body for POST /recipes/cooking-techniques/.
+// CookingTechniqueCreateInput is the body for POST /recipes/cooking-techniques.
 // name/category/summary/body are required; the rest are optional prose.
 type CookingTechniqueCreateInput struct {
 	Name           string   `json:"name"`
@@ -46,7 +46,7 @@ type CookingTechniqueCreateInput struct {
 }
 
 // CookingTechniqueUpdateInput is a partial update (PATCH
-// /recipes/cooking-techniques/{id}/): only the fields set are sent.
+// /recipes/cooking-techniques/{id}): only the fields set are sent.
 type CookingTechniqueUpdateInput struct {
 	Name           *string  `json:"name,omitempty"`
 	Category       *string  `json:"category,omitempty"`
@@ -68,7 +68,7 @@ type CookingTechniqueCategory struct {
 }
 
 // ListCookingTechniques returns techniques ordered by name (GET
-// /recipes/cooking-techniques/). category and ratingMin, when non-nil, filter.
+// /recipes/cooking-techniques). category and ratingMin, when non-nil, filter.
 // A nil limit fetches all; a non-nil limit caps the count.
 func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ratingMin, limit *int) ([]CookingTechnique, error) {
 	params := url.Values{}
@@ -79,7 +79,7 @@ func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ra
 		params.Set("rating_min", strconv.Itoa(*ratingMin))
 	}
 	applyLimit(params, limit)
-	path := "/recipes/cooking-techniques/"
+	path := "/recipes/cooking-techniques"
 	if encoded := params.Encode(); encoded != "" {
 		path += "?" + encoded
 	}
@@ -91,29 +91,29 @@ func (c *Client) ListCookingTechniques(ctx context.Context, category *string, ra
 }
 
 // GetCookingTechnique returns a single technique by id (GET
-// /recipes/cooking-techniques/{id}/). Missing is 404.
+// /recipes/cooking-techniques/{id}). Missing is 404.
 func (c *Client) GetCookingTechnique(ctx context.Context, id int) (CookingTechnique, error) {
 	var technique CookingTechnique
-	if err := c.get(ctx, fmt.Sprintf("/recipes/cooking-techniques/%d/", id), &technique); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/recipes/cooking-techniques/%d", id), &technique); err != nil {
 		return CookingTechnique{}, err
 	}
 	return technique, nil
 }
 
 // GetCookingTechniqueBySlug returns a single technique by slug (GET
-// /recipes/cooking-techniques/slug/{slug}/). Missing is 404.
+// /recipes/cooking-techniques/slug/{slug}). Missing is 404.
 func (c *Client) GetCookingTechniqueBySlug(ctx context.Context, slug string) (CookingTechnique, error) {
 	var technique CookingTechnique
-	if err := c.get(ctx, fmt.Sprintf("/recipes/cooking-techniques/slug/%s/", url.PathEscape(slug)), &technique); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/recipes/cooking-techniques/slug/%s", url.PathEscape(slug)), &technique); err != nil {
 		return CookingTechnique{}, err
 	}
 	return technique, nil
 }
 
 // SearchCookingTechniques returns techniques matching q across name, summary,
-// body, and tags (GET /recipes/cooking-techniques/search/?q=).
+// body, and tags (GET /recipes/cooking-techniques/search?q=).
 func (c *Client) SearchCookingTechniques(ctx context.Context, q string) ([]CookingTechnique, error) {
-	path := "/recipes/cooking-techniques/search/?" + url.Values{"q": {q}}.Encode()
+	path := "/recipes/cooking-techniques/search?" + url.Values{"q": {q}}.Encode()
 	var techniques []CookingTechnique
 	if err := c.get(ctx, path, &techniques); err != nil {
 		return nil, err
@@ -122,26 +122,26 @@ func (c *Client) SearchCookingTechniques(ctx context.Context, q string) ([]Cooki
 }
 
 // ListCookingTechniqueCategories returns all category buckets with counts (GET
-// /recipes/cooking-techniques/categories/).
+// /recipes/cooking-techniques/categories).
 func (c *Client) ListCookingTechniqueCategories(ctx context.Context) ([]CookingTechniqueCategory, error) {
 	var categories []CookingTechniqueCategory
-	if err := c.get(ctx, "/recipes/cooking-techniques/categories/", &categories); err != nil {
+	if err := c.get(ctx, "/recipes/cooking-techniques/categories", &categories); err != nil {
 		return nil, err
 	}
 	return categories, nil
 }
 
-// CreateCookingTechnique creates a technique (POST /recipes/cooking-techniques/).
+// CreateCookingTechnique creates a technique (POST /recipes/cooking-techniques).
 func (c *Client) CreateCookingTechnique(ctx context.Context, in CookingTechniqueCreateInput) (CookingTechnique, error) {
 	var technique CookingTechnique
-	if err := c.send(ctx, http.MethodPost, "/recipes/cooking-techniques/", in, &technique); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/recipes/cooking-techniques", in, &technique); err != nil {
 		return CookingTechnique{}, err
 	}
 	return technique, nil
 }
 
 // UpdateCookingTechnique applies a partial update (PATCH
-// /recipes/cooking-techniques/{id}/). Each field named in clear is sent as an
+// /recipes/cooking-techniques/{id}). Each field named in clear is sent as an
 // explicit null (the API's null_fields capability).
 func (c *Client) UpdateCookingTechnique(ctx context.Context, id int, in CookingTechniqueUpdateInput, clear []string) (CookingTechnique, error) {
 	body, err := mergeClearNulls(in, clear)
@@ -149,14 +149,14 @@ func (c *Client) UpdateCookingTechnique(ctx context.Context, id int, in CookingT
 		return CookingTechnique{}, err
 	}
 	var technique CookingTechnique
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/cooking-techniques/%d/", id), body, &technique); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/recipes/cooking-techniques/%d", id), body, &technique); err != nil {
 		return CookingTechnique{}, err
 	}
 	return technique, nil
 }
 
 // DeleteCookingTechnique removes a technique (DELETE
-// /recipes/cooking-techniques/{id}/ → 204).
+// /recipes/cooking-techniques/{id} → 204).
 func (c *Client) DeleteCookingTechnique(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/recipes/cooking-techniques/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/recipes/cooking-techniques/%d", id), nil, nil)
 }

@@ -56,7 +56,7 @@ export const useAdminStore = defineStore('admin', () => {
     systemHealthLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/admin/system/health/')
+      const response = await api.get('/admin/system/health')
       systemHealth.value = response.data
       logger.info('system_health_fetched')
     } catch (e) {
@@ -73,7 +73,7 @@ export const useAdminStore = defineStore('admin', () => {
   async function fetchRecentErrors() {
     recentErrorsLoading.value = true
     try {
-      const response = await api.get('/admin/system/errors/')
+      const response = await api.get('/admin/system/errors')
       recentErrors.value = response.data
       logger.info('recent_errors_fetched', { count: recentErrors.value.length })
     } catch (e) {
@@ -89,7 +89,7 @@ export const useAdminStore = defineStore('admin', () => {
     schedulerJobsLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/admin/scheduler/jobs/')
+      const response = await api.get('/admin/scheduler/jobs')
       schedulerJobs.value = response.data
       logger.info('scheduler_jobs_fetched', { count: schedulerJobs.value.length })
     } catch (e) {
@@ -105,7 +105,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function pauseJob(jobId: string) {
     try {
-      const response = await api.post(`/admin/scheduler/jobs/${jobId}/pause/`)
+      const response = await api.post(`/admin/scheduler/jobs/${jobId}/pause`)
       const idx = schedulerJobs.value.findIndex((j) => j.id === jobId)
       if (idx !== -1) schedulerJobs.value[idx] = response.data
       logger.info('scheduler_job_paused', { job_id: jobId })
@@ -118,7 +118,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function resumeJob(jobId: string) {
     try {
-      const response = await api.post(`/admin/scheduler/jobs/${jobId}/resume/`)
+      const response = await api.post(`/admin/scheduler/jobs/${jobId}/resume`)
       const idx = schedulerJobs.value.findIndex((j) => j.id === jobId)
       if (idx !== -1) schedulerJobs.value[idx] = response.data
       logger.info('scheduler_job_resumed', { job_id: jobId })
@@ -132,7 +132,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function deleteJob(jobId: string) {
     try {
-      await api.delete(`/admin/scheduler/jobs/${jobId}/`)
+      await api.delete(`/admin/scheduler/jobs/${jobId}`)
       schedulerJobs.value = schedulerJobs.value.filter((j) => j.id !== jobId)
       logger.info('scheduler_job_deleted', { job_id: jobId })
     } catch (e) {
@@ -147,7 +147,7 @@ export const useAdminStore = defineStore('admin', () => {
     jobHistoryLoading.value = true
     try {
       const params = jobId ? { job_id: jobId } : {}
-      const response = await api.get('/admin/scheduler/history/', { params })
+      const response = await api.get('/admin/scheduler/history', { params })
       jobHistory.value = response.data
       logger.info('job_history_fetched', { count: jobHistory.value.length, job_id: jobId })
     } catch (e) {
@@ -163,7 +163,7 @@ export const useAdminStore = defineStore('admin', () => {
     usersLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/users/')
+      const response = await api.get('/users')
       users.value = response.data
       logger.info('users_fetched', { count: users.value.length })
     } catch (e) {
@@ -177,7 +177,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function updateUserAdmin(userId: number, isAdmin: boolean) {
     try {
-      await api.patch(`/users/${userId}/`, { is_admin: isAdmin })
+      await api.patch(`/users/${userId}`, { is_admin: isAdmin })
       const user = users.value.find((u) => u.id === userId)
       if (user) user.is_admin = isAdmin
       logger.info('user_admin_updated', { user_id: userId, is_admin: isAdmin })
@@ -195,7 +195,7 @@ export const useAdminStore = defineStore('admin', () => {
     settingsLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/admin/settings/')
+      const response = await api.get('/admin/settings')
       settings.value = response.data
       logger.info('admin_settings_fetched', { ...settings.value })
     } catch (e) {
@@ -211,7 +211,7 @@ export const useAdminStore = defineStore('admin', () => {
 
   async function updateSettings(update: AdminSettingsUpdate) {
     try {
-      const response = await api.patch('/admin/settings/', update)
+      const response = await api.patch('/admin/settings', update)
       settings.value = response.data
       logger.info('admin_settings_updated', { ...update })
     } catch (e) {
@@ -230,7 +230,7 @@ export const useAdminStore = defineStore('admin', () => {
     configLoading.value = true
     error.value = null
     try {
-      const response = await api.get('/admin/config/')
+      const response = await api.get('/admin/config')
       config.value = response.data
       logger.info('config_fetched', { sections: config.value.length })
     } catch (e) {
@@ -248,7 +248,7 @@ export const useAdminStore = defineStore('admin', () => {
     smokeTestsRunning.value = true
     error.value = null
     try {
-      const response = await api.post('/admin/smoke-tests/')
+      const response = await api.post('/admin/smoke-tests')
       smokeReport.value = response.data
       logger.info('smoke_tests_completed', {
         total: smokeReport.value!.total,

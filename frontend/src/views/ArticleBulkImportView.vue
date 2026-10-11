@@ -142,7 +142,7 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    const response = await api.post<BulkImportResponse>('/articles/bulk-import/', { urls })
+    const response = await api.post<BulkImportResponse>('/articles/bulk-import', { urls })
     batchId.value = response.data.batch_id
     logger.info('bulk_import_started', { batchId: response.data.batch_id, total: response.data.total })
     startPolling()
@@ -163,7 +163,7 @@ function startPolling() {
 async function pollStatus() {
   if (!batchId.value) return
   try {
-    const response = await api.get<BulkImportStatus>(`/articles/bulk-import/${batchId.value}/`)
+    const response = await api.get<BulkImportStatus>(`/articles/bulk-import/${batchId.value}`)
     batch.value = response.data
     if (response.data.status === 'completed') {
       stopPolling()

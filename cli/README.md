@@ -119,10 +119,11 @@ that can reach a listener on this machine, and there is none.
 The resulting access token is an **RFC 9068 JWT** (`typ: at+jwt`, RS256, `kid:
 main`) that the FastAPI verifies itself against Authelia's JWKS. It is not
 authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
-scope alongside the device grant, so the CLI targets `ichrisbirch.com/api`. The
+scope alongside the device grant, so the CLI targets `https://ichrisbirch.com`. The
 `ichrisbirch-bearer` Traefik router carries a request holding an `Authorization`
 header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
-authorizing the token. That address is the config file's `api` key.
+authorizing the token. That address is the config file's `api` key, and every
+request goes to a path under `/api/v1` on it.
 
 Authelia leaves `aud` empty on the device grant and the client-credentials grant
 alike, so cross-product isolation rests on the `client_id` claim. The API
@@ -161,7 +162,7 @@ grants it.
 header from stdin, so the token never appears in another process's arguments:
 
 ```bash
-printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/tasks/
+printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/v1/tasks
 ```
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.
@@ -364,7 +365,7 @@ goclilogin's config-file contract. It holds three keys, and none has a compiled-
 default:
 
 ```toml
-api = "https://ichrisbirch.com/api"
+api = "https://ichrisbirch.com"
 issuer = "https://auth.ichrisbirch.com"
 client_id = "icb-cli-laptop"
 ```
@@ -374,8 +375,9 @@ file, every such command refuses, naming the file and `icb auth login <url>`. Th
 login fills in whatever the file lacks — the issuer from the API's RFC 9728
 metadata, the client id from `--client-id` or the short hostname — prints each
 with where it came from, and writes the file once the login succeeds.
-`icb auth status` prints the three values, where each came from and the file's
-path.
+`icb config show` prints the three values, where each came from and the file's
+path, as does `icb auth status` beside the session. `icb config path` prints the
+path alone, whether or not the file exists.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |

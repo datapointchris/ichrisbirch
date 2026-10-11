@@ -22,7 +22,7 @@ type PatternCreateInput struct {
 	RecordedAt *string `json:"recorded_at,omitempty"`
 }
 
-// PatternUpdateInput is a partial update (PATCH /patterns/{id}/).
+// PatternUpdateInput is a partial update (PATCH /patterns/{id}).
 type PatternUpdateInput struct {
 	Message    *string `json:"message,omitempty"`
 	RecordedAt *string `json:"recorded_at,omitempty"`
@@ -37,7 +37,7 @@ type PatternListOptions struct {
 	Limit  *int
 }
 
-// ListPatterns returns patterns newest first (GET /patterns/).
+// ListPatterns returns patterns newest first (GET /patterns).
 func (c *Client) ListPatterns(ctx context.Context, opts PatternListOptions) ([]Pattern, error) {
 	query := url.Values{}
 	if opts.Search != "" {
@@ -45,7 +45,7 @@ func (c *Client) ListPatterns(ctx context.Context, opts PatternListOptions) ([]P
 	}
 	applyLimit(query, opts.Limit)
 
-	path := "/patterns/"
+	path := "/patterns"
 	if encoded := query.Encode(); encoded != "" {
 		path += "?" + encoded
 	}
@@ -57,34 +57,34 @@ func (c *Client) ListPatterns(ctx context.Context, opts PatternListOptions) ([]P
 	return patterns, nil
 }
 
-// GetPattern returns a single pattern (GET /patterns/{id}/). Missing is 404.
+// GetPattern returns a single pattern (GET /patterns/{id}). Missing is 404.
 func (c *Client) GetPattern(ctx context.Context, id int) (Pattern, error) {
 	var pattern Pattern
-	if err := c.get(ctx, fmt.Sprintf("/patterns/%d/", id), &pattern); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/patterns/%d", id), &pattern); err != nil {
 		return Pattern{}, err
 	}
 	return pattern, nil
 }
 
-// CreatePattern creates a pattern (POST /patterns/).
+// CreatePattern creates a pattern (POST /patterns).
 func (c *Client) CreatePattern(ctx context.Context, in PatternCreateInput) (Pattern, error) {
 	var pattern Pattern
-	if err := c.send(ctx, http.MethodPost, "/patterns/", in, &pattern); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/patterns", in, &pattern); err != nil {
 		return Pattern{}, err
 	}
 	return pattern, nil
 }
 
-// UpdatePattern applies a partial update (PATCH /patterns/{id}/).
+// UpdatePattern applies a partial update (PATCH /patterns/{id}).
 func (c *Client) UpdatePattern(ctx context.Context, id int, in PatternUpdateInput) (Pattern, error) {
 	var pattern Pattern
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/patterns/%d/", id), in, &pattern); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/patterns/%d", id), in, &pattern); err != nil {
 		return Pattern{}, err
 	}
 	return pattern, nil
 }
 
-// DeletePattern removes a pattern (DELETE /patterns/{id}/ → 204).
+// DeletePattern removes a pattern (DELETE /patterns/{id} → 204).
 func (c *Client) DeletePattern(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/patterns/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/patterns/%d", id), nil, nil)
 }

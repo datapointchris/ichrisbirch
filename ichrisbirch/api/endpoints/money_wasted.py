@@ -13,13 +13,13 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.MoneyWasted], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.MoneyWasted], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession):
     query = select(models.MoneyWasted).order_by(models.MoneyWasted.date_wasted.desc())
     return list(session.scalars(query).all())
 
 
-@router.post('/', response_model=schemas.MoneyWasted, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.MoneyWasted, status_code=status.HTTP_201_CREATED)
 def create(entry: schemas.MoneyWastedCreate, session: DbSession):
     db_obj = models.MoneyWasted(**entry.model_dump())
     session.add(db_obj)
@@ -28,7 +28,7 @@ def create(entry: schemas.MoneyWastedCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         return db_obj
@@ -37,7 +37,7 @@ def read_one(id: int, session: DbSession):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
 
 
-@router.patch('/{id}/', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.MoneyWasted, status_code=status.HTTP_200_OK)
 def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         for field, value in entry_update.model_dump(exclude_unset=True).items():
@@ -50,7 +50,7 @@ def update(id: int, entry_update: schemas.MoneyWastedUpdate, session: DbSession)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'MoneyWasted {id} not found')
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if db_obj := session.get(models.MoneyWasted, id):
         session.delete(db_obj)

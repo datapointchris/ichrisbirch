@@ -18,13 +18,9 @@ func newPatternsCommand() *cobra.Command {
 		Long:  "Fragments noticed in passing — what you ate, how you slept, when the\nheadache started. Not tasks and not journal entries: the point is having\nenough of them, over enough time, to see what goes with what.",
 	})
 	withNotFoundHints(cmd, "List every pattern: icb patterns list")
-	cmd.AddCommand(
-		newPatternsListCommand(),
-		newPatternsShowCommand(),
-		newPatternsCreateCommand(),
-		newPatternsEditCommand(),
-		newPatternsDeleteCommand(),
-	)
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading, newPatternsListCommand(), newPatternsShowCommand())...)
+	cmd.AddCommand(inGroup(groupChanging, newPatternsCreateCommand(), newPatternsEditCommand(), newPatternsDeleteCommand())...)
 	return cmd
 }
 

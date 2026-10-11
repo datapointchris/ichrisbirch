@@ -147,7 +147,7 @@ const highestRated = computed(() =>
 onMounted(async () => {
   loading.value = true
   try {
-    const response = await api.get<Book[]>('/books/')
+    const response = await api.get<Book[]>('/books')
     books.value = response.data
     logger.info('book_stats_loaded', { count: response.data.length })
   } catch (e) {

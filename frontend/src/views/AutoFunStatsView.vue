@@ -114,7 +114,7 @@ const recentlyCompleted = computed(() =>
 onMounted(async () => {
   loading.value = true
   try {
-    const response = await api.get<AutoFun[]>('/autofun/')
+    const response = await api.get<AutoFun[]>('/autofun')
     items.value = response.data
     logger.info('autofun_stats_loaded', { count: response.data.length })
   } catch (e) {

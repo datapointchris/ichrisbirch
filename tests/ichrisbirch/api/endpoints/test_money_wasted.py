@@ -15,7 +15,7 @@ NEW_OBJ = schemas.MoneyWastedCreate(
     date_wasted=dt.date(2040, 1, 20),
 )
 
-ENDPOINT = '/money-wasted/'
+ENDPOINT = '/money-wasted'
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ def test_update(money_wasted_crud_tester):
     client, crud_tester = money_wasted_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'item': 'Updated Item', 'amount': 99.99})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'item': 'Updated Item', 'amount': 99.99})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     updated = response.json()
@@ -69,19 +69,19 @@ class TestMoneyWastedNotFound:
     """Test 404 responses for non-existent money_wasted entries."""
 
     def test_read_one_not_found(self, money_wasted_crud_tester):
-        """GET /{id}/ returns 404 for non-existent entry."""
+        """GET /{id} returns 404 for non-existent entry."""
         client, _ = money_wasted_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, money_wasted_crud_tester):
-        """PATCH /{id}/ returns 404 for non-existent entry."""
+        """PATCH /{id} returns 404 for non-existent entry."""
         client, _ = money_wasted_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'item': 'Nope'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'item': 'Nope'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, money_wasted_crud_tester):
-        """DELETE /{id}/ returns 404 for non-existent entry."""
+        """DELETE /{id} returns 404 for non-existent entry."""
         client, _ = money_wasted_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
