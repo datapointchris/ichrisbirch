@@ -66,6 +66,9 @@ class FastAPISettings:
     def __init__(self) -> None:
         self.host: str = os.environ['FASTAPI_HOST']
         self.port: int = int(os.environ['FASTAPI_PORT'])
+        # The address the edge serves this API at, which its RFC 9728 metadata names.
+        # Unset, the API serves no metadata: a default would describe some other deployment.
+        self.public_url: str | None = os.environ.get('PUBLIC_URL') or None
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
         _protocol = os.environ['PROTOCOL']

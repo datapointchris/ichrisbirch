@@ -115,6 +115,7 @@ services:
     environment: !override
       - ENVIRONMENT=development
       - FASTAPI_DEBUG=True
+      - PUBLIC_URL=https://api.docker.localhost
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       - LOG_COLORS=${LOG_COLORS:-true}

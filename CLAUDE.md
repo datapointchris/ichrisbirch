@@ -50,6 +50,8 @@ Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every
 
 **OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `icb-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
+**RFC 9728 metadata:** `/.well-known/oauth-protected-resource/api` is served without authentication, only where `PUBLIC_URL` is set, and the prod router `api-protected-resource` reaches it outside `/api`. `docs/authentication-architecture.md` says why the address is configured rather than derived.
+
 **OIDC bearer (a service running the CLI):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
 **Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Login`, so do not reintroduce an `internal/auth` here.

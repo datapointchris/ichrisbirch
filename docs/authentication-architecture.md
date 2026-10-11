@@ -39,6 +39,21 @@ A token that fails any check answers one opaque 401 and never falls through to
 a weaker strategy. Otherwise a junk token sent beside a forged `Remote-User`
 header would be ignored, and the request would run as that header's user.
 
+## The issuer is published without a credential
+
+`icb auth login <url>` learns which issuer to log in through from the API's RFC
+9728 metadata, before it holds a token. `ichrisbirch/api/protected_resource.py`
+serves `{"resource": PUBLIC_URL, "authorization_servers": [OIDC_ISSUER]}` with no
+authentication, and serves nothing while `PUBLIC_URL` is unset. The CLI refuses
+the document unless `resource` matches the URL it was given exactly, so
+`PUBLIC_URL` is set per deployment rather than derived from a request.
+
+RFC 9728 puts the document for `https://ichrisbirch.com/api` at
+`/.well-known/oauth-protected-resource/api`, outside `/api`. The prod router
+`api-protected-resource` carries that one path to the API unstripped, and the
+edge needs a router of its own for it, since a request without a token otherwise
+meets ForwardAuth.
+
 ## Remote-User is read only where ForwardAuth set it
 
 The edge runs ForwardAuth on `ichrisbirch.com`, and one kind of request reaches
