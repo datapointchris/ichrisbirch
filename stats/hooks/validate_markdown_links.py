@@ -52,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ValidateMarkdownL
     )
 
     duration = time.perf_counter() - start_time
-    broken_links = _parse_output(result.stdout + result.stderr)
+    broken_links = parse_output(result.stdout + result.stderr)
 
     return ValidateMarkdownLinksHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -66,7 +66,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ValidateMarkdownL
     )
 
 
-def _parse_output(output: str) -> list[BrokenLink]:
+def parse_output(output: str) -> list[BrokenLink]:
     """Parse validate-markdown-links output."""
     links: list[BrokenLink] = []
 

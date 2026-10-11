@@ -24,7 +24,7 @@ LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
 LOG_COLORS = os.environ.get('LOG_COLORS', 'auto')
 
 
-def _use_colors() -> bool:
+def use_colors() -> bool:
     """Determine if colors should be used in console output.
 
     LOG_COLORS env var controls this:
@@ -84,7 +84,7 @@ def configure_structlog():
     else:
         formatter = structlog.stdlib.ProcessorFormatter(
             processor=structlog.dev.ConsoleRenderer(
-                colors=_use_colors(),
+                colors=use_colors(),
                 pad_level=True,
             ),
         )

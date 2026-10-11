@@ -42,7 +42,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DetectPrivateKeyH
     )
 
     duration = time.perf_counter() - start_time
-    issues = _parse_output(result.stdout + result.stderr)
+    issues = parse_output(result.stdout + result.stderr)
 
     return DetectPrivateKeyHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -56,7 +56,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DetectPrivateKeyH
     )
 
 
-def _parse_output(output: str) -> list[DetectedPrivateKey]:
+def parse_output(output: str) -> list[DetectedPrivateKey]:
     """Parse detect-private-key output for detected files.
 
     Output format: "Private key found: <filepath>"

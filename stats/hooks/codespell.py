@@ -49,7 +49,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodespellHookEven
     duration = time.perf_counter() - start_time
 
     # Parse codespell output
-    issues = _parse_codespell_output(result.stdout + result.stderr)
+    issues = parse_codespell_output(result.stdout + result.stderr)
 
     return CodespellHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -63,7 +63,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CodespellHookEven
     )
 
 
-def _parse_codespell_output(output: str) -> list[CodespellIssue]:
+def parse_codespell_output(output: str) -> list[CodespellIssue]:
     """Parse codespell output into structured issues."""
     issues: list[CodespellIssue] = []
 

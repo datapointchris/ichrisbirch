@@ -41,7 +41,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckShebangExecu
     )
 
     duration = time.perf_counter() - start_time
-    files_not_executable = _parse_output(result.stdout + result.stderr)
+    files_not_executable = parse_output(result.stdout + result.stderr)
 
     return CheckShebangExecutableHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -55,7 +55,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckShebangExecu
     )
 
 
-def _parse_output(output: str) -> list[str]:
+def parse_output(output: str) -> list[str]:
     """Parse check-shebang-scripts-are-executable output for failing file paths.
 
     The tool outputs 3 lines per issue: the file path with error message,

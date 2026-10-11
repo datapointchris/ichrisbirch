@@ -61,7 +61,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ActionlintHookEve
     duration = time.perf_counter() - start_time
 
     # Parse actionlint JSON output
-    issues = _parse_actionlint_output(result.stdout)
+    issues = parse_actionlint_output(result.stdout)
 
     return ActionlintHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -75,7 +75,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ActionlintHookEve
     )
 
 
-def _parse_actionlint_output(output: str) -> list[ActionlintIssue]:
+def parse_actionlint_output(output: str) -> list[ActionlintIssue]:
     """Parse actionlint JSON output into structured issues."""
     if not output.strip():
         return []

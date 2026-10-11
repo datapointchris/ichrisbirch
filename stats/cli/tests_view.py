@@ -24,7 +24,7 @@ from stats.cli.data import merge_test_trends
 from stats.cli.data import tests_per_directory
 
 
-def _safe_int(value: int | float | str | None, default: int = 0) -> int:
+def safe_int(value: int | float | str | None, default: int = 0) -> int:
     """Extract an int from a snapshot value that may be None or a string."""
     if value is None:
         return default
@@ -34,7 +34,7 @@ def _safe_int(value: int | float | str | None, default: int = 0) -> int:
         return default
 
 
-def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
+def safe_float(value: int | float | str | None, default: float = 0.0) -> float:
     """Extract a float from a snapshot value that may be None or a string."""
     if value is None:
         return default
@@ -44,31 +44,31 @@ def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
         return default
 
 
-def _render_current_results(con: Console, snap: dict) -> None:
+def render_current_results(con: Console, snap: dict) -> None:
     """Render the combined test results summary from snapshot data."""
     tests = snap.get('tests', {})
     fe = snap.get('frontend_tests', {})
     e2e = snap.get('e2e_tests', {})
 
-    py_active = _safe_int(tests.get('active', tests.get('total')))
-    py_passed = _safe_int(tests.get('passed'))
-    py_failed = _safe_int(tests.get('failed'))
-    py_skipped = _safe_int(tests.get('skipped'))
-    py_errors = _safe_int(tests.get('errors'))
-    py_dur = _safe_float(tests.get('duration_seconds'))
-    coverage = _safe_float(snap.get('coverage', {}).get('line_percent'))
+    py_active = safe_int(tests.get('active', tests.get('total')))
+    py_passed = safe_int(tests.get('passed'))
+    py_failed = safe_int(tests.get('failed'))
+    py_skipped = safe_int(tests.get('skipped'))
+    py_errors = safe_int(tests.get('errors'))
+    py_dur = safe_float(tests.get('duration_seconds'))
+    coverage = safe_float(snap.get('coverage', {}).get('line_percent'))
 
-    fe_active = _safe_int(fe.get('active', fe.get('total')))
-    fe_passed = _safe_int(fe.get('passed'))
-    fe_failed = _safe_int(fe.get('failed'))
-    fe_skipped = _safe_int(fe.get('skipped'))
-    fe_dur = _safe_float(fe.get('duration_seconds'))
+    fe_active = safe_int(fe.get('active', fe.get('total')))
+    fe_passed = safe_int(fe.get('passed'))
+    fe_failed = safe_int(fe.get('failed'))
+    fe_skipped = safe_int(fe.get('skipped'))
+    fe_dur = safe_float(fe.get('duration_seconds'))
 
-    e2e_active = _safe_int(e2e.get('total'))
-    e2e_passed = _safe_int(e2e.get('passed'))
-    e2e_failed = _safe_int(e2e.get('failed'))
-    e2e_skipped = _safe_int(e2e.get('skipped'))
-    e2e_dur = _safe_float(e2e.get('duration_seconds'))
+    e2e_active = safe_int(e2e.get('total'))
+    e2e_passed = safe_int(e2e.get('passed'))
+    e2e_failed = safe_int(e2e.get('failed'))
+    e2e_skipped = safe_int(e2e.get('skipped'))
+    e2e_dur = safe_float(e2e.get('duration_seconds'))
 
     all_active = py_active + fe_active + e2e_active
     all_passed = py_passed + fe_passed + e2e_passed
@@ -94,7 +94,7 @@ def _render_current_results(con: Console, snap: dict) -> None:
     con.print()
 
 
-def _render_trends(con: Console, events_path: str) -> None:
+def render_trends(con: Console, events_path: str) -> None:
     """Render test suite trends table (by day)."""
     trends = merge_test_trends(events_path, days=7)
     if not trends:
@@ -123,7 +123,7 @@ def _render_trends(con: Console, events_path: str) -> None:
     con.print()
 
 
-def _render_history_chart(con: Console, events_path: str) -> None:
+def render_history_chart(con: Console, events_path: str) -> None:
     """Render the test suite history as a dual-series vertical bar chart."""
     history = merge_test_history(events_path, limit=25)
     if not history:
@@ -153,7 +153,7 @@ def _render_history_chart(con: Console, events_path: str) -> None:
     con.print()
 
 
-def _render_slowest_files(con: Console, events_path: str) -> None:
+def render_slowest_files(con: Console, events_path: str) -> None:
     """Render slowest test files with horizontal bars."""
     slowest = aggregate_slowest_tests(events_path)
     if not slowest:
@@ -169,7 +169,7 @@ def _render_slowest_files(con: Console, events_path: str) -> None:
     con.print()
 
 
-def _render_tests_per_dir(con: Console, events_path: str) -> None:
+def render_tests_per_dir(con: Console, events_path: str) -> None:
     """Render test count per directory."""
     dirs = tests_per_directory(events_path)
     if not dirs:
@@ -187,7 +187,7 @@ def _render_tests_per_dir(con: Console, events_path: str) -> None:
     con.print()
 
 
-def _render_flaky_tests(con: Console, events_path: str) -> None:
+def render_flaky_tests(con: Console, events_path: str) -> None:
     """Render flaky test detection results."""
     con.print('[bold blue]Flaky Tests (failed in some runs)[/bold blue]')
     flaky = detect_flaky_tests(events_path)
@@ -200,7 +200,7 @@ def _render_flaky_tests(con: Console, events_path: str) -> None:
     con.print()
 
 
-def _render_slowest_from_snapshot(con: Console, snap: dict, section: str, title: str, path_transform: str | None = None) -> None:
+def render_slowest_from_snapshot(con: Console, snap: dict, section: str, title: str, path_transform: str | None = None) -> None:
     """Render slowest tests from a snapshot section."""
     data = snap.get(section, {})
     slowest = data.get('slowest', [])
@@ -219,14 +219,14 @@ def _render_slowest_from_snapshot(con: Console, snap: dict, section: str, title:
     con.print()
 
 
-def _render_test_suite_details(con: Console, snap: dict, section: str, title: str, path_transform: str | None = None) -> None:
+def render_test_suite_details(con: Console, snap: dict, section: str, title: str, path_transform: str | None = None) -> None:
     """Render detailed test suite results from a snapshot section."""
     data = snap.get(section, {})
-    active = _safe_int(data.get('active', data.get('total')))
-    passed = _safe_int(data.get('passed'))
-    failed = _safe_int(data.get('failed'))
-    skipped = _safe_int(data.get('skipped'))
-    duration = _safe_float(data.get('duration_seconds'))
+    active = safe_int(data.get('active', data.get('total')))
+    passed = safe_int(data.get('passed'))
+    failed = safe_int(data.get('failed'))
+    skipped = safe_int(data.get('skipped'))
+    duration = safe_float(data.get('duration_seconds'))
 
     con.print(f'[bold blue]{title}[/bold blue]')
 
@@ -244,7 +244,7 @@ def _render_test_suite_details(con: Console, snap: dict, section: str, title: st
     con.print(f'  Duration:  {duration:.1f}s')
     con.print()
 
-    _render_slowest_from_snapshot(con, snap, section, f'Slowest {title.split("(")[0].strip()}', path_transform)
+    render_slowest_from_snapshot(con, snap, section, f'Slowest {title.split("(")[0].strip()}', path_transform)
 
 
 def render(events_path: str, data_dir: str, snapshot_file: str | None = None, *, console: Console | None = None) -> None:
@@ -275,15 +275,15 @@ def render(events_path: str, data_dir: str, snapshot_file: str | None = None, *,
         con.print('[yellow]No stats snapshots found.[/yellow]')
         return
 
-    _render_current_results(con, snap)
-    _render_trends(con, events_path)
-    _render_history_chart(con, events_path)
-    _render_slowest_files(con, events_path)
-    _render_tests_per_dir(con, events_path)
-    _render_flaky_tests(con, events_path)
-    _render_slowest_from_snapshot(con, snap, 'tests', 'Slowest Python Tests (latest run)', 'python')
-    _render_test_suite_details(con, snap, 'frontend_tests', 'Frontend Test Details (Vitest)', 'frontend')
-    _render_test_suite_details(con, snap, 'e2e_tests', 'E2E Test Details (Playwright)')
+    render_current_results(con, snap)
+    render_trends(con, events_path)
+    render_history_chart(con, events_path)
+    render_slowest_files(con, events_path)
+    render_tests_per_dir(con, events_path)
+    render_flaky_tests(con, events_path)
+    render_slowest_from_snapshot(con, snap, 'tests', 'Slowest Python Tests (latest run)', 'python')
+    render_test_suite_details(con, snap, 'frontend_tests', 'Frontend Test Details (Vitest)', 'frontend')
+    render_test_suite_details(con, snap, 'e2e_tests', 'E2E Test Details (Playwright)')
 
 
 if __name__ == '__main__':

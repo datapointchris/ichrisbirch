@@ -36,7 +36,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-def _unique_cooking_technique_slug(session: Session, base_slug: str) -> str:
+def unique_cooking_technique_slug(session: Session, base_slug: str) -> str:
     """Append -2, -3, ... if `base_slug` already exists."""
     existing = set(session.scalars(select(models.CookingTechnique.slug).where(models.CookingTechnique.slug.like(f'{base_slug}%'))).all())
     if base_slug not in existing:
@@ -47,12 +47,12 @@ def _unique_cooking_technique_slug(session: Session, base_slug: str) -> str:
     return f'{base_slug}-{counter}'
 
 
-def _load_recipe(session: Session, recipe_id: int) -> models.Recipe | None:
+def load_recipe(session: Session, recipe_id: int) -> models.Recipe | None:
     query = select(models.Recipe).options(selectinload(models.Recipe.ingredients)).where(models.Recipe.id == recipe_id)
     return session.scalar(query)
 
 
-def _scaled_recipe_response(recipe: models.Recipe, servings: int | None) -> schemas.Recipe:
+def scaled_recipe_response(recipe: models.Recipe, servings: int | None) -> schemas.Recipe:
     """Build a Recipe response and, if `servings` differs from the base, include scaled quantities."""
     response = schemas.Recipe.model_validate(recipe)
     if servings is None or recipe.servings in (servings, 0):
@@ -101,7 +101,7 @@ def create(recipe: schemas.RecipeCreate, session: DbSession):
     session.add(obj)
     session.commit()
     session.refresh(obj)
-    reloaded = _load_recipe(session, obj.id)
+    reloaded = load_recipe(session, obj.id)
     return reloaded
 
 
@@ -317,7 +317,7 @@ def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
     session.add(obj)
     session.commit()
     session.refresh(obj)
-    return _load_recipe(session, obj.id)
+    return load_recipe(session, obj.id)
 
 
 # =============================================================================
@@ -391,7 +391,7 @@ def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
 
     if candidate.technique is not None:
         technique_data = candidate.technique.model_dump()
-        technique_data['slug'] = _unique_cooking_technique_slug(session, slugify(technique_data['name']))
+        technique_data['slug'] = unique_cooking_technique_slug(session, slugify(technique_data['name']))
         technique_obj = models.CookingTechnique(**technique_data)
         session.add(technique_obj)
 
@@ -401,7 +401,7 @@ def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
     result_technique = None
     if recipe_obj is not None:
         session.refresh(recipe_obj)
-        result_recipe = schemas.Recipe.model_validate(_load_recipe(session, recipe_obj.id))
+        result_recipe = schemas.Recipe.model_validate(load_recipe(session, recipe_obj.id))
     if technique_obj is not None:
         session.refresh(technique_obj)
         result_technique = schemas.CookingTechnique.model_validate(technique_obj)
@@ -434,7 +434,7 @@ def list_cooking_techniques(
 @router.post('/cooking-techniques/', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)
 def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session: DbSession):
     data = technique.model_dump()
-    data['slug'] = _unique_cooking_technique_slug(session, slugify(data['name']))
+    data['slug'] = unique_cooking_technique_slug(session, slugify(data['name']))
     obj = models.CookingTechnique(**data)
     session.add(obj)
     session.commit()
@@ -540,10 +540,10 @@ def read_one(
     session: DbSession,
     servings: int | None = Query(None, ge=1, description='Optional scaling — returns scaled_quantity per ingredient'),
 ):
-    recipe = _load_recipe(session, id)
+    recipe = load_recipe(session, id)
     if recipe is None:
         raise NotFoundException('recipe', id, logger)
-    return _scaled_recipe_response(recipe, servings)
+    return scaled_recipe_response(recipe, servings)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -558,7 +558,7 @@ def delete(id: int, session: DbSession):
 
 @router.patch('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
 def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
-    recipe = _load_recipe(session, id)
+    recipe = load_recipe(session, id)
     if recipe is None:
         raise NotFoundException('recipe', id, logger)
 
@@ -578,7 +578,7 @@ def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
 
     session.commit()
     session.refresh(recipe)
-    return _load_recipe(session, id)
+    return load_recipe(session, id)
 
 
 @router.post('/{id}/mark-made/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
@@ -590,4 +590,4 @@ def mark_made(id: int, session: DbSession):
     recipe.times_made = (recipe.times_made or 0) + 1
     recipe.last_made_date = dt.datetime.now(dt.UTC)
     session.commit()
-    return _load_recipe(session, id)
+    return load_recipe(session, id)

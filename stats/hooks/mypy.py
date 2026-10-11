@@ -59,7 +59,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MypyHookEvent:
     duration = time.perf_counter() - start_time
 
     # Parse mypy output
-    errors = _parse_mypy_output(result.stdout + result.stderr)
+    errors = parse_mypy_output(result.stdout + result.stderr)
 
     return MypyHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -73,7 +73,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MypyHookEvent:
     )
 
 
-def _parse_mypy_output(output: str) -> list[MypyError]:
+def parse_mypy_output(output: str) -> list[MypyError]:
     """Parse mypy output into structured errors."""
     errors: list[MypyError] = []
 

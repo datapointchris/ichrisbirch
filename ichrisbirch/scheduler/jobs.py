@@ -36,7 +36,7 @@ from ichrisbirch.util import find_project_root
 logger = structlog.get_logger()
 
 
-def _admin_user(session: Session) -> models.User | None:
+def first_admin_user(session: Session) -> models.User | None:
     return session.scalars(select(models.User).where(models.User.is_admin.is_(True))).first()
 
 
@@ -49,7 +49,7 @@ def admin_calendar_zone(session: Session) -> ZoneInfo:
     """
     if not inspect(session.connection()).has_table(models.User.__tablename__):
         return ZoneInfo(CALENDAR_FALLBACK_ZONE)
-    admin = _admin_user(session)
+    admin = first_admin_user(session)
     return ZoneInfo(admin.calendar_zone if admin else CALENDAR_FALLBACK_ZONE)
 
 
@@ -70,7 +70,7 @@ class JobToAdd:
         return asdict(self)
 
 
-def _persist_job_run(
+def persist_job_run(
     settings: Settings,
     job_id: str,
     job_run_id: str,
@@ -139,7 +139,7 @@ def job_logger(func: Callable) -> Callable:
             # settings is always the first positional arg to every job function
             settings = args[0] if args else kwargs.get('settings')
             if settings:
-                _persist_job_run(
+                persist_job_run(
                     settings=settings,
                     job_id=func.__name__,
                     job_run_id=job_run_id,
@@ -227,7 +227,7 @@ def check_and_run_autofun(settings: Settings) -> None:
     """
     with create_session(settings) as session:
         # Load scheduler settings from the single admin user's preferences
-        admin_user = _admin_user(session)
+        admin_user = first_admin_user(session)
         if not admin_user:
             logger.warning('autofun_no_admin_user')
             return

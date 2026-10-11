@@ -45,18 +45,18 @@ def renumber_ranks(session: Session, model: type[FractionallyRanked]) -> None:
     session.expire_all()
 
 
-def _neighbor_before(session: Session, row: FractionallyRanked, anchor: FractionallyRanked) -> float | None:
+def neighbor_before(session: Session, row: FractionallyRanked, anchor: FractionallyRanked) -> float | None:
     """The rank of whatever sits directly before `anchor`, other than `row` itself."""
     model = type(row)
     return session.scalar(select(model.rank).where(model.rank < anchor.rank, model.id != row.id).order_by(model.rank.desc()).limit(1))
 
 
-def _neighbor_after(session: Session, row: FractionallyRanked, anchor: FractionallyRanked) -> float | None:
+def neighbor_after(session: Session, row: FractionallyRanked, anchor: FractionallyRanked) -> float | None:
     model = type(row)
     return session.scalar(select(model.rank).where(model.rank > anchor.rank, model.id != row.id).order_by(model.rank.asc()).limit(1))
 
 
-def _between(low: float | None, high: float | None) -> float | None:
+def between(low: float | None, high: float | None) -> float | None:
     """The midpoint, or one step past an open end. None when the gap is spent."""
     if low is not None and high is not None:
         return (low + high) / 2 if high - low >= MIN_GAP else None
@@ -67,20 +67,20 @@ def _between(low: float | None, high: float | None) -> float | None:
     return 1.0
 
 
-def _rank_beside[R: FractionallyRanked](session: Session, row: R, before: R | None, after: R | None) -> float | None:
+def rank_beside[R: FractionallyRanked](session: Session, row: R, before: R | None, after: R | None) -> float | None:
     if before is not None:
-        return _between(_neighbor_before(session, row, before), before.rank)
+        return between(neighbor_before(session, row, before), before.rank)
     if after is not None:
-        return _between(after.rank, _neighbor_after(session, row, after))
+        return between(after.rank, neighbor_after(session, row, after))
     raise ValueError('a move needs a neighbor: before or after')
 
 
 def move_ranked[R: FractionallyRanked](session: Session, row: R, *, before: R | None = None, after: R | None = None) -> None:
     """Rank `row` immediately before `before`, or immediately after `after`."""
-    rank = _rank_beside(session, row, before, after)
+    rank = rank_beside(session, row, before, after)
     if rank is None:
         renumber_ranks(session, type(row))
-        rank = _rank_beside(session, row, before, after)
+        rank = rank_beside(session, row, before, after)
     if rank is None:
         raise RuntimeError('rank gap still spent after renumbering')
     row.rank = rank

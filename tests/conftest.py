@@ -51,33 +51,33 @@ logger.warning('<-- file imported')
 TEST_LOCK_DIR = Path('/tmp/pytest-ichrisbirch-lock')
 
 # Cached API apps to avoid expensive recreation for every test
-_cached_api = None
-_cached_api_regular = None
-_cached_api_admin = None
+cached_api = None
+cached_api_regular = None
+cached_api_admin = None
 
 
 def get_cached_api():
     """Get or create a cached FastAPI app instance (unauthenticated)."""
-    global _cached_api
-    if _cached_api is None:
-        _cached_api = create_api(settings=test_settings)
-    return _cached_api
+    global cached_api
+    if cached_api is None:
+        cached_api = create_api(settings=test_settings)
+    return cached_api
 
 
 def get_cached_api_regular():
     """Get or create a cached FastAPI app for regular user."""
-    global _cached_api_regular
-    if _cached_api_regular is None:
-        _cached_api_regular = create_api(settings=test_settings)
-    return _cached_api_regular
+    global cached_api_regular
+    if cached_api_regular is None:
+        cached_api_regular = create_api(settings=test_settings)
+    return cached_api_regular
 
 
 def get_cached_api_admin():
     """Get or create a cached FastAPI app for admin user."""
-    global _cached_api_admin
-    if _cached_api_admin is None:
-        _cached_api_admin = create_api(settings=test_settings)
-    return _cached_api_admin
+    global cached_api_admin
+    if cached_api_admin is None:
+        cached_api_admin = create_api(settings=test_settings)
+    return cached_api_admin
 
 
 def prewarm_caches():

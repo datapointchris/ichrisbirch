@@ -20,14 +20,14 @@ from stats.cli.data import hook_run_summary
 from stats.cli.data import sum_issues_in_window
 
 
-def _issue_cell(count: int) -> str:
+def issue_cell(count: int) -> str:
     """Format an issue count with conditional coloring."""
     if count == 0:
         return '[dim]0[/dim]'
     return f'[yellow]{count}[/yellow]'
 
 
-def _render_issue_matrix(con: Console, events_path: str) -> None:
+def render_issue_matrix(con: Console, events_path: str) -> None:
     """Render the tool × time window issue matrix."""
     issues = aggregate_hook_issues(events_path)
 
@@ -53,16 +53,16 @@ def _render_issue_matrix(con: Console, events_path: str) -> None:
 
         table.add_row(
             tool,
-            _issue_cell(day1),
-            _issue_cell(day7),
-            _issue_cell(day30),
+            issue_cell(day1),
+            issue_cell(day7),
+            issue_cell(day30),
             str(total) if total > 0 else '[dim]0[/dim]',
         )
 
     con.print(table)
 
 
-def _render_hook_runs(con: Console, events_path: str) -> None:
+def render_hook_runs(con: Console, events_path: str) -> None:
     """Render hook run counts and failure rates with delta arrows."""
     runs = hook_run_summary(events_path)
     if not runs:
@@ -126,8 +126,8 @@ def render(events_path: str, *, console: Console | None = None) -> None:
     con.print('[bold green]Code Quality - Pre-commit Hook Results[/bold green]')
     con.print()
 
-    _render_issue_matrix(con, events_path)
-    _render_hook_runs(con, events_path)
+    render_issue_matrix(con, events_path)
+    render_hook_runs(con, events_path)
 
     con.print()
     con.print('[dim]Note: Issues shown are from all pre-commit runs (including failed commits)[/dim]')

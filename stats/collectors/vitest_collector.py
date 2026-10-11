@@ -29,7 +29,7 @@ def run(branch: str, project: str, json_path: str) -> VitestCollectEvent | None:
     with path.open() as f:
         raw_data = json.load(f)
 
-    tests = _parse_tests(raw_data.get('testResults', []))
+    tests = parse_tests(raw_data.get('testResults', []))
     summary = VitestSummary(
         passed=raw_data.get('numPassedTests', 0),
         failed=raw_data.get('numFailedTests', 0),
@@ -50,7 +50,7 @@ def run(branch: str, project: str, json_path: str) -> VitestCollectEvent | None:
     )
 
 
-def _parse_tests(test_results: list[dict]) -> list[VitestTest]:
+def parse_tests(test_results: list[dict]) -> list[VitestTest]:
     """Flatten testResults → assertionResults into VitestTest objects."""
     tests = []
     for suite in test_results:

@@ -17,7 +17,7 @@ from pathlib import Path
 from rich.console import Console
 
 
-def _git(args: list[str]) -> str:
+def git(args: list[str]) -> str:
     """Run a git command and return stripped stdout."""
     result = subprocess.run(  # nosec B603 B607 — fixed git binary, no shell
         ['git', *args],
@@ -27,12 +27,12 @@ def _git(args: list[str]) -> str:
     return result.stdout.strip()
 
 
-def _most_modified_files(since: str | None, limit: int) -> list[tuple[int, str]]:
+def most_modified_files(since: str | None, limit: int) -> list[tuple[int, str]]:
     """Count how many commits touched each file."""
     args = ['log', '--name-only', '--pretty=format:']
     if since:
         args.insert(1, f'--since={since}')
-    output = _git(args)
+    output = git(args)
 
     counts: dict[str, int] = {}
     for line in output.splitlines():
@@ -43,12 +43,12 @@ def _most_modified_files(since: str | None, limit: int) -> list[tuple[int, str]]
     return [(c, f) for f, c in sorted(counts.items(), key=lambda x: -x[1])[:limit]]
 
 
-def _most_lines_changed(since: str | None, limit: int) -> list[tuple[int, int, int, str]]:
+def most_lines_changed(since: str | None, limit: int) -> list[tuple[int, int, int, str]]:
     """Aggregate added/deleted lines per file from git numstat."""
     args = ['log', '--numstat', '--pretty=format:']
     if since:
         args.insert(1, f'--since={since}')
-    output = _git(args)
+    output = git(args)
 
     adds: dict[str, int] = {}
     dels: dict[str, int] = {}
@@ -63,9 +63,9 @@ def _most_lines_changed(since: str | None, limit: int) -> list[tuple[int, int, i
     return sorted(files, key=lambda x: -x[0])[:limit]
 
 
-def _created_files(since: str, limit: int) -> list[str]:
+def created_files(since: str, limit: int) -> list[str]:
     """Files added in the time window that still exist."""
-    output = _git(['log', f'--since={since}', '--diff-filter=A', '--name-only', '--pretty=format:'])
+    output = git(['log', f'--since={since}', '--diff-filter=A', '--name-only', '--pretty=format:'])
     seen: set[str] = set()
     result: list[str] = []
     for line in output.splitlines():
@@ -77,9 +77,9 @@ def _created_files(since: str, limit: int) -> list[str]:
     return result[-limit:]
 
 
-def _deleted_files(since: str, limit: int) -> list[str]:
+def files_deleted_since(since: str, limit: int) -> list[str]:
     """Files deleted in the time window."""
-    output = _git(['log', f'--since={since}', '--diff-filter=D', '--name-only', '--pretty=format:'])
+    output = git(['log', f'--since={since}', '--diff-filter=D', '--name-only', '--pretty=format:'])
     seen: set[str] = set()
     result: list[str] = []
     for line in output.splitlines():
@@ -90,12 +90,12 @@ def _deleted_files(since: str, limit: int) -> list[str]:
     return result[-limit:]
 
 
-def _churn_by_directory(since: str | None, limit: int) -> list[tuple[int, str]]:
+def churn_by_directory(since: str | None, limit: int) -> list[tuple[int, str]]:
     """Aggregate file changes by top-level directory pair."""
     args = ['log', '--name-only', '--pretty=format:']
     if since:
         args.insert(1, f'--since={since}')
-    output = _git(args)
+    output = git(args)
 
     counts: dict[str, int] = {}
     for line in output.splitlines():
@@ -125,13 +125,13 @@ def render(days: int | None = 30, *, console: Console | None = None) -> None:
     if days:
         con.print(f'[bold green]Code Churn Analysis (last {days} days)[/bold green]')
     else:
-        commit_count = _git(['rev-list', '--count', 'HEAD'])
-        first_date = _git(['log', '--reverse', '--format=%cs']).splitlines()[0] if commit_count != '0' else '?'
+        commit_count = git(['rev-list', '--count', 'HEAD'])
+        first_date = git(['log', '--reverse', '--format=%cs']).splitlines()[0] if commit_count != '0' else '?'
         con.print(f'[bold green]Code Churn Analysis (all time - {commit_count} commits since {first_date})[/bold green]')
     con.print()
 
     # Most Modified Files
-    modified = _most_modified_files(since, limit)
+    modified = most_modified_files(since, limit)
     if modified:
         con.print('[bold blue]Most Modified Files[/bold blue]')
         for count, f in modified:
@@ -139,7 +139,7 @@ def render(days: int | None = 30, *, console: Console | None = None) -> None:
         con.print()
 
     # Most Lines Changed
-    lines_data = _most_lines_changed(since, limit)
+    lines_data = most_lines_changed(since, limit)
     if lines_data:
         con.print('[bold blue]Most Lines Changed[/bold blue]')
         for line_total, line_added, line_deleted, line_file in lines_data:
@@ -148,14 +148,14 @@ def render(days: int | None = 30, *, console: Console | None = None) -> None:
 
     # Created / Deleted (only for time-windowed mode)
     if days and since:
-        created = _created_files(since, limit)
+        created = created_files(since, limit)
         if created:
             con.print('[bold blue]Recently Created Files[/bold blue]')
             for f in created:
                 con.print(f'  [green]+[/green] {f}')
             con.print()
 
-        deleted_files = _deleted_files(since, limit)
+        deleted_files = files_deleted_since(since, limit)
         if deleted_files:
             con.print('[bold blue]Recently Deleted Files[/bold blue]')
             for f in deleted_files:
@@ -163,7 +163,7 @@ def render(days: int | None = 30, *, console: Console | None = None) -> None:
             con.print()
 
     # Churn by Directory
-    dir_churn = _churn_by_directory(since, limit)
+    dir_churn = churn_by_directory(since, limit)
     if dir_churn:
         con.print('[bold blue]Churn by Directory[/bold blue]')
         for count, d in dir_churn:

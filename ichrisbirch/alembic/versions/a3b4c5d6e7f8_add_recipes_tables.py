@@ -5,8 +5,8 @@ Revises: f2a3b4c5d6e7
 Create Date: 2026-04-16
 """
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from ichrisbirch.models.recipe import RECIPE_CUISINES
@@ -20,7 +20,7 @@ branch_labels = None
 depends_on = None
 
 
-def _seed_lookup(table_name: str, values: list[str]) -> None:
+def seed_lookup(table_name: str, values: list[str]) -> None:
     table = sa.table(table_name, sa.column('name', sa.Text()))
     op.bulk_insert(table, [{'name': v} for v in values])
 
@@ -47,10 +47,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('name', name=op.f('pk_recipe_meal_type')),
     )
 
-    _seed_lookup('recipe_units', RECIPE_UNITS)
-    _seed_lookup('recipe_difficulty', RECIPE_DIFFICULTIES)
-    _seed_lookup('recipe_cuisine', RECIPE_CUISINES)
-    _seed_lookup('recipe_meal_type', RECIPE_MEAL_TYPES)
+    seed_lookup('recipe_units', RECIPE_UNITS)
+    seed_lookup('recipe_difficulty', RECIPE_DIFFICULTIES)
+    seed_lookup('recipe_cuisine', RECIPE_CUISINES)
+    seed_lookup('recipe_meal_type', RECIPE_MEAL_TYPES)
 
     op.create_table(
         'recipes',
@@ -92,12 +92,8 @@ def upgrade() -> None:
         sa.Column('prep_note', sa.Text(), nullable=True),
         sa.Column('is_optional', sa.Boolean(), server_default='false', nullable=False),
         sa.Column('ingredient_group', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ['recipe_id'], ['recipes.id'], ondelete='CASCADE', name=op.f('fk_recipe_ingredients_recipe_id_recipes')
-        ),
-        sa.ForeignKeyConstraint(
-            ['unit'], ['recipe_units.name'], name=op.f('fk_recipe_ingredients_unit_recipe_units')
-        ),
+        sa.ForeignKeyConstraint(['recipe_id'], ['recipes.id'], ondelete='CASCADE', name=op.f('fk_recipe_ingredients_recipe_id_recipes')),
+        sa.ForeignKeyConstraint(['unit'], ['recipe_units.name'], name=op.f('fk_recipe_ingredients_unit_recipe_units')),
         sa.PrimaryKeyConstraint('id', name=op.f('pk_recipe_ingredients')),
     )
     op.create_index(

@@ -9,7 +9,7 @@ from ichrisbirch.schemas.recipe import UrlImportCandidate
 from ichrisbirch.schemas.recipe import UrlImportRequest
 
 
-def _recipe_payload() -> RecipeCandidate:
+def recipe_payload() -> RecipeCandidate:
     return RecipeCandidate(
         name='Classic Chimichurri',
         source_url='https://www.youtube.com/watch?v=qEb96qFi2Tc',
@@ -17,7 +17,7 @@ def _recipe_payload() -> RecipeCandidate:
     )
 
 
-def _technique_payload() -> CookingTechniqueCreate:
+def technique_payload() -> CookingTechniqueCreate:
     return CookingTechniqueCreate(
         name='3:1 Vinaigrette Ratio',
         category='composition_and_ratio',
@@ -43,7 +43,7 @@ class TestUrlImportRequest:
 
 class TestUrlImportCandidateKindValidation:
     def test_recipe_kind_with_recipe_is_valid(self):
-        c = UrlImportCandidate(kind='recipe', recipe=_recipe_payload())
+        c = UrlImportCandidate(kind='recipe', recipe=recipe_payload())
         assert c.recipe is not None
         assert c.technique is None
 
@@ -52,7 +52,7 @@ class TestUrlImportCandidateKindValidation:
             UrlImportCandidate(kind='recipe')
 
     def test_technique_kind_with_technique_is_valid(self):
-        c = UrlImportCandidate(kind='technique', technique=_technique_payload())
+        c = UrlImportCandidate(kind='technique', technique=technique_payload())
         assert c.technique is not None
         assert c.recipe is None
 
@@ -63,8 +63,8 @@ class TestUrlImportCandidateKindValidation:
     def test_both_kind_with_both_payloads_is_valid(self):
         c = UrlImportCandidate(
             kind='both',
-            recipe=_recipe_payload(),
-            technique=_technique_payload(),
+            recipe=recipe_payload(),
+            technique=technique_payload(),
             technique_mention='Uses the 3:1 vinaigrette ratio technique',
         )
         assert c.recipe is not None
@@ -73,12 +73,12 @@ class TestUrlImportCandidateKindValidation:
 
     def test_both_kind_missing_recipe_rejected(self):
         with pytest.raises(ValidationError, match='kind=both requires'):
-            UrlImportCandidate(kind='both', technique=_technique_payload())
+            UrlImportCandidate(kind='both', technique=technique_payload())
 
     def test_both_kind_missing_technique_rejected(self):
         with pytest.raises(ValidationError, match='kind=both requires'):
-            UrlImportCandidate(kind='both', recipe=_recipe_payload())
+            UrlImportCandidate(kind='both', recipe=recipe_payload())
 
     def test_technique_mention_is_optional_even_for_both(self):
-        c = UrlImportCandidate(kind='both', recipe=_recipe_payload(), technique=_technique_payload())
+        c = UrlImportCandidate(kind='both', recipe=recipe_payload(), technique=technique_payload())
         assert c.technique_mention is None

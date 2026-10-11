@@ -31,7 +31,7 @@ def run(branch: str, project: str, json_path: str) -> PlaywrightCollectEvent | N
 
     tests: list[PlaywrightTest] = []
     for suite in raw_data.get('suites', []):
-        _walk_suite(suite, '', tests)
+        walk_suite(suite, '', tests)
 
     passed = 0
     failed = 0
@@ -64,7 +64,7 @@ def run(branch: str, project: str, json_path: str) -> PlaywrightCollectEvent | N
     )
 
 
-def _walk_suite(suite: dict, parent_title: str, tests: list[PlaywrightTest]) -> None:
+def walk_suite(suite: dict, parent_title: str, tests: list[PlaywrightTest]) -> None:
     """Recursively walk Playwright suite tree to extract test results."""
     suite_title = suite.get('title', '')
     full_title = f'{parent_title} > {suite_title}' if parent_title else suite_title
@@ -87,4 +87,4 @@ def _walk_suite(suite: dict, parent_title: str, tests: list[PlaywrightTest]) -> 
                 )
 
     for child_suite in suite.get('suites', []):
-        _walk_suite(child_suite, full_title, tests)
+        walk_suite(child_suite, full_title, tests)

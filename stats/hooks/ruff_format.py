@@ -43,7 +43,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffFormatHookEve
     )
 
     duration = time.perf_counter() - start_time
-    files_reformatted = _parse_format_output(result.stdout + result.stderr)
+    files_reformatted = parse_format_output(result.stdout + result.stderr)
 
     return RuffFormatHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -57,7 +57,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffFormatHookEve
     )
 
 
-def _parse_format_output(output: str) -> list[str]:
+def parse_format_output(output: str) -> list[str]:
     """Parse ruff format --check output for files that would be reformatted.
 
     Output lines look like: "Would reformat: path/to/file.py"

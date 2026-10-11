@@ -530,14 +530,14 @@ Examples:
     syncer = CodeSyncTool(args.base_path)
 
     if args.check:
-        return _run_check_mode(syncer, args.docs_dir)
+        return run_check_mode(syncer, args.docs_dir)
     else:
         processed, updated = syncer.sync_all_markdown_files(args.docs_dir)
         logger.info(f'Processed {processed} files, updated {updated} files')
         return 0
 
 
-def _run_check_mode(syncer: CodeSyncTool, docs_dir: str) -> int:
+def run_check_mode(syncer: CodeSyncTool, docs_dir: str) -> int:
     """Run in check mode - report if docs are out of sync without modifying."""
     import tempfile
     from pathlib import Path

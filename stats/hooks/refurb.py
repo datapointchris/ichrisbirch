@@ -64,7 +64,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RefurbHookEvent:
     duration = time.perf_counter() - start_time
 
     # Parse refurb output
-    issues = _parse_refurb_output(result.stdout + result.stderr)
+    issues = parse_refurb_output(result.stdout + result.stderr)
 
     return RefurbHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -78,7 +78,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RefurbHookEvent:
     )
 
 
-def _parse_refurb_output(output: str) -> list[RefurbIssue]:
+def parse_refurb_output(output: str) -> list[RefurbIssue]:
     """Parse refurb output into structured issues."""
     issues: list[RefurbIssue] = []
 

@@ -86,7 +86,7 @@ DependencyItemFromPath = Annotated[models.ProjectItem, Depends(path_dependency_i
 ProjectFromPath = Annotated[models.Project, Depends(path_project)]
 
 
-def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUID) -> bool:
+def detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUID) -> bool:
     """Check if adding item_id -> depends_on_id would create a cycle.
 
     Walk forward from depends_on_id through existing dependencies.
@@ -109,7 +109,7 @@ def _detect_dependency_cycle(session: Session, item_id: UUID, depends_on_id: UUI
     return False
 
 
-def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDetail:
+def project_item_detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDetail:
     dependency_ids = list(
         session.execute(select(ProjectItemDependency.depends_on_id).where(ProjectItemDependency.item_id == item.id)).scalars().all()
     )
@@ -138,7 +138,7 @@ def _detail(session: Session, item: models.ProjectItem) -> schemas.ProjectItemDe
     )
 
 
-def _next_position_in_project(session: Session, project_id: UUID) -> int:
+def next_position_in_project(session: Session, project_id: UUID) -> int:
     max_pos = session.scalar(
         select(ProjectItemMembership.position)
         .where(ProjectItemMembership.project_id == project_id)
@@ -247,7 +247,7 @@ def create(item: schemas.ProjectItemCreate, session: DbSession):
 
     for project in projects:
         membership = ProjectItemMembership(
-            item_id=db_item.id, project_id=project.id, position=_next_position_in_project(session, project.id)
+            item_id=db_item.id, project_id=project.id, position=next_position_in_project(session, project.id)
         )
         session.add(membership)
 
@@ -258,12 +258,12 @@ def create(item: schemas.ProjectItemCreate, session: DbSession):
     # row it just created, so leaving it to the next pull is not good enough.
     session.refresh(db_item)
 
-    return _detail(session, db_item)
+    return project_item_detail(session, db_item)
 
 
 @router.get('/{id}/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
 def read_one(item: ItemFromPath, session: DbSession):
-    return _detail(session, item)
+    return project_item_detail(session, item)
 
 
 @router.patch('/{id}/', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
@@ -355,7 +355,7 @@ def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembership
             detail=f'Item {item.number} is already in project {project.name}',
         )
 
-    db_membership = ProjectItemMembership(item_id=item.id, project_id=project.id, position=_next_position_in_project(session, project.id))
+    db_membership = ProjectItemMembership(item_id=item.id, project_id=project.id, position=next_position_in_project(session, project.id))
     session.add(db_membership)
     session.commit()
 
@@ -402,7 +402,7 @@ def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate,
             detail=f'Dependency already exists: item {item.number} depends on {depends_on.number}',
         )
 
-    if _detect_dependency_cycle(session, item.id, depends_on.id):
+    if detect_dependency_cycle(session, item.id, depends_on.id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f'Adding dependency would create a cycle: {item.number} -> {depends_on.number}',
@@ -411,7 +411,7 @@ def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate,
     session.add(ProjectItemDependency(item_id=item.id, depends_on_id=depends_on.id))
     session.commit()
 
-    return _detail(session, item)
+    return project_item_detail(session, item)
 
 
 @router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)

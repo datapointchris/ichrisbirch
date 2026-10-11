@@ -64,7 +64,7 @@ def run(staged_files: list[str], branch: str, project: str) -> TerraformTflintHo
                 continue
 
             for issue in raw_output.get('issues', []):
-                all_issues.append(_parse_issue(issue))
+                all_issues.append(parse_issue(issue))
 
     duration = time.perf_counter() - start_time
 
@@ -80,7 +80,7 @@ def run(staged_files: list[str], branch: str, project: str) -> TerraformTflintHo
     )
 
 
-def _parse_issue(issue: dict) -> TflintIssue:
+def parse_issue(issue: dict) -> TflintIssue:
     """Parse a single tflint issue from JSON output."""
     rule_data = issue.get('rule', {})
     range_data = issue.get('range', {})

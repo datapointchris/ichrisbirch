@@ -16,7 +16,7 @@ from ichrisbirch.database.session import get_db_engine
 from tests.utils.database import test_settings
 
 
-def _database_state() -> tuple[list[str], str, int]:
+def database_state() -> tuple[list[str], str, int]:
     with get_db_engine(test_settings).connect() as conn:
         schemas = sorted(sa.inspect(conn).get_schema_names())
         revision = conn.execute(sa.text('SELECT version_num FROM alembic_version')).scalar_one()
@@ -26,11 +26,11 @@ def _database_state() -> tuple[list[str], str, int]:
 
 def test_a_second_initialization_changes_no_schema_revision_or_user():
     full_initialization(test_settings)
-    before = _database_state()
+    before = database_state()
 
     full_initialization(test_settings)
 
-    assert _database_state() == before
+    assert database_state() == before
 
 
 def test_initialization_seeds_signups_closed_into_an_empty_settings_table():

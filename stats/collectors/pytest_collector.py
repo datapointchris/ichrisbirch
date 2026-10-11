@@ -30,8 +30,8 @@ def run(branch: str, project: str, json_path: str) -> PytestCollectEvent | None:
     with path.open() as f:
         raw_data = json.load(f)
 
-    summary = _parse_summary(raw_data.get('summary', {}))
-    tests = [_parse_test(t) for t in raw_data.get('tests', [])]
+    summary = parse_summary(raw_data.get('summary', {}))
+    tests = [parse_test(t) for t in raw_data.get('tests', [])]
 
     return PytestCollectEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -44,7 +44,7 @@ def run(branch: str, project: str, json_path: str) -> PytestCollectEvent | None:
     )
 
 
-def _parse_summary(summary_data: dict) -> PytestSummary:
+def parse_summary(summary_data: dict) -> PytestSummary:
     """Parse summary section from pytest-json-report."""
     return PytestSummary(
         passed=summary_data.get('passed', 0),
@@ -56,7 +56,7 @@ def _parse_summary(summary_data: dict) -> PytestSummary:
     )
 
 
-def _parse_phase(phase_data: dict | None) -> PytestPhase | None:
+def parse_phase(phase_data: dict | None) -> PytestPhase | None:
     """Parse a test phase (setup/call/teardown)."""
     if not phase_data:
         return None
@@ -67,13 +67,13 @@ def _parse_phase(phase_data: dict | None) -> PytestPhase | None:
     )
 
 
-def _parse_test(test_data: dict) -> PytestTest:
+def parse_test(test_data: dict) -> PytestTest:
     """Parse a single test result."""
     return PytestTest(
         nodeid=test_data['nodeid'],
         outcome=test_data.get('outcome', 'passed'),
         duration=test_data.get('duration', 0.0),
-        setup=_parse_phase(test_data.get('setup')),
-        call=_parse_phase(test_data.get('call')),
-        teardown=_parse_phase(test_data.get('teardown')),
+        setup=parse_phase(test_data.get('setup')),
+        call=parse_phase(test_data.get('call')),
+        teardown=parse_phase(test_data.get('teardown')),
     )

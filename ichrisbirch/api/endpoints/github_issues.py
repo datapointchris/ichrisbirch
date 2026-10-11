@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-def _format_issue_body(issue: GithubIssueCreate, request: Request) -> str:
+def format_issue_body(issue: GithubIssueCreate, request: Request) -> str:
     user_agent = request.headers.get('User-Agent', '')
     ua_parts = [f'\t - {part.strip()})' for part in re.split(r'\)', user_agent) if part.strip()]
 
@@ -46,7 +46,7 @@ async def create_github_issue(
     request: Request,
     settings: Settings = Depends(get_settings),
 ):
-    body = _format_issue_body(issue, request)
+    body = format_issue_body(issue, request)
     data = {'title': issue.title, 'body': body, 'labels': issue.labels}
     logger.info('github_issue_creating', title=issue.title, labels=issue.labels)
 

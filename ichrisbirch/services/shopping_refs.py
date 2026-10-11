@@ -19,7 +19,7 @@ from ichrisbirch.services.names_near import names_near
 logger = structlog.get_logger()
 
 
-def _parse_uuid(ref: str) -> UUID | None:
+def parse_uuid(ref: str) -> UUID | None:
     try:
         return UUID(ref)
     except ValueError:
@@ -35,7 +35,7 @@ def item_by_name(session: Session, name: str) -> models.ShoppingItem | None:
 
 
 def resolve_section(session: Session, ref: str | UUID) -> models.ShoppingSection:
-    key = ref if isinstance(ref, UUID) else _parse_uuid(ref)
+    key = ref if isinstance(ref, UUID) else parse_uuid(ref)
     section = session.get(models.ShoppingSection, key) if key is not None else section_by_name(session, str(ref))
     if section is None:
         names = session.scalars(select(models.ShoppingSection.name).order_by(models.ShoppingSection.rank)).all()
@@ -45,7 +45,7 @@ def resolve_section(session: Session, ref: str | UUID) -> models.ShoppingSection
 
 
 def resolve_item(session: Session, ref: str | UUID) -> models.ShoppingItem:
-    key = ref if isinstance(ref, UUID) else _parse_uuid(ref)
+    key = ref if isinstance(ref, UUID) else parse_uuid(ref)
     item = session.get(models.ShoppingItem, key) if key is not None else item_by_name(session, str(ref))
     if item is None:
         names = session.scalars(

@@ -12,7 +12,7 @@ from ichrisbirch.config import get_settings
 
 
 @functools.lru_cache(maxsize=4)
-def _cached_engine(db_uri: str, echo: bool) -> Engine:
+def cached_engine(db_uri: str, echo: bool) -> Engine:
     return create_engine(
         db_uri,
         echo=echo,
@@ -28,7 +28,7 @@ def _cached_engine(db_uri: str, echo: bool) -> Engine:
 
 
 def get_db_engine(settings: Settings) -> Engine:
-    return _cached_engine(settings.sqlalchemy.db_uri, settings.sqlalchemy.echo)
+    return cached_engine(settings.sqlalchemy.db_uri, settings.sqlalchemy.echo)
 
 
 @contextmanager

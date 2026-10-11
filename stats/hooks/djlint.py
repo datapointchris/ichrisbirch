@@ -68,7 +68,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DjlintHookEvent:
     duration = time.perf_counter() - start_time
 
     # Parse djlint output
-    issues = _parse_djlint_output(result.stdout)
+    issues = parse_djlint_output(result.stdout)
 
     return DjlintHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -82,7 +82,7 @@ def run(staged_files: list[str], branch: str, project: str) -> DjlintHookEvent:
     )
 
 
-def _parse_djlint_output(output: str) -> list[DjlintIssue]:
+def parse_djlint_output(output: str) -> list[DjlintIssue]:
     """Parse djlint output into structured issues.
 
     Djlint output format:

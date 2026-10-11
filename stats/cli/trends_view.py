@@ -20,7 +20,7 @@ from stats.cli.charts import vertical_bars
 from stats.cli.data import load_snapshot
 
 
-def _git(args: list[str]) -> str:
+def git(args: list[str]) -> str:
     """Run a git command and return stripped stdout."""
     result = subprocess.run(  # nosec B603 B607 — fixed git binary, no shell
         ['git', *args],
@@ -30,14 +30,14 @@ def _git(args: list[str]) -> str:
     return result.stdout.strip()
 
 
-def _count_lines(text: str) -> int:
+def count_lines(text: str) -> int:
     """Count non-empty lines."""
     if not text:
         return 0
     return len([line for line in text.splitlines() if line.strip()])
 
 
-def _numstat_totals(since: str, path_filter: str | None = None) -> tuple[int, int]:
+def numstat_totals(since: str, path_filter: str | None = None) -> tuple[int, int]:
     """Get total added/deleted lines from git log --numstat.
 
     Returns (added, deleted) tuple.
@@ -45,7 +45,7 @@ def _numstat_totals(since: str, path_filter: str | None = None) -> tuple[int, in
     args = ['log', f'--since={since}', '--numstat', '--pretty=']
     if path_filter:
         args.extend(['--', path_filter])
-    output = _git(args)
+    output = git(args)
     added = 0
     deleted = 0
     for line in output.splitlines():
@@ -56,7 +56,7 @@ def _numstat_totals(since: str, path_filter: str | None = None) -> tuple[int, in
     return added, deleted
 
 
-def _delta_str(current: int, previous: int) -> str:
+def delta_str(current: int, previous: int) -> str:
     """Format a percentage change with colored arrow."""
     if previous == 0:
         return ''
@@ -68,32 +68,32 @@ def _delta_str(current: int, previous: int) -> str:
     return ' (same as prev week)'
 
 
-def _net_str(net: int) -> str:
+def net_str(net: int) -> str:
     """Format a net line change with color."""
     if net >= 0:
         return f'[green]+{net:,}[/green]'
     return f'[red]{net:,}[/red]'
 
 
-def _render_commit_velocity(con: Console) -> None:
+def render_commit_velocity(con: Console) -> None:
     """Commit counts for today, 7d, 30d with delta vs previous period."""
-    today = _count_lines(_git(['log', '--oneline', '--since=midnight']))
-    week = _count_lines(_git(['log', '--oneline', '--since=7 days ago']))
-    month = _count_lines(_git(['log', '--oneline', '--since=30 days ago']))
-    prev_week = _count_lines(_git(['log', '--oneline', '--since=14 days ago', '--until=7 days ago']))
+    today = count_lines(git(['log', '--oneline', '--since=midnight']))
+    week = count_lines(git(['log', '--oneline', '--since=7 days ago']))
+    month = count_lines(git(['log', '--oneline', '--since=30 days ago']))
+    prev_week = count_lines(git(['log', '--oneline', '--since=14 days ago', '--until=7 days ago']))
 
     con.print('[bold blue]Commit Velocity[/bold blue]')
     con.print(f'  {"Today:":<14} {today} commits')
-    delta = _delta_str(week, prev_week) if prev_week > 0 else ''
+    delta = delta_str(week, prev_week) if prev_week > 0 else ''
     con.print(f'  {"Last 7 days:":<14} {week} commits{delta}')
     con.print(f'  {"Last 30 days:":<14} {month} commits')
     con.print()
 
 
-def _render_code_churn(con: Console) -> None:
+def render_code_churn(con: Console) -> None:
     """Lines added/deleted for 7d and 30d."""
-    w_add, w_del = _numstat_totals('7 days ago')
-    m_add, m_del = _numstat_totals('30 days ago')
+    w_add, w_del = numstat_totals('7 days ago')
+    m_add, m_del = numstat_totals('30 days ago')
 
     con.print('[bold blue]Code Churn (lines changed)[/bold blue]')
     con.print(f'  {"Last 7 days:":<14} [green]+{w_add:,}[/green] / [red]-{w_del:,}[/red]')
@@ -101,7 +101,7 @@ def _render_code_churn(con: Console) -> None:
     con.print()
 
 
-def _safe_int(value: int | float | str | None, default: int = 0) -> int:
+def safe_int(value: int | float | str | None, default: int = 0) -> int:
     if value is None:
         return default
     try:
@@ -110,7 +110,7 @@ def _safe_int(value: int | float | str | None, default: int = 0) -> int:
         return default
 
 
-def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
+def safe_float(value: int | float | str | None, default: float = 0.0) -> float:
     if value is None:
         return default
     try:
@@ -119,7 +119,7 @@ def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
         return default
 
 
-def _render_test_suite(con: Console, snap: dict | None) -> None:
+def render_test_suite(con: Console, snap: dict | None) -> None:
     """Test suite summary from snapshot."""
     con.print('[bold blue]Test Suite (from latest snapshot)[/bold blue]')
     if not snap:
@@ -131,15 +131,15 @@ def _render_test_suite(con: Console, snap: dict | None) -> None:
     fe = snap.get('frontend_tests', {})
     e2e = snap.get('e2e_tests', {})
 
-    py_t = _safe_int(tests.get('active', tests.get('total')))
-    fe_t = _safe_int(fe.get('active', fe.get('total')))
-    e2e_t = _safe_int(e2e.get('total'))
+    py_t = safe_int(tests.get('active', tests.get('total')))
+    fe_t = safe_int(fe.get('active', fe.get('total')))
+    e2e_t = safe_int(e2e.get('total'))
     all_t = py_t + fe_t + e2e_t
 
-    all_failed = sum(_safe_int(s.get('failed')) for s in (tests, fe, e2e))
-    all_skipped = sum(_safe_int(s.get('skipped')) for s in (tests, fe, e2e))
-    all_dur = sum(_safe_float(s.get('duration_seconds')) for s in (tests, fe, e2e))
-    cov = _safe_float(snap.get('coverage', {}).get('line_percent'))
+    all_failed = sum(safe_int(s.get('failed')) for s in (tests, fe, e2e))
+    all_skipped = sum(safe_int(s.get('skipped')) for s in (tests, fe, e2e))
+    all_dur = sum(safe_float(s.get('duration_seconds')) for s in (tests, fe, e2e))
+    cov = safe_float(snap.get('coverage', {}).get('line_percent'))
 
     status = f'([red]{all_failed} failed[/red])' if all_failed > 0 else '([green]all passing[/green])'
     con.print(f'  {"Active:":<14} {all_t} tests {status}')
@@ -157,22 +157,22 @@ def _render_test_suite(con: Console, snap: dict | None) -> None:
     con.print()
 
 
-def _render_python_loc(con: Console) -> None:
+def render_python_loc(con: Console) -> None:
     """Python-specific line changes for 7d and 30d."""
-    w_add, w_del = _numstat_totals('7 days ago', '*.py')
-    m_add, m_del = _numstat_totals('30 days ago', '*.py')
+    w_add, w_del = numstat_totals('7 days ago', '*.py')
+    m_add, m_del = numstat_totals('30 days ago', '*.py')
     w_net = w_add - w_del
     m_net = m_add - m_del
 
     con.print('[bold blue]Python LOC (from git)[/bold blue]')
-    con.print(f'  {"Last 7 days:":<14} {_net_str(w_net)} net ([green]+{w_add:,}[/green]/[red]-{w_del:,}[/red])')
-    con.print(f'  {"Last 30 days:":<14} {_net_str(m_net)} net ([green]+{m_add:,}[/green]/[red]-{m_del:,}[/red])')
+    con.print(f'  {"Last 7 days:":<14} {net_str(w_net)} net ([green]+{w_add:,}[/green]/[red]-{w_del:,}[/red])')
+    con.print(f'  {"Last 30 days:":<14} {net_str(m_net)} net ([green]+{m_add:,}[/green]/[red]-{m_del:,}[/red])')
     con.print()
 
 
-def _render_hot_files(con: Console) -> None:
+def render_hot_files(con: Console) -> None:
     """Most frequently modified files in the last 7 days."""
-    output = _git(['log', '--since=7 days ago', '--name-only', '--pretty=format:'])
+    output = git(['log', '--since=7 days ago', '--name-only', '--pretty=format:'])
     if not output:
         return
 
@@ -190,7 +190,7 @@ def _render_hot_files(con: Console) -> None:
     con.print()
 
 
-def _render_daily_commits(con: Console) -> None:
+def render_daily_commits(con: Console) -> None:
     """30-day daily commit chart using vertical bars."""
     today = dt.datetime.now(dt.UTC).astimezone().date()  # local date to match git --since/--until
     labels = []
@@ -200,7 +200,7 @@ def _render_daily_commits(con: Console) -> None:
         day = today - dt.timedelta(days=i)
         date_str = day.strftime('%Y-%m-%d')
         dow = day.strftime('%a')[0]
-        count = _count_lines(_git(['log', '--oneline', f'--since={date_str} 00:00:00', f'--until={date_str} 23:59:59']))
+        count = count_lines(git(['log', '--oneline', f'--since={date_str} 00:00:00', f'--until={date_str} 23:59:59']))
         labels.append(dow)
         values.append(float(count))
 
@@ -208,9 +208,9 @@ def _render_daily_commits(con: Console) -> None:
     con.print()
 
 
-def _render_hourly_histogram(con: Console) -> None:
+def render_hourly_histogram(con: Console) -> None:
     """Commit time-of-day distribution as vertical bars."""
-    output = _git(['log', '--since=30 days ago', '--date=format:%H', '--format=%ad'])
+    output = git(['log', '--since=30 days ago', '--date=format:%H', '--format=%ad'])
     if not output:
         return
 
@@ -241,13 +241,13 @@ def render(data_dir: str, *, console: Console | None = None) -> None:
     con.print('[bold green]Project Trends[/bold green]')
     con.print()
 
-    _render_commit_velocity(con)
-    _render_code_churn(con)
-    _render_test_suite(con, snap)
-    _render_python_loc(con)
-    _render_hot_files(con)
-    _render_daily_commits(con)
-    _render_hourly_histogram(con)
+    render_commit_velocity(con)
+    render_code_churn(con)
+    render_test_suite(con, snap)
+    render_python_loc(con)
+    render_hot_files(con)
+    render_daily_commits(con)
+    render_hourly_histogram(con)
 
 
 if __name__ == '__main__':

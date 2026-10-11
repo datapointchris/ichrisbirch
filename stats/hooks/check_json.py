@@ -52,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckJsonHookEven
     )
 
     duration = time.perf_counter() - start_time
-    issues = _parse_check_json_output(result.stdout + result.stderr)
+    issues = parse_check_json_output(result.stdout + result.stderr)
 
     return CheckJsonHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -66,7 +66,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckJsonHookEven
     )
 
 
-def _parse_check_json_output(output: str) -> list[FileFormatIssue]:
+def parse_check_json_output(output: str) -> list[FileFormatIssue]:
     """Parse check-json output into structured issues."""
     issues: list[FileFormatIssue] = []
 

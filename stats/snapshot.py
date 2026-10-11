@@ -472,7 +472,7 @@ def write_snapshot(snapshot: dict, output_dir: str) -> Path:
     return filepath
 
 
-def _fill_missing_collectors(
+def fill_missing_collectors(
     events: list[dict],
     collector_events: list[dict],
     required_types: set[str],
@@ -511,7 +511,7 @@ def _fill_missing_collectors(
 
 # Collector types that should always appear in a snapshot, backfilled
 # from earlier commits if they didn't run in the latest cycle.
-_BACKFILL_COLLECTOR_TYPES = {
+BACKFILL_COLLECTOR_TYPES = {
     'collect.pytest',
     'collect.vitest',
     'collect.playwright',
@@ -546,7 +546,7 @@ def generate_snapshot(events_path: str | None = None, output_dir: str | None = N
         print('No commit events found')
         return None
 
-    collector_events = _fill_missing_collectors(events, collector_events, _BACKFILL_COLLECTOR_TYPES)
+    collector_events = fill_missing_collectors(events, collector_events, BACKFILL_COLLECTOR_TYPES)
 
     snapshot = build_snapshot(commit_event, collector_events, hook_events)
     filepath = write_snapshot(snapshot, output_dir)

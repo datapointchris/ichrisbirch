@@ -23,8 +23,8 @@ def run(branch: str, project: str) -> DockerCollectEvent:
     """
     start_time = time.perf_counter()
 
-    images = _get_images()
-    containers = _get_containers()
+    images = get_images()
+    containers = get_containers()
 
     duration = time.perf_counter() - start_time
 
@@ -38,7 +38,7 @@ def run(branch: str, project: str) -> DockerCollectEvent:
     )
 
 
-def _get_images() -> list[DockerImage]:
+def get_images() -> list[DockerImage]:
     """Get list of docker images."""
     result = subprocess.run(  # nosec B603 B607
         ['docker', 'images', '--format', '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedAt}}\t{{.Size}}'],
@@ -64,7 +64,7 @@ def _get_images() -> list[DockerImage]:
     return images
 
 
-def _get_containers() -> list[DockerContainer]:
+def get_containers() -> list[DockerContainer]:
     """Get list of docker containers."""
     result = subprocess.run(  # nosec B603 B607
         ['docker', 'ps', '-a', '--format', '{{.ID}}\t{{.Image}}\t{{.Command}}\t{{.CreatedAt}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}'],

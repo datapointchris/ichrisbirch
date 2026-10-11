@@ -278,7 +278,7 @@ QUALITY_TOOLS = [
 ]
 
 
-def _issue_count(event: dict, tool: str) -> int:
+def issue_count(event: dict, tool: str) -> int:
     """Count issues in a single hook event based on its tool-specific field."""
     field = ISSUE_FIELD_MAP.get(tool, 'issues')
     value = event.get(field, [])
@@ -307,7 +307,7 @@ def aggregate_hook_issues(events_path: str | Path) -> dict[str, dict[str, int]]:
         if not date_key:
             continue
 
-        count = _issue_count(event, tool)
+        count = issue_count(event, tool)
         tool_dates = result.setdefault(tool, {})
         tool_dates[date_key] = tool_dates.get(date_key, 0) + count
 
@@ -368,7 +368,7 @@ def hook_run_summary(events_path: str | Path) -> list[dict]:
 # ── Test data aggregation ──────────────────────────────────────────
 
 
-def _aggregate_test_type_by_day(events: list[dict]) -> dict[str, dict]:
+def aggregate_test_type_by_day(events: list[dict]) -> dict[str, dict]:
     """Aggregate test events by date, computing per-day averages.
 
     Replaces the jq pattern:
@@ -420,8 +420,8 @@ def merge_test_trends(events_path: str | Path, days: int = 7) -> list[dict]:
     pytest_events = load_events(events_path, event_type='collect.pytest')
     vitest_events = load_events(events_path, event_type='collect.vitest')
 
-    pytest_by_day = _aggregate_test_type_by_day(pytest_events)
-    vitest_by_day = _aggregate_test_type_by_day(vitest_events)
+    pytest_by_day = aggregate_test_type_by_day(pytest_events)
+    vitest_by_day = aggregate_test_type_by_day(vitest_events)
 
     # Merge: use pytest dates as the base, add vitest where date matches
     merged = []

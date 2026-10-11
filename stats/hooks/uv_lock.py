@@ -40,7 +40,7 @@ def run(staged_files: list[str], branch: str, project: str) -> UvLockHookEvent:
     )
 
     duration = time.perf_counter() - start_time
-    packages, time_ms = _parse_uv_lock_output(result.stdout + result.stderr)
+    packages, time_ms = parse_uv_lock_output(result.stdout + result.stderr)
 
     return UvLockHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -55,7 +55,7 @@ def run(staged_files: list[str], branch: str, project: str) -> UvLockHookEvent:
     )
 
 
-def _parse_uv_lock_output(output: str) -> tuple[int | None, int | None]:
+def parse_uv_lock_output(output: str) -> tuple[int | None, int | None]:
     """Parse uv lock output for resolution stats."""
     match = RESOLVED_PATTERN.search(output)
     if match:

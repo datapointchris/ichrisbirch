@@ -83,7 +83,7 @@ def read_many_items(session: DbSession, limit: RowLimit = None):
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-def _update_box_details_based_on_contents(box: models.Box, session: Session):
+def update_box_details_based_on_contents(box: models.Box, session: Session):
     """Update the box details based on the items in the box.
 
     When a new item is added or deleted from the box, see if it changes the box details
@@ -101,7 +101,7 @@ def create_item(item: schemas.BoxItemCreate, session: DbSession):
     db_obj = models.BoxItem(**item.model_dump())
     session.add(db_obj)
     session.commit()
-    _update_box_details_based_on_contents(db_obj.box, session)
+    update_box_details_based_on_contents(db_obj.box, session)
     session.refresh(db_obj)
     return db_obj
 
@@ -126,7 +126,7 @@ def delete_item(id: int, session: DbSession):
         session.delete(item)
         session.commit()
         if box:  # if item was in a box and not an orphan
-            _update_box_details_based_on_contents(box, session)
+            update_box_details_based_on_contents(box, session)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     raise NotFoundException('box item', id, logger)
 

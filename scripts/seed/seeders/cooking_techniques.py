@@ -202,7 +202,7 @@ COOKING_TECHNIQUE_BLUEPRINTS: list[dict] = [
 ]
 
 
-def _ensure_lookup_seeded(session: Session) -> None:
+def ensure_lookup_seeded(session: Session) -> None:
     """Safety net: if Alembic's seed path didn't run, populate the category lookup table."""
     existing = {row[0] for row in session.execute(sa.text('SELECT name FROM cooking_technique_categories')).all()}
     for name in COOKING_TECHNIQUE_CATEGORIES:
@@ -216,7 +216,7 @@ def clear(session: Session) -> None:
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
-    _ensure_lookup_seeded(session)
+    ensure_lookup_seeded(session)
 
     techniques: list[CookingTechnique] = []
     seen_slugs: set[str] = set()

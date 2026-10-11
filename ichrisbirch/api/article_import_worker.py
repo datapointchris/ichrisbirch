@@ -47,7 +47,7 @@ QUEUE_READ_TIMEOUT_SECONDS = QUEUE_WAIT_SECONDS * 2
 USAGE_LIMIT_RECHECK = dt.timedelta(minutes=15)
 
 
-def _worth_retrying(error: Exception) -> bool:
+def worth_retrying(error: Exception) -> bool:
     """Whether asking again at once could give a different answer.
 
     A page that is not the article, a duplicate and a 4xx stay the same on a
@@ -175,9 +175,9 @@ class ArticleImportWorker:
 
         try:
             with create_session(self.settings) as session:
-                from ichrisbirch.api.endpoints.articles import _summarize_and_create_article
+                from ichrisbirch.api.endpoints.articles import summarize_and_create_article
 
-                article = asyncio.run(_summarize_and_create_article(url, notes, session, self.settings))
+                article = asyncio.run(summarize_and_create_article(url, notes, session, self.settings))
                 self._record_success(batch_key, url, article.title)
         except AssistantUsageLimitReached as e:
             self._hold_for_usage_limit(item, e)
@@ -185,7 +185,7 @@ class ArticleImportWorker:
             error_msg = str(e)
             logger.warning('article_import_item_failed', url=url, attempt=attempt, error=error_msg)
 
-            if attempt < MAX_ATTEMPTS and _worth_retrying(e):
+            if attempt < MAX_ATTEMPTS and worth_retrying(e):
                 # Re-queue with incremented attempt
                 retry_item = json.dumps(
                     {

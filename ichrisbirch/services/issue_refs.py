@@ -20,14 +20,14 @@ from ichrisbirch.services.names_near import names_near
 logger = structlog.get_logger()
 
 
-def _parse_uuid(ref: str) -> UUID | None:
+def parse_uuid(ref: str) -> UUID | None:
     try:
         return UUID(ref)
     except ValueError:
         return None
 
 
-def _issue_by_number(session: Session, number: int) -> models.Issue | None:
+def issue_by_number(session: Session, number: int) -> models.Issue | None:
     return session.scalar(select(models.Issue).where(models.Issue.number == number))
 
 
@@ -35,15 +35,15 @@ def resolve_issue(session: Session, ref: str | UUID | int) -> models.Issue:
     """Fetch an issue by its UUID or its number."""
     issue: models.Issue | None
     if isinstance(ref, int):
-        issue = _issue_by_number(session, ref)
+        issue = issue_by_number(session, ref)
     elif isinstance(ref, UUID):
         issue = session.get(models.Issue, ref)
     # A hyphenless UUID can be 32 decimal digits, so it is parsed before the
     # all-digits test. No number will ever be that long.
-    elif (issue_id := _parse_uuid(ref)) is not None:
+    elif (issue_id := parse_uuid(ref)) is not None:
         issue = session.get(models.Issue, issue_id)
     elif ref.lstrip('#').isdigit():
-        issue = _issue_by_number(session, int(ref.lstrip('#')))
+        issue = issue_by_number(session, int(ref.lstrip('#')))
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -54,7 +54,7 @@ def resolve_issue(session: Session, ref: str | UUID | int) -> models.Issue:
     return issue
 
 
-def _initiative_by_name(session: Session, name: str) -> models.Initiative | None:
+def initiative_by_name(session: Session, name: str) -> models.Initiative | None:
     """The active initiative holding the name, else a lone closed one, else ambiguity named."""
     matches = session.scalars(select(models.Initiative).where(models.Initiative.name == name)).all()
     active = [initiative for initiative in matches if initiative.status == 'active']
@@ -76,18 +76,18 @@ def resolve_initiative(session: Session, ref: str | UUID) -> models.Initiative:
     initiative: models.Initiative | None
     if isinstance(ref, UUID):
         initiative = session.get(models.Initiative, ref)
-    elif (initiative_id := _parse_uuid(ref)) is not None:
+    elif (initiative_id := parse_uuid(ref)) is not None:
         initiative = session.get(models.Initiative, initiative_id)
     else:
-        initiative = _initiative_by_name(session, ref)
+        initiative = initiative_by_name(session, ref)
         if initiative is None:
-            raise NotFoundException('initiative', ref, logger, near=names_near(ref, _initiative_names(session)))
+            raise NotFoundException('initiative', ref, logger, near=names_near(ref, initiative_names(session)))
     if initiative is None:
         raise NotFoundException('initiative', str(ref), logger)
     return initiative
 
 
-def _initiative_names(session: Session) -> list[str]:
+def initiative_names(session: Session) -> list[str]:
     """Every initiative's name, active ones first and each group in board order."""
     query = select(models.Initiative.name).order_by((models.Initiative.status == 'active').desc(), models.Initiative.position)
     return list(session.scalars(query))

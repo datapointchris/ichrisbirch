@@ -75,7 +75,7 @@ def include_name(name, type_, parent_names):
 # ... etc.
 
 
-def _get_db_url():
+def get_db_url():
     """Get the database URL, preferring the config option over settings.
 
     When called programmatically (e.g., from run_alembic_migrations), the URL
@@ -97,7 +97,7 @@ def run_migrations_offline() -> None:
 
     Calls to context.execute() here emit the given string to the script output.
     """
-    url = _get_db_url()
+    url = get_db_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -118,7 +118,7 @@ def run_migrations_online() -> None:
     """
     from sqlalchemy import create_engine
 
-    url = _get_db_url()
+    url = get_db_url()
     connectable = create_engine(url, poolclass=pool.NullPool)
     with connectable.connect() as connection:
         context.configure(

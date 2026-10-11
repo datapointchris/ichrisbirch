@@ -59,7 +59,7 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
     duration = time.perf_counter() - start_time
 
     # Parse syntax errors from stderr
-    issues = _parse_sass_errors(result.stderr)
+    issues = parse_sass_errors(result.stderr)
 
     # If compilation succeeded, check if output differs from committed CSS
     css_stale = False
@@ -96,7 +96,7 @@ def run(staged_files: list[str], branch: str, project: str) -> SassHookEvent:
     )
 
 
-def _parse_sass_errors(output: str) -> list[SassError]:
+def parse_sass_errors(output: str) -> list[SassError]:
     """Parse SASS error output into structured errors.
 
     SASS error output looks like:

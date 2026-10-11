@@ -23,7 +23,7 @@ from stats.cli.data import load_events
 from stats.cli.data import load_snapshot
 
 
-def _safe_int(value: int | float | str | None, default: int = 0) -> int:
+def safe_int(value: int | float | str | None, default: int = 0) -> int:
     if value is None:
         return default
     try:
@@ -32,7 +32,7 @@ def _safe_int(value: int | float | str | None, default: int = 0) -> int:
         return default
 
 
-def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
+def safe_float(value: int | float | str | None, default: float = 0.0) -> float:
     if value is None:
         return default
     try:
@@ -41,7 +41,7 @@ def _safe_float(value: int | float | str | None, default: float = 0.0) -> float:
         return default
 
 
-def _tokei_languages() -> list[dict]:
+def tokei_languages() -> list[dict]:
     """Run tokei and return language stats sorted by content lines descending.
 
     Each dict has keys: language, content, blanks, files.
@@ -73,7 +73,7 @@ def _tokei_languages() -> list[dict]:
     return sorted(languages, key=lambda x: -x['content'])
 
 
-def _render_code_section(con: Console, languages: list[dict]) -> None:
+def render_code_section(con: Console, languages: list[dict]) -> None:
     """Render the top-5 code summary section."""
     if not languages:
         return
@@ -87,22 +87,22 @@ def _render_code_section(con: Console, languages: list[dict]) -> None:
     con.print()
 
 
-def _render_tests_section(con: Console, snap: dict) -> None:
+def render_tests_section(con: Console, snap: dict) -> None:
     """Render the combined test results section from snapshot."""
     tests = snap.get('tests', {})
     fe = snap.get('frontend_tests', {})
     e2e = snap.get('e2e_tests', {})
 
-    py_active = _safe_int(tests.get('active', tests.get('total')))
-    fe_active = _safe_int(fe.get('active', fe.get('total')))
-    e2e_active = _safe_int(e2e.get('total'))
+    py_active = safe_int(tests.get('active', tests.get('total')))
+    fe_active = safe_int(fe.get('active', fe.get('total')))
+    e2e_active = safe_int(e2e.get('total'))
     all_active = py_active + fe_active + e2e_active
 
-    all_passed = sum(_safe_int(s.get('passed')) for s in (tests, fe, e2e))
-    all_failed = sum(_safe_int(s.get('failed')) for s in (tests, fe, e2e))
-    all_skipped = sum(_safe_int(s.get('skipped')) for s in (tests, fe, e2e))
-    all_duration = sum(int(_safe_float(s.get('duration_seconds'))) for s in (tests, fe, e2e))
-    coverage = _safe_float(snap.get('coverage', {}).get('line_percent'))
+    all_passed = sum(safe_int(s.get('passed')) for s in (tests, fe, e2e))
+    all_failed = sum(safe_int(s.get('failed')) for s in (tests, fe, e2e))
+    all_skipped = sum(safe_int(s.get('skipped')) for s in (tests, fe, e2e))
+    all_duration = sum(int(safe_float(s.get('duration_seconds'))) for s in (tests, fe, e2e))
+    coverage = safe_float(snap.get('coverage', {}).get('line_percent'))
 
     pass_rate = (all_passed * 100 // all_active) if all_active > 0 else 0
 
@@ -122,13 +122,13 @@ def _render_tests_section(con: Console, snap: dict) -> None:
     con.print()
 
 
-def _render_dependencies_section(con: Console, snap: dict) -> None:
+def render_dependencies_section(con: Console, snap: dict) -> None:
     """Render the dependency counts section from snapshot."""
-    deps_direct = _safe_int(snap.get('dependencies', {}).get('direct'))
-    deps_total = _safe_int(snap.get('dependencies', {}).get('total'))
-    npm_prod = _safe_int(snap.get('npm_dependencies', {}).get('production'))
-    npm_dev = _safe_int(snap.get('npm_dependencies', {}).get('dev'))
-    npm_total = _safe_int(snap.get('npm_dependencies', {}).get('total'))
+    deps_direct = safe_int(snap.get('dependencies', {}).get('direct'))
+    deps_total = safe_int(snap.get('dependencies', {}).get('total'))
+    npm_prod = safe_int(snap.get('npm_dependencies', {}).get('production'))
+    npm_dev = safe_int(snap.get('npm_dependencies', {}).get('dev'))
+    npm_total = safe_int(snap.get('npm_dependencies', {}).get('total'))
 
     con.print('[bold blue]Dependencies[/bold blue]')
     con.print(f'  {"Python:":<13} {deps_direct} direct / {deps_total} total')
@@ -137,7 +137,7 @@ def _render_dependencies_section(con: Console, snap: dict) -> None:
     con.print()
 
 
-def _render_activity_section(con: Console, events_path: str) -> None:
+def render_activity_section(con: Console, events_path: str) -> None:
     """Render commit activity counts from events.jsonl."""
     if not Path(events_path).exists():
         return
@@ -183,10 +183,10 @@ def render_summary(data_dir: str, events_path: str, *, console: Console | None =
     con.print(f'Last collected: [cyan]{collected_at}[/cyan]')
     con.print()
 
-    _render_code_section(con, _tokei_languages())
-    _render_tests_section(con, snap)
-    _render_dependencies_section(con, snap)
-    _render_activity_section(con, events_path)
+    render_code_section(con, tokei_languages())
+    render_tests_section(con, snap)
+    render_dependencies_section(con, snap)
+    render_activity_section(con, events_path)
 
 
 def render_code(*, console: Console | None = None) -> None:
@@ -201,7 +201,7 @@ def render_code(*, console: Console | None = None) -> None:
     con.print('[bold green]Code Statistics by Language[/bold green]')
     con.print()
 
-    languages = _tokei_languages()
+    languages = tokei_languages()
     if not languages:
         con.print('[yellow]tokei not found or no code to analyze[/yellow]')
         return

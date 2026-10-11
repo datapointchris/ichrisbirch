@@ -38,7 +38,7 @@ def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHoo
     )
 
     duration = time.perf_counter() - start_time
-    fixed_files = _parse_fixer_output(result.stdout + result.stderr)
+    fixed_files = parse_fixer_output(result.stdout + result.stderr)
 
     return EndOfFileFixerHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -52,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHoo
     )
 
 
-def _parse_fixer_output(output: str) -> list[str]:
+def parse_fixer_output(output: str) -> list[str]:
     """Parse fixer output for fixed files."""
     fixed: list[str] = []
 

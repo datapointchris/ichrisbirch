@@ -102,10 +102,10 @@ def vertical_bars(
         line = Text(f'  {label:>5} │ ', style='dim')
 
         for i, v in enumerate(values):
-            _append_bar_cell(line, v, max_val, height, row, color)
+            append_bar_cell(line, v, max_val, height, row, color)
 
             if second_values:
-                _append_bar_cell(line, second_values[i], max_val, height, row, second_color)
+                append_bar_cell(line, second_values[i], max_val, height, row, second_color)
 
             line.append(' ')
 
@@ -162,7 +162,7 @@ def horizontal_bars(
         con.print(line)
 
 
-def _append_bar_cell(
+def append_bar_cell(
     line: Text,
     value: float,
     max_val: float,

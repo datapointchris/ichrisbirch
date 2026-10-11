@@ -172,7 +172,7 @@ class Settings:
         return f'{self.protocol}://{self.fastapi.host}{port}'
 
 
-def _detect_environment() -> str:
+def detect_environment() -> str:
     """Detect environment with sensible defaults for development.
 
     Priority:
@@ -198,7 +198,7 @@ def _detect_environment() -> str:
 # @log_caller
 @functools.cache
 def get_settings():
-    env = _detect_environment()
+    env = detect_environment()
     os.environ['ENVIRONMENT'] = env
 
     if dotenv.load_dotenv():

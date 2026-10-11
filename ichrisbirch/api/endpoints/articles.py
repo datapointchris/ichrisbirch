@@ -54,7 +54,7 @@ class ArticleAlreadyExists(Exception):
 PAGE_ERRORS = (PageFetchError, PageStatusError, PageUnreadable, CaptionsBlocked)
 
 
-def _page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsBlocked) -> HTTPException:
+def page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsBlocked) -> HTTPException:
     """Translate a page that could not be read into a response for a request handler.
 
     The site failing is a failed dependency. A page that answered but is not the
@@ -67,11 +67,11 @@ def _page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsB
     return FailedDependencyException(str(e))
 
 
-def _read_page_for_request(url: str) -> ArticlePage:
+def read_page_for_request(url: str) -> ArticlePage:
     try:
         return read_article_page(url)
     except PAGE_ERRORS as e:
-        raise _page_error(e) from e
+        raise page_error(e) from e
 
 
 @router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
@@ -143,7 +143,7 @@ def create(article: schemas.ArticleCreate, session: DbSession):
     return obj
 
 
-async def _summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
+async def summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
     """Fetch URL, summarize via Claude, create article.
 
     Used by create-from-url endpoint and bulk import worker, so it raises domain
@@ -191,11 +191,11 @@ async def create_from_url(
 ):
     """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
     try:
-        return await _summarize_and_create_article(body.url, body.notes, session, settings)
+        return await summarize_and_create_article(body.url, body.notes, session, settings)
     except ArticleAlreadyExists as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
     except PAGE_ERRORS as e:
-        raise _page_error(e) from e
+        raise page_error(e) from e
 
 
 @router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
@@ -251,7 +251,7 @@ async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_s
     """
     logger.debug('article_summarize_request', url=body.url)
     url = clean_url(body.url)
-    page = await run_in_threadpool(_read_page_for_request, url)
+    page = await run_in_threadpool(read_page_for_request, url)
     logger.debug('article_title_retrieved', title=page.title)
 
     assistant = AnthropicAssistant(
@@ -287,7 +287,7 @@ async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_se
                 lines.append(f'<p>{html_escaping.escape(line)}</p>')
         return Response(content=''.join(lines).replace('<p></p>', ''))
     except PAGE_ERRORS as e:
-        raise _page_error(e) from e
+        raise page_error(e) from e
 
     assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
     mkd = await assistant.generate(page.text, max_tokens=8192)

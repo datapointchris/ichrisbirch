@@ -58,7 +58,7 @@ TYPE_COLORS = {
 }
 
 
-def _extract_info(event: dict) -> tuple[str, str]:
+def extract_info(event: dict) -> tuple[str, str]:
     """Extract display value and label from an event."""
     event_type = event.get('type', '')
 
@@ -73,7 +73,7 @@ def _extract_info(event: dict) -> tuple[str, str]:
     return '-', ''
 
 
-def _type_color(event_type: str) -> str:
+def type_color(event_type: str) -> str:
     """Return a Rich style string for an event type."""
     if event_type in TYPE_COLORS:
         return TYPE_COLORS[event_type]
@@ -116,8 +116,8 @@ def render(events_path: str, count: int = 20, *, console: Console | None = None)
         event_type = event.get('type', '')
         timestamp = event.get('timestamp', '')
         time_str = timestamp[11:19] if len(timestamp) >= 19 else timestamp
-        value, label = _extract_info(event)
-        color = _type_color(event_type)
+        value, label = extract_info(event)
+        color = type_color(event_type)
 
         table.add_row(
             f'[{color}]{event_type}[/{color}]',

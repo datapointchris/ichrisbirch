@@ -286,7 +286,7 @@ def redirected_away(requested_url: str, final_url: str) -> bool:
     return final_path == '' or requested_path.startswith(final_path + '/')
 
 
-def _video_captions(url: str) -> str:
+def video_captions(url: str) -> str:
     """A video's captions as text, with the transcript library's failures named for callers."""
     try:
         return get_youtube_video_text_captions(url)
@@ -314,7 +314,7 @@ def read_article_page(url: str) -> ArticlePage:
         if (challenge := bot_challenge_title(soup)) is not None:
             raise PageIsBotChallenge(url, challenge)
         title = get_page_title(soup)
-        text = _video_captions(url) if is_youtube_url(url) else extract_main_text(page.content, page.url)
+        text = video_captions(url) if is_youtube_url(url) else extract_main_text(page.content, page.url)
 
     word_count = len(text.split())
     if word_count < MIN_READABLE_WORDS:

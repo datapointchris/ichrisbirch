@@ -57,7 +57,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ShellcheckHookEve
         except json.JSONDecodeError:
             raw_output = {}
 
-    comments = [_parse_comment(c) for c in raw_output.get('comments', [])]
+    comments = [parse_comment(c) for c in raw_output.get('comments', [])]
 
     return ShellcheckHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -71,7 +71,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ShellcheckHookEve
     )
 
 
-def _parse_comment(comment: dict) -> ShellcheckComment:
+def parse_comment(comment: dict) -> ShellcheckComment:
     """Parse a single shellcheck comment from JSON."""
     fix_data = comment.get('fix')
     fix = None

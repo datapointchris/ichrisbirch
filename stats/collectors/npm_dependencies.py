@@ -30,8 +30,8 @@ def run(branch: str, project: str) -> NpmDependenciesCollectEvent | None:
     with package_json_path.open() as f:
         raw_data = json.load(f)
 
-    production_deps = _parse_dependencies(raw_data.get('dependencies', {}))
-    dev_deps = _parse_dependencies(raw_data.get('devDependencies', {}))
+    production_deps = parse_dependencies(raw_data.get('dependencies', {}))
+    dev_deps = parse_dependencies(raw_data.get('devDependencies', {}))
 
     duration = time.perf_counter() - start_time
 
@@ -48,7 +48,7 @@ def run(branch: str, project: str) -> NpmDependenciesCollectEvent | None:
     )
 
 
-def _parse_dependencies(deps: dict[str, str]) -> list[NpmDependency]:
+def parse_dependencies(deps: dict[str, str]) -> list[NpmDependency]:
     """Parse a dependencies object into NpmDependency list, stripping version prefixes."""
     return [
         NpmDependency(

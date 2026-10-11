@@ -159,7 +159,7 @@ def create(
     return db_obj
 
 
-def _update_user_preferences_helper(db_user: models.User, update_data: dict, session: Session) -> models.User:
+def merge_user_preferences(db_user: models.User, update_data: dict, session: Session) -> models.User:
     """Helper function to update user preferences with error handling."""
     try:
         db_user.preferences = deep_merge(db_user.preferences, update_data)
@@ -182,7 +182,7 @@ def update_my_preferences(update_data: dict[str, Any], user: CurrentUser, sessio
 
     # The session attached to the CurrentUser has gone out of scope, must re-attach to the new session
     db_user = session.merge(user)
-    return _update_user_preferences_helper(db_user, update_data, session)
+    return merge_user_preferences(db_user, update_data, session)
 
 
 @router.patch('/{id}/preferences/', response_model=schemas.User, status_code=status.HTTP_200_OK)
@@ -202,7 +202,7 @@ def update_user_preferences(
     if not (db_user := session.get(models.User, id)):
         raise NotFoundException('user', id, logger)
 
-    return _update_user_preferences_helper(db_user, update_data, session)
+    return merge_user_preferences(db_user, update_data, session)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)

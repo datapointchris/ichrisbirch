@@ -49,7 +49,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
     )
 
     duration = time.perf_counter() - start_time
-    files_without_shebangs = _parse_output(result.stdout + result.stderr)
+    files_without_shebangs = parse_output(result.stdout + result.stderr)
 
     return CheckExecutablesShebangsHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -63,7 +63,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckExecutablesS
     )
 
 
-def _parse_output(output: str) -> list[str]:
+def parse_output(output: str) -> list[str]:
     """Parse check-executables-have-shebangs output for failing file paths.
 
     The tool outputs 3 lines per issue: the file path with error message,

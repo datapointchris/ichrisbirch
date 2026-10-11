@@ -106,24 +106,24 @@ logger = logging.getLogger(__name__)
 # 3. Tests can run in parallel safely
 # =============================================================================
 
-_test_connection: Connection | None = None
+test_connection: Connection | None = None
 
 
 def set_test_connection(conn: Connection) -> None:
     """Set the current test connection for transaction isolation."""
-    global _test_connection
-    _test_connection = conn
+    global test_connection
+    test_connection = conn
 
 
 def get_test_connection() -> Connection | None:
     """Get the current test connection."""
-    return _test_connection
+    return test_connection
 
 
 def clear_test_connection() -> None:
     """Clear the current test connection."""
-    global _test_connection
-    _test_connection = None
+    global test_connection
+    test_connection = None
 
 
 def get_transactional_session() -> Generator[Session]:
@@ -132,11 +132,11 @@ def get_transactional_session() -> Generator[Session]:
     This session participates in the test's transaction and will be
     rolled back after the test completes.
     """
-    if _test_connection is None:
+    if test_connection is None:
         raise RuntimeError(
             'No test connection configured. Use the db_transaction fixture or ensure transaction isolation is set up before calling this.'
         )
-    session = Session(bind=_test_connection, join_transaction_mode='create_savepoint')
+    session = Session(bind=test_connection, join_transaction_mode='create_savepoint')
     try:
         yield session
     finally:
@@ -238,7 +238,7 @@ def get_test_login_users() -> list[dict]:
 # Profiling shows: uncached ~104ms/test (2 lookups), cached ~0ms
 # =============================================================================
 
-_cached_users: dict[str, models.User] = {}
+cached_users: dict[str, models.User] = {}
 
 
 def get_test_user(email: str) -> models.User:
@@ -247,8 +247,8 @@ def get_test_user(email: str) -> models.User:
     Login users are session-scoped and inserted once via insert_users_for_login.
     Caching avoids repeated DB queries (~52ms each).
     """
-    if email in _cached_users:
-        return _cached_users[email]
+    if email in cached_users:
+        return cached_users[email]
 
     with create_session(test_settings) as session:
         q = select(models.User).where(models.User.email == email)
@@ -256,7 +256,7 @@ def get_test_user(email: str) -> models.User:
             user = session.execute(q).scalar_one()
             # Detach from session so it can be used across different sessions
             session.expunge(user)
-            _cached_users[email] = user
+            cached_users[email] = user
             logger.debug(f'Cached test user: {email}')
             return user
         except Exception as e:
@@ -266,7 +266,7 @@ def get_test_user(email: str) -> models.User:
 
 def clear_user_cache() -> None:
     """Clear the cached users (useful for test cleanup)."""
-    _cached_users.clear()
+    cached_users.clear()
     logger.debug('Cleared test user cache')
 
 

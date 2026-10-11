@@ -33,7 +33,7 @@ def path_item(item_id: str, session: DbSession) -> models.ProjectItem:
 ItemFromPath = Annotated[models.ProjectItem, Depends(path_item)]
 
 
-def _get_task_or_404(session: Session, item_id: UUID, task_id: UUID) -> ProjectItemTask:
+def get_task_or_404(session: Session, item_id: UUID, task_id: UUID) -> ProjectItemTask:
     task = session.get(ProjectItemTask, task_id)
     if not task or task.item_id != item_id:
         raise NotFoundException('project item task', task_id, logger)
@@ -75,7 +75,7 @@ def create_task(item: ItemFromPath, task: ProjectItemTaskCreate, session: DbSess
 @router.patch('/{task_id}/', response_model=ProjectItemTaskSchema, status_code=status.HTTP_200_OK)
 def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTaskUpdate, session: DbSession):
     """Update a project item task."""
-    task = _get_task_or_404(session, item.id, task_id)
+    task = get_task_or_404(session, item.id, task_id)
     update_data = update.model_dump(exclude_unset=True)
     was_completed = task.completed
     for attr, value in update_data.items():
@@ -89,7 +89,7 @@ def update_task(item: ItemFromPath, task_id: UUID, update: ProjectItemTaskUpdate
 @router.delete('/{task_id}/', status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(item: ItemFromPath, task_id: UUID, session: DbSession):
     """Delete a project item task."""
-    task = _get_task_or_404(session, item.id, task_id)
+    task = get_task_or_404(session, item.id, task_id)
     session.delete(task)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

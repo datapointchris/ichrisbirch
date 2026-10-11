@@ -16,13 +16,13 @@ from tests.utils.database import test_settings
 DROPPED_TABLES = ('chats', 'messages')
 
 
-def _tables_in_chat_schema(conn) -> list[str]:
+def tables_in_chat_schema(conn) -> list[str]:
     rows = conn.execute(sa.text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'chat' ORDER BY table_name"))
     return [r[0] for r in rows]
 
 
 def test_the_chat_schema_holds_no_tables(factory_session):
-    assert _tables_in_chat_schema(factory_session.connection()) == []
+    assert tables_in_chat_schema(factory_session.connection()) == []
 
 
 def test_initialization_at_head_does_not_recreate_the_chat_schema():

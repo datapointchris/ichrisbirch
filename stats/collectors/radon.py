@@ -14,7 +14,7 @@ from stats.schemas.collectors.radon import FunctionComplexity
 from stats.schemas.collectors.radon import RadonCollectEvent
 
 
-def _start_radon(subcommand: str, python_files: list[str]) -> subprocess.Popen[str]:
+def start_radon(subcommand: str, python_files: list[str]) -> subprocess.Popen[str]:
     return subprocess.Popen(  # nosec B603 B607
         ['uv', 'run', 'radon', subcommand, '-j', *python_files],
         stdout=subprocess.PIPE,
@@ -23,7 +23,7 @@ def _start_radon(subcommand: str, python_files: list[str]) -> subprocess.Popen[s
     )
 
 
-def _read_json(process: subprocess.Popen[str]) -> dict:
+def read_json(process: subprocess.Popen[str]) -> dict:
     stdout, _ = process.communicate()
     if process.returncode != 0 or not stdout:
         return {}
@@ -54,10 +54,10 @@ def run(branch: str, project: str, root_path: str = '.') -> RadonCollectEvent | 
 
     # Both passes parse the same files and neither needs the other's output, so
     # they run concurrently — radon's own parse is the whole cost here.
-    cc_process = _start_radon('cc', python_files)
-    mi_process = _start_radon('mi', python_files)
-    cc_data = _read_json(cc_process)
-    mi_data = _read_json(mi_process)
+    cc_process = start_radon('cc', python_files)
+    mi_process = start_radon('mi', python_files)
+    cc_data = read_json(cc_process)
+    mi_data = read_json(mi_process)
 
     # Combine into file complexity records
     files: list[FileComplexity] = []

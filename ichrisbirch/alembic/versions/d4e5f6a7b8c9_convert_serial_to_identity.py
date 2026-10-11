@@ -43,14 +43,14 @@ SERIAL_COLUMNS = [
 ]
 
 
-def _qualified(schema, table):
+def qualified_table_name(schema, table):
     """Return schema-qualified table name."""
     return f'{schema}.{table}' if schema else table
 
 
 def upgrade() -> None:
     for schema, table, column, seq_name in SERIAL_COLUMNS:
-        qualified = _qualified(schema, table)
+        qualified = qualified_table_name(schema, table)
         # 1. Get current sequence value so identity restarts correctly
         # 2. Drop the DEFAULT (removes nextval() binding)
         # 3. Drop the old sequence
@@ -73,7 +73,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     for schema, table, column, seq_name in SERIAL_COLUMNS:
-        qualified = _qualified(schema, table)
+        qualified = qualified_table_name(schema, table)
         # Revert: drop identity, recreate sequence, set default
         op.execute(f"""
             DO $$

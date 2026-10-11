@@ -61,7 +61,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MarkdownlintHookE
     duration = time.perf_counter() - start_time
 
     # Parse markdownlint JSON output
-    issues = _parse_markdownlint_output(result.stdout)
+    issues = parse_markdownlint_output(result.stdout)
 
     return MarkdownlintHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -75,7 +75,7 @@ def run(staged_files: list[str], branch: str, project: str) -> MarkdownlintHookE
     )
 
 
-def _parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
+def parse_markdownlint_output(output: str) -> list[MarkdownlintIssue]:
     """Parse markdownlint JSON output into structured issues."""
     if not output.strip():
         return []

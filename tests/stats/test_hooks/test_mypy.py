@@ -126,12 +126,12 @@ class TestMypyRunner:
 
     def test_mypy_runner_skips_notes(self) -> None:
         """Test runner skips note-level messages."""
-        from stats.hooks.mypy import _parse_mypy_output
+        from stats.hooks.mypy import parse_mypy_output
 
         output = """test.py:10: note: This is a note  [annotation-unchecked]
 test.py:15: error: Actual error  [return-value]"""
 
-        errors = _parse_mypy_output(output)
+        errors = parse_mypy_output(output)
 
         # Should only have the error, not the note
         assert len(errors) == 1

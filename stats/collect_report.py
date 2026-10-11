@@ -28,21 +28,21 @@ def get_branch() -> str:
     return result.stdout.strip() or 'HEAD'
 
 
-def _collect_pytest(branch: str, project: str, collect_config: dict) -> object | None:
+def collect_pytest(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.pytest_collector import run
 
     json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
     return run(branch, project, json_path)
 
 
-def _collect_vitest(branch: str, project: str, collect_config: dict) -> object | None:
+def collect_vitest(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.vitest_collector import run
 
     json_path = collect_config.get('vitest_json_path', '/tmp/ichrisbirch-vitest-report.json')  # nosec B108
     return run(branch, project, json_path)
 
 
-def _collect_playwright(branch: str, project: str, collect_config: dict) -> object | None:
+def collect_playwright(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.playwright_collector import run
 
     json_path = collect_config.get('playwright_json_path', '/tmp/ichrisbirch-playwright-report.json')  # nosec B108
@@ -50,9 +50,9 @@ def _collect_playwright(branch: str, project: str, collect_config: dict) -> obje
 
 
 COLLECTORS = {
-    'pytest': _collect_pytest,
-    'vitest': _collect_vitest,
-    'playwright': _collect_playwright,
+    'pytest': collect_pytest,
+    'vitest': collect_vitest,
+    'playwright': collect_playwright,
 }
 
 

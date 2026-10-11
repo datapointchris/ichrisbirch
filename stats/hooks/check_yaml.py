@@ -52,7 +52,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckYamlHookEven
     )
 
     duration = time.perf_counter() - start_time
-    issues = _parse_check_yaml_output(result.stdout + result.stderr)
+    issues = parse_check_yaml_output(result.stdout + result.stderr)
 
     return CheckYamlHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -66,7 +66,7 @@ def run(staged_files: list[str], branch: str, project: str) -> CheckYamlHookEven
     )
 
 
-def _parse_check_yaml_output(output: str) -> list[FileFormatIssue]:
+def parse_check_yaml_output(output: str) -> list[FileFormatIssue]:
     """Parse check-yaml output into structured issues.
 
     Output format is multi-line:

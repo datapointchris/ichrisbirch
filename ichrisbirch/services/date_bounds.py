@@ -49,7 +49,7 @@ def day_bounds(day: dt.date, zone: ZoneInfo) -> tuple[dt.datetime, dt.datetime]:
     return start, end
 
 
-def _parse_bound(value: str) -> dt.datetime | dt.date:
+def parse_bound(value: str) -> dt.datetime | dt.date:
     """The bound as the caller wrote it, keeping whether they named a time.
 
     `exact=True` answers a bare day with a `date` and a time with a `datetime`.
@@ -76,15 +76,15 @@ def _parse_bound(value: str) -> dt.datetime | dt.date:
     return parsed
 
 
-def _as_date(parsed: dt.datetime | dt.date) -> dt.date:
+def as_date(parsed: dt.datetime | dt.date) -> dt.date:
     return parsed.date() if isinstance(parsed, dt.datetime) else parsed
 
 
-def _is_date_column(column: InstrumentedAttribute) -> bool:
+def is_date_column(column: InstrumentedAttribute) -> bool:
     return isinstance(column.type, sa.Date) and not isinstance(column.type, sa.DateTime)
 
 
-def _criterion(column: InstrumentedAttribute, value: str, *, end: bool, zone: ZoneInfo | None) -> ColumnElement[bool]:
+def bound_comparison(column: InstrumentedAttribute, value: str, *, end: bool, zone: ZoneInfo | None) -> ColumnElement[bool]:
     """One bound's comparison, matched to the column's type and the bound's own.
 
     A `Date` column compared against an aware `datetime` makes Postgres cast the
@@ -103,9 +103,9 @@ def _criterion(column: InstrumentedAttribute, value: str, *, end: bool, zone: Zo
     whole day after it. A time written with no offset is a reading on the
     request's clock, so it is placed in `zone` before it is compared.
     """
-    parsed = _parse_bound(value)
-    if _is_date_column(column):
-        as_written = _as_date(parsed)
+    parsed = parse_bound(value)
+    if is_date_column(column):
+        as_written = as_date(parsed)
         return column <= as_written if end else column >= as_written
     if isinstance(parsed, dt.datetime) and parsed.tzinfo is not None:
         return column <= parsed if end else column >= parsed
@@ -133,7 +133,7 @@ def apply_date_bounds(
     """
     zone = ZoneInfo(timezone) if timezone is not None else None
     if start_date is not None:
-        query = query.where(_criterion(column, start_date, end=False, zone=zone))
+        query = query.where(bound_comparison(column, start_date, end=False, zone=zone))
     if end_date is not None:
-        query = query.where(_criterion(column, end_date, end=True, zone=zone))
+        query = query.where(bound_comparison(column, end_date, end=True, zone=zone))
     return query

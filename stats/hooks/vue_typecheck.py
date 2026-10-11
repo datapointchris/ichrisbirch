@@ -45,7 +45,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VueTypecheckHookE
 
     duration = time.perf_counter() - start_time
 
-    errors = _parse_tsc_output(result.stdout + result.stderr)
+    errors = parse_tsc_output(result.stdout + result.stderr)
 
     return VueTypecheckHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -59,7 +59,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VueTypecheckHookE
     )
 
 
-def _parse_tsc_output(output: str) -> list[TypecheckError]:
+def parse_tsc_output(output: str) -> list[TypecheckError]:
     """Parse tsc output for type errors.
 
     Each error line looks like:

@@ -23,7 +23,7 @@ def conn(factory_session):
     return factory_session.connection()
 
 
-def _stored_day(conn, session_zone: str, stored: str) -> dt.date:
+def stored_day(conn, session_zone: str, stored: str) -> dt.date:
     conn.execute(sa.text(f"SET LOCAL TimeZone = '{session_zone}'"))
     conn.execute(sa.text('CREATE TEMP TABLE probe (value timestamptz) ON COMMIT DROP'))
     conn.execute(sa.text('INSERT INTO probe VALUES (:v)'), {'v': stored})
@@ -33,7 +33,7 @@ def _stored_day(conn, session_zone: str, stored: str) -> dt.date:
 
 @pytest.mark.parametrize('session_zone', ['UTC', 'America/Chicago', 'Pacific/Auckland'])
 def test_the_typed_day_survives_whatever_the_session_zone_is(conn, session_zone):
-    assert _stored_day(conn, session_zone, '2026-08-20 00:00:00+00') == dt.date(2026, 8, 20)
+    assert stored_day(conn, session_zone, '2026-08-20 00:00:00+00') == dt.date(2026, 8, 20)
 
 
 def test_without_the_pinned_zone_a_western_session_loses_a_day(conn):

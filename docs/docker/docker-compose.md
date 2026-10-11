@@ -167,7 +167,7 @@ brings the stack up as project `icb-test`, the same name a workstation uses.
 What actually changes:
 
 - **The API's Docker socket is dropped.** The API mounts it to report container
-  status on the admin dashboard, through `_get_docker_containers()` in
+  status on the admin dashboard, through `get_docker_containers()` in
   `ichrisbirch/api/endpoints/admin.py`. A runner has no reason to hand that in.
 - **Traefik's dashboard is disabled** and its log level raised.
 - **The Vue health check's `start_period` is extended**, because `npm install`

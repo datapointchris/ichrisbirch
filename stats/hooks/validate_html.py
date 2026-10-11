@@ -39,7 +39,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ValidateHtmlHookE
     )
 
     duration = time.perf_counter() - start_time
-    issues = _parse_validation_output(result.stdout + result.stderr)
+    issues = parse_validation_output(result.stdout + result.stderr)
 
     return ValidateHtmlHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -53,7 +53,7 @@ def run(staged_files: list[str], branch: str, project: str) -> ValidateHtmlHookE
     )
 
 
-def _parse_validation_output(output: str) -> list[HtmlValidationIssue]:
+def parse_validation_output(output: str) -> list[HtmlValidationIssue]:
     """Parse validation output into structured issues."""
     issues: list[HtmlValidationIssue] = []
 

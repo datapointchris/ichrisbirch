@@ -24,7 +24,7 @@ class TestSmokeTestAuth:
 class TestSmokeTests:
     """Test smoke test endpoint responses."""
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_smoke_all_endpoints_pass(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
         response = test_api_logged_in_admin.post(SMOKE_ENDPOINT)
@@ -33,7 +33,7 @@ class TestSmokeTests:
         failed = [r for r in data['results'] if not r['passed']]
         assert data['failed'] == 0, f'Failed endpoints: {[(r["path"], r["status_code"], r.get("error")) for r in failed]}'
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_smoke_discovers_core_endpoints(self, mock_docker, test_api_logged_in_admin):
         """Verify autodiscovery isn't filtering too aggressively."""
         mock_docker.return_value = []

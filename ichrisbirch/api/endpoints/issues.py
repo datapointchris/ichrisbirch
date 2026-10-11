@@ -263,7 +263,7 @@ def load_issue(session: Session, issue_id: UUID) -> models.Issue:
     return issue
 
 
-def detail(session: Session, issue: models.Issue, zone: str) -> schemas.IssueDetail:
+def fresh_issue_detail(session: Session, issue: models.Issue, zone: str) -> schemas.IssueDetail:
     session.expire_all()
     return issue_detail(session, load_issue(session, issue.id), zone)
 
@@ -503,12 +503,12 @@ def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
         session.flush()
     session.commit()
     logger.info('issue_created', number=db_issue.number, repo=db_issue.repo)
-    return detail(session, db_issue, zone)
+    return fresh_issue_detail(session, db_issue, zone)
 
 
 @router.get('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
 def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
-    return detail(session, issue, zone)
+    return fresh_issue_detail(session, issue, zone)
 
 
 @router.patch('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
@@ -553,7 +553,7 @@ def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession
         setattr(issue, attr, value)
     issue.updated_ts = now
     session.commit()
-    return detail(session, issue, zone)
+    return fresh_issue_detail(session, issue, zone)
 
 
 @router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
@@ -693,7 +693,7 @@ def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependencyCrea
     session.add(models.IssueDependency(issue_id=issue.id, depends_on_id=depends_on.id))
     issue.updated_ts = dt.datetime.now(dt.UTC)
     session.commit()
-    return detail(session, issue, zone)
+    return fresh_issue_detail(session, issue, zone)
 
 
 def path_dependency(dep_id: str, session: DbSession) -> models.Issue:

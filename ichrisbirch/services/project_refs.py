@@ -25,14 +25,14 @@ from ichrisbirch.services.names_near import names_near
 logger = structlog.get_logger()
 
 
-def _parse_uuid(ref: str) -> UUID | None:
+def parse_uuid(ref: str) -> UUID | None:
     try:
         return UUID(ref)
     except ValueError:
         return None
 
 
-def _item_by_number(session: Session, number: int) -> models.ProjectItem | None:
+def item_by_number(session: Session, number: int) -> models.ProjectItem | None:
     return session.scalar(select(models.ProjectItem).where(models.ProjectItem.number == number))
 
 
@@ -40,15 +40,15 @@ def resolve_item(session: Session, ref: str | UUID | int) -> models.ProjectItem:
     """Fetch a project item by its UUID or its number."""
     item: models.ProjectItem | None
     if isinstance(ref, int):
-        item = _item_by_number(session, ref)
+        item = item_by_number(session, ref)
     elif isinstance(ref, UUID):
         item = session.get(models.ProjectItem, ref)
     # A hyphenless UUID can be 32 decimal digits, so it is parsed before the
     # all-digits test. No number will ever be that long.
-    elif (item_id := _parse_uuid(ref)) is not None:
+    elif (item_id := parse_uuid(ref)) is not None:
         item = session.get(models.ProjectItem, item_id)
     elif ref.isdigit():
-        item = _item_by_number(session, int(ref))
+        item = item_by_number(session, int(ref))
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -59,7 +59,7 @@ def resolve_item(session: Session, ref: str | UUID | int) -> models.ProjectItem:
     return item
 
 
-def _project_by_name(session: Session, name: str) -> models.Project | None:
+def project_by_name(session: Session, name: str) -> models.Project | None:
     """Resolve a project name, which is unique only among ACTIVE projects.
 
     The active one wins outright — the live effort is what a name means while
@@ -92,18 +92,18 @@ def resolve_project(session: Session, ref: str | UUID) -> models.Project:
     project: models.Project | None
     if isinstance(ref, UUID):
         project = session.get(models.Project, ref)
-    elif (project_id := _parse_uuid(ref)) is not None:
+    elif (project_id := parse_uuid(ref)) is not None:
         project = session.get(models.Project, project_id)
     else:
-        project = _project_by_name(session, ref)
+        project = project_by_name(session, ref)
         if project is None:
-            raise NotFoundException('project', ref, logger, near=names_near(ref, _project_names(session)))
+            raise NotFoundException('project', ref, logger, near=names_near(ref, project_names(session)))
     if project is None:
         raise NotFoundException('project', str(ref), logger)
     return project
 
 
-def _project_names(session: Session) -> list[str]:
+def project_names(session: Session) -> list[str]:
     """Every project's name, active ones first and each group in board order."""
     query = select(models.Project.name).order_by((models.Project.status == 'active').desc(), models.Project.position)
     return list(session.scalars(query))

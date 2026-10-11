@@ -49,7 +49,7 @@ def summary(issue: models.Issue | None) -> schemas.IssueSummary | None:
     return schemas.IssueSummary(id=issue.id, number=issue.number, title=issue.title, status=issue.status)
 
 
-def _by_number(issues: Iterable[models.Issue]) -> list[schemas.IssueSummary]:
+def by_number(issues: Iterable[models.Issue]) -> list[schemas.IssueSummary]:
     return [schemas.IssueSummary(id=i.id, number=i.number, title=i.title, status=i.status) for i in sorted(issues, key=lambda i: i.number)]
 
 
@@ -89,8 +89,8 @@ def issue_view(issue: models.Issue, readiness: IssueReadiness, comments: dict[UU
         discovered_from=summary(issue.discovered_from),
         duplicate_of=summary(issue.duplicate_of),
         labels=[label.slug for label in issue.labels],
-        depends_on=_by_number(edge.depends_on for edge in issue.dependencies),
-        blocks=_by_number(edge.issue for edge in issue.dependents),
+        depends_on=by_number(edge.depends_on for edge in issue.dependencies),
+        blocks=by_number(edge.issue for edge in issue.dependents),
         child_count=readiness.child_count.get(issue.id, 0),
         open_child_count=readiness.open_child_count.get(issue.id, 0),
         comment_count=comments.get(issue.id, 0),

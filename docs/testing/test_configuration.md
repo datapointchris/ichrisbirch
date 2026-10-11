@@ -69,7 +69,7 @@ and its container publishes only to localhost.
 `test run` exports `ENVIRONMENT=testing` and starts the containers if they are
 down.
 
-Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` returns
+Running pytest by hand, leave `ENVIRONMENT` unset. `detect_environment` returns
 `testing` when pytest is in `sys.modules`, but an explicit `ENVIRONMENT` is
 checked first and wins.
 

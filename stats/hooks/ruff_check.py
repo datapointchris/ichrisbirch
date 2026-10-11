@@ -58,7 +58,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffCheckHookEven
         except json.JSONDecodeError:
             raw_issues = []
 
-    issues = [_parse_issue(issue) for issue in raw_issues]
+    issues = [parse_issue(issue) for issue in raw_issues]
 
     return RuffCheckHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -72,7 +72,7 @@ def run(staged_files: list[str], branch: str, project: str) -> RuffCheckHookEven
     )
 
 
-def _parse_issue(issue: dict) -> RuffIssue:
+def parse_issue(issue: dict) -> RuffIssue:
     """Parse a single ruff issue from JSON."""
     return RuffIssue(
         code=issue['code'],
@@ -86,14 +86,14 @@ def _parse_issue(issue: dict) -> RuffIssue:
             column=issue['end_location']['column'],
             row=issue['end_location']['row'],
         ),
-        fix=_parse_fix(issue['fix']) if issue.get('fix') else None,
+        fix=parse_fix(issue['fix']) if issue.get('fix') else None,
         noqa_row=issue.get('noqa_row'),
         url=issue.get('url'),
         cell=issue.get('cell'),
     )
 
 
-def _parse_fix(fix_data: dict) -> RuffFix:
+def parse_fix(fix_data: dict) -> RuffFix:
     """Parse ruff fix information."""
     edits = [
         RuffEdit(

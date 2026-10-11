@@ -21,7 +21,7 @@ from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_datetime
 
 
-def _recipe(
+def recipe(
     name: str,
     description: str,
     cuisine: str,
@@ -309,7 +309,7 @@ RECIPE_BLUEPRINTS: list[dict] = [
 ]
 
 
-def _ensure_lookup_seeded(session: Session) -> None:
+def ensure_lookup_seeded(session: Session) -> None:
     """Safety net: if Alembic's seed path didn't run, populate the lookup tables."""
     existing_units = {row[0] for row in session.execute(sa.text('SELECT name FROM recipe_units')).all()}
     for unit in RECIPE_UNITS:
@@ -340,7 +340,7 @@ def clear(session: Session) -> None:
 
 
 def seed(session: Session, scale: int = 1) -> SeedResult:
-    _ensure_lookup_seeded(session)
+    ensure_lookup_seeded(session)
 
     recipes: list[Recipe] = []
     for rep in range(scale):
@@ -349,7 +349,7 @@ def seed(session: Session, scale: int = 1) -> SeedResult:
             rating = random.choice([None, 3, 4, 4, 5, 5])
             times_made = random.choice([0, 0, 1, 2, 3, 5, 8])
             recipes.append(
-                _recipe(
+                recipe(
                     name=name,
                     description=bp['description'],
                     cuisine=bp['cuisine'],

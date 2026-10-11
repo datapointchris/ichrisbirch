@@ -6,7 +6,7 @@ import datetime as dt
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from stats.hooks.sass import _parse_sass_errors
+from stats.hooks.sass import parse_sass_errors
 from stats.hooks.sass import run
 from stats.schemas.hooks.sass import SassError
 from stats.schemas.hooks.sass import SassHookEvent
@@ -179,7 +179,7 @@ class TestSassRunner:
 
 
 class TestSassErrorParser:
-    """Tests for _parse_sass_errors."""
+    """Tests for parse_sass_errors."""
 
     def test_parses_error_with_location(self) -> None:
         """Test parsing error output with file location."""
@@ -192,7 +192,7 @@ class TestSassErrorParser:
             '  ichrisbirch/app/static/sass/main.scss 3:15  root stylesheet\n'
         )
 
-        issues = _parse_sass_errors(output)
+        issues = parse_sass_errors(output)
 
         assert len(issues) == 1
         assert issues[0].file == 'ichrisbirch/app/static/sass/main.scss'
@@ -201,14 +201,14 @@ class TestSassErrorParser:
 
     def test_parses_empty_output(self) -> None:
         """Test parsing empty stderr."""
-        assert not _parse_sass_errors('')
-        assert not _parse_sass_errors('   ')
+        assert not parse_sass_errors('')
+        assert not parse_sass_errors('   ')
 
     def test_parses_error_without_location(self) -> None:
         """Test parsing error output without file location info."""
         output = 'Error: Could not find an option named "bad-flag".\n'
 
-        issues = _parse_sass_errors(output)
+        issues = parse_sass_errors(output)
 
         assert len(issues) == 1
         assert 'bad-flag' in issues[0].message

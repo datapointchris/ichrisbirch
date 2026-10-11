@@ -41,7 +41,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VuePrettierHookEv
 
     duration = time.perf_counter() - start_time
 
-    unformatted_files = _parse_prettier_output(result.stdout + result.stderr)
+    unformatted_files = parse_prettier_output(result.stdout + result.stderr)
 
     return VuePrettierHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -55,7 +55,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VuePrettierHookEv
     )
 
 
-def _parse_prettier_output(output: str) -> list[str]:
+def parse_prettier_output(output: str) -> list[str]:
     """Parse Prettier --check output for files that need formatting.
 
     Prettier outputs lines like:

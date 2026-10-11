@@ -20,19 +20,19 @@ Usage:
 from sqlalchemy.orm import Session
 
 # Module-level session holder - factories read from this
-_factory_session: Session | None = None
+factory_session: Session | None = None
 
 
 def set_factory_session(session: Session) -> None:
     """Set the SQLAlchemy session for all factories."""
-    global _factory_session
-    _factory_session = session
+    global factory_session
+    factory_session = session
 
 
 def clear_factory_session() -> None:
     """Clear the factory session after tests complete."""
-    global _factory_session
-    _factory_session = None
+    global factory_session
+    factory_session = None
 
 
 def get_factory_session() -> Session:
@@ -40,6 +40,6 @@ def get_factory_session() -> Session:
 
     Called by factories to get their session.
     """
-    if _factory_session is None:
+    if factory_session is None:
         raise RuntimeError('Factory session not configured. Use the factory_session fixture or call set_factory_session() first.')
-    return _factory_session
+    return factory_session

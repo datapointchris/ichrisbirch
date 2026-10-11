@@ -48,7 +48,7 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
     transport = httpx2.ASGITransport(app=app)
     async with httpx2.AsyncClient(transport=transport, base_url='http://smoke-test', timeout=5.0, follow_redirects=False) as client:
         for endpoint in endpoints:
-            result = await _test_endpoint(client, endpoint, headers)
+            result = await probe_endpoint(client, endpoint, headers)
             results.append(result)
 
     total_ms = (perf_counter() - start) * 1000
@@ -70,7 +70,7 @@ async def run_smoke_tests(app, settings: Settings, admin_email: str) -> schemas.
     return report
 
 
-async def _test_endpoint(client: httpx2.AsyncClient, endpoint: dict, headers: dict[str, str]) -> schemas.admin.SmokeTestResult:
+async def probe_endpoint(client: httpx2.AsyncClient, endpoint: dict, headers: dict[str, str]) -> schemas.admin.SmokeTestResult:
     """Test a single endpoint and return the result."""
     start = perf_counter()
     try:

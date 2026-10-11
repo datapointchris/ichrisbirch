@@ -58,8 +58,8 @@ def run(staged_files: list[str], branch: str, project: str) -> BanditHookEvent:
         except json.JSONDecodeError:
             raw_output = {}
 
-    issues = [_parse_issue(issue) for issue in raw_output.get('results', [])]
-    metrics = _parse_metrics(raw_output.get('metrics', {}).get('_totals', {}))
+    issues = [parse_issue(issue) for issue in raw_output.get('results', [])]
+    metrics = parse_metrics(raw_output.get('metrics', {}).get('_totals', {}))
 
     return BanditHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -74,7 +74,7 @@ def run(staged_files: list[str], branch: str, project: str) -> BanditHookEvent:
     )
 
 
-def _parse_issue(issue: dict) -> BanditIssue:
+def parse_issue(issue: dict) -> BanditIssue:
     """Parse a single bandit issue from JSON."""
     cwe_data = issue.get('issue_cwe')
     cwe = BanditCWE(id=cwe_data['id'], link=cwe_data['link']) if cwe_data else None
@@ -96,7 +96,7 @@ def _parse_issue(issue: dict) -> BanditIssue:
     )
 
 
-def _parse_metrics(totals: dict) -> BanditMetrics:
+def parse_metrics(totals: dict) -> BanditMetrics:
     """Parse bandit metrics from JSON."""
     return BanditMetrics(
         confidence_high=totals.get('CONFIDENCE.HIGH', 0),

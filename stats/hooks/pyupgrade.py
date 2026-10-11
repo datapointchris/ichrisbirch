@@ -63,7 +63,7 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
     duration = time.perf_counter() - start_time
 
     # Parse pyupgrade output for rewritten files
-    rewritten_files = _parse_pyupgrade_output(result.stdout + result.stderr)
+    rewritten_files = parse_pyupgrade_output(result.stdout + result.stderr)
 
     return PyupgradeHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -77,7 +77,7 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
     )
 
 
-def _parse_pyupgrade_output(output: str) -> list[str]:
+def parse_pyupgrade_output(output: str) -> list[str]:
     """Parse pyupgrade output to find rewritten files."""
     rewritten: list[str] = []
 

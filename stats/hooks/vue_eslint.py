@@ -47,7 +47,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VueEslintHookEven
 
     duration = time.perf_counter() - start_time
 
-    eslint_results = _extract_eslint_json(result.stdout)
+    eslint_results = extract_eslint_json(result.stdout)
 
     total_errors = 0
     total_warnings = 0
@@ -90,7 +90,7 @@ def run(staged_files: list[str], branch: str, project: str) -> VueEslintHookEven
     )
 
 
-def _extract_eslint_json(output: str) -> list[dict]:
+def extract_eslint_json(output: str) -> list[dict]:
     """Extract ESLint JSON array from potentially mixed npm output.
 
     ESLint's --format json produces a top-level JSON array, but npm may

@@ -53,7 +53,7 @@ class TestSystemHealthAuth:
 class TestSystemHealth:
     """Test system health endpoint responses."""
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_health_returns_all_sections(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
 
@@ -66,7 +66,7 @@ class TestSystemHealth:
         assert 'redis' in data
         assert 'disk' in data
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_health_server_info(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
 
@@ -75,7 +75,7 @@ class TestSystemHealth:
         assert data['server']['environment'] == 'testing'
         assert 'server_time' in data['server']
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_health_database_stats(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
 
@@ -86,7 +86,7 @@ class TestSystemHealth:
         assert 'active_connections' in data['database']
         assert data['database']['total_size_mb'] > 0
 
-    @patch('ichrisbirch.api.endpoints.admin._get_docker_containers')
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_health_disk_usage(self, mock_docker, test_api_logged_in_admin):
         mock_docker.return_value = []
 
@@ -110,8 +110,8 @@ class TestSystemHealthProbes:
         # TestClient runs each request on its own event loop, which would hide the stall, so one loop is driven here as uvicorn drives it.
         transport = httpx2.ASGITransport(app=test_api_logged_in_admin.app)
         with (
-            patch('ichrisbirch.api.endpoints.admin._get_docker_containers', return_value=[]),
-            patch('ichrisbirch.api.endpoints.admin._get_redis_stats', slow_redis_probe),
+            patch('ichrisbirch.api.endpoints.admin.get_docker_containers', return_value=[]),
+            patch('ichrisbirch.api.endpoints.admin.get_redis_stats', slow_redis_probe),
         ):
             async with httpx2.AsyncClient(transport=transport, base_url='http://test') as client:
                 health = asyncio.create_task(client.get(HEALTH_ENDPOINT))
@@ -130,7 +130,7 @@ class TestSystemHealthProbes:
         settings.redis.password = 'not-the-test-redis-password'
 
         started = time.monotonic()
-        stats = admin._get_redis_stats(settings)
+        stats = admin.get_redis_stats(settings)
 
         assert stats is None
         assert time.monotonic() - started < admin.PROBE_TIMEOUT_SECONDS
@@ -141,7 +141,7 @@ class TestSystemHealthProbes:
             settings.redis.host, settings.redis.port = silent.getsockname()
             settings.redis.password = ''
             with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
-                stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_redis_stats(settings))
+                stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin.get_redis_stats(settings))
 
         assert stats is None
 
@@ -151,7 +151,7 @@ class TestSystemHealthProbes:
             monkeypatch.setenv('DOCKER_HOST', f'tcp://{host}:{port}')
             monkeypatch.delenv('DOCKER_TLS_VERIFY', raising=False)
             with patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS):
-                containers = finish_within(PROBE_DEADLINE_SECONDS, admin._get_docker_containers)
+                containers = finish_within(PROBE_DEADLINE_SECONDS, admin.get_docker_containers)
 
         assert containers is None
 
@@ -162,9 +162,9 @@ class TestSystemHealthProbes:
 
         with (
             patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS),
-            patch.object(admin, '_list_docker_containers', slow_listing),
+            patch.object(admin, 'list_docker_containers', slow_listing),
         ):
-            containers = finish_within(SLOW_LISTING_SECONDS / 2, admin._get_docker_containers)
+            containers = finish_within(SLOW_LISTING_SECONDS / 2, admin.get_docker_containers)
 
         assert containers is None
 
@@ -174,7 +174,7 @@ class TestSystemHealthProbes:
             patch.object(admin, 'PROBE_TIMEOUT_SECONDS', SHORT_PROBE_TIMEOUT_SECONDS),
             patch.object(admin, 'TABLE_ROW_COUNTS_SQL', text('SELECT pg_sleep(5)')),
         ):
-            stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin._get_database_stats(session))
+            stats = finish_within(PROBE_DEADLINE_SECONDS, lambda: admin.get_database_stats(session))
 
         assert stats is None
 

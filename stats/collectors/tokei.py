@@ -51,7 +51,7 @@ def run(branch: str, project: str) -> TokeiCollectEvent:
         except json.JSONDecodeError:
             raw_output = {}
 
-    languages, totals = _parse_tokei_output(raw_output)
+    languages, totals = parse_tokei_output(raw_output)
 
     return TokeiCollectEvent(
         timestamp=dt.datetime.now(dt.UTC),
@@ -66,7 +66,7 @@ def run(branch: str, project: str) -> TokeiCollectEvent:
     )
 
 
-def _parse_tokei_output(
+def parse_tokei_output(
     raw_output: dict,
 ) -> tuple[dict[str, TokeiLanguageStats], dict[str, int]]:
     """Parse tokei output into structured language stats."""

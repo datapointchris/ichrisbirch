@@ -24,7 +24,7 @@ def run(staged_files: list[str], branch: str, project: str) -> HadolintHookEvent
     """
     start_time = time.perf_counter()
 
-    dockerfiles = [f for f in staged_files if _is_dockerfile(f.rsplit('/', 1)[-1])]
+    dockerfiles = [f for f in staged_files if is_dockerfile(f.rsplit('/', 1)[-1])]
 
     if not dockerfiles:
         return HadolintHookEvent(
@@ -77,7 +77,7 @@ def run(staged_files: list[str], branch: str, project: str) -> HadolintHookEvent
     )
 
 
-def _is_dockerfile(filename: str) -> bool:
+def is_dockerfile(filename: str) -> bool:
     """Check if a filename is a Dockerfile variant.
 
     Matches: Dockerfile, Dockerfile.prod, Dockerfile.dev, foo.dockerfile

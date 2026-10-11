@@ -13,7 +13,7 @@ import structlog
 logger = structlog.get_logger()
 
 # Tracking query parameters to strip from URLs
-_TRACKING_PARAMS = frozenset(
+TRACKING_PARAMS = frozenset(
     {
         # Google Analytics / UTM
         'utm_source',
@@ -65,7 +65,7 @@ def clean_url(url: str) -> str:
     """
     parsed = urlparse(url)
     params = parse_qs(parsed.query, keep_blank_values=True)
-    cleaned = {k: v for k, v in params.items() if k.lower() not in _TRACKING_PARAMS}
+    cleaned = {k: v for k, v in params.items() if k.lower() not in TRACKING_PARAMS}
     # urlencode with doseq=True to handle multi-value params
     new_query = urlencode(cleaned, doseq=True)
     return urlunparse(parsed._replace(query=new_query, fragment=''))
@@ -118,7 +118,7 @@ def url_builder(base_url: str, *parts) -> str:
     return '/'.join([base_url.rstrip('/')] + stripped_parts) + '/'
 
 
-_SLUG_NON_ALNUM = re.compile(r'[^a-z0-9]+')
+SLUG_NON_ALNUM = re.compile(r'[^a-z0-9]+')
 
 
 def slugify(text: str) -> str:
@@ -127,7 +127,7 @@ def slugify(text: str) -> str:
     "3:1 Vinaigrette Ratio" -> "3-1-vinaigrette-ratio"
     """
     lowered = text.lower().strip()
-    hyphenated = _SLUG_NON_ALNUM.sub('-', lowered)
+    hyphenated = SLUG_NON_ALNUM.sub('-', lowered)
     return hyphenated.strip('-')
 
 

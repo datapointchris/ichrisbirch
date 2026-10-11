@@ -25,7 +25,7 @@ health checks, so no manual start is needed first.
 `test run` exports `ENVIRONMENT=testing` itself, so nothing is needed from the
 shell.
 
-Running pytest by hand, leave `ENVIRONMENT` unset. `_detect_environment` in
+Running pytest by hand, leave `ENVIRONMENT` unset. `detect_environment` in
 `ichrisbirch/config.py` returns `testing` when pytest is in `sys.modules`. An
 `ENVIRONMENT` already exported in your shell outranks that check, and every
 test calling `get_settings()` directly then gets that environment's settings.

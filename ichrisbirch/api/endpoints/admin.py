@@ -37,7 +37,7 @@ router = APIRouter()
 # --- Scheduler endpoints ---
 
 
-def _format_time_until(next_run_time) -> str:
+def format_time_until(next_run_time) -> str:
     """Format the time until next run as a human-readable string."""
     if next_run_time is None:
         return 'Paused'
@@ -55,7 +55,7 @@ def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
             name=job.name,
             trigger=str(job.trigger),
             next_run_time=job.next_run_time,
-            time_until_next_run=_format_time_until(job.next_run_time),
+            time_until_next_run=format_time_until(job.next_run_time),
             is_paused=job.next_run_time is None,
         )
         for job in jobs
@@ -97,7 +97,7 @@ def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)
         name=job.name,
         trigger=str(job.trigger),
         next_run_time=job.next_run_time,
-        time_until_next_run=_format_time_until(job.next_run_time),
+        time_until_next_run=format_time_until(job.next_run_time),
         is_paused=False,
     )
 
@@ -178,10 +178,10 @@ CONNECTION_COUNT_SQL = text('SELECT count(*) FROM pg_stat_activity')
 
 # A slow daemon holds one thread at most, however often the page refreshes. A health read arriving
 # meanwhile queues behind that thread until its own deadline.
-_docker_probe_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='docker-probe')
+docker_probe_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='docker-probe')
 
 
-def _list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
+def list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
     with closing(docker.from_env(timeout=PROBE_TIMEOUT_SECONDS)) as client:
         statuses = []
         for container in sorted(client.containers.list(all=True, filters={'name': 'icb-'}), key=lambda c: c.name):
@@ -197,9 +197,9 @@ def _list_docker_containers() -> list[schemas.admin.DockerContainerStatus]:
         return statuses
 
 
-def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None:
+def get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None:
     """None when the daemon errors or misses the deadline. An empty list means it answered and no container matched."""
-    probe = _docker_probe_executor.submit(_list_docker_containers)
+    probe = docker_probe_executor.submit(list_docker_containers)
     try:
         return probe.result(timeout=PROBE_TIMEOUT_SECONDS)
     except TimeoutError:
@@ -211,7 +211,7 @@ def _get_docker_containers() -> list[schemas.admin.DockerContainerStatus] | None
         return None
 
 
-def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats | None:
+def get_database_stats(session: Session) -> schemas.admin.DatabaseStats | None:
     """Get database statistics via raw SQL."""
     try:
         session.execute(
@@ -231,7 +231,7 @@ def _get_database_stats(session: Session) -> schemas.admin.DatabaseStats | None:
     return schemas.admin.DatabaseStats(tables=tables, total_size_mb=total_size_mb, active_connections=conn_result or 0)
 
 
-def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats | None:
+def get_redis_stats(settings: Settings) -> schemas.admin.RedisStats | None:
     """Get Redis server statistics."""
     try:
         with get_redis_client(settings, read_timeout=PROBE_TIMEOUT_SECONDS) as client:
@@ -249,7 +249,7 @@ def _get_redis_stats(settings: Settings) -> schemas.admin.RedisStats | None:
         return None
 
 
-def _get_disk_usage() -> schemas.admin.DiskUsage:
+def get_disk_usage() -> schemas.admin.DiskUsage:
     """Get disk usage for the root filesystem."""
     usage = shutil.disk_usage('/')
     return schemas.admin.DiskUsage(
@@ -260,7 +260,7 @@ def _get_disk_usage() -> schemas.admin.DiskUsage:
     )
 
 
-def _mask_settings_value(key: str, value: object) -> Any:
+def mask_settings_value(key: str, value: object) -> Any:
     """Mask sensitive settings values based on field name."""
     key_lower = key.lower()
     if any(keyword in key_lower for keyword in SENSITIVE_FIELD_KEYWORDS):
@@ -268,7 +268,7 @@ def _mask_settings_value(key: str, value: object) -> Any:
     return value
 
 
-def _serialize_settings_section(section: object) -> dict:
+def serialize_settings_section(section: object) -> dict:
     """Serialize a settings section to a dict with secrets masked."""
     result = {}
     for attr in sorted(dir(section)):
@@ -278,9 +278,9 @@ def _serialize_settings_section(section: object) -> dict:
         if callable(value):
             continue
         if hasattr(value, '__dict__') and value is not None and not isinstance(value, str | list | dict | int | float | bool):
-            result[attr] = _serialize_settings_section(value)
+            result[attr] = serialize_settings_section(value)
         else:
-            result[attr] = _mask_settings_value(attr, value)
+            result[attr] = mask_settings_value(attr, value)
     return result
 
 
@@ -299,10 +299,10 @@ def get_system_health(
             server_time=pendulum.now().isoformat(timespec='seconds'),
             deploy_color=deploy_color,
         ),
-        docker=_get_docker_containers(),
-        database=_get_database_stats(session),
-        redis=_get_redis_stats(settings),
-        disk=_get_disk_usage(),
+        docker=get_docker_containers(),
+        database=get_database_stats(session),
+        redis=get_redis_stats(settings),
+        disk=get_disk_usage(),
     )
 
 
@@ -326,11 +326,11 @@ def get_environment_config(settings: Settings = Depends(get_settings)):
             sections.append(
                 schemas.admin.EnvironmentConfigSection(
                     name=attr,
-                    settings=_serialize_settings_section(value),
+                    settings=serialize_settings_section(value),
                 )
             )
         else:
             if not sections or sections[0].name != '_general':
                 sections.insert(0, schemas.admin.EnvironmentConfigSection(name='_general', settings={}))
-            sections[0].settings[attr] = _mask_settings_value(attr, value)
+            sections[0].settings[attr] = mask_settings_value(attr, value)
     return sections
