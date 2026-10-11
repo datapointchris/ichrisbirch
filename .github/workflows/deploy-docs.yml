@@ -6,13 +6,13 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
-      - "tools/docs/**"
+      - "mkdocs_plugins/**"
   pull_request:
     branches: [main]
     paths:
       - "docs/**"
       - "mkdocs.yml"
-      - "tools/docs/**"
+      - "mkdocs_plugins/**"
   workflow_dispatch:
 
 permissions:
