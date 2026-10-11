@@ -32,8 +32,8 @@ func TestHandleAPIError_RefusedRefreshPointsAtLogin(t *testing.T) {
 	}
 	// The shape the API client actually produces: an *url.Error from the HTTP
 	// round trip, wrapped again with the base URL.
-	wrapped := fmt.Errorf("reach ichrisbirch API at %s: %w", "https://ichrisbirch.com/api",
-		&url.Error{Op: "Get", URL: "https://ichrisbirch.com/api/tasks/", Err: retrieveErr})
+	wrapped := fmt.Errorf("reach ichrisbirch API at %s: %w", "https://ichrisbirch.com",
+		&url.Error{Op: "Get", URL: "https://ichrisbirch.com/api/v1/tasks", Err: retrieveErr})
 
 	got := handleAPIError(wrapped)
 	if !strings.Contains(got.Error(), "icb auth login") {

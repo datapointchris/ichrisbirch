@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -54,6 +55,9 @@ func Load(ctx context.Context, api string) (goclilogin.Deployment, error) {
 		return goclilogin.Deployment{}, err
 	}
 	d, err := goclilogin.LoadDeployment(ctx, product, api)
+	if stale := refuseRetiredAPIPath(d.API); stale != nil {
+		return d, stale
+	}
 	if !IsService() || !errors.Is(err, goclilogin.ErrNotConfigured) {
 		return d, err
 	}
@@ -76,7 +80,36 @@ func ForLogin(ctx context.Context, api, clientID string) (goclilogin.Deployment,
 	if err := refuseRetiredAPIBase(); err != nil {
 		return goclilogin.Deployment{}, err
 	}
-	return goclilogin.DeploymentForLogin(ctx, product, api, clientID)
+	if err := refuseRetiredAPIPath(goclilogin.Setting{Value: api, Source: goclilogin.SourceCommandLine}); err != nil {
+		return goclilogin.Deployment{}, err
+	}
+	d, err := goclilogin.DeploymentForLogin(ctx, product, api, clientID)
+	if stale := refuseRetiredAPIPath(d.API); stale != nil {
+		return d, stale
+	}
+	return d, err
+}
+
+// retiredAPIPath is where api ended while a proxy stripped it in front of an
+// API serving its routes at the root. The client adds /api/v1 to api, so one
+// still ending in /api reaches /api/api/v1.
+const retiredAPIPath = "/api"
+
+// refuseRetiredAPIPath names the line to change, because login never rewrites
+// a value the file already holds. It wraps ErrNotConfigured, so config show
+// and auth status still print the file, and logout still removes the token.
+func refuseRetiredAPIPath(api goclilogin.Setting) error {
+	u, err := url.Parse(api.Value)
+	if err != nil || strings.TrimRight(u.Path, "/") != retiredAPIPath {
+		return nil
+	}
+	host := (&url.URL{Scheme: u.Scheme, Host: u.Host}).String()
+	if api.Source == goclilogin.SourceFile {
+		return fmt.Errorf("%w: %s sets api = %q, and icb adds /api/v1 to it; change that line to api = %q",
+			goclilogin.ErrNotConfigured, api.From, api.Value, host)
+	}
+	return fmt.Errorf("%w: %s ends in /api, and icb adds /api/v1 to it; name the host alone, %s",
+		goclilogin.ErrNotConfigured, api.Value, host)
 }
 
 // retiredAPIBase is how earlier releases were pointed at another API, dev

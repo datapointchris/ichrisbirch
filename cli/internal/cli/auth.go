@@ -55,7 +55,7 @@ func newAuthLoginCommand() *cobra.Command {
 			"the login starts, and written to the file once it succeeds. A value already\n" +
 			"in the file is never rewritten.",
 		Example: "  icb auth login\n" +
-			"  icb auth login https://ichrisbirch.com/api",
+			"  icb auth login https://ichrisbirch.com",
 		Args: usageArgs(cobra.MaximumNArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config.IsService() {
@@ -173,7 +173,7 @@ func newAuthTokenCommand() *cobra.Command {
 			"non-zero if not logged in. With ICB_CLIENT_SECRET set, it requests a new\n" +
 			"service token instead.",
 		Example: "  icb auth token\n" +
-			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/tasks/",
+			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/v1/tasks",
 		Args: noArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, err := config.Load(cmd.Context(), apiOverride)
