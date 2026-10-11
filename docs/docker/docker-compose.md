@@ -9,8 +9,8 @@ all.
 | Environment | Files                | Project name                          |
 | ----------- | -------------------- | ------------------------------------- |
 | Development | base + `dev`         | `icb-dev`                             |
-| Testing     | base + `test`        | `icb-test`                            |
-| CI          | base + `test` + `ci` | `icb-test`                            |
+| Testing     | base + `test`        | `icb-test-<checkout directory>`       |
+| CI          | base + `test` + `ci` | `icb-test-ichrisbirch`                |
 | Production  | `infra`, then `app`  | `icb-infra`, `icb-blue` / `icb-green` |
 
 `ops/icbops` holds these combinations as `COMPOSE_DEV`, `COMPOSE_TEST`,
@@ -131,71 +131,56 @@ has the recovery for a daemon that has already crashed.
 
 ## Testing
 
-The test stack runs alongside dev on other ports, so both can be up at once.
+Every checkout gets its own test stack, and the e2e suite runs inside it.
+pytest uses none of it: each session starts its own Postgres and Redis.
 
-| Service       | Dev  | Test |
-| ------------- | ---- | ---- |
-| API           | 8000 | 8001 |
-| Vue           | 5173 | 5174 |
-| PostgreSQL    | 5432 | 5434 |
-| Redis         | 6379 | 6380 |
-| Traefik HTTPS | 443  | 8443 |
-| Traefik HTTP  | 80   | 9080 |
+`ops/icbops` passes `--project-name icb-test-<checkout directory>`, and
+`docker-compose.test.yml` scopes everything else to that name:
+
+- **Container names** are `${COMPOSE_PROJECT_NAME}-<service>`.
+- **Volumes and networks** carry no `name:`, so compose prefixes them with the
+  project.
+- **No port is published.** Every service sets `ports: !override []`, so any
+  number of stacks and the dev stack run side by side.
+- **Traefik reads only files.** `deploy-containers/traefik/dynamic/test/services.yml`
+  routes to `http://api:8000` and `http://vue:5173`, which resolve on the
+  project's own network. A Docker provider would see every stack on the daemon
+  and merge their `api` services into one load balancer.
+- **Vue runs Playwright's image**, which carries Node and Chromium, so the dev
+  server and the e2e suite share one container.
 
 Its Postgres keeps data on tmpfs and runs with `fsync`, `synchronous_commit`
 and `full_page_writes` off. Tests do not need durability. Dropping it is most
 of the speed difference.
 
 The database therefore empties whenever that container stops or is recreated.
-Every `icbops` verb that brings the stack up initializes it afterwards, and
-pytest's session setup migrates it to head. A bare `docker compose up` does
-neither, which leaves an empty database behind healthy containers:
+Every `icbops` verb that brings the stack up initializes it afterwards. A bare
+`docker compose up` does not, which leaves an empty database behind healthy
+containers:
 
 ```bash
-./ops/icbops test run          # starts the stack if needed, then runs pytest
+./ops/icbops test e2e          # starts the stack if needed, then runs Playwright in it
 ./ops/icbops testing start     # leaves it up for repeated runs
 ```
 
-[Test Environment Configuration](../testing/environment.md) covers what a
-pytest session does against the stack.
+[Test Environment Configuration](../testing/environment.md) covers both suites.
 
 ## CI
 
-CI layers a third file over base and test. `.github/workflows/validate.yml`
-brings the stack up as project `icb-test`, the same name a workstation uses.
+CI layers a third file over base and test. `icbops` adds it when `CI=true`,
+which GitHub sets on every job. The e2e job runs `./ops/icbops testing start`
+and `./ops/icbops test e2e`, the same commands a workstation runs, so the
+project is `icb-test-ichrisbirch`, after the runner's checkout directory.
 
-What actually changes:
-
-- **The API's Docker socket is dropped.** The API mounts it to report container
-  status on the admin dashboard, through `get_docker_containers()` in
-  `ichrisbirch/api/endpoints/admin.py`. A runner has no reason to hand that in.
-- **Traefik's dashboard is disabled** and its log level raised.
-- **The Vue health check's `start_period` is extended**, because `npm install`
-  runs from scratch on a fresh volume in CI.
-
-`docker-compose.ci.yml` also resets `build` on `vue` and declares the proxy
-network as a bridge. Neither changes the resolved result.
-`docker-compose.test.yml` already carries `build: !reset null` and already
-declares `proxy` as a non-external bridge.
+The file changes one thing. **The API's Docker socket is dropped.** The API
+mounts it to report container status on the admin dashboard, through
+`get_docker_containers()` in `ichrisbirch/api/endpoints/admin.py`. A runner
+has no reason to hand that in.
 
 Do not add a named volume for `.venv` or the uv cache to any of these files.
 Named volumes survive rebuilds, so a stale virtualenv outlives the image meant
 to replace it, and the API hangs in `health: starting` while `uv` resyncs. The
 anonymous `/app/.venv` volume is what keeps dev, test and CI behaving alike.
-
-`.github/workflows/validate.yml` starts `postgres` and `redis`, then `api` and
-`scheduler`, each with `--wait` so the next service starts against a healthy
-dependency. A separate step migrates the database before pytest or Playwright
-runs.
-
-The fixtures detect CI and skip container management, because the workflow has
-already done it:
-
-```python
-@property
-def is_ci(self) -> bool:
-    return os.environ.get('CI', '').lower() == 'true'
-```
 
 ## Production
 

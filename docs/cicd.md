@@ -29,7 +29,7 @@ commit being released rather than whatever finished CI last.
 ```text
 generated from declared components
 ├── python      ruff check, ruff format, mypy, pytest
-│                 (custom: SOPS secrets and the compose stack, first)
+│                 (custom: SOPS secrets, first)
 ├── go-cli      build, vet, test, golangci-lint, govulncheck
 ├── vue-frontend  eslint, npm run build (vue-tsc + vite)
 ├── terraform   fmt, init, validate, test
@@ -37,7 +37,7 @@ generated from declared components
 
 custom, because no generated block covers them
 ├── vue-unit          vitest run
-├── e2e               Playwright through Traefik, on the test stack
+├── e2e               Playwright inside the test stack's vue container
 └── production-build  build the production images and start them
 ```
 
@@ -46,85 +46,35 @@ The last three are jobs rather than steps on an existing job. A
 marker, which sits below the following job's header — so on any component but
 the last, such a block swallows that header and forge emits it twice.
 
-### Docker Compose in CI
+### pytest starts its own services, in CI as on a workstation
 
-The CI environment uses a special Docker Compose configuration that differs from local development:
+The python job decrypts `secrets/secrets.test.enc.env` to `.env` and runs the
+generated `uv run --with pytest pytest`. Each session starts its own Postgres
+and Redis on the runner's Docker through testcontainers, so no compose stack
+runs for that job. [Test Environment](testing/environment.md) covers how.
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-  --project-name icb-test up -d
-```
-
-**Three compose files are layered:**
-
-1. `docker-compose.yml` - Base production configuration
-2. `docker-compose.test.yml` - Test-specific overrides (different ports, tmpfs for speed)
-3. `docker-compose.ci.yml` - CI-specific overrides (removes local bind mounts)
-
-### CI-Specific Configuration (`docker-compose.ci.yml`)
-
-The CI override file addresses differences between local and CI environments:
-
-| Issue | Local Development | CI Environment | CI Override Solution |
-| --- | --- | --- | --- |
-| AWS credentials | `~/.config/aws` mounted | Environment variables via OIDC | Remove bind mount |
-| Docker network | External `proxy` network | Network doesn't exist | Create as bridge network |
-| File mounts | Local paths exist | Only repo checkout | Use volumes only |
-| Traefik dashboard | Enabled with auth | Not needed | Disabled |
-
-### Container Startup Sequence
-
-The workflow starts containers in a specific order to handle dependencies:
+### The e2e job runs the workstation's commands
 
 ```bash
-# Phase 1: Start database services first
-docker compose ... up -d --build postgres redis
-sleep 10  # Wait for health checks
-
-# Phase 2: Start application services
-docker compose ... up -d --build api app scheduler
-sleep 30  # Wait for services to initialize
+./ops/icbops testing start
+./ops/icbops test e2e
 ```
 
-**Why this order matters:**
+The job first writes `.env` and a self-signed certificate for
+`*.test.localhost`, because Traefik will not start without one. GitHub sets
+`CI=true`, and `icbops` then adds `docker-compose.ci.yml` to the compose set.
+That file removes the API's Docker socket mount. `test e2e` passes `CI` into
+the vue container, where the Playwright config retries a failed test and
+refuses `.only`.
 
-- `postgres` and `redis` must be healthy before application services start
-- `api` initializes the shared virtual environment used by other services
-- `scheduler` creates the `apscheduler_jobs` table needed by scheduler tests
-- Sleep intervals allow health checks to complete
-
-### Test Environment Detection
-
-The test fixtures detect CI environment and adjust behavior:
-
-```python
-# In tests/environment.py
-@property
-def is_ci(self) -> bool:
-    return os.environ.get('CI', '').lower() == 'true'
-```
-
-**CI-specific behavior:**
-
-- Skip Docker Compose startup (containers pre-started by workflow)
-- Skip Docker Compose teardown (handled by workflow cleanup step)
-- Longer wait times for container health checks
-
-### Environment Variables
-
-Key environment variables set in CI:
-
-```yaml
-env:
-  ENVIRONMENT: testing
-  CI: true  # Detected by test fixtures
-  AWS_REGION: us-east-2
-  # AWS credentials via OIDC (not stored as secrets)
-```
+The project is `icb-test-ichrisbirch`, after the checkout's directory. Each job
+runs on its own hosted VM, so no two jobs share a Docker daemon. The job saves
+the stack's logs to `frontend/test-results/stack.log` and uploads that
+directory with the JSON report, on a pass as well as a failure.
 
 ### AWS Authentication
 
-The workflow uses OIDC (OpenID Connect) for AWS authentication instead of long-lived credentials:
+`terraform-check.yml` uses OIDC (OpenID Connect) for AWS authentication instead of long-lived credentials:
 
 ```yaml
 - name: Configure AWS Credentials
@@ -149,7 +99,7 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
-      - 'tools/docs/**'
+      - 'mkdocs_plugins/**'
 ```
 
 ### Custom MkDocs Plugins
@@ -163,8 +113,8 @@ These are registered as entry points in `pyproject.toml`:
 
 ```toml
 [project.entry-points."mkdocs.plugins"]
-code_sync = "tools.docs.mkdocs_code_sync_plugin:CodeSyncPlugin"
-diagrams = "tools.docs.mkdocs_diagrams_plugin:DiagramGeneratorPlugin"
+code_sync = "mkdocs_plugins.code_sync.plugin:CodeSyncPlugin"
+diagrams = "mkdocs_plugins.diagrams:DiagramGeneratorPlugin"
 ```
 
 The workflow uses `uv sync` to install all dependencies including these plugins.
@@ -173,29 +123,19 @@ The workflow uses `uv sync` to install all dependencies including these plugins.
 
 ### Common Issues
 
-#### 1. Docker Compose containers not starting
+#### 1. The e2e job's stack does not start
 
-```yaml
-Error: Failed to start Docker Compose test environment
+`./ops/icbops testing start` failing names the unhealthy service. The
+`playwright-evidence` artifact holds `stack.log`, every container's output.
+
+#### 2. pytest cannot start its services
+
+```text
+Could not start the Postgres and Redis this session runs against
 ```
 
-Check:
-
-- Docker Compose CI override file exists
-- Proxy network creation step succeeded
-- Container health checks are passing
-
-#### 2. Missing database table
-
-```yaml
-Error: relation "apscheduler_jobs" does not exist
-```
-
-Ensure scheduler container is started:
-
-```yaml
-docker compose ... up -d --build api app scheduler
-```
+Docker on the runner refused a container. The step's log carries Docker's own
+error just above it.
 
 #### 3. MkDocs plugin not found
 
@@ -205,7 +145,7 @@ Error: The "code_sync" plugin is not installed
 
 Ensure workflow uses `uv sync` instead of just `pip install mkdocs-material`.
 
-#### 4. AWS credential issues
+#### 4. AWS credential issues in `terraform-check.yml`
 
 ```yaml
 Error: Unable to locate credentials
@@ -257,10 +197,9 @@ uv run ruff format --check .
 # Run type checking
 uv run mypy ichrisbirch/
 
-# Run tests with the same configuration as CI
-./ops/icbops testing start
-uv run pytest --cov=ichrisbirch
-./ops/icbops testing stop
+# Run both suites the way CI does
+./ops/icbops test run
+./ops/icbops test e2e
 ```
 
 ## Workflow Files Reference
@@ -272,5 +211,5 @@ uv run pytest --cov=ichrisbirch
 | `.github/workflows/release-cli.yml` | `icb` binary release, gated on CI |
 | `.github/workflows/deploy-docs.yml` | Documentation deployment |
 | `.github/workflows/sync-docs-code.yml` | Code sync in docs |
-| `docker-compose.ci.yml` | CI-specific Docker Compose overrides |
-| `tests/environment.py` | Test environment with CI detection |
+| `docker-compose.ci.yml` | CI-specific Docker Compose overrides, added by `icbops` under `CI=true` |
+| `tests/environment.py` | `PrivateServices`, pytest's own Postgres and Redis |

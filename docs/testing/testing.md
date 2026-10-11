@@ -19,8 +19,10 @@ We now have detailed documentation for the testing infrastructure:
 ./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
 ```
 
-`test run` starts the test containers if they are down and waits for their
-health checks, so no manual start is needed first.
+Each pytest session starts its own Postgres and Redis and removes them when it
+ends, so nothing needs starting first. The e2e suite is
+`./ops/icbops test e2e`, which starts this checkout's test stack if it is down.
+[Test Environment](environment.md) covers both.
 
 `test run` exports `ENVIRONMENT=testing` itself, so nothing is needed from the
 shell.
@@ -36,20 +38,20 @@ it builds, never on the cached object `get_settings()` returns.
 
 ### Local DNS
 
-Traefik routes by host name, so Playwright and the browser need the names
-resolving. pytest does not. It reaches the API on a published port rather than
-through Traefik.
+Traefik routes by host name, so a browser needs the names resolving. pytest
+does not, because it calls the API in-process.
+
+The `*.test.localhost` names need no host entry. The e2e suite resolves them
+inside the test stack, through Docker's DNS and a Chromium resolver rule. Only
+the dev stack's `*.docker.localhost` names, listed in
+[Quick Start](../quick-start.md), belong in `/etc/hosts`. Those are what a
+browser and `E2E_ENV=dev` need.
 
 ```bash
-grep -E 'docker\.localhost|test\.localhost' /etc/hosts
+grep -E 'docker\.localhost' /etc/hosts
 ```
-
-Playwright targets `*.test.localhost` by default, listed in
-[Traefik deployment](../traefik-deployment.md).
-[Quick Start](../quick-start.md) lists the `*.docker.localhost` entries, which
-are what `E2E_ENV=dev` needs.
 
 ### `pytest-xdist`
 
-Do not add it. The session fixture starts the Docker Compose stack once. xdist
-would run that startup once per worker, against one set of ports.
+It is not installed. Under it, each worker would run the session fixture and
+start its own Postgres and Redis, so workers would never share a database.

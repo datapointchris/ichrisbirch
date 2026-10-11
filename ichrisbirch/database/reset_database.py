@@ -6,7 +6,9 @@ to its expected host:port so a misconfigured `.env` can't target the wrong DB.
 
 Usage:
     ENVIRONMENT=development python -m ichrisbirch.database.reset_database
-    ENVIRONMENT=testing     python -m ichrisbirch.database.reset_database
+
+The test stack publishes no ports, so its reset runs inside its api container,
+where `postgres:5432` is the stack's own database: `icbops testing db reset`.
 
 This is intentionally separate from ichrisbirch.database.initialization so
 destructive operations live in one clearly-named module.
@@ -17,7 +19,7 @@ import sys
 
 ALLOWED_ENVIRONMENTS = {
     'development': {'host': 'localhost', 'port': '5432'},
-    'testing': {'host': 'localhost', 'port': '5434'},
+    'testing': {'host': 'postgres', 'port': '5432'},
 }
 
 

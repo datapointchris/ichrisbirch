@@ -15,7 +15,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     'collect': {
         'collectors': ['tokei', 'pytest_collector', 'coverage', 'docker', 'dependencies', 'files'],
-        'pytest_json_path': '/tmp/ichrisbirch-pytest-report.json',  # nosec B108
+        'pytest_json_path': '.test-reports/pytest-report.json',
     },
 }
 

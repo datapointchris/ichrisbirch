@@ -38,7 +38,7 @@ print_error() {
 # Get URLs for environment
 get_urls() {
   case "$ENVIRONMENT" in
-    dev | test)
+    dev)
       API_URL="$(icb_service_url "$ENVIRONMENT" api)"
       APP_URL="$(icb_service_url "$ENVIRONMENT" app)"
       DASHBOARD_URL="$(icb_service_url "$ENVIRONMENT" dashboard)"
@@ -147,13 +147,18 @@ check_containers() {
       )
       ;;
     test)
+      # Each checkout's stack is its own compose project, which ops/icbops names
+      if [[ -z "${ICB_TEST_PROJECT:-}" ]]; then
+        print_error "ICB_TEST_PROJECT is unset; run this as: icbops testing health"
+        exit 1
+      fi
       containers=(
-        "icb-test-traefik"
-        "icb-test-api"
-        "icb-test-vue"
-        "icb-test-postgres"
-        "icb-test-redis"
-        "icb-test-scheduler"
+        "${ICB_TEST_PROJECT}-traefik"
+        "${ICB_TEST_PROJECT}-api"
+        "${ICB_TEST_PROJECT}-vue"
+        "${ICB_TEST_PROJECT}-postgres"
+        "${ICB_TEST_PROJECT}-redis"
+        "${ICB_TEST_PROJECT}-scheduler"
       )
       ;;
     prod)
@@ -260,13 +265,18 @@ main() {
   check_containers
   echo ""
 
+  # The test stack publishes no ports, so its health checks are the whole
+  # verdict: api's probes /health and vue's the dev server.
+  if [ "$ENVIRONMENT" = "test" ]; then
+    print_info "Health check completed for $ENVIRONMENT environment"
+    return 0
+  fi
+
   # Get URLs for the environment
   get_urls
 
   # Check DNS resolution for localhost domains.
-  # icb_env_domain rather than icb_env_suffix: check_dns runs `host`, which
-  # takes a name and not a name:port.
-  if [ "$ENVIRONMENT" = "dev" ] || [ "$ENVIRONMENT" = "test" ]; then
+  if [ "$ENVIRONMENT" = "dev" ]; then
     local domain_suffix service
     domain_suffix=$(icb_env_domain "$ENVIRONMENT")
 
@@ -286,9 +296,6 @@ main() {
   case "$ENVIRONMENT" in
     dev)
       check_url "Dashboard" "$DASHBOARD_URL/api/overview" "dev:devpass" "200"
-      ;;
-    test)
-      check_url "Dashboard" "$DASHBOARD_URL/api/overview" "test:testpass" "200"
       ;;
     prod)
       print_info "Dashboard: Not exposed in production (security)"
@@ -311,10 +318,10 @@ show_help() {
   echo "  prod    - Production environment"
   echo ""
   echo "This script checks:"
-  echo "  • Docker container status"
-  echo "  • DNS resolution (for dev/test)"
+  echo "  • Docker container status (all a test stack gets, since it publishes no ports)"
+  echo "  • DNS resolution (dev only)"
   echo "  • Service endpoints (API, App)"
-  echo "  • Dashboard access (dev/test only)"
+  echo "  • Dashboard access (dev only)"
 }
 
 # Check for help

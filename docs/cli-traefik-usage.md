@@ -76,33 +76,27 @@ Dev Credentials:
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `test run` | Run tests (reuses containers) | `icbops test run [path] [args]` |
-| `testing start` | Start testing environment | `icbops testing start` |
-| `testing stop` | Stop testing environment | `icbops testing stop` |
+| `test run` | Run pytest against its own throwaway Postgres and Redis | `icbops test run [path] [args]` |
+| `test e2e` | Run Playwright inside this checkout's test stack, starting it if needed | `icbops test e2e [spec] [args]` |
+| `testing start` | Remove stacks whose checkout is gone, start this one | `icbops testing start` |
+| `testing stop` | Stop this checkout's stack and remove its volumes | `icbops testing stop` |
 | `testing restart` | Restart testing environment | `icbops testing restart` |
-| `testing status` | Show service status and HTTPS URLs | `icbops testing status` |
+| `testing status` | Show the project name and each service's state | `icbops testing status` |
 | `testing logs` | View service logs | `icbops testing logs [service]` |
 | `testing health` | Run comprehensive health checks | `icbops testing health` |
 | `testing rebuild` | Rebuild app image, recreate api/scheduler/vue (keeps infra running) | `icbops testing rebuild` |
 | `testing rebuild --all` | Full rebuild including infra | `icbops testing rebuild --all` |
 | `testing rebuild --volumes` | Wipe named volumes and rebuild — step 2 of the code-change escalation ladder (see CLAUDE.md); covers stale `.venv`, deps, node_modules, ENOTEMPTY | `icbops testing rebuild --all --volumes` |
-| `testing is-ready` | Quick API health check (exit 0/1) | `icbops testing is-ready` |
+| `testing is-ready` | Quick check that every service is healthy (exit 0/1) | `icbops testing is-ready` |
 | `testing ensure` | Start containers if not already running | `icbops testing ensure` |
 | `testing docker [service]` | Show merged Docker Compose config | `icbops testing docker api` |
 | `testing db ...` | Database commands (seed, init, reset) | `icbops testing db reset` |
 
 `testing start`, `testing restart` and every `testing rebuild` variant end by initializing the database. The test Postgres keeps its data on tmpfs, so any recreate of it starts empty, and a rebuild hands back a database the suite can run against with no second step.
 
-**Test Run Behavior:**
+**Each checkout has its own stack.** The `testing` verbs act on the compose project `icb-test-<checkout directory>`, which publishes no ports. Two worktrees run their stacks side by side, and `testing stop` in one leaves the other running. Every verb but `testing stop` refuses a stack another checkout with the same directory name started.
 
-The `test run` command reuses running containers for fast iteration:
-
-1. **Reuses containers** - Reuses the stack when `icb-test-api` is healthy, otherwise recreates it with `testing start`
-2. **Database readiness and cleaning** - pytest's session setup migrates the database to head, then the `truncate_tables` fixture truncates it (not the CLI)
-3. **No stale connections** - API container's connection pool stays valid across test runs
-4. **Fast** - Sub-second database clean vs seconds for drop/recreate
-
-> **Note:** Test and dev environments use separate proxy networks (`icb-test-proxy` and `icb-dev-proxy`) to avoid Traefik routing conflicts when running simultaneously.
+**`test run` never touches the stack.** Each pytest session starts its own Postgres and Redis through testcontainers, migrates them to head and discards them at the end. [Test Environment](testing/environment.md) covers both suites.
 
 ### Production Environment
 
@@ -195,11 +189,11 @@ icbops dev stop
 
 **Characteristics:**
 
-- **Domain**: `*.test.localhost` (browser-trusted with mkcert)
-- **Port**: 8443 (custom HTTPS port)
-- **Dashboard**: `https://dashboard.test.localhost:8443/` (test/testpass)
+- **Project**: `icb-test-<checkout directory>`, one per checkout
+- **Ports**: none published to the host
+- **Dashboard**: none
 
-**Services:**
+**Services**, reachable only from inside the stack, where the e2e suite runs:
 
 - **API**: `https://api.test.localhost:8443/`
 - **App**: `https://app.test.localhost:8443/`
@@ -288,7 +282,7 @@ Starts the development environment with full Traefik + HTTPS setup.
 **What it does:**
 
 - Generates SSL certificates if missing (using mkcert when available)
-- Creates Docker networks (`proxy-dev` for development, separate from `proxy-test`)
+- Creates the `icb-dev-proxy` network, which no test stack shares
 - Starts all services with Docker Compose
 - Waits for services to become healthy
 - Displays HTTPS access URLs and dev credentials
@@ -340,10 +334,6 @@ Development environment URLs:
   API:       https://api.docker.localhost/
   APP:       https://app.docker.localhost/
   DASHBOARD: https://dashboard.docker.localhost/
-
-Database Info:
-  PostgreSQL: localhost:5434 (external access)
-  Redis:      localhost:6379 (external access)
 ```
 
 ### `icbops dev health`
@@ -498,7 +488,7 @@ icbops ssl-manager generate dev && icbops dev start
 # Check status across all environments
 for env in dev testing prod; do
   echo "=== $env ==="
-  ichrisbirch $env status
+  icbops $env status
 done
 ```
 
@@ -551,7 +541,7 @@ icbops ssl-manager generate dev    # Regenerate if needed
    ```bash
    # Stop conflicting services
    icbops dev stop
-   docker stop $(docker ps -q --filter "name=ichrisbirch")
+   docker stop $(docker ps -q --filter "name=icb-dev-")
 
    # Restart
    icbops dev start
@@ -598,7 +588,7 @@ icbops ssl-manager generate dev    # Regenerate if needed
 
 6. **Test containers stuck in restart loop / `npm install` ENOTEMPTY errors**
 
-   A corrupted named volume (usually `icb-test-vue-node-modules` from an interrupted `npm install`) causes the container to crash-loop forever. Use `--volumes` to wipe and rebuild:
+   A corrupted named volume (usually `icb-test-<checkout>-vue-node-modules` from an interrupted `npm install`) causes the container to crash-loop forever. Use `--volumes` to wipe and rebuild:
 
    ```bash
    ./ops/icbops testing rebuild --all --volumes
@@ -609,8 +599,9 @@ icbops ssl-manager generate dev    # Regenerate if needed
    ```bash
    sudo systemctl reset-failed docker.service docker.socket
    sudo systemctl start docker
-   docker rm -f icb-test-vue 2>/dev/null       # kill the loop immediately
-   docker volume rm icb-test-vue-node-modules 2>/dev/null
+   project=icb-test-<checkout>
+   docker rm -f "$project-vue" 2>/dev/null     # kill the loop immediately
+   docker volume rm "$project-vue-node-modules" 2>/dev/null
    ./ops/icbops testing rebuild --all --volumes
    ```
 

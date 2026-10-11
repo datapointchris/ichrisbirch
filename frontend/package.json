@@ -18,7 +18,7 @@
     "test:build": "vue-tsc -b --noEmit && vite build --mode development 2>&1",
     "test:e2e": "playwright test",
     "test:e2e:dev": "E2E_ENV=dev playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:ui": "E2E_ENV=dev playwright test --ui",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write src/",

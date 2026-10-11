@@ -110,14 +110,13 @@ echo "/widgets" >> deploy-containers/traefik/vue-paths.txt
 ### 5. Tests
 
 - **Unit tests**: `frontend/src/stores/__tests__/widgets.test.ts` — mock API, test CRUD + error paths
-- **E2E tests**: `frontend/e2e/widgets.spec.ts` — Playwright through `app.docker.localhost`
+- **E2E tests**: `frontend/e2e/widgets.spec.ts` — Playwright through the test stack's Traefik at `app.test.localhost:8443`
 
 ### 6. Verify
 
 ```bash
-cd frontend
-npm test           # Build check + unit tests
-npm run test:e2e   # E2E through Traefik (requires dev containers)
+npm --prefix frontend test   # Build check + unit tests
+./ops/icbops test e2e        # E2E inside this checkout's test stack
 ```
 
 ## `icb` CLI

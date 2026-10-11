@@ -28,6 +28,7 @@ from ichrisbirch.services.url_extraction import ArticlePage
 from ichrisbirch.services.url_extraction import CaptionsBlocked
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
+from tests.utils.database import test_settings
 
 from .crud_test import ApiCrudTester
 
@@ -594,8 +595,8 @@ class TestCreateFromUrl:
 
 @pytest.fixture
 def test_redis():
-    """Connect to test Redis on port 6380 db=1, isolated from container worker on db=0."""
-    client = redis.Redis(host='localhost', port=6380, db=1, decode_responses=True)
+    """The session's Redis, where the bulk import tests queue batches and read them back."""
+    client = redis.Redis(host=test_settings.redis.host, port=test_settings.redis.port, db=test_settings.redis.db, decode_responses=True)
     yield client
     # Cleanup: delete all article_import keys
     for key in client.keys('article_import:*'):
@@ -605,12 +606,7 @@ def test_redis():
 
 @pytest.fixture
 def api_with_redis(txn_api_logged_in, test_redis):
-    """API client with Redis on db=1, isolated from the container's worker.
-
-    The test Docker container runs an ArticleImportWorker on db=0. By using db=1
-    for the in-process TestClient, queued URLs are invisible to the container's
-    worker, preventing it from saving articles outside the test transaction.
-    """
+    """API client whose Redis is `test_redis`, so a test reads back what the endpoint queued."""
     client, session = txn_api_logged_in
     client.app.state.redis_client = test_redis
     yield client, session

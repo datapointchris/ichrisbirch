@@ -37,8 +37,8 @@ Only after both is a manual `docker` subcommand worth reaching for.
 [A change is not taking effect](testing-issues.md#a-change-is-not-taking-effect)
 covers what each step fixes.
 
-After a failed test run, read `/tmp/ichrisbirch-pytest-output.log` and
-`/tmp/ichrisbirch-pytest-report.json` rather than re-running the suite.
+After a failed test run, read `.test-reports/pytest-output.log` and
+`.test-reports/pytest-report.json` in the checkout rather than re-running the suite.
 
 ### Emergency fixes
 

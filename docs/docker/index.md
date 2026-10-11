@@ -32,8 +32,8 @@ standalone.
 | File                       | Environment                                        |
 | -------------------------- | -------------------------------------------------- |
 | `docker-compose.dev.yml`   | Local development                                  |
-| `docker-compose.test.yml`  | The test stack, alongside dev on other ports       |
-| `docker-compose.ci.yml`    | GitHub Actions                                     |
+| `docker-compose.test.yml`  | Each checkout's test stack, no ports published     |
+| `docker-compose.ci.yml`    | GitHub Actions, added by `icbops` under `CI=true`  |
 | `docker-compose.infra.yml` | Production Traefik, Postgres and Redis             |
 | `docker-compose.app.yml`   | Production api, vue and scheduler, one color       |
 
@@ -44,8 +44,9 @@ own overrides.
 ## Environments
 
 Development is `https://app.docker.localhost/` with the API at
-`https://api.docker.localhost/`. Tests run against
-`https://api.test.localhost:8443/`.
+`https://api.docker.localhost/`. pytest runs against its own Postgres and Redis.
+The e2e suite runs inside the checkout's test stack, which publishes no ports,
+so `https://app.test.localhost:8443/` resolves only there.
 
 Production runs on a self-hosted server, not locally. A push to `main` triggers
 a webhook that runs `scripts/deploy-homelab.sh`, which deploys the color that

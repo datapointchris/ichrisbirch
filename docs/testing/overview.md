@@ -28,11 +28,16 @@ The architecture ensures that:
 
 ## Test Environment Setup
 
-The test environment uses a separate Docker Compose environment with isolated database and Redis, running alongside dev on alternate ports. Test containers are ephemeral — the postgres data volume is destroyed on `testing stop`.
+pytest and Playwright each get an environment no other checkout shares.
+
+- **pytest** starts its own Postgres and Redis for every session, on ports Docker picks, and removes them when the session ends. The API runs in-process.
+- **Playwright** runs inside the checkout's own test stack, a compose project named `icb-test-<checkout directory>` that publishes no ports. Its Postgres is on tmpfs, so `testing stop` empties it.
+
+[Test Environment](environment.md) covers both.
 
 ## Test Data Management
 
-Test data is managed through seed modules (`ichrisbirch/seeders/`) and test fixtures. The seed system uses per-entity seeders that populate the test database on container startup.
+Test data comes from the `tests.test_data` package, which fixtures insert and delete around each module. pytest never runs the seeders. `scripts/seed/seeders/` fills the dev stack, and the test stack on request through `./ops/icbops testing db seed`.
 
 ## Test Clients
 
@@ -45,7 +50,7 @@ Test clients provide interfaces to interact with the API server:
 
 The testing infrastructure provides fixtures at different scopes:
 
-1. **Session-scoped**: Docker orchestration, table lifecycle, test users
+1. **Session-scoped**: the session's own Postgres and Redis, table lifecycle, test users
 2. **Module-scoped**: `test_api`, `test_api_logged_in`, `test_api_logged_in_admin`
 3. **Function-scoped**: `*_function` suffix variants for test isolation
 
@@ -59,12 +64,12 @@ See the [writing tests guide](writing_tests.md) for information on how to write 
 
 The Vue frontend uses a four-layer testing strategy:
 
-| Layer | Tool | Tests | Duration | What it catches |
-| --- | --- | --- | --- | --- |
-| Build | `vue-tsc` + `vite build` | — | ~10s | TypeScript errors, missing imports |
-| Store/Unit | Vitest | ~347 | ~5s | Store logic, composables, utilities |
-| Component | Vitest + `@pinia/testing` | ~225 | ~2s | View rendering, store wiring, modals |
-| E2E | Playwright | ~80 | ~50s | CORS, Traefik routing, real CRUD |
+| Layer | Tool | What it catches |
+| --- | --- | --- |
+| Build | `vue-tsc` + `vite build` | TypeScript errors, missing imports |
+| Store/Unit | Vitest | Store logic, composables, utilities |
+| Component | Vitest + `@pinia/testing` | View rendering, store wiring, modals |
+| E2E | Playwright | CORS, Traefik routing, real CRUD |
 
 ### Build Verification (`npm run test:build`)
 
@@ -89,11 +94,11 @@ Vitest with `@pinia/testing`. Mounts real Vue view components with controlled st
 - Pattern: `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`
 - Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`)
 - Verify: rendering states, conditional CSS classes, store action calls on user interaction, modal prop wiring
-- Every view page has a corresponding test file (14 files total)
+- Every view page has a corresponding test file
 
-### E2E Tests (`npm run test:e2e`)
+### E2E Tests (`./ops/icbops test e2e`)
 
-Playwright tests running through real Traefik routing at `https://app.docker.localhost`. Trimmed to smoke-only — each page keeps:
+Playwright tests running inside the checkout's test stack, through its Traefik at `https://app.test.localhost:8443`. Trimmed to smoke-only — each page keeps:
 
 - CORS/API reachability check
 - Page load with correct title
@@ -103,22 +108,21 @@ Playwright tests running through real Traefik routing at `https://app.docker.loc
 Interaction-heavy tests (edit modals, toggles, filters, search, sort) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 
 - Located in `frontend/e2e/`
-- Requires test containers running (`./ops/icbops testing start`)
+- `./ops/icbops test e2e` starts the stack if it is down, then runs Playwright in its vue container
 - Sequential execution (`workers: 1`) to maintain consistent database state
 
 ### Running Vue Tests
 
 ```bash
-cd frontend
-
 # Build check + all unit/component tests (fast, no containers needed)
-npm test
+npm --prefix frontend test
 
-# E2E tests (requires test containers)
-npm run test:e2e
+# E2E tests, inside this checkout's test stack
+./ops/icbops test e2e
+./ops/icbops test e2e e2e/tasks.spec.ts --trace on
 
-# E2E with interactive UI
-npm run test:e2e:ui
+# E2E with interactive UI, against the dev stack
+npm --prefix frontend run test:e2e:ui
 ```
 
 ### Pre-commit Integration
@@ -128,8 +132,8 @@ Five pre-commit hooks gate Vue code quality on every commit:
 - **vue-eslint**: Linting with auto-fix
 - **vue-prettier**: Code formatting
 - **vue-typecheck**: TypeScript type checking
-- **vue-test**: Vitest unit + component tests
-- **vue-e2e**: Playwright E2E smoke tests
+- **vue-test-results**: Vitest unit + component tests
+- **vue-e2e-results**: Playwright E2E smoke tests, through `./ops/icbops test e2e`
 
 ## Related Documentation
 

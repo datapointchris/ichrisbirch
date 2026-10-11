@@ -1,0 +1,15 @@
+# Backends for the test environment's routers. Each name resolves on the
+# compose project's own network, so every checkout's Traefik reaches its own
+# API and Vue dev server.
+
+http:
+  services:
+    api:
+      loadBalancer:
+        servers:
+          - url: "http://api:8000"
+
+    vue:
+      loadBalancer:
+        servers:
+          - url: "http://vue:5173"

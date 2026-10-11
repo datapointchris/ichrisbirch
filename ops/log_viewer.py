@@ -51,7 +51,9 @@ SERVICE_STYLE = {
 
 ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 PREFIX_RE = re.compile(r'^([A-Za-z0-9_.-]+)\s*\|\s?(.*)$')
-CONTAINER_STRIP_RE = re.compile(r'^icb-(?:dev|test|prod|blue|green|infra)-')
+# A test stack's project carries its checkout's name, `icb-test-<checkout>`, and
+# no service name has a hyphen, so the service is what follows the last one.
+CONTAINER_STRIP_RE = re.compile(r'^icb-(?:dev|test(?:-.+?)?|prod|blue|green|infra)-(?=[a-z]+$)')
 
 META_KEYS = {'timestamp', 'level', 'event', 'filename', 'func_name', 'lineno'}
 
@@ -174,7 +176,10 @@ def build_compose_cmd(env: str, tail: int, follow: bool, services: list[str]) ->
     if env == 'dev':
         base += ['--project-name', 'icb-dev', '-f', 'docker-compose.yml', '-f', 'docker-compose.dev.yml']
     elif env == 'testing':
-        base += ['--project-name', 'icb-test', '-f', 'docker-compose.yml', '-f', 'docker-compose.test.yml']
+        project = os.environ.get('ICB_TEST_PROJECT')
+        if not project:
+            raise SystemExit('ICB_TEST_PROJECT is unset; run this as: icbops testing logs')
+        base += ['--project-name', project, '-f', 'docker-compose.yml', '-f', 'docker-compose.test.yml']
     elif env == 'prod':
         color = read_bluegreen_color()
         if color:

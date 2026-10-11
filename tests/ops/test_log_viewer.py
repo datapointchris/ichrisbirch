@@ -11,6 +11,11 @@ def test_parse_prefix_strips_icb_env_prefix():
     assert log_viewer.parse_prefix('icb-infra-traefik | startup') == ('traefik', 'startup')
 
 
+def test_parse_prefix_strips_a_test_stack_named_after_a_hyphenated_checkout():
+    assert log_viewer.parse_prefix('icb-test-fast-test-stack-api  | x') == ('api', 'x')
+    assert log_viewer.parse_prefix('icb-test-ichrisbirch-vue | y') == ('vue', 'y')
+
+
 def test_parse_prefix_handles_plain_container_name():
     assert log_viewer.parse_prefix('postgres   | starting...') == ('postgres', 'starting...')
 
@@ -106,11 +111,20 @@ def test_build_compose_cmd_dev_uses_dev_overlay():
     assert cmd[-1] == 'api'
 
 
-def test_build_compose_cmd_testing_uses_test_overlay():
+def test_build_compose_cmd_testing_uses_this_checkouts_project(monkeypatch):
+    monkeypatch.setenv('ICB_TEST_PROJECT', 'icb-test-some-checkout')
     cwd, *cmd = log_viewer.build_compose_cmd('testing', tail=100, follow=False, services=[])
-    assert 'icb-test' in cmd
+    assert cmd[cmd.index('--project-name') + 1] == 'icb-test-some-checkout'
     assert 'docker-compose.test.yml' in cmd
     assert '--follow' not in cmd
+
+
+def test_build_compose_cmd_testing_refuses_without_a_project(monkeypatch):
+    import pytest
+
+    monkeypatch.delenv('ICB_TEST_PROJECT', raising=False)
+    with pytest.raises(SystemExit, match='icbops testing logs'):
+        log_viewer.build_compose_cmd('testing', tail=100, follow=False, services=[])
 
 
 def test_build_compose_cmd_rejects_unknown_env():

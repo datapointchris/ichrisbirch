@@ -66,13 +66,13 @@ Catches: Store logic errors, error handling paths, API response parsing.
 ### E2E Tests
 
 ```bash
-npm run test:e2e     # Playwright, requires test containers
-npm run test:e2e:ui  # Interactive UI
+./ops/icbops test e2e   # From the repo root: Playwright, inside this checkout's test stack
+npm run test:e2e:ui     # Interactive UI, against the dev stack
 ```
 
 Catches: CORS failures, auth header issues, Traefik routing, real CRUD operations.
 
-E2E tests run through `app.docker.localhost` (not `vue.docker.localhost`) to test the real user path including cross-origin API calls to `api.docker.localhost`.
+E2E tests run through `app.test.localhost:8443` (not `vue.test.localhost`) to test the real user path including cross-origin API calls to `api.test.localhost:8443`. Both names resolve only inside the test stack, where the suite runs.
 
 The `phone` Playwright project reruns the specs its `testMatch` names on a Pixel 7 profile, at phone size and with touch. A page meant to be used from a phone adds its spec there.
 
@@ -91,7 +91,7 @@ npm test             # Build check + unit tests
 5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`
 6. Write unit tests in `frontend/src/stores/__tests__/`
 7. Write E2E tests in `frontend/e2e/`
-8. Run `npm test` and `npm run test:e2e` before considering the page done
+8. Run `npm test` and `./ops/icbops test e2e` before considering the page done
 
 ## Phone Layout
 

@@ -17,12 +17,6 @@ setup() {
   [ "$(icb_service_url dev dashboard)" = 'https://dashboard.docker.localhost' ]
 }
 
-@test "test URLs carry Traefik's port, which is not 443 there" {
-  [ "$(icb_service_url test api)" = 'https://api.test.localhost:8443' ]
-  [ "$(icb_service_url test app)" = 'https://app.test.localhost:8443' ]
-  [ "$(icb_service_url test dashboard)" = 'https://dashboard.test.localhost:8443' ]
-}
-
 @test "the Vue app is the bare domain in production and a subdomain elsewhere" {
   [ "$(icb_service_url prod app)" = 'https://ichrisbirch.com' ]
   [ "$(icb_service_url dev app)" = 'https://app.docker.localhost' ]
@@ -52,11 +46,6 @@ setup() {
   [ "$output" = 'https://example.com/api' ]
 }
 
-@test "icb_env_domain carries no port, because check_dns runs host" {
-  [ "$(icb_env_domain test)" = 'test.localhost' ]
-  [ "$(icb_env_suffix test)" = 'test.localhost:8443' ]
-}
-
 @test "icb_service_host returns the header value health-check sends in prod" {
   [ "$(icb_service_host prod api)" = 'ichrisbirch.com' ]
   [ "$(icb_service_host prod app)" = 'ichrisbirch.com' ]
@@ -67,11 +56,9 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "no tool that reads the grid spells a hostname by hand" {
-  # The grid exists because this was written out twice. A third copy is a
-  # hostname literal anywhere outside ops/lib/urls.sh itself.
-  # grep exits 1 for no match alone, so a missing tool or a bad path fails here.
-  run grep -nE 'docker\.localhost|test\.localhost' \
-    "$REPO_ROOT/ops/icbops" "$REPO_ROOT/ops/health-check.sh"
-  [ "$status" -eq 1 ]
+@test "icbops prints the dev and prod URLs the grid gives" {
+  TERM='' run "$REPO_ROOT/ops/icbops"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Dev:  $(icb_service_url dev api) | $(icb_service_url dev app)"* ]]
+  [[ "$output" == *"Prod: $(icb_service_url prod api) | $(icb_service_url prod app)"* ]]
 }

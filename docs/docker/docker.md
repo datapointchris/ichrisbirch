@@ -67,9 +67,9 @@ checks both.
 into the bundle at build time, so changing it means rebuilding the image.
 Production passes `/api`, which is the same-origin path Traefik proxies.
 
-Dev and test never build this image. Their `vue` service is a plain
-`node:24-alpine` running `npm install && npm run dev`, so Vite's dev server
-answers on port 5173 with hot module replacement.
+Dev and test never build this image. Their `vue` service runs
+`npm install && npm run dev`, dev on `node:24-alpine` and test on Playwright's
+image, so Vite's dev server answers on port 5173 with hot module replacement.
 
 Caddy serves the frontend you deploy and Vite serves the one you develop
 against. So a fault in the SPA fallback, or anywhere else in
@@ -80,8 +80,8 @@ against. So a fault in the SPA fallback, or anywhere else in
 | Environment | Python target | Image                                | Source |
 | ----------- | ------------- | ------------------------------------ | ------ |
 | Development | `development` | `ichrisbirch:development`            | Built  |
-| Testing     | `testing`     | `ichrisbirch:testing`                | Built  |
-| CI          | `testing`     | `ichrisbirch:testing`                | Built  |
+| Testing     | `testing`     | `ichrisbirch:icb-test-<checkout>`    | Built  |
+| CI          | `testing`     | `ichrisbirch:icb-test-ichrisbirch`   | Built  |
 | Production  | `production`  | `ghcr.io/datapointchris/ichrisbirch` | Pulled |
 
 Production never builds on the server. `.github/workflows/release.yml` builds
@@ -94,8 +94,10 @@ compiling one next to a live database.
 Dev and test mount `.:/app` over the image's own copy, so the code that runs is
 the code on disk. Both also mount `/app/.venv` as an anonymous volume, which
 shadows the bind mount at that one path and keeps the image's virtualenv rather
-than the host's. Docker re-seeds an anonymous volume from the image layer on
-every new container, so a rebuild picks up dependency changes.
+than the host's. Docker seeds a new anonymous volume from the image layer.
+Compose would hand a recreated container the volume of the one it replaces, so
+every `icbops` `up` passes `--renew-anon-volumes`, and a rebuild picks up
+dependency changes.
 
 Do not replace that anonymous volume with a named one. A named volume survives
 rebuilds, so a stale virtualenv outlives the image that was supposed to fix it,

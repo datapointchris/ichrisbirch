@@ -167,9 +167,8 @@ test('creates a new countdown', async ({ page }) => {
 Run Vue E2E tests:
 
 ```bash
-cd frontend
-npm run test:e2e        # Headless
-npm run test:e2e:ui     # Interactive UI
+./ops/icbops test e2e                        # Inside this checkout's test stack
+npm --prefix frontend run test:e2e:ui        # Interactive UI, against the dev stack
 ```
 
 ### Vue Unit Tests (Vitest)

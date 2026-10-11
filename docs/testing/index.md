@@ -6,7 +6,7 @@ Start at the overview; the other pages go one layer deeper on a single part of t
 
 - [Testing Overview](overview.md) — the layered architecture, and the map across every other testing page
 - [Testing Guide](testing.md) — running pytest by hand, the `ENVIRONMENT` variable, and `/etc/hosts` on Mac
-- [Test Environment](environment.md) — the Docker Compose containers, their ports, and how their lifecycle is driven
+- [Test Environment](environment.md) — pytest's private Postgres and Redis, and the per-checkout stack the e2e suite runs inside
 - [Test Configuration](test_configuration.md) — `test_settings`, built in `tests/utils/database.py`
 - [Test Fixtures](fixtures.md) — every fixture by scope, what it sets up, and which conftest defines it
 - [Test Data](test_data.md) — the `tests.test_data` package, `BASE_DATA`, and model instantiation

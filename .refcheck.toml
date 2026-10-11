@@ -2,5 +2,8 @@
 # and commit sha, each holding a pytest node ID per test collected at that
 # commit. A snapshot naming a file that existed at that commit is correct, so
 # refcheck must not read one as a live reference.
+#
+# .test-reports holds the last pytest, Playwright and Vitest run's reports,
+# which name every test file that existed when the suite ran.
 [scan]
-exclude = ["stats/data/**"]
+exclude = ["stats/data/**", ".test-reports/**"]

@@ -16,70 +16,22 @@ Session fixtures run once per test session and are available throughout the test
 
 - **Scope**: Session
 - **Autouse**: Yes
-- **Description**: Sets up the entire test environment including Docker containers and server processes
-- **Implementation**: Defined in `conftest.py` and calls the `TestEnvironment.setup()` method
+- **Description**: Starts this session's own Postgres and Redis and brings the schema to head
+- **Implementation**: Defined in `conftest.py`; enters `PrivateServices` from `tests/environment.py`, which [Test Environment](environment.md) describes
 
 ```python file=tests/conftest.py element=setup_test_environment label="setup_test_environment"
 @pytest.fixture(scope='session', autouse=True)
-def setup_test_environment(request):
-    """Set up the test environment with parallel execution support.
-
-    When running with pytest-xdist, multiple workers start simultaneously.
-    This fixture uses file locking to ensure only one worker performs the
-    actual Docker/database setup, while others wait for completion.
-
-    For normal (non-parallel) execution, this works as before.
-
-    Note: Docker containers are NOT torn down during parallel runs to avoid
-    killing the environment while other workers are still using it.
-    """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-
+def setup_test_environment():
+    """Start this session's own Postgres and Redis, and bring the schema to head."""
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  STARTING TESTING [{worker_id}]  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  STARTING TESTING  <{"=" * 30}')
     logger.warning('')
 
-    TEST_LOCK_DIR.mkdir(parents=True, exist_ok=True)
-
-    if is_parallel:
-        lock = filelock.FileLock(str(TEST_LOCK_FILE), timeout=300)
-        with lock:
-            if not TEST_READY_FILE.exists():
-                logger.info(f'Worker {worker_id}: Performing environment setup (first to acquire lock)')
-                test_env = DockerComposeTestEnvironment(test_settings)
-                test_env.setup()
-                TEST_READY_FILE.touch()
-                logger.info(f'Worker {worker_id}: Environment setup complete, marker created')
-            else:
-                logger.info(f'Worker {worker_id}: Environment already set up by another worker')
-
-        # Wait for ready file (in case another worker is still setting up)
-        timeout = 300
-        start = time.time()
-        while not TEST_READY_FILE.exists() and (time.time() - start) < timeout:
-            logger.info(f'Worker {worker_id}: Waiting for environment to be ready...')
-            time.sleep(2)
-
-        if not TEST_READY_FILE.exists():
-            pytest.exit(f'Worker {worker_id}: Timeout waiting for test environment', returncode=1)
-
-        # Yield None - environment is shared
-        yield None
-
-        # Don't teardown in parallel mode - containers are shared across workers
-        logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
-    else:
-        with DockerComposeTestEnvironment(test_settings) as test_env:
-            logger.info('Docker Compose test environment is ready')
-            yield test_env
-
-    # Cleanup lock files on non-parallel exit
-    if not is_parallel:
-        TEST_READY_FILE.unlink(missing_ok=True)
+    with PrivateServices(test_settings) as services:
+        yield services
 
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  TESTING FINISHED [{worker_id}]  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  TESTING FINISHED  <{"=" * 30}')
     logger.warning('')
 ```
 
@@ -90,7 +42,7 @@ Module fixtures run once per test module:
 ### `truncate_tables`
 
 - **Scope**: Session
-- **Description**: Cleans all tables via TRUNCATE at session start, preserving schema so the API container's connection pool stays valid
+- **Description**: Cleans all tables via TRUNCATE at session start, so the rows the migrations seed never reach a test
 - **Implementation**: Truncates every table with `truncate_all_tables()`, then re-inserts the rows the app cannot run without. The fixture body in `tests/conftest.py` lists them.
 
 ### `insert_users_for_login`

@@ -253,9 +253,10 @@ grep docker.localhost /etc/hosts
 ### Other Environments
 
 ```bash
-# Testing environment (different port and domain)
-./ops/icbops testing start
-# Access at: https://api.test.localhost:8443/
+# Tests: pytest starts its own Postgres and Redis, and the e2e suite runs
+# inside this checkout's test stack, which publishes no ports
+./ops/icbops test run
+./ops/icbops test e2e
 
 # Production environment (runs on homelab, not locally)
 # See blue-green-deployment.md

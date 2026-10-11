@@ -1,285 +1,90 @@
-"""The Docker Compose test environment a pytest session runs against.
+"""The Postgres and Redis a pytest session runs against.
 
-`DockerComposeTestEnvironment` starts the test containers or reuses running
-ones, waits for Postgres, Redis and the API, and initializes the database.
-Resetting the data between sessions is the `truncate_tables` fixture's job.
+Every session starts its own pair on ports Docker picks, so two checkouts run
+pytest at once and neither can truncate the other's tables. testcontainers'
+reaper removes both when the session ends, however it ends.
 """
 
-import json
 import logging
-import os
-import socket
-import subprocess
-import time
 from pathlib import Path
 
-import httpx2
 import pytest
+import yaml
+from testcontainers.community.postgres import PostgresContainer
+from testcontainers.community.redis import RedisContainer
+from testcontainers.core.config import testcontainers_config
+from testcontainers.core.container import DockerContainer
 
 from ichrisbirch.config import Settings
 from ichrisbirch.database.initialization import full_initialization
 
 logger = logging.getLogger(__name__)
 
+# Readiness is checked every 100ms instead of every second, under the same two-minute ceiling.
+testcontainers_config.sleep_time = 0.1
+testcontainers_config.max_tries = 1200
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-WORKING_DIR_FORMAT = '{{.Label "com.docker.compose.project.working_dir"}}'
+POSTGRES_USER = 'postgres'
+POSTGRES_PASSWORD = 'postgres'
+POSTGRES_DB = 'ichrisbirch'
+POSTGRES_DATA = '/var/lib/postgresql/data'
 
 
-def checkouts_that_started_the_test_stack() -> set[Path]:
-    """The checkouts compose labelled the icb-test containers with, empty when there are none."""
-    try:
-        result = subprocess.run(
-            ['docker', 'ps', '--all', '--filter', 'label=com.docker.compose.project=icb-test', '--format', WORKING_DIR_FORMAT],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except FileNotFoundError:
-        return set()
-    return {Path(line.strip()).resolve() for line in result.stdout.splitlines() if line.strip()}
+def production_image(service: str) -> str:
+    """The image production runs a service on, so the tests meet the same major version."""
+    compose = yaml.safe_load((REPO_ROOT / 'docker-compose.yml').read_text())
+    return compose['services'][service]['image']
 
 
-class DockerComposeTestEnvironment:
-    """Context manager for the Docker Compose test environment.
-
-    It:
-    - Uses Docker Compose to start test services
-    - Services use ENVIRONMENT=testing for test-specific configuration
-    - Runs on different ports to avoid conflicts with dev environment
-    - Allows pytest to run locally against containerized services
-
-    In CI, containers are pre-started by the workflow, so we only verify they're running.
-    """
-
-    # CI uses an additional override file for CI-specific configuration
-    COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml'
-    COMPOSE_FILES_CI = '-f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml'
-    COMPOSE_COMMAND = f'docker compose --project-name icb-test {COMPOSE_FILES} up -d'
-    COMPOSE_COMMAND_CI = f'docker compose --project-name icb-test {COMPOSE_FILES_CI} up -d'
-
-    @property
-    def is_ci(self) -> bool:
-        """Detect if running in CI environment."""
-        return os.environ.get('CI', '').lower() == 'true'
+class PrivateServices:
+    """Starts this session's Postgres and Redis and points `settings` at them."""
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.docker_compose_process: subprocess.Popen | None = None
+        # Durability is off and the data lives in memory: nothing outlives the session.
+        self.postgres = (
+            PostgresContainer(
+                production_image('postgres'), username=POSTGRES_USER, password=POSTGRES_PASSWORD, dbname=POSTGRES_DB, driver=None
+            )
+            .with_tmpfs_mount(POSTGRES_DATA)
+            .with_command(['postgres', '-c', 'fsync=off', '-c', 'synchronous_commit=off', '-c', 'full_page_writes=off'])
+        )
+        self.redis = RedisContainer(production_image('redis')).with_command(['redis-server', '--save', '', '--appendonly', 'no'])
+        self.started: list[DockerContainer] = []
 
     def __enter__(self):
-        """Context manager entry - setup the Docker Compose test environment."""
-        self.setup()
+        try:
+            self.start()
+        except Exception as e:
+            self.stop()
+            pytest.exit(f'Could not start the Postgres and Redis this session runs against: {e}', returncode=1)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit - always teardown the environment."""
-        self.teardown()
-        if exc_type is not None:
-            logger.error(f'Exception during context: {exc_type.__name__}: {exc_val}')
-        return False  # Don't suppress exceptions
+        self.stop()
+        return False
 
-    def setup(self):
-        """Setup the Docker Compose test environment.
+    def start(self) -> None:
+        for container in (self.redis, self.postgres):
+            container.start()
+            self.started.append(container)
+        postgres_host = self.postgres.get_container_host_ip()
+        postgres_port = self.postgres.get_exposed_port(5432)
+        for database in (self.settings.postgres, self.settings.sqlalchemy):
+            database.host = postgres_host
+            database.port = postgres_port
+            database.username = POSTGRES_USER
+            database.password = POSTGRES_PASSWORD
+            database.database = POSTGRES_DB
+        self.settings.redis.host = self.redis.get_container_host_ip()
+        self.settings.redis.port = self.redis.get_exposed_port(6379)
+        self.settings.redis.password = ''
+        logger.info(
+            f'session services: postgres {postgres_host}:{postgres_port}, redis {self.settings.redis.host}:{self.settings.redis.port}'
+        )
+        full_initialization(self.settings)
 
-        In CI: containers are pre-started by workflow, just wait for them.
-        Locally: reuse running containers for fast iteration, start if needed.
-        Then bring the database to the current schema.
-        """
-        try:
-            self.require_test_stack_here()
-            if self.is_ci:
-                logger.info('Running in CI environment - containers should be pre-started by workflow')
-                if not self.docker_test_services_already_running():
-                    logger.warning('CI containers not detected, waiting for them to start...')
-                    time.sleep(10)
-                    if not self.docker_test_services_already_running():
-                        raise RuntimeError('CI containers not running - check workflow configuration')
-                logger.info('CI containers detected and running')
-            else:
-                # Check if containers are already running
-                if self.docker_test_services_already_running():
-                    logger.info('Test containers already running, reusing them')
-                    self.verify_test_services()
-                else:
-                    logger.info('Starting Docker Compose test services')
-                    self.setup_test_services()
-
-            # Healthy containers can hold an empty database: the test Postgres
-            # keeps its data on tmpfs, so every recreate of it starts blank.
-            # Initialization is idempotent and leaves an initialized database
-            # unchanged.
-            full_initialization(self.settings)
-
-        except Exception as e:
-            logger.error(f'Error during setup: {e}')
-            pytest.exit(f'Exiting due to setup failure: {e}', returncode=1)
-
-    def require_test_stack_here(self) -> None:
-        """Every checkout drives the one icb-test project, and `truncate_tables` empties
-        whichever database it reaches. `ops/icbops` refuses the same stack before it runs
-        pytest, and this covers pytest run without it, as the pre-commit hook does."""
-        others = sorted(str(path) for path in checkouts_that_started_the_test_stack() - {REPO_ROOT})
-        if others:
-            raise RuntimeError(
-                f'the test stack was started from {", ".join(others)}, not from {REPO_ROOT}. '
-                'Its database may hold a run from there, and this session truncates every table. '
-                f'Once nothing there is using it, take the stack over: {REPO_ROOT}/ops/icbops testing stop'
-            )
-
-    def teardown(self) -> None:
-        """Leave containers running for fast iteration."""
-        logger.info('Leaving test containers running for fast iteration')
-        logger.info('Stop manually with: icbops testing stop')
-
-    def docker_test_services_already_running(self, required_services=None) -> bool:
-        """Returns True if all required Docker Compose services are running."""
-        if required_services is None:
-            required_services = {'postgres', 'redis', 'api'}
-        try:
-            # Use docker ps with JSON format for clean parsing
-            cmd = ['docker', 'ps', '--filter', 'status=running', '--format', 'json']
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            if result.returncode != 0:
-                logger.warning(f'docker ps failed: {result.stderr}')
-                return False
-
-            # Parse JSON output and extract running test services
-            running_services = {
-                json.loads(line).get('Names', '').removeprefix('icb-test-')
-                for line in result.stdout.strip().splitlines()
-                if line.strip() and 'icb-test-' in line
-            }
-
-            # Check if all required services are running
-            return required_services.issubset(running_services)
-        except Exception as e:
-            logger.error(f'Error checking Docker Compose services: {e}')
-            return False
-
-    def setup_test_services(self) -> None:
-        """Start Docker Compose test services."""
-        logger.info('Starting Docker Compose test services')
-        try:
-            result = subprocess.run(self.COMPOSE_COMMAND.split(' '), capture_output=True, text=True, timeout=120)
-
-            if result.returncode != 0:
-                logger.error(f'Docker Compose failed with return code {result.returncode}')
-                logger.error(f'STDOUT: {result.stdout}')
-                logger.error(f'STDERR: {result.stderr}')
-                raise RuntimeError('Failed to start Docker Compose test environment')
-
-            logger.info('Docker Compose test services started successfully')
-            logger.info('Waiting for services to be ready...')
-            time.sleep(10)
-            self.verify_test_services()
-
-        except subprocess.TimeoutExpired as e:
-            logger.error('Docker Compose startup timed out')
-            raise RuntimeError('Docker Compose test environment startup timed out') from e
-
-    def verify_test_services(self) -> None:
-        """Verify that test services are responding on their test ports."""
-        # These should match the test ports configured in docker-compose.test.yml
-        test_services = {
-            'postgres': (self.settings.postgres.host, self.settings.postgres.port),
-            'redis': (self.settings.redis.host, self.settings.redis.port),
-        }
-        for service_name, (host, port) in test_services.items():
-            logger.info(f'Checking {service_name} readiness on {host}:{port}')
-            attempts = 0
-            max_attempts = 6
-            service_running = False
-            while not service_running and attempts < max_attempts:
-                try:
-                    with socket.create_connection((host, port), timeout=5):
-                        service_running = True
-                        logger.info(f'{service_name} is responding on {host}:{port}')
-                        break
-                except (OSError, TimeoutError) as e:
-                    logger.error(f'Attempt {attempts + 1}/{max_attempts} - {service_name} not responding on {host}:{port}: {e}')
-                attempts += 1
-                time.sleep(5)
-            if attempts >= max_attempts:
-                self._log_container_debug_info(f'icb-test-{service_name}')
-                raise RuntimeError(f'{service_name} on {host}:{port} did not respond after {max_attempts * 5} seconds')
-
-        http_services = {
-            'api': f'{self.settings.api_url}/health',
-        }
-        for service_name, url in http_services.items():
-            logger.info(f'Checking {service_name} readiness at {url}')
-            attempts = 0
-            max_attempts = 6
-            service_running = False
-            while not service_running and attempts < max_attempts:
-                try:
-                    response = httpx2.get(url, timeout=5, follow_redirects=False).raise_for_status()
-                    if service_running := response.status_code == 200:
-                        logger.info(f'{service_name} is ready at {url}')
-                        break
-                    else:
-                        logger.warning(f'{service_name} returned status {response.status_code} at {url}')
-                except httpx2.RequestError as e:
-                    logger.error(f'Error connecting to {service_name} at {url}: {e}')
-                attempts += 1
-                time.sleep(5)
-            if attempts >= max_attempts:
-                self._log_container_debug_info(f'icb-test-{service_name}')
-                raise RuntimeError(f'{service_name} on url {url} did not respond after {max_attempts * 5} seconds')
-
-    def stop_docker_compose(self) -> None:
-        """Stop Docker Compose test services completely.
-
-        Always uses --volumes --remove-orphans to ensure clean state for next run.
-        """
-        logger.info('Stopping Docker Compose test services (with volumes cleanup)...')
-        try:
-            cmd = [
-                'docker',
-                'compose',
-                '--project-name',
-                'icb-test',
-                '-f',
-                'docker-compose.yml',
-                '-f',
-                'docker-compose.test.yml',
-                'down',
-                '--volumes',
-                '--remove-orphans',
-            ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            if result.returncode == 0:
-                logger.info('Docker Compose test services stopped successfully')
-            else:
-                logger.warning(f'Docker Compose down had issues: {result.stderr}')
-
-        except subprocess.TimeoutExpired:
-            logger.warning('Docker Compose down timed out, forcing container removal')
-            # Force kill any remaining containers
-            services = ['postgres', 'redis', 'api', 'scheduler', 'traefik']
-            containers = [f'icb-test-{s}' for s in services]
-            subprocess.run(['docker', 'rm', '-f'] + containers, capture_output=True, timeout=30)
-        except Exception as e:
-            logger.warning(f'Error stopping Docker Compose: {e}')
-
-    def _log_container_debug_info(self, container_name: str) -> None:
-        """Log container status and logs for debugging failed services."""
-        try:
-            # Check container status
-            status_cmd = ['docker', 'inspect', container_name, '--format', '{{.State.Status}}']
-            status_result = subprocess.run(status_cmd, capture_output=True, text=True, timeout=10)
-            if status_result.returncode == 0:
-                logger.error(f'Container {container_name} status: {status_result.stdout.strip()}')
-
-            # Get container logs (last 50 lines)
-            logs_cmd = ['docker', 'logs', '--tail', '50', container_name]
-            logs_result = subprocess.run(logs_cmd, capture_output=True, text=True, timeout=10)
-            if logs_result.returncode == 0:
-                logger.error(f'Container {container_name} logs:\n{logs_result.stdout}')
-                if logs_result.stderr:
-                    logger.error(f'Container {container_name} stderr:\n{logs_result.stderr}')
-            else:
-                logger.error(f'Failed to get logs for {container_name}: {logs_result.stderr}')
-
-        except Exception as e:
-            logger.error(f'Error getting debug info for {container_name}: {e}')
+    def stop(self) -> None:
+        while self.started:
+            self.started.pop().stop()

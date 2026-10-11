@@ -18,9 +18,9 @@ jobs:
 
       # > custom:before:python - Testing secrets
       #
-      # tests/conftest.py refuses to import without a .env for the testing
-      # environment, so pytest here failed at collection. Same two steps
-      # validate-project.yml already runs before its own pytest.
+      # tests/conftest.py reads its settings from a .env for the testing
+      # environment, so collection fails without one. pytest starts its own
+      # Postgres and Redis, so no compose stack runs for this job.
       - name: Install SOPS
         uses: mdgreenwald/mozilla-sops-action@v1.6.0
         with:
@@ -30,43 +30,6 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: sops decrypt secrets/secrets.test.enc.env > .env
-
-      # uv before the containers, matching validate-project.yml's order and not
-      # by preference: `up --build` runs as root over the mounted workspace and
-      # leaves .venv root-owned, after which `uv run` dies with EACCES on
-      # .venv/CACHEDIR.TAG. Creating the venv first means it is already the
-      # runner's.
-      #
-      # Repeated ahead of the generated block's own setup-uv because a before:
-      # section runs before every generated step, including that one. The
-      # action is cached, so the second call costs nothing.
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-        with:
-          enable-cache: true
-
-      - run: uv sync --all-extras --dev
-
-      # The suite is integration-only: tests/environment.py aborts the session
-      # in CI unless the services are already up, and there is no runner-safe
-      # subset to fall back to — the guard fires during setup, before markers
-      # could deselect anything. Same stack validate-project.yml stands up.
-      - name: Setup Docker Compose
-        uses: docker/setup-compose-action@54042514f505b273907334ae2b9cdbb9a0213c1a # v2.4.0
-        with:
-          version: "latest"
-
-      - name: Create Docker network
-        run: docker network create proxy || true
-
-      - name: Start test services
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build --wait --wait-timeout 180 api scheduler
-
-      - name: Initialize test database
-        run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
 
       # generated:python
       # enable-cache is left at setup-uv's `auto`, which caches on a hosted
@@ -524,25 +487,6 @@ jobs:
         with:
           version: "latest"
 
-      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-        with:
-          enable-cache: true
-
-      - run: uv sync --all-extras --dev
-
-      - uses: actions/setup-node@v7
-        with:
-          # The literal major, matching the generated vue job. package.json
-          # declares a range (">=24"), and pinning the same number in both
-          # places keeps a custom job from resolving a different Node than the
-          # one the build was checked against.
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: npm ci
-        working-directory: frontend
-
       # The E2E suite drives app.test.localhost through Traefik, which is the
       # point of it: the dev-only path to the Vue container skips CORS entirely.
       # Traefik will not start without a cert for that name.
@@ -553,38 +497,30 @@ jobs:
             -subj "/CN=test.localhost" \
             -addext "subjectAltName=DNS:test.localhost,DNS:*.test.localhost,DNS:api.test.localhost,DNS:app.test.localhost"
 
-      - name: Create Docker network
-        run: docker network create proxy || true
-
+      # The same commands as a workstation: the stack builds, starts and
+      # initializes its database, and the browser runs inside its vue container,
+      # whose image carries Node and Chromium.
       - name: Start test stack
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build --wait --wait-timeout 120 postgres redis
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test up -d --build api vue traefik
+        run: ./ops/icbops testing start
 
-      - name: Initialize test database
-        run: uv run python -m ichrisbirch.database.initialization --env testing --db-host localhost --db-port 5434
-
-      - run: npx playwright install --with-deps chromium
-        working-directory: frontend
-
-      - run: npx playwright test
-        working-directory: frontend
+      - name: Run the E2E suite
+        run: ./ops/icbops test e2e
 
       # This and the upload run on a pass too. A test that fails and then passes
       # on retry leaves the job green, and its retry trace is the only record of
-      # what the first attempt waited on.
+      # what the first attempt waited on. icbops names the stack after the
+      # checkout's directory, which on a runner is the repository's name.
       - name: Save the stack's logs
         if: always()
         run: |
           mkdir -p frontend/test-results
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test logs --no-color --timestamps > frontend/test-results/stack.log
+            --project-name icb-test-ichrisbirch logs --no-color --timestamps > frontend/test-results/stack.log
 
       # The reporters are list and JSON, so no HTML report exists. The evidence
       # is test-results/ (first-retry traces, screenshots, page snapshots, the
-      # stack's logs) and the JSON report.
+      # stack's logs) and the JSON report, which sits in a dot-directory the
+      # action skips unless told otherwise.
       - name: Upload Playwright evidence
         uses: actions/upload-artifact@v7
         if: always()
@@ -592,14 +528,13 @@ jobs:
           name: playwright-evidence
           path: |
             frontend/test-results/
-            /tmp/ichrisbirch-playwright-report.json
+            .test-reports/playwright-report.json
+          include-hidden-files: true
           retention-days: 7
 
       - name: Stop test stack
         if: always()
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test down -v
+        run: ./ops/icbops testing stop
 
   production-build:
     name: Production image build

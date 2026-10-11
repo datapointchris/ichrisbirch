@@ -5,7 +5,6 @@ const appURL = isDevEnv ? 'https://app.docker.localhost' : 'https://app.test.loc
 
 // Gate for all E2E tests — if the API, database, or frontend is unreachable,
 // skip the entire test suite instead of waiting for every test to timeout.
-// Pattern matches Python's DockerComposeTestEnvironment.verify_test_services().
 
 test('API is reachable', async ({ request }) => {
   test.setTimeout(180_000)

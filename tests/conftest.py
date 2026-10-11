@@ -1,22 +1,14 @@
 """Pytest configuration and fixtures.
 
-This module provides pytest fixtures for all test modules, centralizing test setup and teardown. In the containerized approach, we rely on
-environment-based configuration rather than overrides.
-
-Parallel Execution Support (pytest-xdist):
-When running with pytest-xdist, session-scoped fixtures run once per worker, not once globally.
-To coordinate shared setup (Docker containers, database tables), we use file-based locking.
-The first worker to acquire the lock performs setup, and other workers wait for completion.
+This module provides pytest fixtures for all test modules, centralizing test setup and teardown.
+Each session runs against its own Postgres and Redis, started by `tests.environment.PrivateServices`.
 """
 
 import contextlib
 import logging
 import threading
-import time
 from contextlib import contextmanager
-from pathlib import Path
 
-import filelock
 import pytest
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
@@ -36,7 +28,7 @@ from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.database.session import get_sqlalchemy_session
 from ichrisbirch.scheduler.main import get_jobstore
 from tests import test_data
-from tests.environment import DockerComposeTestEnvironment
+from tests.environment import PrivateServices
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
 from tests.utils.database import get_test_login_users
@@ -47,8 +39,6 @@ from tests.utils.database import test_settings
 
 logger = logging.getLogger(__name__)
 logger.warning('<-- file imported')
-
-TEST_LOCK_DIR = Path('/tmp/pytest-ichrisbirch-lock')
 
 # Cached API apps to avoid expensive recreation for every test
 cached_api = None
@@ -103,158 +93,49 @@ def prewarm_caches():
     logger.info(f'Pre-warmed caches in {elapsed:.1f}ms')
 
 
-TEST_LOCK_FILE = TEST_LOCK_DIR / 'setup.lock'
-TEST_READY_FILE = TEST_LOCK_DIR / 'ready'
-
-
 @pytest.fixture(scope='session', autouse=True)
-def setup_test_environment(request):
-    """Set up the test environment with parallel execution support.
-
-    When running with pytest-xdist, multiple workers start simultaneously.
-    This fixture uses file locking to ensure only one worker performs the
-    actual Docker/database setup, while others wait for completion.
-
-    For normal (non-parallel) execution, this works as before.
-
-    Note: Docker containers are NOT torn down during parallel runs to avoid
-    killing the environment while other workers are still using it.
-    """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-
+def setup_test_environment():
+    """Start this session's own Postgres and Redis, and bring the schema to head."""
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  STARTING TESTING [{worker_id}]  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  STARTING TESTING  <{"=" * 30}')
     logger.warning('')
 
-    TEST_LOCK_DIR.mkdir(parents=True, exist_ok=True)
-
-    if is_parallel:
-        lock = filelock.FileLock(str(TEST_LOCK_FILE), timeout=300)
-        with lock:
-            if not TEST_READY_FILE.exists():
-                logger.info(f'Worker {worker_id}: Performing environment setup (first to acquire lock)')
-                test_env = DockerComposeTestEnvironment(test_settings)
-                test_env.setup()
-                TEST_READY_FILE.touch()
-                logger.info(f'Worker {worker_id}: Environment setup complete, marker created')
-            else:
-                logger.info(f'Worker {worker_id}: Environment already set up by another worker')
-
-        # Wait for ready file (in case another worker is still setting up)
-        timeout = 300
-        start = time.time()
-        while not TEST_READY_FILE.exists() and (time.time() - start) < timeout:
-            logger.info(f'Worker {worker_id}: Waiting for environment to be ready...')
-            time.sleep(2)
-
-        if not TEST_READY_FILE.exists():
-            pytest.exit(f'Worker {worker_id}: Timeout waiting for test environment', returncode=1)
-
-        # Yield None - environment is shared
-        yield None
-
-        # Don't teardown in parallel mode - containers are shared across workers
-        logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
-    else:
-        with DockerComposeTestEnvironment(test_settings) as test_env:
-            logger.info('Docker Compose test environment is ready')
-            yield test_env
-
-    # Cleanup lock files on non-parallel exit
-    if not is_parallel:
-        TEST_READY_FILE.unlink(missing_ok=True)
+    with PrivateServices(test_settings) as services:
+        yield services
 
     logger.warning('')
-    logger.warning(f'{"=" * 30}>  TESTING FINISHED [{worker_id}]  <{"=" * 30}')
+    logger.warning(f'{"=" * 30}>  TESTING FINISHED  <{"=" * 30}')
     logger.warning('')
 
 
 @pytest.fixture(scope='session')
-def truncate_tables(setup_test_environment, request):
-    """Clean all tables at session start via TRUNCATE.
-
-    Uses TRUNCATE (not DROP/CREATE) to clear data while preserving schema,
-    so the API container's connection pool stays valid.
-    Lookup table data and default users are re-inserted after truncation.
-
-    In parallel mode, uses file locking to coordinate across workers.
-    """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-
-    if is_parallel:
-        tables_lock = filelock.FileLock(str(TEST_LOCK_DIR / 'tables.lock'), timeout=300)
-        tables_ready = TEST_LOCK_DIR / 'tables_ready'
-        with tables_lock:
-            if not tables_ready.exists():
-                logger.info(f'Worker {worker_id}: Cleaning tables (first to acquire lock)')
-                truncate_all_tables(test_settings)
-                insert_lookup_table_data(test_settings)
-                insert_admin_settings(test_settings)
-                with create_session(test_settings) as session:
-                    insert_default_users(session, test_settings)
-                logger.info(f'Worker {worker_id}: Tables cleaned')
-                tables_ready.touch()
-            else:
-                logger.info(f'Worker {worker_id}: Tables already cleaned by another worker')
-        yield
-        logger.info(f'Worker {worker_id}: Skipping teardown (parallel mode)')
-    else:
-        truncate_all_tables(test_settings)
-        insert_lookup_table_data(test_settings)
-        insert_admin_settings(test_settings)
-        with create_session(test_settings) as session:
-            insert_default_users(session, test_settings)
-        logger.info('cleaned all tables (session scope)')
-        yield
-        # Cleanup table marker
-        (TEST_LOCK_DIR / 'tables_ready').unlink(missing_ok=True)
+def truncate_tables(setup_test_environment):
+    """Empty every table the migrations seeded, then insert the rows the app cannot run without."""
+    truncate_all_tables(test_settings)
+    insert_lookup_table_data(test_settings)
+    insert_admin_settings(test_settings)
+    with create_session(test_settings) as session:
+        insert_default_users(session, test_settings)
+    logger.info('cleaned all tables (session scope)')
 
 
 @pytest.fixture(scope='session', autouse=True)
-def insert_users_for_login(truncate_tables, request):
+def insert_users_for_login(truncate_tables):
     """Ensure login users exist for the session (idempotent).
 
     Session-scoped for performance - runs once instead of ~44 times.
-    Uses file locking in parallel mode to coordinate across workers.
     """
-    worker_id = getattr(request.config, 'workerinput', {}).get('workerid', 'main')
-    is_parallel = worker_id != 'main'
-
-    if is_parallel:
-        users_lock = filelock.FileLock(str(TEST_LOCK_DIR / 'users.lock'), timeout=300)
-        users_ready = TEST_LOCK_DIR / 'users_ready'
-        with users_lock:
-            if not users_ready.exists():
-                logger.info(f'Worker {worker_id}: Inserting login users (first to acquire lock)')
-                with create_session(test_settings) as session:
-                    for user_data in get_test_login_users():
-                        existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
-                        if not existing:
-                            session.add(models.User(**user_data))
-                    session.commit()
-                    for user in session.query(models.User).all():
-                        logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
-                users_ready.touch()
-                prewarm_caches()  # Pre-warm after inserting users
-            else:
-                logger.info(f'Worker {worker_id}: Login users already inserted by another worker')
-                prewarm_caches()  # Each worker still needs its own cached APIs
-    else:
-        with create_session(test_settings) as session:
-            for user_data in get_test_login_users():
-                existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
-                if not existing:
-                    session.add(models.User(**user_data))
-            session.commit()
-            for user in session.query(models.User).all():
-                logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
-        (TEST_LOCK_DIR / 'users_ready').unlink(missing_ok=True)
+    with create_session(test_settings) as session:
+        for user_data in get_test_login_users():
+            existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
+            if not existing:
+                session.add(models.User(**user_data))
+        session.commit()
+        for user in session.query(models.User).all():
+            logger.info(f'Login user ready: {user.email} with alt ID: {user.alternative_id}')
 
     # Pre-warm caches after users are ready (avoids first-test latency)
     prewarm_caches()
-    yield
 
 
 @pytest.fixture(scope='module')

@@ -11,18 +11,14 @@ function db-env-vars() {
   # Map environment name to host-accessible connection params.
   # .env has POSTGRES_HOST=postgres (Docker-internal), which doesn't resolve
   # from the host. python-dotenv won't override existing env vars, so exporting
-  # here takes precedence over .env values.
+  # here takes precedence over .env values. The test stack publishes no ports,
+  # so its commands run inside its api container instead.
   local env="$1"
   case "$env" in
     development)
       export ENVIRONMENT=development
       export POSTGRES_HOST=localhost
       export POSTGRES_PORT=5432
-      ;;
-    testing)
-      export ENVIRONMENT=testing
-      export POSTGRES_HOST=localhost
-      export POSTGRES_PORT=5434
       ;;
     production)
       export ENVIRONMENT=production
@@ -39,7 +35,7 @@ function db-container-prefix() {
   local env="$1"
   case "$env" in
     development) echo "icb-dev" ;;
-    testing) echo "icb-test" ;;
+    testing) echo "$ICB_TEST_PROJECT" ;;
     production) echo "icb-prod" ;;
   esac
 }
@@ -52,6 +48,12 @@ function db-seed() {
   if [[ "$env" == "production" ]]; then
     echo "${red}Seeding production is not allowed${reset}"
     return 1
+  fi
+
+  if [[ "$env" == "testing" ]]; then
+    echo "${blue}Seeding testing database in ${ICB_TEST_PROJECT}...${reset}"
+    docker exec "${ICB_TEST_PROJECT}-api" python -m scripts.seed --env testing "$@"
+    return
   fi
 
   db-env-vars "$env" || return 1
@@ -80,6 +82,12 @@ function db-reset() {
   if [[ "$env" == "production" ]]; then
     echo "${red}Resetting production is not allowed${reset}"
     return 1
+  fi
+
+  if [[ "$env" == "testing" ]]; then
+    echo "${blue}Resetting testing database in ${ICB_TEST_PROJECT}...${reset}"
+    docker exec "${ICB_TEST_PROJECT}-api" python -m ichrisbirch.database.reset_database
+    return
   fi
 
   db-env-vars "$env" || return 1
@@ -123,7 +131,7 @@ function db-usage() {
   echo "${yellow}Database Lifecycle:${reset}"
   echo "  ${green}init${reset}   — Run migrations, insert users; idempotent, and every start, restart and rebuild runs it"
   echo "  ${green}reset${reset}  — Nuclear option: drop all tables + init from scratch (a corrupt schema, or an applied migration edited)"
-  echo "  Truncation between test runs is handled automatically by pytest fixtures."
+  echo "  pytest runs against its own throwaway database, never the test stack's."
   echo ""
   echo "${yellow}Seed Options:${reset}"
   echo "  --scale N          Scale multiplier for record counts (default: 1)"

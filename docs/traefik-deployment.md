@@ -7,7 +7,7 @@ This guide covers the complete deployment of Traefik reverse proxy for the iChri
 **Traefik v3.4** serves as the reverse proxy for all environments:
 
 - **File provider routing** in `deploy-containers/traefik/dynamic/{dev,test,prod}/routing.yml`
-- **Docker provider** for service discovery (container ports)
+- **Docker provider** for service discovery (container ports) in dev and production; the test stack reads files alone
 - **Browser-trusted HTTPS** with mkcert for local development
 - **Generated routing** from canonical `vue-paths.txt` via `icbops routing generate`
 - **Separate CORS and security middlewares** per environment
@@ -25,10 +25,12 @@ Traefik uses two providers simultaneously:
 
 File provider routers reference Docker-discovered services via `service: name@docker`. This separates routing logic (YAML files, diffable, generatable) from service discovery (Docker labels, minimal).
 
+The test stack is the exception. Its routers name `api@file` and `vue@file`, which `dynamic/test/services.yml` points at `http://api:8000` and `http://vue:5173`. A Docker provider watches the whole daemon, so every checkout's test stack would add its `api` to one load balancer.
+
 ### Environment Separation
 
 - **Development**: `*.docker.localhost` with mkcert browser-trusted certificates
-- **Testing**: `*.test.localhost:8443` with isolated testing certificates
+- **Testing**: `*.test.localhost:8443`, inside each checkout's own stack, with isolated testing certificates
 - **Production**: `*.ichrisbirch.com` via Cloudflare Tunnel (see [Homelab Deployment](homelab-deployment.md))
 
 ### Proxy Network Isolation
@@ -37,11 +39,11 @@ Each environment uses its own proxy network to avoid routing conflicts:
 
 | Environment | Proxy Network | Traefik Constraint |
 | --- | --- | --- |
-| Development | `proxy-dev` | `traefik.environment=development` |
-| Testing | `proxy-test` | `traefik.environment=testing` |
+| Development | `icb-dev-proxy` | `traefik.environment=development` |
+| Testing | `icb-test-<checkout>_proxy`, one per stack | none: no Docker provider |
 | Production | `proxy` | (no constraint needed) |
 
-This allows all environments to run simultaneously. Traefik only discovers containers with matching environment labels.
+This allows all environments to run simultaneously. Dev Traefik discovers only containers labeled for development, and a test stack's Traefik sees only its own project's network.
 
 ## 📁 Directory Structure
 
@@ -51,8 +53,7 @@ deploy-containers/traefik/
 ├── generate-routing.sh              # Generates routing.yml for all 3 envs from vue-paths.txt
 ├── certs/                           # SSL certificates
 │   ├── dev.crt, dev.key            # Development (mkcert generated)
-│   ├── testing.crt, testing.key    # Testing
-│   └── prod.crt, prod.key          # Production
+│   └── test.crt, test.key          # Testing
 └── dynamic/                         # Per-environment Traefik file provider configs
     ├── dev/
     │   ├── routing.yml             # Dev routers (generated)
@@ -60,6 +61,7 @@ deploy-containers/traefik/
     │   └── tls.yml
     ├── test/
     │   ├── routing.yml             # Test routers (generated)
+    │   ├── services.yml            # api and vue, on the stack's own network
     │   ├── middlewares.yml         # cors-test, security-headers-test, etc.
     │   └── tls.yml
     └── prod/
@@ -164,9 +166,10 @@ This middleware is applied to the API router so Vue's cross-origin API calls are
 
 ### Testing Environment
 
-- **API**: <https://api.test.localhost:8443/>
-- **App**: <https://app.test.localhost:8443/>
-- **Dashboard**: <https://dashboard.test.localhost:8443/> (test/testpass)
+These resolve only inside a checkout's test stack, which publishes no ports. The e2e suite runs there through `./ops/icbops test e2e`. The test stack has no dashboard.
+
+- **API**: `https://api.test.localhost:8443/`
+- **App**: `https://app.test.localhost:8443/`
 
 ### Production Environment
 
@@ -247,16 +250,13 @@ icbops ssl-manager generate dev
 For local development, add entries to `/etc/hosts`:
 
 ```bash
-# Development environment
 127.0.0.1 api.docker.localhost
 127.0.0.1 app.docker.localhost
 127.0.0.1 dashboard.docker.localhost
-
-# Test environment
-127.0.0.1 api.test.localhost
-127.0.0.1 app.test.localhost
-127.0.0.1 dashboard.test.localhost
 ```
+
+The `*.test.localhost` names need none. They resolve only inside a test stack,
+where Traefik carries them as network aliases.
 
 ## 📊 Health Monitoring
 
