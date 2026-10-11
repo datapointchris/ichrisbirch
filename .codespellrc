@@ -1,0 +1,3 @@
+[codespell]
+# convertor = Starlette's own spelling, in the module starlette.convertors and its Convertor class
+ignore-words-list = convertor,convertors
