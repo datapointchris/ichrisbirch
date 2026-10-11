@@ -78,23 +78,26 @@ require_prod_host() {
 HEALTH_CHECK_SCRIPT="$ICHRISBIRCH_HOME/ops/health-check.sh"
 SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
 
-# Colors
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-magenta=$(tput setaf 5)
-cyan=$(tput setaf 6)
-white=$(tput setaf 7)
-gray=$(tput setaf 8)
-bright_red=$(tput setaf 9)
-bright_green=$(tput setaf 10)
-bright_yellow=$(tput setaf 11)
-bright_blue=$(tput setaf 12)
-bright_magenta=$(tput setaf 13)
-bright_cyan=$(tput setaf 14)
-orange=$(tput setaf 208)
-reset=$(tput sgr0)
+# Colors. A CI runner sets no TERM, and tput then writes an error for every
+# call, so there every color is empty.
+if tput sgr0 >/dev/null 2>&1; then
+  red=$(tput setaf 1)
+  green=$(tput setaf 2)
+  yellow=$(tput setaf 3)
+  blue=$(tput setaf 4)
+  magenta=$(tput setaf 5)
+  cyan=$(tput setaf 6)
+  white=$(tput setaf 7)
+  gray=$(tput setaf 8)
+  bright_red=$(tput setaf 9)
+  bright_green=$(tput setaf 10)
+  bright_yellow=$(tput setaf 11)
+  bright_blue=$(tput setaf 12)
+  bright_magenta=$(tput setaf 13)
+  bright_cyan=$(tput setaf 14)
+  orange=$(tput setaf 208)
+  reset=$(tput sgr0)
+fi
 
 # Source command modules
 source "$ICHRISBIRCH_HOME/ops/stats"
