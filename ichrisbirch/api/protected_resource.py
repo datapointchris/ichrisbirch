@@ -20,7 +20,7 @@ def metadata_path(resource: str) -> str:
     at `/.well-known/oauth-protected-resource/api`. That path is outside `/api`,
     so it reaches this app unstripped.
     """
-    return WELL_KNOWN + urlsplit(resource).path.rstrip('/')
+    return WELL_KNOWN + urlsplit(resource).path
 
 
 def add_protected_resource_route(api: FastAPI, resource: str, issuer: str) -> None:
