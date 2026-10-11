@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/datapointchris/goclilogin"
+
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
 )
 
@@ -56,10 +58,8 @@ func asService(t *testing.T, idp, api, secret string) string {
 	t.Helper()
 	state := t.TempDir()
 	t.Setenv("XDG_STATE_HOME", state)
-	t.Setenv("ICB_OIDC_ISSUER", idp)
-	t.Setenv("ICB_API_BASE", api)
-	t.Setenv("ICB_CLIENT_ID", serviceClientID)
-	t.Setenv("ICB_CLIENT_SECRET", secret)
+	configure(t, api, idp, serviceClientID)
+	t.Setenv(config.ClientSecretEnv, secret)
 	return state
 }
 
@@ -154,18 +154,6 @@ func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 	}
 }
 
-// Without ICB_CLIENT_ID the client would be the person's icb-cli-<host>.
-func TestService_ASecretWithoutItsClientIsRefused(t *testing.T) {
-	asService(t, serviceIDP(t).URL, "http://127.0.0.1:9", serviceSecret)
-	t.Setenv("ICB_CLIENT_ID", "")
-	for _, args := range [][]string{{"projects", "items", "search", "sync"}, {"auth", "status"}, {"auth", "token"}, {"auth", "login"}, {"auth", "logout"}} {
-		_, err := runService(t, args...)
-		if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_ID") {
-			t.Errorf("%v: got %v, want it refused naming ICB_CLIENT_ID", args, err)
-		}
-	}
-}
-
 func TestService_ARouteOutsideTheScopeReportsTheAPIsDetail(t *testing.T) {
 	detail := "Access denied: Route is outside this client's scopes; they reach only GET /project-items/"
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -202,7 +190,7 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	// routes to another handler.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)
-	scopes := config.Load().Service().Scopes
+	scopes := config.Service(goclilogin.Deployment{}).Scopes
 	var listed []*regexp.Regexp
 	for _, scope := range scopes {
 		for _, pattern := range reaches[scope] {

@@ -190,8 +190,8 @@ the real command tree through `runTree` and asserts exit codes.
 
 ```bash
 task cli:lint && task cli:test
-ICB_API_BASE=https://api.docker.localhost icb widgets list
+icb widgets list --api https://api.docker.localhost
 ```
 
-The installed `icb` always targets production regardless of working directory,
-which is why a check against dev sets `ICB_API_BASE`.
+The installed `icb` targets the config file's `api`, which is production,
+regardless of working directory. That is why a check against dev passes `--api`.

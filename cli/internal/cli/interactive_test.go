@@ -201,7 +201,7 @@ func TestLooksLikeUUID(t *testing.T) {
 
 func TestItemsCreate_WithoutATerminalRefusesBeforeReachingTheAPI(t *testing.T) {
 	noInput = false
-	t.Setenv("ICB_API_BASE", "http://127.0.0.1:9") // any call here would fail loudly
+	unreachableAPI(t) // any call here would fail loudly
 	root := NewRootCommand()
 	var out bytes.Buffer
 	root.SetOut(&out)

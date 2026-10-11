@@ -25,6 +25,20 @@ http:
       entrypoints:
         - web
 
+    # RFC 9728 metadata for the API at /api, which `icb auth login <url>` reads
+    # before it holds a token. RFC 9728 puts it outside /api, so nothing strips
+    # the path, and the API serves it at this path itself.
+    api-protected-resource:
+      rule: "Host(`ichrisbirch.com`) && Path(`/.well-known/oauth-protected-resource/api`)"
+      service: api
+      priority: 200
+      middlewares:
+        - strip-authelia-identity-headers@file
+        - security-headers-prod@file
+        - rate-limit-prod@file
+      entrypoints:
+        - web
+
     # Vue SPA — migrated pages served at higher priority
     vue-paths:
       rule: "Host(`ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/issues`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"

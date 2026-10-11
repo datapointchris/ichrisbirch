@@ -122,17 +122,16 @@ authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
 scope alongside the device grant, so the CLI targets `ichrisbirch.com/api`. The
 `ichrisbirch-bearer` Traefik router carries a request holding an `Authorization`
 header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
-authorizing the token. `cli/internal/config/config.go` sets it as
-`defaultAPIBase`.
+authorizing the token. That address is the config file's `api` key.
 
 Authelia leaves `aud` empty on the device grant and the client-credentials grant
 alike, so cross-product isolation rests on the `client_id` claim. The API
 requires it to start with `icb-cli-` or `icb-svc-`.
 
-A service runs icb with no person present to approve a login. It sets
-`ICB_CLIENT_ID` to its confidential client, `icb-svc-<machine>`, and
-`ICB_CLIENT_SECRET` to that client's secret. A secret with no `ICB_CLIENT_ID` is
-refused, because the default is the person's client. icb then requests a token
+A service runs icb with no person present to approve a login. Its config file
+names its confidential client, `icb-svc-<machine>`, as `client_id`, and
+`ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
+is told which one to write. icb then requests a token
 through the client-credentials grant on each run, asking for
 `icb.project-items.read` and `icb.issues.read`, and stores nothing. `auth login`
 and `auth logout` refuse in that mode. The API never resolves that token to a
@@ -358,14 +357,29 @@ Copying the directory would not be the whole port in any case.
 It depends on nothing in this repo but `internal/prompt` itself, and it sits in
 the wrong package to travel with a copy of that directory.
 
-## Config (env over config file over default)
+## Config
+
+Where icb is pointed is `$XDG_CONFIG_HOME/icb/config.toml`, read through
+goclilogin's config-file contract. It holds three keys, and none has a compiled-in
+default:
+
+```toml
+api = "https://ichrisbirch.com/api"
+issuer = "https://auth.ichrisbirch.com"
+client_id = "icb-cli-laptop"
+```
+
+`--api` on any command that reaches the API outranks the file's `api`. With no
+file, every such command refuses, naming the file and `icb auth login <url>`. That
+login fills in whatever the file lacks — the issuer from the API's RFC 9728
+metadata, the client id from `--client-id` or the short hostname — prints each
+with where it came from, and writes the file once the login succeeds.
+`icb auth status` prints the three values, where each came from and the file's
+path.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ICB_OIDC_ISSUER` | `https://auth.ichrisbirch.com` | Authelia OIDC issuer |
-| `ICB_CLIENT_ID` | `icb-cli-<shorthostname>` | per-(machine × app) client id; required with `ICB_CLIENT_SECRET` |
-| `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant |
-| `ICB_API_BASE` | `https://ichrisbirch.com/api` | API base URL |
+| `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant for the file's `client_id` |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
 | `ICB_ACTOR` | unset | names the worker a scheduler is running; `docs/issues.md` gives the identity it signs claims, comments and closes with |
 

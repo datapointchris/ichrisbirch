@@ -14,7 +14,7 @@ import (
 // command that reaches the network fails and one that refuses first does not.
 func unreachableAPI(t *testing.T) {
 	t.Helper()
-	t.Setenv("ICB_API_BASE", "http://127.0.0.1:9")
+	configure(t, "http://127.0.0.1:9", "http://127.0.0.1:9", "icb-cli-test")
 }
 
 // A bad id is refused by the argument parser, before a client is built, so it

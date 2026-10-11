@@ -21,7 +21,7 @@ func MachineConfigPath() string {
 }
 
 // MachineConfig is what this machine says about its own layout, as opposed to
-// what Config above says about which deployment to talk to.
+// config.toml beside it, which says which deployment to talk to.
 //
 // YAML rather than JSON because every key in here wants the reason it is set
 // written next to it, and JSON has nowhere to put one. It is the same format and

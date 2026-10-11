@@ -22,6 +22,7 @@ from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.endpoints.auth import get_current_user_or_scoped_client
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
+from ichrisbirch.api.protected_resource import add_protected_resource_route
 from ichrisbirch.api.redis_client import REQUEST_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
@@ -134,6 +135,8 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.strains.router, prefix='/strains', dependencies=deps)
     api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
     api.include_router(endpoints.users.router, prefix='/users')
+    if settings.fastapi.public_url:
+        add_protected_resource_route(api, settings.fastapi.public_url, settings.oidc.issuer)
     logger.info('routers_registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)

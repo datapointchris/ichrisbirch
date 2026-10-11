@@ -195,7 +195,7 @@ func TestAnotherStatusIsUntouched(t *testing.T) {
 }
 
 // A proxy error page or an Authelia redirect decodes to a status and nothing
-// else, and the resource was never reached. A wrong ICB_API_BASE and a missing
+// else, and the resource was never reached. A wrong api address and a missing
 // item have different remedies.
 func TestABodylessNotFoundKeepsItsStatusLine(t *testing.T) {
 	bare := &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found"}
