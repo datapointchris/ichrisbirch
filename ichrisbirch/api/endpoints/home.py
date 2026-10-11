@@ -16,4 +16,4 @@ def docs_redirect():
 @router.get('/health', include_in_schema=False, status_code=status.HTTP_200_OK)
 def health():
     """Health check endpoint for container health monitoring."""
-    return {'status': 'healthy'}
+    return {'status': 'ok'}
