@@ -37,7 +37,9 @@ func newAuthCommand() *cobra.Command {
 			"config file's client_id names, through the client-credentials grant. It\n" +
 			"requests a token per run and stores nothing, so login and logout refuse.",
 	})
-	cmd.AddCommand(withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand(), withAPIFlag(newAuthStatusCommand()), withAPIFlag(newAuthTokenCommand()))
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupChanging, withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand())...)
+	cmd.AddCommand(inGroup(groupReading, withAPIFlag(newAuthStatusCommand()), withAPIFlag(newAuthTokenCommand()))...)
 	return cmd
 }
 

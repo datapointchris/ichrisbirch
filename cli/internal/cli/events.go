@@ -19,14 +19,14 @@ func newEventsCommand() *cobra.Command {
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
 	})
 	withNotFoundHints(cmd, "List every event: icb events list")
-	cmd.AddCommand(
-		newEventsListCommand(),
-		newEventsShowCommand(),
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading, newEventsListCommand(), newEventsShowCommand())...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newEventsCreateCommand(),
 		newEventsEditCommand(),
 		newEventsAttendCommand(),
 		newEventsDeleteCommand(),
-	)
+	)...)
 	return cmd
 }
 

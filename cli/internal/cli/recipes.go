@@ -22,20 +22,23 @@ func newRecipesCommand() *cobra.Command {
 			"for review and never save on their own.",
 	})
 	withNotFoundHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newRecipesListCommand(),
 		newRecipesShowCommand(),
 		newRecipesSearchCommand(),
 		newRecipesSearchIngredientsCommand(),
+		newRecipesAISuggestCommand(),
+		newRecipesAIImportCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newRecipesCreateCommand(),
 		newRecipesEditCommand(),
 		newRecipesDeleteCommand(),
 		newRecipesMadeCommand(),
-		newRecipesAISuggestCommand(),
 		newRecipesAISaveCommand(),
-		newRecipesAIImportCommand(),
 		newRecipesAISaveImportCommand(),
-	)
+	)...)
 	return cmd
 }
 

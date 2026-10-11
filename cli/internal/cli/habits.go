@@ -32,19 +32,22 @@ func newHabitsCommand() *cobra.Command {
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
 	})
 	withNotFoundHints(cmd, habitHints...)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newHabitsTodayCommand(),
 		newHabitsListCommand(),
 		newHabitsShowCommand(),
+		newHabitsCategoriesCommand(),
+		newHabitsCompletedCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		// create and edit take a category id as well as a habit id, so a 404
 		// under either can be about a category the group's hints never mention.
 		withNotFoundHints(newHabitsCreateCommand(), habitAndCategoryHints...),
 		withNotFoundHints(newHabitsEditCommand(), habitAndCategoryHints...),
 		newHabitsDeleteCommand(),
 		newHabitsCompleteCommand(),
-		newHabitsCategoriesCommand(),
-		newHabitsCompletedCommand(),
-	)
+	)...)
 	return cmd
 }
 

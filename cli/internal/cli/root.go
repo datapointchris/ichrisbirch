@@ -34,6 +34,51 @@ func withAPIFlag(cmd *cobra.Command) *cobra.Command {
 	return cmd
 }
 
+// The root's help sections. Overview comes first because it is where the root's
+// own help says to start, and development work has a section of its own since
+// it is the one app agents file into.
+const (
+	groupOverview    = "overview"
+	groupDevelopment = "development"
+	groupPlanning    = "planning"
+	groupTracking    = "tracking"
+	groupLibrary     = "library"
+	groupSetup       = "setup"
+)
+
+// Within a namespace whose verbs both read and change something, the verbs
+// are split by which they do, so the half that changes something is visible
+// without reading each Short.
+const (
+	groupReading  = "reading"
+	groupChanging = "changing"
+)
+
+// A namespace holding another namespace gives it a section of its own, so its
+// verbs are not interleaved with the parent's.
+const (
+	groupTaskCategories   = "task-categories"
+	groupProjectItems     = "project-items"
+	groupShoppingSections = "shopping-sections"
+)
+
+// splitReadingFromChanging gives cmd the two sections its verbs go under.
+func splitReadingFromChanging(cmd *cobra.Command) {
+	cmd.AddGroup(
+		&cobra.Group{ID: groupReading, Title: "Reading commands:"},
+		&cobra.Group{ID: groupChanging, Title: "Changing commands:"},
+	)
+}
+
+// inGroup puts each of cmds under the section id and returns them, for an
+// AddCommand list.
+func inGroup(id string, cmds ...*cobra.Command) []*cobra.Command {
+	for _, cmd := range cmds {
+		cmd.GroupID = id
+	}
+	return cmds
+}
+
 // usageError marks an invocation mistake (bad flag/args) so Execute can return
 // exit code 2, distinct from a runtime failure (1). Per CLI conventions.
 type usageError struct{ err error }
@@ -102,7 +147,7 @@ func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 func NewRootCommand() *cobra.Command {
 	root := asNamespace(&cobra.Command{
 		Use:   "icb",
-		Short: "icb — the ichrisbirch data CLI",
+		Short: "The ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
 			"projects, issues, books, articles, habits, recipes, countdowns, events,\n" +
 			"strains, and the shopping list.\n" +
@@ -140,6 +185,7 @@ func NewRootCommand() *cobra.Command {
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return usageError{err}
 	})
+	useHelp(root)
 
 	root.PersistentFlags().BoolVar(&noInput, "no-input", false,
 		"Never prompt; fail naming the flag that would have answered")
@@ -152,30 +198,37 @@ func NewRootCommand() *cobra.Command {
 		f.Shorthand = ""
 	}
 
-	root.AddCommand(newUpdateCommand(), newAuthCommand(), newConfigCommand())
-	for _, cmd := range []*cobra.Command{
-		newOverviewCommand(),
-		newProjectsCommand(),
-		newIssuesCommand(),
-		newTasksCommand(),
-		newAutotasksCommand(),
-		newCountdownsCommand(),
-		newEventsCommand(),
-		newHabitsCommand(),
-		newPatternsCommand(),
-		newBooksCommand(),
-		newArticlesCommand(),
-		newRecipesCommand(),
-		newCookingTechniquesCommand(),
-		newStrainsCommand(),
-		newShoppingCommand(),
-	} {
-		root.AddCommand(withAPIFlag(cmd))
-	}
-
-	// After the tree is assembled: cobra only propagates a usage template to
-	// commands that already exist when it is set.
-	applyUsageTemplate(root)
+	root.AddGroup(
+		&cobra.Group{ID: groupOverview, Title: "Overview commands:"},
+		&cobra.Group{ID: groupDevelopment, Title: "Development commands:"},
+		&cobra.Group{ID: groupPlanning, Title: "Planning commands:"},
+		&cobra.Group{ID: groupTracking, Title: "Tracking commands:"},
+		&cobra.Group{ID: groupLibrary, Title: "Library commands:"},
+		&cobra.Group{ID: groupSetup, Title: "Setup commands:"},
+	)
+	root.SetCompletionCommandGroupID(groupSetup)
+	root.AddCommand(inGroup(groupOverview, withAPIFlag(newOverviewCommand()))...)
+	root.AddCommand(inGroup(groupDevelopment, withAPIFlag(newIssuesCommand()))...)
+	root.AddCommand(inGroup(groupPlanning,
+		withAPIFlag(newProjectsCommand()),
+		withAPIFlag(newTasksCommand()),
+		withAPIFlag(newAutotasksCommand()),
+		withAPIFlag(newCountdownsCommand()),
+		withAPIFlag(newEventsCommand()),
+		withAPIFlag(newShoppingCommand()),
+	)...)
+	root.AddCommand(inGroup(groupTracking,
+		withAPIFlag(newHabitsCommand()),
+		withAPIFlag(newPatternsCommand()),
+	)...)
+	root.AddCommand(inGroup(groupLibrary,
+		withAPIFlag(newBooksCommand()),
+		withAPIFlag(newArticlesCommand()),
+		withAPIFlag(newRecipesCommand()),
+		withAPIFlag(newCookingTechniquesCommand()),
+		withAPIFlag(newStrainsCommand()),
+	)...)
+	root.AddCommand(inGroup(groupSetup, newAuthCommand(), newConfigCommand(), newUpdateCommand())...)
 	return root
 }
 

@@ -20,16 +20,19 @@ func newCookingTechniquesCommand() *cobra.Command {
 	})
 	withNotFoundHints(cmd,
 		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newCookingTechniquesListCommand(),
 		newCookingTechniquesShowCommand(),
 		newCookingTechniquesSlugCommand(),
 		newCookingTechniquesSearchCommand(),
 		newCookingTechniquesCategoriesCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newCookingTechniquesCreateCommand(),
 		newCookingTechniquesEditCommand(),
 		newCookingTechniquesDeleteCommand(),
-	)
+	)...)
 	return cmd
 }
 

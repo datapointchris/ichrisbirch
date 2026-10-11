@@ -31,15 +31,14 @@ func newBooksCommand() *cobra.Command {
 			"and what is queued next. `list --progress reading` is the reading-now view.",
 	})
 	withNotFoundHints(cmd, "Search books by title, author, or tags: icb books search <query>")
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddCommand(inGroup(groupReading,
 		newBooksListCommand(),
 		newBooksShowCommand(),
 		newBooksISBNCommand(),
 		newBooksSearchCommand(),
-		newBooksCreateCommand(),
-		newBooksEditCommand(),
-		newBooksDeleteCommand(),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupChanging, newBooksCreateCommand(), newBooksEditCommand(), newBooksDeleteCommand())...)
 	return cmd
 }
 

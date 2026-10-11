@@ -38,10 +38,14 @@ func newProjectsCommand() *cobra.Command {
 			"status. A name that misses is answered with the names near it.",
 	})
 	withNotFoundHints(cmd, projectHints...)
-	cmd.AddCommand(
+	splitReadingFromChanging(cmd)
+	cmd.AddGroup(&cobra.Group{ID: groupProjectItems, Title: "Item commands:"})
+	cmd.AddCommand(inGroup(groupReading,
 		newProjectsListCommand(),
 		newProjectsNextCommand(),
 		newProjectsShowCommand(),
+	)...)
+	cmd.AddCommand(inGroup(groupChanging,
 		newProjectsCreateCommand(),
 		newProjectsEditCommand(),
 		newProjectsShelveCommand(),
@@ -49,8 +53,8 @@ func newProjectsCommand() *cobra.Command {
 		newProjectsDropCommand(),
 		newProjectsReopenCommand(),
 		newProjectsDeleteCommand(),
-		newItemsCommand(),
-	)
+	)...)
+	cmd.AddCommand(inGroup(groupProjectItems, newItemsCommand())...)
 	return cmd
 }
 
