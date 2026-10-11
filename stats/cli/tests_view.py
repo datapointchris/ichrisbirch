@@ -9,7 +9,9 @@ Usage from bash dispatch:
 
 from __future__ import annotations
 
+import json
 import sys
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -260,9 +262,6 @@ def render(events_path: str, data_dir: str, snapshot_file: str | None = None, *,
 
     snap = load_snapshot(data_dir) if not snapshot_file else None
     if snapshot_file:
-        import json
-        from pathlib import Path
-
         p = Path(snapshot_file)
         if p.exists():
             snap = json.loads(p.read_text())

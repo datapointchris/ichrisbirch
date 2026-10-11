@@ -31,9 +31,7 @@ def discover_hooks() -> dict[str, HookRunner]:
     """
     hooks: dict[str, Any] = {}
 
-    import stats.hooks as hooks_package
-
-    for _importer, modname, _ispkg in pkgutil.iter_modules(hooks_package.__path__):
+    for _importer, modname, _ispkg in pkgutil.iter_modules(__path__):
         if modname.startswith('_'):
             continue
         with suppress(ImportError):

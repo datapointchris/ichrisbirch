@@ -8,14 +8,18 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.post_commit_collect import get_branch
+from stats.post_commit_collect import get_commit_info
+from stats.post_commit_collect import get_staged_files_from_commit
+from stats.post_commit_collect import main
+from stats.schemas.collectors.tokei import TokeiCollectEvent
+
 
 class TestGetBranch:
     """Tests for get_branch function."""
 
     def test_get_branch_returns_branch_name(self) -> None:
         """Test get_branch returns the current branch name."""
-        from stats.post_commit_collect import get_branch
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 stdout='master\n',
@@ -28,8 +32,6 @@ class TestGetBranch:
 
     def test_get_branch_returns_head_when_empty(self) -> None:
         """Test get_branch returns HEAD when branch is empty."""
-        from stats.post_commit_collect import get_branch
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 stdout='',
@@ -46,8 +48,6 @@ class TestGetCommitInfo:
 
     def test_get_commit_info_parses_git_log(self) -> None:
         """Test get_commit_info parses git log output correctly."""
-        from stats.post_commit_collect import get_commit_info
-
         with patch('subprocess.run') as mock_run:
             git_log_output = (
                 'abc123def456789012345678901234567890abcd|abc123d|feat: add feature|'
@@ -81,8 +81,6 @@ class TestGetStagedFilesFromCommit:
 
     def test_get_staged_files_parses_numstat(self) -> None:
         """Test get_staged_files_from_commit parses git numstat output."""
-        from stats.post_commit_collect import get_staged_files_from_commit
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 stdout='10\t5\ttest.py\n50\t0\tnew.py\n0\t30\told.py\n',
@@ -109,8 +107,6 @@ class TestGetStagedFilesFromCommit:
 
     def test_get_staged_files_empty(self) -> None:
         """Test get_staged_files_from_commit handles empty output."""
-        from stats.post_commit_collect import get_staged_files_from_commit
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 stdout='',
@@ -127,8 +123,6 @@ class TestMain:
 
     def test_main_emits_commit_event(self) -> None:
         """Test main emits a commit event."""
-        from stats.post_commit_collect import main
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
@@ -166,9 +160,6 @@ class TestMain:
 
     def test_main_runs_enabled_collectors(self) -> None:
         """Test main runs the enabled collectors."""
-        from stats.post_commit_collect import main
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
@@ -220,8 +211,6 @@ class TestMain:
 
     def test_main_skips_unknown_collectors(self, capsys) -> None:
         """Test main skips unknown collectors with a warning."""
-        from stats.post_commit_collect import main
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
@@ -259,8 +248,6 @@ class TestMain:
 
     def test_main_handles_collector_returning_none(self) -> None:
         """Test main handles collectors that return None (e.g., no pytest report)."""
-        from stats.post_commit_collect import main
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 

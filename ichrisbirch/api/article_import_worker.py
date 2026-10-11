@@ -27,6 +27,8 @@ import structlog
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.services.article_creation import ArticleAlreadyExists
+from ichrisbirch.services.article_creation import summarize_and_create_article
 from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.url_extraction import CaptionsBlocked
 from ichrisbirch.services.url_extraction import PageUnreadable
@@ -55,8 +57,6 @@ def worth_retrying(error: Exception) -> bool:
     a second one, which is what keeps the refusal going. A dropped connection or a
     5xx can pass, so those are retried.
     """
-    from ichrisbirch.api.endpoints.articles import ArticleAlreadyExists
-
     if isinstance(error, PageUnreadable | CaptionsBlocked | ArticleAlreadyExists):
         return False
     return not (isinstance(error, PageStatusError) and error.status_code < 500)
@@ -175,8 +175,6 @@ class ArticleImportWorker:
 
         try:
             with create_session(self.settings) as session:
-                from ichrisbirch.api.endpoints.articles import summarize_and_create_article
-
                 article = asyncio.run(summarize_and_create_article(url, notes, session, self.settings))
                 self._record_success(batch_key, url, article.title)
         except AssistantUsageLimitReached as e:

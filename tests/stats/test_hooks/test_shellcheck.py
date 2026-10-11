@@ -8,6 +8,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.shellcheck import run
+from stats.schemas.hooks.shellcheck import ShellcheckComment
+from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -16,8 +20,6 @@ class TestShellcheckSchema:
 
     def test_shellcheck_comment_schema_parses_real_output(self) -> None:
         """Test that ShellcheckComment can parse real shellcheck output."""
-        from stats.schemas.hooks.shellcheck import ShellcheckComment
-
         data = json.loads((FIXTURES_DIR / 'shellcheck_with_issues.json').read_text())
         comments = data.get('comments', [])
 
@@ -34,9 +36,6 @@ class TestShellcheckSchema:
 
     def test_shellcheck_hook_event_with_issues(self) -> None:
         """Test ShellcheckHookEvent with issues."""
-        from stats.schemas.hooks.shellcheck import ShellcheckComment
-        from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
-
         data = json.loads((FIXTURES_DIR / 'shellcheck_with_issues.json').read_text())
         comments = [ShellcheckComment.model_validate(c) for c in data.get('comments', [])]
 
@@ -57,8 +56,6 @@ class TestShellcheckSchema:
 
     def test_shellcheck_hook_event_clean(self) -> None:
         """Test ShellcheckHookEvent with no issues."""
-        from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
-
         event = ShellcheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -80,9 +77,6 @@ class TestShellcheckRunner:
 
     def test_shellcheck_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns ShellcheckHookEvent for clean output."""
-        from stats.hooks.shellcheck import run
-        from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
-
         clean_output = (FIXTURES_DIR / 'shellcheck_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -101,9 +95,6 @@ class TestShellcheckRunner:
 
     def test_shellcheck_runner_parses_comments(self) -> None:
         """Test runner parses comments from shellcheck output."""
-        from stats.hooks.shellcheck import run
-        from stats.schemas.hooks.shellcheck import ShellcheckHookEvent
-
         issues_output = (FIXTURES_DIR / 'shellcheck_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -122,8 +113,6 @@ class TestShellcheckRunner:
 
     def test_shellcheck_runner_skips_non_shell_files(self) -> None:
         """Test runner skips non-shell files."""
-        from stats.hooks.shellcheck import run
-
         event = run(['test.py', 'main.js'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'

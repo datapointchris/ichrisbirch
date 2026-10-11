@@ -1,7 +1,8 @@
 """Turn a saved URL into the title and text a summary is written from.
 
-Consumers: `api/endpoints/articles.py` (create, summarize, insights and the bulk
-import worker) and `services/url_ingest.py` (recipe import).
+Consumers: `services/article_creation.py` (create from a URL, for the endpoint
+and the bulk import worker), `api/endpoints/articles.py` (summarize, insights)
+and `services/url_ingest.py` (recipe import).
 
 `read_article_page` is the entry point. It refuses a page that is not the
 article: one the site redirected to its homepage or a section index, a bot

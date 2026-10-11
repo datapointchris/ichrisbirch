@@ -6,14 +6,16 @@ import datetime as dt
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.collectors.dependencies import run
+from stats.schemas.collectors.dependencies import DependenciesCollectEvent
+from stats.schemas.collectors.dependencies import Dependency
+
 
 class TestDependenciesSchema:
     """Tests for DependenciesCollectEvent schema."""
 
     def test_dependency_schema(self) -> None:
         """Test Dependency captures all fields."""
-        from stats.schemas.collectors.dependencies import Dependency
-
         dep = Dependency(name='pydantic', version='2.0.0')
 
         assert dep.name == 'pydantic'
@@ -21,9 +23,6 @@ class TestDependenciesSchema:
 
     def test_dependencies_collect_event_schema(self) -> None:
         """Test DependenciesCollectEvent schema."""
-        from stats.schemas.collectors.dependencies import DependenciesCollectEvent
-        from stats.schemas.collectors.dependencies import Dependency
-
         event = DependenciesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -42,9 +41,6 @@ class TestDependenciesRunner:
 
     def test_dependencies_runner_parses_output(self) -> None:
         """Test runner parses uv pip list output."""
-        from stats.collectors.dependencies import run
-        from stats.schemas.collectors.dependencies import DependenciesCollectEvent
-
         mock_output = 'pydantic==2.0.0\nfastapi==0.100.0\n'
 
         with patch('subprocess.run') as mock_run:

@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import datetime as dt
 
+from stats.schemas.commit import CommitEvent
+from stats.schemas.commit import StagedFile
+
 
 class TestStagedFile:
     """Tests for StagedFile schema."""
 
     def test_staged_file_all_statuses(self) -> None:
         """Test StagedFile accepts all valid statuses."""
-        from stats.schemas.commit import StagedFile
-
         for status in ('added', 'modified', 'deleted', 'renamed'):
             file = StagedFile(
                 path='test.py',
@@ -23,8 +24,6 @@ class TestStagedFile:
 
     def test_staged_file_serialization(self) -> None:
         """Test StagedFile serializes correctly."""
-        from stats.schemas.commit import StagedFile
-
         file = StagedFile(
             path='ichrisbirch/api/main.py',
             status='modified',
@@ -45,8 +44,6 @@ class TestCommitEvent:
 
     def test_commit_event_has_type(self) -> None:
         """Test CommitEvent has correct type literal."""
-        from stats.schemas.commit import CommitEvent
-
         event = CommitEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -66,9 +63,6 @@ class TestCommitEvent:
 
     def test_commit_event_with_staged_files(self) -> None:
         """Test CommitEvent with staged files."""
-        from stats.schemas.commit import CommitEvent
-        from stats.schemas.commit import StagedFile
-
         staged_files = [
             StagedFile(path='test.py', status='modified', lines_added=10, lines_removed=5),
             StagedFile(path='new.py', status='added', lines_added=50, lines_removed=0),
@@ -97,9 +91,6 @@ class TestCommitEvent:
 
     def test_commit_event_serialization(self) -> None:
         """Test CommitEvent serializes to JSON correctly."""
-        from stats.schemas.commit import CommitEvent
-        from stats.schemas.commit import StagedFile
-
         event = CommitEvent(
             timestamp=dt.datetime(2025, 12, 31, 12, 0, 0, tzinfo=dt.UTC),
             project='ichrisbirch',

@@ -7,6 +7,14 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks import code_sync
+from stats.hooks import generate_fixture_diagrams
+from stats.hooks import validate_html
+from stats.schemas.hooks.project import CodeSyncHookEvent
+from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
+from stats.schemas.hooks.project import HtmlValidationIssue
+from stats.schemas.hooks.project import ValidateHtmlHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -14,8 +22,6 @@ class TestCodeSyncSchema:
     """Tests for CodeSyncHookEvent schema."""
 
     def test_code_sync_hook_event(self) -> None:
-        from stats.schemas.hooks.project import CodeSyncHookEvent
-
         event = CodeSyncHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -31,8 +37,6 @@ class TestCodeSyncSchema:
 
     def test_code_sync_hook_event_failed(self) -> None:
         """Test CodeSyncHookEvent with failing sync check."""
-        from stats.schemas.hooks.project import CodeSyncHookEvent
-
         event = CodeSyncHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -51,22 +55,16 @@ class TestCodeSyncRunner:
     """Tests for code-sync hook runner."""
 
     def test_code_sync_runner_runs_command(self) -> None:
-        from stats.hooks.code_sync import run
-        from stats.schemas.hooks.project import CodeSyncHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['docs/guide.md'], 'master', 'ichrisbirch')
+            event = code_sync.run(['docs/guide.md'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CodeSyncHookEvent)
             assert event.status == 'passed'
 
     def test_code_sync_runner_failed(self) -> None:
         """Test runner returns failed event for out-of-sync code blocks."""
-        from stats.hooks.code_sync import run
-        from stats.schemas.hooks.project import CodeSyncHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -74,7 +72,7 @@ class TestCodeSyncRunner:
                 stderr='',
             )
 
-            event = run(['docs/api.md'], 'master', 'ichrisbirch')
+            event = code_sync.run(['docs/api.md'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CodeSyncHookEvent)
             assert event.status == 'failed'
@@ -85,8 +83,6 @@ class TestGenerateFixtureDiagramsSchema:
     """Tests for GenerateFixtureDiagramsHookEvent schema."""
 
     def test_generate_fixture_diagrams_hook_event(self) -> None:
-        from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
-
         event = GenerateFixtureDiagramsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -101,8 +97,6 @@ class TestGenerateFixtureDiagramsSchema:
 
     def test_generate_fixture_diagrams_hook_event_failed(self) -> None:
         """Test GenerateFixtureDiagramsHookEvent with failing check."""
-        from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
-
         event = GenerateFixtureDiagramsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -121,18 +115,13 @@ class TestGenerateFixtureDiagramsRunner:
     """Tests for generate-fixture-diagrams hook runner."""
 
     def test_generate_fixture_diagrams_runner_skips_irrelevant(self) -> None:
-        from stats.hooks.generate_fixture_diagrams import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = generate_fixture_diagrams.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
 
     def test_generate_fixture_diagrams_runner_clean(self) -> None:
         """Test runner returns passed event for up-to-date diagrams."""
-        from stats.hooks.generate_fixture_diagrams import run
-        from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -140,7 +129,7 @@ class TestGenerateFixtureDiagramsRunner:
                 stderr='',
             )
 
-            event = run(['tests/conftest.py'], 'master', 'ichrisbirch')
+            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'ichrisbirch')
 
             assert isinstance(event, GenerateFixtureDiagramsHookEvent)
             assert event.status == 'passed'
@@ -148,9 +137,6 @@ class TestGenerateFixtureDiagramsRunner:
 
     def test_generate_fixture_diagrams_runner_failed(self) -> None:
         """Test runner returns failed event for outdated diagrams."""
-        from stats.hooks.generate_fixture_diagrams import run
-        from stats.schemas.hooks.project import GenerateFixtureDiagramsHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -158,7 +144,7 @@ class TestGenerateFixtureDiagramsRunner:
                 stderr='',
             )
 
-            event = run(['tests/conftest.py'], 'master', 'ichrisbirch')
+            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'ichrisbirch')
 
             assert isinstance(event, GenerateFixtureDiagramsHookEvent)
             assert event.status == 'failed'
@@ -169,9 +155,6 @@ class TestValidateHtmlSchema:
     """Tests for ValidateHtmlHookEvent schema."""
 
     def test_validate_html_hook_event_with_issues(self) -> None:
-        from stats.schemas.hooks.project import HtmlValidationIssue
-        from stats.schemas.hooks.project import ValidateHtmlHookEvent
-
         event = ValidateHtmlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -195,8 +178,6 @@ class TestValidateHtmlSchema:
 
     def test_validate_html_hook_event_clean(self) -> None:
         """Test ValidateHtmlHookEvent with no issues."""
-        from stats.schemas.hooks.project import ValidateHtmlHookEvent
-
         event = ValidateHtmlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -217,9 +198,6 @@ class TestValidateHtmlRunner:
     """Tests for validate-html hook runner."""
 
     def test_validate_html_runner_parses_issues(self) -> None:
-        from stats.hooks.validate_html import run
-        from stats.schemas.hooks.project import ValidateHtmlHookEvent
-
         issues_output = (FIXTURES_DIR / 'validate_html_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -229,7 +207,7 @@ class TestValidateHtmlRunner:
                 stderr='',
             )
 
-            event = run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
+            event = validate_html.run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
 
             assert isinstance(event, ValidateHtmlHookEvent)
             assert event.status == 'failed'
@@ -242,9 +220,6 @@ class TestValidateHtmlRunner:
 
     def test_validate_html_runner_clean(self) -> None:
         """Test runner returns passed event for valid HTML."""
-        from stats.hooks.validate_html import run
-        from stats.schemas.hooks.project import ValidateHtmlHookEvent
-
         clean_output = (FIXTURES_DIR / 'validate_html_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -254,16 +229,14 @@ class TestValidateHtmlRunner:
                 stderr='',
             )
 
-            event = run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
+            event = validate_html.run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
 
             assert isinstance(event, ValidateHtmlHookEvent)
             assert event.status == 'passed'
             assert not event.issues
 
     def test_validate_html_runner_skips_non_html(self) -> None:
-        from stats.hooks.validate_html import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = validate_html.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked

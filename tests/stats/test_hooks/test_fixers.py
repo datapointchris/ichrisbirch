@@ -10,6 +10,11 @@ from unittest.mock import patch
 
 import pytest
 
+from stats.hooks import end_of_file_fixer
+from stats.hooks import trailing_whitespace
+from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
+from stats.schemas.hooks.fixers import TrailingWhitespaceHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -18,8 +23,6 @@ class TestTrailingWhitespaceSchema:
 
     def test_trailing_whitespace_hook_event_with_fixes(self) -> None:
         """Test TrailingWhitespaceHookEvent with fixed files."""
-        from stats.schemas.hooks.fixers import TrailingWhitespaceHookEvent
-
         event = TrailingWhitespaceHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -41,9 +44,6 @@ class TestTrailingWhitespaceRunner:
 
     def test_trailing_whitespace_runner_parses_fixes(self, tmp_path: Path) -> None:
         """Test runner parses fixed files from output."""
-        from stats.hooks.trailing_whitespace import run
-        from stats.schemas.hooks.fixers import TrailingWhitespaceHookEvent
-
         fixes_output = (FIXTURES_DIR / 'trailing_whitespace_with_fixes.txt').read_text()
         source = tmp_path / 'main.py'
         source.write_text('x = 1\n')
@@ -55,7 +55,7 @@ class TestTrailingWhitespaceRunner:
                 stderr='',
             )
 
-            event = run([str(source)], 'master', 'ichrisbirch')
+            event = trailing_whitespace.run([str(source)], 'master', 'ichrisbirch')
 
             assert isinstance(event, TrailingWhitespaceHookEvent)
             assert event.status == 'failed'
@@ -68,8 +68,6 @@ class TestEndOfFileFixerSchema:
 
     def test_end_of_file_fixer_hook_event_with_fixes(self) -> None:
         """Test EndOfFileFixerHookEvent with fixed files."""
-        from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
-
         event = EndOfFileFixerHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -90,9 +88,6 @@ class TestEndOfFileFixerRunner:
 
     def test_end_of_file_fixer_runner_parses_fixes(self, tmp_path: Path) -> None:
         """Test runner parses fixed files from output."""
-        from stats.hooks.end_of_file_fixer import run
-        from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
-
         fixes_output = (FIXTURES_DIR / 'end_of_file_fixer_with_fixes.txt').read_text()
         readme = tmp_path / 'README.md'
         readme.write_text('# Title\n')
@@ -104,7 +99,7 @@ class TestEndOfFileFixerRunner:
                 stderr='',
             )
 
-            event = run([str(readme)], 'master', 'ichrisbirch')
+            event = end_of_file_fixer.run([str(readme)], 'master', 'ichrisbirch')
 
             assert isinstance(event, EndOfFileFixerHookEvent)
             assert event.status == 'failed'

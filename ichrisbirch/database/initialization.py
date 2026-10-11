@@ -13,6 +13,9 @@ Usage:
     full_initialization(settings)
 """
 
+import argparse
+import os
+
 import structlog
 from alembic import command
 from alembic.config import Config
@@ -22,6 +25,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateSchema
 
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
@@ -283,9 +287,6 @@ def full_initialization(settings, use_alembic: bool = True) -> None:
 
 def main():
     """Command line interface for database initialization."""
-    import argparse
-    import os
-
     parser = argparse.ArgumentParser(
         description='Initialize database with schemas and default users',
         epilog='No password flag: flag values land in ps output and shell history. Set POSTGRES_PASSWORD in the environment.',
@@ -328,8 +329,6 @@ def main():
 
     try:
         # Create fresh settings after environment variable overrides
-        from ichrisbirch.config import get_settings
-
         settings = get_settings()
         logger.info('settings_loaded', environment=getattr(settings, 'ENVIRONMENT', 'unknown'))
         logger.info(

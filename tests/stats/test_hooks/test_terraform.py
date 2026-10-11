@@ -8,6 +8,16 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks import terraform_docs
+from stats.hooks import terraform_fmt
+from stats.hooks import terraform_tflint
+from stats.hooks import terraform_validate
+from stats.schemas.hooks.terraform import TerraformDocsHookEvent
+from stats.schemas.hooks.terraform import TerraformFmtHookEvent
+from stats.schemas.hooks.terraform import TerraformTflintHookEvent
+from stats.schemas.hooks.terraform import TerraformValidateHookEvent
+from stats.schemas.hooks.terraform import TflintIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +25,6 @@ class TestTerraformValidateSchema:
     """Tests for TerraformValidateHookEvent schema."""
 
     def test_terraform_validate_hook_event(self) -> None:
-        from stats.schemas.hooks.terraform import TerraformValidateHookEvent
-
         event = TerraformValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -32,8 +40,6 @@ class TestTerraformValidateSchema:
 
     def test_terraform_validate_hook_event_failed(self) -> None:
         """Test TerraformValidateHookEvent with failing validation."""
-        from stats.schemas.hooks.terraform import TerraformValidateHookEvent
-
         event = TerraformValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -53,18 +59,13 @@ class TestTerraformValidateRunner:
     """Tests for terraform_validate hook runner."""
 
     def test_terraform_validate_runner_skips_non_tf(self) -> None:
-        from stats.hooks.terraform_validate import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_validate.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
 
     def test_terraform_validate_runner_clean(self) -> None:
         """Test runner returns passed event for valid terraform."""
-        from stats.hooks.terraform_validate import run
-        from stats.schemas.hooks.terraform import TerraformValidateHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -72,7 +73,7 @@ class TestTerraformValidateRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_validate.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformValidateHookEvent)
             assert event.status == 'passed'
@@ -80,9 +81,6 @@ class TestTerraformValidateRunner:
 
     def test_terraform_validate_runner_failed(self) -> None:
         """Test runner returns failed event for invalid terraform."""
-        from stats.hooks.terraform_validate import run
-        from stats.schemas.hooks.terraform import TerraformValidateHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -90,7 +88,7 @@ class TestTerraformValidateRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_validate.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformValidateHookEvent)
             assert event.status == 'failed'
@@ -101,9 +99,6 @@ class TestTerraformTflintSchema:
     """Tests for TerraformTflintHookEvent schema."""
 
     def test_terraform_tflint_hook_event_with_issues(self) -> None:
-        from stats.schemas.hooks.terraform import TerraformTflintHookEvent
-        from stats.schemas.hooks.terraform import TflintIssue
-
         event = TerraformTflintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -128,9 +123,6 @@ class TestTerraformTflintSchema:
 
     def test_terraform_tflint_hook_event_from_fixture(self) -> None:
         """Test TerraformTflintHookEvent with issues parsed from fixture."""
-        from stats.schemas.hooks.terraform import TerraformTflintHookEvent
-        from stats.schemas.hooks.terraform import TflintIssue
-
         raw = json.loads((FIXTURES_DIR / 'terraform_tflint_with_issues.json').read_text())
         issues: list[TflintIssue] = []
         for issue in raw['issues']:
@@ -166,8 +158,6 @@ class TestTerraformTflintSchema:
 
     def test_terraform_tflint_hook_event_clean(self) -> None:
         """Test TerraformTflintHookEvent with no issues."""
-        from stats.schemas.hooks.terraform import TerraformTflintHookEvent
-
         event = TerraformTflintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -188,18 +178,13 @@ class TestTerraformTflintRunner:
     """Tests for terraform_tflint hook runner."""
 
     def test_terraform_tflint_runner_skips_non_tf(self) -> None:
-        from stats.hooks.terraform_tflint import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_tflint.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.issues
 
     def test_terraform_tflint_runner_clean(self) -> None:
         """Test runner returns passed event for clean tflint output."""
-        from stats.hooks.terraform_tflint import run
-        from stats.schemas.hooks.terraform import TerraformTflintHookEvent
-
         clean_output = (FIXTURES_DIR / 'terraform_tflint_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -209,7 +194,7 @@ class TestTerraformTflintRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_tflint.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformTflintHookEvent)
             assert event.status == 'passed'
@@ -217,9 +202,6 @@ class TestTerraformTflintRunner:
 
     def test_terraform_tflint_runner_parses_issues(self) -> None:
         """Test runner parses issues from tflint output."""
-        from stats.hooks.terraform_tflint import run
-        from stats.schemas.hooks.terraform import TerraformTflintHookEvent
-
         issues_output = (FIXTURES_DIR / 'terraform_tflint_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -229,7 +211,7 @@ class TestTerraformTflintRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_tflint.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformTflintHookEvent)
             assert event.status == 'failed'
@@ -244,8 +226,6 @@ class TestTerraformFmtSchema:
     """Tests for TerraformFmtHookEvent schema."""
 
     def test_terraform_fmt_hook_event(self) -> None:
-        from stats.schemas.hooks.terraform import TerraformFmtHookEvent
-
         event = TerraformFmtHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -262,8 +242,6 @@ class TestTerraformFmtSchema:
 
     def test_terraform_fmt_hook_event_clean(self) -> None:
         """Test TerraformFmtHookEvent with no files needing reformatting."""
-        from stats.schemas.hooks.terraform import TerraformFmtHookEvent
-
         event = TerraformFmtHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -284,18 +262,13 @@ class TestTerraformFmtRunner:
     """Tests for terraform_fmt hook runner."""
 
     def test_terraform_fmt_runner_skips_non_tf(self) -> None:
-        from stats.hooks.terraform_fmt import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_fmt.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_reformatted
 
     def test_terraform_fmt_runner_clean(self) -> None:
         """Test runner returns passed event for well-formatted files."""
-        from stats.hooks.terraform_fmt import run
-        from stats.schemas.hooks.terraform import TerraformFmtHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -303,7 +276,7 @@ class TestTerraformFmtRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_fmt.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformFmtHookEvent)
             assert event.status == 'passed'
@@ -311,9 +284,6 @@ class TestTerraformFmtRunner:
 
     def test_terraform_fmt_runner_with_reformatted(self) -> None:
         """Test runner parses files needing reformatting from output."""
-        from stats.hooks.terraform_fmt import run
-        from stats.schemas.hooks.terraform import TerraformFmtHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=3,
@@ -321,7 +291,7 @@ class TestTerraformFmtRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf', 'infra/variables.tf'], 'master', 'ichrisbirch')
+            event = terraform_fmt.run(['infra/main.tf', 'infra/variables.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformFmtHookEvent)
             assert event.status == 'failed'
@@ -332,8 +302,6 @@ class TestTerraformDocsSchema:
     """Tests for TerraformDocsHookEvent schema."""
 
     def test_terraform_docs_hook_event(self) -> None:
-        from stats.schemas.hooks.terraform import TerraformDocsHookEvent
-
         event = TerraformDocsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -349,8 +317,6 @@ class TestTerraformDocsSchema:
 
     def test_terraform_docs_hook_event_failed(self) -> None:
         """Test TerraformDocsHookEvent with failing check."""
-        from stats.schemas.hooks.terraform import TerraformDocsHookEvent
-
         event = TerraformDocsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -369,18 +335,13 @@ class TestTerraformDocsRunner:
     """Tests for terraform_docs hook runner."""
 
     def test_terraform_docs_runner_skips_non_tf(self) -> None:
-        from stats.hooks.terraform_docs import run
-
-        event = run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_docs.run(['main.py'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
 
     def test_terraform_docs_runner_clean(self) -> None:
         """Test runner returns passed event for up-to-date docs."""
-        from stats.hooks.terraform_docs import run
-        from stats.schemas.hooks.terraform import TerraformDocsHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -388,7 +349,7 @@ class TestTerraformDocsRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_docs.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformDocsHookEvent)
             assert event.status == 'passed'
@@ -396,9 +357,6 @@ class TestTerraformDocsRunner:
 
     def test_terraform_docs_runner_failed(self) -> None:
         """Test runner returns failed event for outdated docs."""
-        from stats.hooks.terraform_docs import run
-        from stats.schemas.hooks.terraform import TerraformDocsHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -406,7 +364,7 @@ class TestTerraformDocsRunner:
                 stderr='',
             )
 
-            event = run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_docs.run(['infra/main.tf'], 'master', 'ichrisbirch')
 
             assert isinstance(event, TerraformDocsHookEvent)
             assert event.status == 'failed'

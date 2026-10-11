@@ -6,14 +6,16 @@ import datetime as dt
 import tempfile
 from pathlib import Path
 
+from stats.collectors.files import run
+from stats.schemas.collectors.files import FilesCollectEvent
+from stats.schemas.collectors.files import FileTypeStats
+
 
 class TestFilesSchema:
     """Tests for FilesCollectEvent schema."""
 
     def test_file_type_stats_schema(self) -> None:
         """Test FileTypeStats captures all fields."""
-        from stats.schemas.collectors.files import FileTypeStats
-
         stats = FileTypeStats(
             extension='.py',
             count=100,
@@ -25,8 +27,6 @@ class TestFilesSchema:
 
     def test_files_collect_event_schema(self) -> None:
         """Test FilesCollectEvent schema."""
-        from stats.schemas.collectors.files import FilesCollectEvent
-
         event = FilesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -45,9 +45,6 @@ class TestFilesRunner:
 
     def test_files_runner_scans_directory(self) -> None:
         """Test runner scans directory for files."""
-        from stats.collectors.files import run
-        from stats.schemas.collectors.files import FilesCollectEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             (Path(tmpdir) / 'test.py').write_text('# test')
             (Path(tmpdir) / 'test.js').write_text('// test')

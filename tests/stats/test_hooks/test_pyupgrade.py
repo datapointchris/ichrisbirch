@@ -7,6 +7,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.pyupgrade import run
+from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +18,6 @@ class TestPyupgradeSchema:
 
     def test_pyupgrade_hook_event_with_rewrites(self) -> None:
         """Test PyupgradeHookEvent with rewritten files."""
-        from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
-
         event = PyupgradeHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -35,8 +36,6 @@ class TestPyupgradeSchema:
 
     def test_pyupgrade_hook_event_clean(self) -> None:
         """Test PyupgradeHookEvent with no rewrites."""
-        from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
-
         event = PyupgradeHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -58,9 +57,6 @@ class TestPyupgradeRunner:
 
     def test_pyupgrade_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns PyupgradeHookEvent for clean output."""
-        from stats.hooks.pyupgrade import run
-        from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
-
         clean_output = (FIXTURES_DIR / 'pyupgrade_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -79,9 +75,6 @@ class TestPyupgradeRunner:
 
     def test_pyupgrade_runner_parses_rewrites(self) -> None:
         """Test runner parses rewritten files from pyupgrade output."""
-        from stats.hooks.pyupgrade import run
-        from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
-
         rewrites_output = (FIXTURES_DIR / 'pyupgrade_with_rewrites.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -102,8 +95,6 @@ class TestPyupgradeRunner:
 
     def test_pyupgrade_runner_measures_duration(self) -> None:
         """Test runner measures execution duration."""
-        from stats.hooks.pyupgrade import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -117,9 +108,6 @@ class TestPyupgradeRunner:
 
     def test_pyupgrade_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        from stats.hooks.pyupgrade import run
-        from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
-
         event = run([], 'master', 'ichrisbirch')
 
         assert isinstance(event, PyupgradeHookEvent)
@@ -130,8 +118,6 @@ class TestPyupgradeRunner:
 
     def test_pyupgrade_runner_filters_python_files(self) -> None:
         """Test runner only checks Python files."""
-        from stats.hooks.pyupgrade import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,

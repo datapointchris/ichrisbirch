@@ -22,6 +22,7 @@ from ichrisbirch.api.article_import_worker import USAGE_LIMIT_RECHECK
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
 from ichrisbirch.api.article_import_worker import enqueue_bulk_import
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.article_creation import summarize_and_create_article
 from ichrisbirch.services.outbound_http import PageFetchError
 from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.url_extraction import ArticlePage
@@ -45,9 +46,13 @@ ENDPOINT = '/articles/'
 PAGE = ArticlePage(url='https://example.com/test-article', title='Test Article', text='Test content')
 
 
-def patched_assistant(mock_assistant):
-    """Patch AnthropicAssistant in the articles module so every instance is `mock_assistant`."""
-    return patch('ichrisbirch.api.endpoints.articles.AnthropicAssistant', MagicMock(return_value=mock_assistant))
+ENDPOINT_MODULE = 'ichrisbirch.api.endpoints.articles'
+CREATION_MODULE = 'ichrisbirch.services.article_creation'
+
+
+def patched_assistant(mock_assistant, module: str = ENDPOINT_MODULE):
+    """Patch AnthropicAssistant in `module` so every instance it builds is `mock_assistant`."""
+    return patch(f'{module}.AnthropicAssistant', MagicMock(return_value=mock_assistant))
 
 
 @pytest.fixture
@@ -470,8 +475,8 @@ class TestCreateFromUrl:
             written = schemas.ArticleSummaryAndTags(summary='A test summary.', tags=['python', 'testing'])
             mock_assistant.generate_structured = AsyncMock(return_value=written)
 
-        get_page_patch = patch('ichrisbirch.api.endpoints.articles.read_article_page', return_value=PAGE)
-        return get_page_patch, patched_assistant(mock_assistant)
+        get_page_patch = patch(f'{CREATION_MODULE}.read_article_page', return_value=PAGE)
+        return get_page_patch, patched_assistant(mock_assistant, CREATION_MODULE)
 
     def test_create_from_url(self, txn_api_logged_in):
         """Create article from URL: fetches, summarizes, persists."""
@@ -521,7 +526,7 @@ class TestCreateFromUrl:
         """The detail names what failed, which is what a caller needs to decide whether to retry."""
         client, _ = txn_api_logged_in
         _, assistant_patch = self._mock_externals()
-        with patch('ichrisbirch.api.endpoints.articles.read_article_page', side_effect=failure), assistant_patch:
+        with patch(f'{CREATION_MODULE}.read_article_page', side_effect=failure), assistant_patch:
             response = client.post(f'{ENDPOINT}create-from-url/', json={'url': 'https://example.com/dead'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         assert response.json()['detail'] == str(failure)
@@ -556,8 +561,6 @@ class TestCreateFromUrl:
         An HTTPException stringifies as '424: {…}', so raising one from the
         shared helper would put the model's whole reply in both.
         """
-        from ichrisbirch.api.endpoints.articles import summarize_and_create_article
-
         client, session = txn_api_logged_in
         long_reply = 'x' * 4000
         invalid = AssistantOutputError(AssistantFailure.INVALID_OUTPUT, 'not a valid ArticleSummaryAndTags', long_reply)
@@ -653,7 +656,7 @@ class TestBulkImport:
 class TestBulkImportUsageLimit:
     """The worker holds the queue when the Claude plan's usage limit refuses a call."""
 
-    SUMMARIZE = 'ichrisbirch.api.endpoints.articles.summarize_and_create_article'
+    SUMMARIZE = 'ichrisbirch.api.article_import_worker.summarize_and_create_article'
 
     def take_first_item(self, redis_client: redis.Redis) -> dict:
         popped = redis_client.blpop(QUEUE_KEY, timeout=1)

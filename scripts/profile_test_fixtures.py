@@ -15,11 +15,17 @@ import time
 from dataclasses import dataclass
 from dataclasses import field
 
+from sqlalchemy import select
 from sqlalchemy import text
 
+from ichrisbirch import models
+from ichrisbirch.api.main import create_api
 from ichrisbirch.database.base import Base
 from ichrisbirch.database.session import get_db_engine
 from tests.conftest import SEQUENCES_TO_RESET
+from tests.utils.database import create_session
+from tests.utils.database import get_test_login_users
+from tests.utils.database import get_test_user
 from tests.utils.database import test_settings
 
 
@@ -237,18 +243,10 @@ def profile_user_lookup():
     print('USER LOOKUP PROFILING')
     print('=' * 60)
 
-    from tests.utils.database import get_test_user
-
     engine = get_db_engine(test_settings)
     Base.metadata.create_all(engine)
 
     # Insert login users if they don't exist
-    from sqlalchemy import select
-
-    from ichrisbirch import models
-    from tests.utils.database import create_session
-    from tests.utils.database import get_test_login_users
-
     with create_session(test_settings) as session:
         for user_data in get_test_login_users():
             existing = session.execute(select(models.User).where(models.User.email == user_data['email'])).scalar_one_or_none()
@@ -308,8 +306,6 @@ def profile_api_creation():
     print('\n' + '=' * 60)
     print('API APP CREATION PROFILING')
     print('=' * 60)
-
-    from ichrisbirch.api.main import create_api
 
     def create_fresh_api():
         return create_api(settings=test_settings)

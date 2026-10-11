@@ -104,7 +104,7 @@ HOLD_SECONDS = 5
 
 HELD_CALLS = [
     pytest.param(
-        'ichrisbirch.api.endpoints.articles.read_article_page',
+        'ichrisbirch.services.article_creation.read_article_page',
         'POST',
         '/articles/create-from-url/',
         {'json': {'url': 'https://held.example/article'}},

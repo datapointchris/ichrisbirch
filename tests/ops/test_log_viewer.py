@@ -1,6 +1,8 @@
 import json
 import re
 
+import pytest
+
 from ops import log_viewer
 
 
@@ -120,16 +122,12 @@ def test_build_compose_cmd_testing_uses_this_checkouts_project(monkeypatch):
 
 
 def test_build_compose_cmd_testing_refuses_without_a_project(monkeypatch):
-    import pytest
-
     monkeypatch.delenv('ICB_TEST_PROJECT', raising=False)
     with pytest.raises(SystemExit, match='icbops testing logs'):
         log_viewer.build_compose_cmd('testing', tail=100, follow=False, services=[])
 
 
 def test_build_compose_cmd_rejects_unknown_env():
-    import pytest
-
     with pytest.raises(SystemExit):
         log_viewer.build_compose_cmd('staging', tail=50, follow=True, services=[])
 

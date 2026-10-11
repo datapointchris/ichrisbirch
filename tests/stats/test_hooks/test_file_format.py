@@ -7,6 +7,18 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks import check_executables_have_shebangs
+from stats.hooks import check_json
+from stats.hooks import check_shebang_scripts_are_executable
+from stats.hooks import check_toml
+from stats.hooks import check_yaml
+from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
+from stats.schemas.hooks.file_format import CheckJsonHookEvent
+from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
+from stats.schemas.hooks.file_format import CheckTomlHookEvent
+from stats.schemas.hooks.file_format import CheckYamlHookEvent
+from stats.schemas.hooks.file_format import FileFormatIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,9 +27,6 @@ class TestCheckYamlSchema:
 
     def test_check_yaml_hook_event_with_issues(self) -> None:
         """Test CheckYamlHookEvent with issues."""
-        from stats.schemas.hooks.file_format import CheckYamlHookEvent
-        from stats.schemas.hooks.file_format import FileFormatIssue
-
         event = CheckYamlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -42,8 +51,6 @@ class TestCheckYamlSchema:
 
     def test_check_yaml_hook_event_clean(self) -> None:
         """Test CheckYamlHookEvent with no issues."""
-        from stats.schemas.hooks.file_format import CheckYamlHookEvent
-
         event = CheckYamlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -65,9 +72,6 @@ class TestCheckYamlRunner:
 
     def test_check_yaml_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns CheckYamlHookEvent for clean output."""
-        from stats.hooks.check_yaml import run
-        from stats.schemas.hooks.file_format import CheckYamlHookEvent
-
         clean_output = (FIXTURES_DIR / 'check_yaml_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -77,7 +81,7 @@ class TestCheckYamlRunner:
                 stderr='',
             )
 
-            event = run(['config.yaml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckYamlHookEvent)
             assert event.status == 'passed'
@@ -85,9 +89,6 @@ class TestCheckYamlRunner:
 
     def test_check_yaml_runner_parses_issues(self) -> None:
         """Test runner parses issues from check-yaml output."""
-        from stats.hooks.check_yaml import run
-        from stats.schemas.hooks.file_format import CheckYamlHookEvent
-
         issues_output = (FIXTURES_DIR / 'check_yaml_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -97,7 +98,7 @@ class TestCheckYamlRunner:
                 stderr='',
             )
 
-            event = run(['config.yaml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckYamlHookEvent)
             assert event.status == 'failed'
@@ -107,12 +108,10 @@ class TestCheckYamlRunner:
 
     def test_check_yaml_runner_filters_yaml_files(self) -> None:
         """Test runner only checks YAML files."""
-        from stats.hooks.check_yaml import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['config.yaml', 'main.py', 'settings.yml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml', 'main.py', 'settings.yml'], 'master', 'ichrisbirch')
 
             assert set(event.files_checked) == {'config.yaml', 'settings.yml'}
 
@@ -122,9 +121,6 @@ class TestCheckTomlSchema:
 
     def test_check_toml_hook_event_with_issues(self) -> None:
         """Test CheckTomlHookEvent with issues."""
-        from stats.schemas.hooks.file_format import CheckTomlHookEvent
-        from stats.schemas.hooks.file_format import FileFormatIssue
-
         event = CheckTomlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -152,9 +148,6 @@ class TestCheckTomlRunner:
 
     def test_check_toml_runner_parses_issues(self) -> None:
         """Test runner parses issues from check-toml output."""
-        from stats.hooks.check_toml import run
-        from stats.schemas.hooks.file_format import CheckTomlHookEvent
-
         issues_output = (FIXTURES_DIR / 'check_toml_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -164,7 +157,7 @@ class TestCheckTomlRunner:
                 stderr='',
             )
 
-            event = run(['pyproject.toml'], 'master', 'ichrisbirch')
+            event = check_toml.run(['pyproject.toml'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckTomlHookEvent)
             assert event.status == 'failed'
@@ -175,12 +168,10 @@ class TestCheckTomlRunner:
 
     def test_check_toml_runner_filters_toml_files(self) -> None:
         """Test runner only checks TOML files."""
-        from stats.hooks.check_toml import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['pyproject.toml', 'main.py', 'config.yaml'], 'master', 'ichrisbirch')
+            event = check_toml.run(['pyproject.toml', 'main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
             assert event.files_checked == ['pyproject.toml']
 
@@ -190,9 +181,6 @@ class TestCheckJsonSchema:
 
     def test_check_json_hook_event_with_issues(self) -> None:
         """Test CheckJsonHookEvent with issues."""
-        from stats.schemas.hooks.file_format import CheckJsonHookEvent
-        from stats.schemas.hooks.file_format import FileFormatIssue
-
         event = CheckJsonHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -220,9 +208,6 @@ class TestCheckJsonRunner:
 
     def test_check_json_runner_parses_issues(self) -> None:
         """Test runner parses issues from check-json output."""
-        from stats.hooks.check_json import run
-        from stats.schemas.hooks.file_format import CheckJsonHookEvent
-
         issues_output = (FIXTURES_DIR / 'check_json_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -232,7 +217,7 @@ class TestCheckJsonRunner:
                 stderr='',
             )
 
-            event = run(['package.json'], 'master', 'ichrisbirch')
+            event = check_json.run(['package.json'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckJsonHookEvent)
             assert event.status == 'failed'
@@ -243,12 +228,10 @@ class TestCheckJsonRunner:
 
     def test_check_json_runner_filters_json_files(self) -> None:
         """Test runner only checks JSON files."""
-        from stats.hooks.check_json import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['package.json', 'main.py', 'data.json'], 'master', 'ichrisbirch')
+            event = check_json.run(['package.json', 'main.py', 'data.json'], 'master', 'ichrisbirch')
 
             assert set(event.files_checked) == {'package.json', 'data.json'}
 
@@ -258,8 +241,6 @@ class TestCheckExecutablesShebangsSchema:
 
     def test_check_executables_shebangs_hook_event_with_issues(self) -> None:
         """Test CheckExecutablesShebangsHookEvent with files missing shebangs."""
-        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
-
         event = CheckExecutablesShebangsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -277,8 +258,6 @@ class TestCheckExecutablesShebangsSchema:
 
     def test_check_executables_shebangs_hook_event_clean(self) -> None:
         """Test CheckExecutablesShebangsHookEvent with no issues."""
-        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
-
         event = CheckExecutablesShebangsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -300,9 +279,6 @@ class TestCheckExecutablesShebangsRunner:
 
     def test_check_executables_shebangs_runner_clean(self) -> None:
         """Test runner returns passed event for files with shebangs."""
-        from stats.hooks.check_executables_have_shebangs import run
-        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -310,7 +286,7 @@ class TestCheckExecutablesShebangsRunner:
                 stderr='',
             )
 
-            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_executables_have_shebangs.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckExecutablesShebangsHookEvent)
             assert event.status == 'passed'
@@ -318,9 +294,6 @@ class TestCheckExecutablesShebangsRunner:
 
     def test_check_executables_shebangs_runner_parses_issues(self) -> None:
         """Test runner parses files missing shebangs from output."""
-        from stats.hooks.check_executables_have_shebangs import run
-        from stats.schemas.hooks.file_format import CheckExecutablesShebangsHookEvent
-
         issues_output = (FIXTURES_DIR / 'check_executables_shebangs_with_issues.txt').read_text()
 
         with (
@@ -333,7 +306,7 @@ class TestCheckExecutablesShebangsRunner:
                 stderr='',
             )
 
-            event = run(['scripts/deploy.sh', 'scripts/backup.sh'], 'master', 'ichrisbirch')
+            event = check_executables_have_shebangs.run(['scripts/deploy.sh', 'scripts/backup.sh'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckExecutablesShebangsHookEvent)
             assert event.status == 'failed'
@@ -341,9 +314,7 @@ class TestCheckExecutablesShebangsRunner:
 
     def test_check_executables_shebangs_runner_empty_staged(self) -> None:
         """Test runner returns passed event when no files are staged."""
-        from stats.hooks.check_executables_have_shebangs import run
-
-        event = run([], 'master', 'ichrisbirch')
+        event = check_executables_have_shebangs.run([], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -354,8 +325,6 @@ class TestCheckShebangExecutableSchema:
 
     def test_check_shebang_executable_hook_event_with_issues(self) -> None:
         """Test CheckShebangExecutableHookEvent with files not executable."""
-        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
-
         event = CheckShebangExecutableHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -373,8 +342,6 @@ class TestCheckShebangExecutableSchema:
 
     def test_check_shebang_executable_hook_event_clean(self) -> None:
         """Test CheckShebangExecutableHookEvent with no issues."""
-        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
-
         event = CheckShebangExecutableHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -396,9 +363,6 @@ class TestCheckShebangExecutableRunner:
 
     def test_check_shebang_executable_runner_clean(self) -> None:
         """Test runner returns passed event for executable scripts."""
-        from stats.hooks.check_shebang_scripts_are_executable import run
-        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -406,7 +370,7 @@ class TestCheckShebangExecutableRunner:
                 stderr='',
             )
 
-            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckShebangExecutableHookEvent)
             assert event.status == 'passed'
@@ -414,9 +378,6 @@ class TestCheckShebangExecutableRunner:
 
     def test_check_shebang_executable_runner_parses_issues(self) -> None:
         """Test runner parses files not executable from output."""
-        from stats.hooks.check_shebang_scripts_are_executable import run
-        from stats.schemas.hooks.file_format import CheckShebangExecutableHookEvent
-
         issues_output = (FIXTURES_DIR / 'check_shebang_executable_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -426,7 +387,7 @@ class TestCheckShebangExecutableRunner:
                 stderr='',
             )
 
-            event = run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
 
             assert isinstance(event, CheckShebangExecutableHookEvent)
             assert event.status == 'failed'
@@ -434,9 +395,7 @@ class TestCheckShebangExecutableRunner:
 
     def test_check_shebang_executable_runner_empty_staged(self) -> None:
         """Test runner returns passed event when no files are staged."""
-        from stats.hooks.check_shebang_scripts_are_executable import run
-
-        event = run([], 'master', 'ichrisbirch')
+        event = check_shebang_scripts_are_executable.run([], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked

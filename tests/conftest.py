@@ -7,12 +7,14 @@ Each session runs against its own Postgres and Redis, started by `tests.environm
 import contextlib
 import logging
 import threading
+import time
 from contextlib import contextmanager
 
 import pytest
 from apscheduler.schedulers.blocking import BlockingScheduler
 from fastapi.testclient import TestClient
 from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
@@ -31,10 +33,13 @@ from tests import test_data
 from tests.environment import PrivateServices
 from tests.factories import clear_factory_session
 from tests.factories import set_factory_session
+from tests.utils.database import clear_test_connection
 from tests.utils.database import get_test_login_users
 from tests.utils.database import get_test_runner_settings
 from tests.utils.database import get_test_session
 from tests.utils.database import get_test_user
+from tests.utils.database import get_transactional_session
+from tests.utils.database import set_test_connection
 from tests.utils.database import test_settings
 
 logger = logging.getLogger(__name__)
@@ -76,8 +81,6 @@ def prewarm_caches():
     This avoids the first-test latency (~230ms per API creation, ~104ms for user lookups).
     Called from insert_users_for_login after tables and users are ready.
     """
-    import time
-
     start = time.perf_counter()
 
     # Pre-warm API apps (~230ms each, but done once)
@@ -244,8 +247,6 @@ def reset_sequences(engine):
 
     Note: users_id_seq is NOT reset because login users (IDs 1-3) are session-scoped.
     """
-    from sqlalchemy import text
-
     with engine.connect() as reset_conn:
         for seq in SEQUENCES_TO_RESET:
             with contextlib.suppress(Exception):
@@ -267,9 +268,6 @@ def factory_session(truncate_tables):
             assert task.id is not None
             # Data is automatically cleaned up after test via rollback
     """
-    from tests.utils.database import clear_test_connection
-    from tests.utils.database import set_test_connection
-
     engine = get_db_engine(test_settings)
     connection = engine.connect()
     transaction = connection.begin()
@@ -312,10 +310,6 @@ def create_transactional_api_client(login=False, admin=False):
     Yields:
         tuple: (TestClient, Session) - API client and transactional session
     """
-    from tests.utils.database import clear_test_connection
-    from tests.utils.database import get_transactional_session
-    from tests.utils.database import set_test_connection
-
     engine = get_db_engine(test_settings)
     connection = engine.connect()
     transaction = connection.begin()
@@ -426,10 +420,6 @@ def create_multi_client_transactional_context():
             - 'client_logged_in': Regular user API client
             - 'client_admin': Admin user API client
     """
-    from tests.utils.database import clear_test_connection
-    from tests.utils.database import get_transactional_session
-    from tests.utils.database import set_test_connection
-
     engine = get_db_engine(test_settings)
     connection = engine.connect()
     transaction = connection.begin()

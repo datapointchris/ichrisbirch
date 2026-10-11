@@ -17,6 +17,14 @@ destructive operations live in one clearly-named module.
 import os
 import sys
 
+import structlog
+
+from ichrisbirch.config import get_settings
+from ichrisbirch.database.initialization import create_tables
+from ichrisbirch.database.initialization import drop_all_tables
+from ichrisbirch.database.initialization import insert_default_users
+from ichrisbirch.database.session import create_session
+
 ALLOWED_ENVIRONMENTS = {
     'development': {'host': 'localhost', 'port': '5432'},
     'testing': {'host': 'postgres', 'port': '5432'},
@@ -36,14 +44,6 @@ def main():
     expected = ALLOWED_ENVIRONMENTS[env]
     os.environ['POSTGRES_HOST'] = expected['host']
     os.environ['POSTGRES_PORT'] = expected['port']
-
-    import structlog
-
-    from ichrisbirch.config import get_settings
-    from ichrisbirch.database.initialization import create_tables
-    from ichrisbirch.database.initialization import drop_all_tables
-    from ichrisbirch.database.initialization import insert_default_users
-    from ichrisbirch.database.session import create_session
 
     logger = structlog.get_logger()
     settings = get_settings()

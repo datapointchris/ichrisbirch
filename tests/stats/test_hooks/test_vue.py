@@ -8,6 +8,15 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks import vue_eslint
+from stats.hooks import vue_prettier
+from stats.hooks import vue_typecheck
+from stats.schemas.hooks.vue import EslintMessage
+from stats.schemas.hooks.vue import TypecheckError
+from stats.schemas.hooks.vue import VueEslintHookEvent
+from stats.schemas.hooks.vue import VuePrettierHookEvent
+from stats.schemas.hooks.vue import VueTypecheckHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -16,9 +25,6 @@ class TestVueEslintSchema:
 
     def test_vue_eslint_hook_event_with_issues(self) -> None:
         """Test VueEslintHookEvent with issues from fixture."""
-        from stats.schemas.hooks.vue import EslintMessage
-        from stats.schemas.hooks.vue import VueEslintHookEvent
-
         raw = json.loads((FIXTURES_DIR / 'vue_eslint_with_issues.json').read_text())
         messages: list[EslintMessage] = []
         for file_result in raw:
@@ -57,8 +63,6 @@ class TestVueEslintSchema:
 
     def test_vue_eslint_hook_event_clean(self) -> None:
         """Test VueEslintHookEvent with no issues."""
-        from stats.schemas.hooks.vue import VueEslintHookEvent
-
         event = VueEslintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -84,9 +88,6 @@ class TestVueEslintRunner:
 
     def test_vue_eslint_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns VueEslintHookEvent for clean output."""
-        from stats.hooks.vue_eslint import run
-        from stats.schemas.hooks.vue import VueEslintHookEvent
-
         clean_output = (FIXTURES_DIR / 'vue_eslint_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -96,7 +97,7 @@ class TestVueEslintRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VueEslintHookEvent)
             assert event.status == 'passed'
@@ -106,9 +107,6 @@ class TestVueEslintRunner:
 
     def test_vue_eslint_runner_parses_issues(self) -> None:
         """Test runner parses issues from ESLint output."""
-        from stats.hooks.vue_eslint import run
-        from stats.schemas.hooks.vue import VueEslintHookEvent
-
         issues_output = (FIXTURES_DIR / 'vue_eslint_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -118,7 +116,7 @@ class TestVueEslintRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VueEslintHookEvent)
             assert event.status == 'failed'
@@ -128,9 +126,7 @@ class TestVueEslintRunner:
 
     def test_vue_eslint_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/TS files."""
-        from stats.hooks.vue_eslint import run
-
-        event = run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_eslint.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -141,8 +137,6 @@ class TestVuePrettierSchema:
 
     def test_vue_prettier_hook_event_with_reformatted(self) -> None:
         """Test VuePrettierHookEvent with files needing reformatting."""
-        from stats.schemas.hooks.vue import VuePrettierHookEvent
-
         event = VuePrettierHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -160,8 +154,6 @@ class TestVuePrettierSchema:
 
     def test_vue_prettier_hook_event_clean(self) -> None:
         """Test VuePrettierHookEvent with no files needing reformatting."""
-        from stats.schemas.hooks.vue import VuePrettierHookEvent
-
         event = VuePrettierHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -183,9 +175,6 @@ class TestVuePrettierRunner:
 
     def test_vue_prettier_runner_clean(self) -> None:
         """Test runner returns passed event for well-formatted files."""
-        from stats.hooks.vue_prettier import run
-        from stats.schemas.hooks.vue import VuePrettierHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -193,7 +182,7 @@ class TestVuePrettierRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_prettier.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VuePrettierHookEvent)
             assert event.status == 'passed'
@@ -201,9 +190,6 @@ class TestVuePrettierRunner:
 
     def test_vue_prettier_runner_with_reformatted(self) -> None:
         """Test runner parses files needing reformatting from output."""
-        from stats.hooks.vue_prettier import run
-        from stats.schemas.hooks.vue import VuePrettierHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -211,7 +197,7 @@ class TestVuePrettierRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/components/Foo.vue'], 'master', 'ichrisbirch')
+            event = vue_prettier.run(['frontend/src/components/Foo.vue'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VuePrettierHookEvent)
             assert event.status == 'failed'
@@ -220,9 +206,7 @@ class TestVuePrettierRunner:
 
     def test_vue_prettier_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/frontend files."""
-        from stats.hooks.vue_prettier import run
-
-        event = run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_prettier.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -233,9 +217,6 @@ class TestVueTypecheckSchema:
 
     def test_vue_typecheck_hook_event_with_errors(self) -> None:
         """Test VueTypecheckHookEvent with type errors."""
-        from stats.schemas.hooks.vue import TypecheckError
-        from stats.schemas.hooks.vue import VueTypecheckHookEvent
-
         event = VueTypecheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -269,8 +250,6 @@ class TestVueTypecheckSchema:
 
     def test_vue_typecheck_hook_event_clean(self) -> None:
         """Test VueTypecheckHookEvent with no errors."""
-        from stats.schemas.hooks.vue import VueTypecheckHookEvent
-
         event = VueTypecheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -292,9 +271,6 @@ class TestVueTypecheckRunner:
 
     def test_vue_typecheck_runner_clean(self) -> None:
         """Test runner returns passed event for clean type check."""
-        from stats.hooks.vue_typecheck import run
-        from stats.schemas.hooks.vue import VueTypecheckHookEvent
-
         clean_output = (FIXTURES_DIR / 'vue_typecheck_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -304,7 +280,7 @@ class TestVueTypecheckRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_typecheck.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VueTypecheckHookEvent)
             assert event.status == 'passed'
@@ -313,9 +289,6 @@ class TestVueTypecheckRunner:
 
     def test_vue_typecheck_runner_parses_errors(self) -> None:
         """Test runner parses type errors from tsc output."""
-        from stats.hooks.vue_typecheck import run
-        from stats.schemas.hooks.vue import VueTypecheckHookEvent
-
         errors_output = (FIXTURES_DIR / 'vue_typecheck_with_errors.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -325,7 +298,7 @@ class TestVueTypecheckRunner:
                 stderr='',
             )
 
-            event = run(['frontend/src/stores/books.ts'], 'master', 'ichrisbirch')
+            event = vue_typecheck.run(['frontend/src/stores/books.ts'], 'master', 'ichrisbirch')
 
             assert isinstance(event, VueTypecheckHookEvent)
             assert event.status == 'failed'
@@ -338,9 +311,7 @@ class TestVueTypecheckRunner:
 
     def test_vue_typecheck_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/TS files."""
-        from stats.hooks.vue_typecheck import run
-
-        event = run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_typecheck.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert event.error_count == 0

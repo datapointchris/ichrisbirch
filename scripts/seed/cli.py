@@ -5,6 +5,9 @@ from __future__ import annotations
 import argparse
 import os
 
+from ichrisbirch.config import get_settings
+from scripts.seed.run import run_seed
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -25,9 +28,6 @@ def main():
     args = parser.parse_args()
 
     os.environ['ENVIRONMENT'] = args.env
-
-    from ichrisbirch.config import get_settings
-    from scripts.seed.run import run_seed
 
     settings = get_settings()
     only = args.only.split(',') if args.only else None

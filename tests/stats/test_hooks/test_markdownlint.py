@@ -7,6 +7,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.markdownlint import run
+from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
+from stats.schemas.hooks.markdownlint import MarkdownlintIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +19,6 @@ class TestMarkdownlintSchema:
 
     def test_markdownlint_issue_schema(self) -> None:
         """Test that MarkdownlintIssue captures all fields."""
-        from stats.schemas.hooks.markdownlint import MarkdownlintIssue
-
         issue = MarkdownlintIssue(
             file_name='docs/README.md',
             line_number=10,
@@ -35,9 +37,6 @@ class TestMarkdownlintSchema:
 
     def test_markdownlint_hook_event_with_issues(self) -> None:
         """Test MarkdownlintHookEvent with issues."""
-        from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
-        from stats.schemas.hooks.markdownlint import MarkdownlintIssue
-
         event = MarkdownlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -65,8 +64,6 @@ class TestMarkdownlintSchema:
 
     def test_markdownlint_hook_event_clean(self) -> None:
         """Test MarkdownlintHookEvent with no issues."""
-        from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
-
         event = MarkdownlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -88,9 +85,6 @@ class TestMarkdownlintRunner:
 
     def test_markdownlint_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns MarkdownlintHookEvent for clean output."""
-        from stats.hooks.markdownlint import run
-        from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
-
         clean_output = (FIXTURES_DIR / 'markdownlint_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -109,9 +103,6 @@ class TestMarkdownlintRunner:
 
     def test_markdownlint_runner_parses_issues(self) -> None:
         """Test runner parses issues from markdownlint JSON output."""
-        from stats.hooks.markdownlint import run
-        from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
-
         issues_output = (FIXTURES_DIR / 'markdownlint_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -133,8 +124,6 @@ class TestMarkdownlintRunner:
 
     def test_markdownlint_runner_measures_duration(self) -> None:
         """Test runner measures execution duration."""
-        from stats.hooks.markdownlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -148,9 +137,6 @@ class TestMarkdownlintRunner:
 
     def test_markdownlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        from stats.hooks.markdownlint import run
-        from stats.schemas.hooks.markdownlint import MarkdownlintHookEvent
-
         event = run([], 'master', 'ichrisbirch')
 
         assert isinstance(event, MarkdownlintHookEvent)
@@ -161,8 +147,6 @@ class TestMarkdownlintRunner:
 
     def test_markdownlint_runner_filters_markdown_files(self) -> None:
         """Test runner only checks markdown files."""
-        from stats.hooks.markdownlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,

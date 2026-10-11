@@ -18,6 +18,7 @@ from typing import get_origin
 
 import pytest
 from fastapi import status
+from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
 from ichrisbirch.services.row_limit import CappedRowLimit
@@ -215,8 +216,6 @@ def collection_reads(api) -> dict:
     after the helper existed. This walks the routes instead, so an endpoint that
     answers with a collection is covered by being registered.
     """
-    from fastapi.routing import APIRoute
-
     found: dict[str, APIRoute] = {}
     for route in api.routes:
         if not isinstance(route, APIRoute) or 'GET' not in route.methods:

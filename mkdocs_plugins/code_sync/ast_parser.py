@@ -5,6 +5,7 @@ This module provides functionality to parse code files using AST (Abstract Synta
 """
 
 import ast
+import importlib.util
 import logging
 import re
 from dataclasses import dataclass
@@ -189,12 +190,8 @@ class TreeSitterParser:
     """Parser that uses Tree-sitter to extract code elements from various language files."""
 
     def __init__(self):
-        self._has_tree_sitter = False
-        try:
-            import tree_sitter  # noqa: F401
-
-            self._has_tree_sitter = True
-        except ImportError:
+        self._has_tree_sitter = importlib.util.find_spec('tree_sitter') is not None
+        if not self._has_tree_sitter:
             logger.warning("Tree-sitter not available. Install with 'pip install tree-sitter'")
 
     def is_available(self) -> bool:

@@ -7,6 +7,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.validate_markdown_links import run
+from stats.schemas.hooks.validate_markdown_links import BrokenLink
+from stats.schemas.hooks.validate_markdown_links import ValidateMarkdownLinksHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,9 +19,6 @@ class TestValidateMarkdownLinksSchema:
 
     def test_validate_markdown_links_hook_event_with_issues(self) -> None:
         """Test ValidateMarkdownLinksHookEvent with broken links."""
-        from stats.schemas.hooks.validate_markdown_links import BrokenLink
-        from stats.schemas.hooks.validate_markdown_links import ValidateMarkdownLinksHookEvent
-
         event = ValidateMarkdownLinksHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -39,9 +40,6 @@ class TestValidateMarkdownLinksRunner:
 
     def test_validate_markdown_links_runner_parses_issues(self) -> None:
         """Test runner parses broken links from output."""
-        from stats.hooks.validate_markdown_links import run
-        from stats.schemas.hooks.validate_markdown_links import ValidateMarkdownLinksHookEvent
-
         output = (FIXTURES_DIR / 'validate_markdown_links_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -62,8 +60,6 @@ class TestValidateMarkdownLinksRunner:
 
     def test_validate_markdown_links_runner_filters_md_files(self) -> None:
         """Test runner only checks markdown files."""
-        from stats.hooks.validate_markdown_links import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 

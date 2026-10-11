@@ -5,6 +5,11 @@ from __future__ import annotations
 import datetime as dt
 from pathlib import Path
 
+from stats.collectors.vitest_collector import run
+from stats.schemas.collectors.vitest_collector import VitestCollectEvent
+from stats.schemas.collectors.vitest_collector import VitestSummary
+from stats.schemas.collectors.vitest_collector import VitestTest
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -13,8 +18,6 @@ class TestVitestSchema:
 
     def test_vitest_summary_schema(self) -> None:
         """Test that VitestSummary captures all fields."""
-        from stats.schemas.collectors.vitest_collector import VitestSummary
-
         summary = VitestSummary(
             passed=4,
             failed=1,
@@ -29,8 +32,6 @@ class TestVitestSchema:
 
     def test_vitest_test_schema(self) -> None:
         """Test that VitestTest captures all fields."""
-        from stats.schemas.collectors.vitest_collector import VitestTest
-
         test = VitestTest(
             name='BookStore > should load books',
             suite='/frontend/src/stores/__tests__/books.test.ts',
@@ -45,9 +46,6 @@ class TestVitestSchema:
 
     def test_vitest_collect_event_schema(self) -> None:
         """Test VitestCollectEvent schema."""
-        from stats.schemas.collectors.vitest_collector import VitestCollectEvent
-        from stats.schemas.collectors.vitest_collector import VitestSummary
-
         event = VitestCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -69,17 +67,12 @@ class TestVitestRunner:
 
     def test_vitest_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None if file doesn't exist."""
-        from stats.collectors.vitest_collector import run
-
         event = run('master', 'ichrisbirch', '/nonexistent/path.json')
 
         assert event is None
 
     def test_vitest_runner_returns_typed_event(self) -> None:
         """Test runner returns VitestCollectEvent."""
-        from stats.collectors.vitest_collector import run
-        from stats.schemas.collectors.vitest_collector import VitestCollectEvent
-
         json_path = FIXTURES_DIR / 'vitest_report.json'
         event = run('master', 'ichrisbirch', str(json_path))
 
@@ -92,8 +85,6 @@ class TestVitestRunner:
 
     def test_vitest_runner_parses_tests(self) -> None:
         """Test runner parses and flattens test details."""
-        from stats.collectors.vitest_collector import run
-
         json_path = FIXTURES_DIR / 'vitest_report.json'
         event = run('master', 'ichrisbirch', str(json_path))
 
@@ -110,8 +101,6 @@ class TestVitestRunner:
 
     def test_vitest_runner_sets_exit_code(self) -> None:
         """Test runner sets exit_code based on success field."""
-        from stats.collectors.vitest_collector import run
-
         json_path = FIXTURES_DIR / 'vitest_report.json'
         event = run('master', 'ichrisbirch', str(json_path))
 

@@ -1,7 +1,6 @@
 import html as html_escaping
 
 import markdown
-import pendulum
 import structlog
 from fastapi import APIRouter
 from fastapi import Depends
@@ -15,17 +14,20 @@ from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import Session
 
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
+from ichrisbirch.api.article_import_worker import enqueue_bulk_import
+from ichrisbirch.api.article_import_worker import get_batch_status
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.services.article_creation import ArticleAlreadyExists
+from ichrisbirch.services.article_creation import summarize_and_create_article
 from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import PageFetchError
 from ichrisbirch.services.outbound_http import PageStatusError
@@ -40,14 +42,6 @@ from ichrisbirch.util import clean_url
 
 logger = structlog.get_logger()
 router = APIRouter()
-
-
-class ArticleAlreadyExists(Exception):
-    """An article with this URL is already saved."""
-
-    def __init__(self, url: str):
-        super().__init__(f'Article already exists: {url}')
-        self.url = url
 
 
 # Every way reading a saved URL fails that is not a fault in this app.
@@ -143,46 +137,6 @@ def create(article: schemas.ArticleCreate, session: DbSession):
     return obj
 
 
-async def summarize_and_create_article(url: str, notes: str | None, session: Session, settings: Settings) -> models.Article:
-    """Fetch URL, summarize via Claude, create article.
-
-    Used by create-from-url endpoint and bulk import worker, so it raises domain
-    exceptions and each caller decides what one means: the endpoint answers a
-    status, the worker records the message.
-    """
-    url = clean_url(url)
-    existing = session.scalar(select(models.Article).where(models.Article.url == url))
-    if existing:
-        raise ArticleAlreadyExists(url)
-
-    page = await run_in_threadpool(read_article_page, url)
-
-    assistant = AnthropicAssistant(
-        name='Article Summary with Tags',
-        system_prompt=settings.ai.prompts.article_summary_tags,
-        settings=settings,
-    )
-    written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
-
-    article = models.Article(
-        title=page.title,
-        url=url,
-        tags=written.tags,
-        summary=written.summary,
-        notes=notes,
-        save_date=pendulum.now(),
-        read_count=0,
-        is_favorite=False,
-        is_current=False,
-        is_archived=False,
-    )
-    session.add(article)
-    session.commit()
-    session.refresh(article)
-    logger.info('article_created_from_url', url=url, title=page.title)
-    return article
-
-
 @router.post('/create-from-url/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
 async def create_from_url(
     body: schemas.ArticleCreateFromUrl,
@@ -201,8 +155,6 @@ async def create_from_url(
 @router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
 def bulk_import(body: schemas.ArticleBulkImport, request: Request):
     """Enqueue URLs for bulk import. Returns batch_id for status polling."""
-    from ichrisbirch.api.article_import_worker import enqueue_bulk_import
-
     if not body.urls:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No URLs provided')
     redis_client = request.app.state.redis_client
@@ -213,8 +165,6 @@ def bulk_import(body: schemas.ArticleBulkImport, request: Request):
 @router.get('/bulk-import/{batch_id}/', status_code=status.HTTP_200_OK)
 def bulk_import_status(batch_id: str, request: Request):
     """Check status of a bulk article import batch."""
-    from ichrisbirch.api.article_import_worker import get_batch_status
-
     redis_client = request.app.state.redis_client
     batch = get_batch_status(redis_client, batch_id)
     if batch is None:

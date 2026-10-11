@@ -7,6 +7,12 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.collectors.tokei import run
+from stats.schemas.collectors.tokei import TokeiCollectEvent
+from stats.schemas.collectors.tokei import TokeiFile
+from stats.schemas.collectors.tokei import TokeiFileStats
+from stats.schemas.collectors.tokei import TokeiLanguageStats
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,10 +21,6 @@ class TestTokeiSchema:
 
     def test_tokei_language_stats_schema(self) -> None:
         """Test that TokeiLanguageStats captures all fields."""
-        from stats.schemas.collectors.tokei import TokeiFile
-        from stats.schemas.collectors.tokei import TokeiFileStats
-        from stats.schemas.collectors.tokei import TokeiLanguageStats
-
         stats = TokeiLanguageStats(
             blanks=100,
             code=1000,
@@ -38,9 +40,6 @@ class TestTokeiSchema:
 
     def test_tokei_collect_event_schema(self) -> None:
         """Test TokeiCollectEvent schema."""
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-        from stats.schemas.collectors.tokei import TokeiLanguageStats
-
         event = TokeiCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -63,9 +62,6 @@ class TestTokeiRunner:
 
     def test_tokei_runner_returns_typed_event(self) -> None:
         """Test runner returns TokeiCollectEvent."""
-        from stats.collectors.tokei import run
-        from stats.schemas.collectors.tokei import TokeiCollectEvent
-
         sample_output = (FIXTURES_DIR / 'tokei_sample.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -83,8 +79,6 @@ class TestTokeiRunner:
 
     def test_tokei_runner_calculates_totals(self) -> None:
         """Test runner calculates totals correctly."""
-        from stats.collectors.tokei import run
-
         sample_output = (FIXTURES_DIR / 'tokei_sample.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -101,8 +95,6 @@ class TestTokeiRunner:
 
     def test_tokei_runner_parses_files(self) -> None:
         """Test runner parses file details."""
-        from stats.collectors.tokei import run
-
         sample_output = (FIXTURES_DIR / 'tokei_sample.json').read_text()
 
         with patch('subprocess.run') as mock_run:

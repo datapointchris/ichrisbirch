@@ -6,14 +6,16 @@ import datetime as dt
 import json
 import tempfile
 
+from stats.collectors.coverage import run
+from stats.schemas.collectors.coverage import CoverageCollectEvent
+from stats.schemas.collectors.coverage import CoverageSummary
+
 
 class TestCoverageSchema:
     """Tests for CoverageCollectEvent schema."""
 
     def test_coverage_summary_schema(self) -> None:
         """Test CoverageSummary captures all fields."""
-        from stats.schemas.collectors.coverage import CoverageSummary
-
         summary = CoverageSummary(
             covered_lines=1000,
             missing_lines=100,
@@ -27,9 +29,6 @@ class TestCoverageSchema:
 
     def test_coverage_collect_event_schema(self) -> None:
         """Test CoverageCollectEvent schema."""
-        from stats.schemas.collectors.coverage import CoverageCollectEvent
-        from stats.schemas.collectors.coverage import CoverageSummary
-
         event = CoverageCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -54,16 +53,11 @@ class TestCoverageRunner:
 
     def test_coverage_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None if file doesn't exist."""
-        from stats.collectors.coverage import run
-
         event = run('master', 'ichrisbirch', '/nonexistent/coverage.json')
         assert event is None
 
     def test_coverage_runner_parses_json(self) -> None:
         """Test runner parses coverage JSON correctly."""
-        from stats.collectors.coverage import run
-        from stats.schemas.collectors.coverage import CoverageCollectEvent
-
         coverage_data = {
             'totals': {
                 'covered_lines': 1000,

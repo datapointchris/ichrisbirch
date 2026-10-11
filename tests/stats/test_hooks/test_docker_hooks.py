@@ -8,6 +8,12 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks import docker_compose_validate
+from stats.hooks import hadolint
+from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
+from stats.schemas.hooks.docker import HadolintHookEvent
+from stats.schemas.hooks.docker import HadolintIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -16,8 +22,6 @@ class TestDockerComposeValidateSchema:
 
     def test_docker_compose_validate_hook_event_passed(self) -> None:
         """Test DockerComposeValidateHookEvent with passing validation."""
-        from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
-
         event = DockerComposeValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -35,8 +39,6 @@ class TestDockerComposeValidateSchema:
 
     def test_docker_compose_validate_hook_event_failed(self) -> None:
         """Test DockerComposeValidateHookEvent with failing validation."""
-        from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
-
         event = DockerComposeValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -57,13 +59,10 @@ class TestDockerComposeValidateRunner:
 
     def test_docker_compose_validate_runner_clean(self) -> None:
         """Test runner returns passed event for valid compose files."""
-        from stats.hooks.docker_compose_validate import run
-        from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['docker-compose.yml'], 'master', 'ichrisbirch')
+            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'ichrisbirch')
 
             assert isinstance(event, DockerComposeValidateHookEvent)
             assert event.status == 'passed'
@@ -72,9 +71,6 @@ class TestDockerComposeValidateRunner:
 
     def test_docker_compose_validate_runner_failed(self) -> None:
         """Test runner returns failed event for invalid compose files."""
-        from stats.hooks.docker_compose_validate import run
-        from stats.schemas.hooks.docker import DockerComposeValidateHookEvent
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1,
@@ -82,7 +78,7 @@ class TestDockerComposeValidateRunner:
                 stderr='services.api.image must be a string',
             )
 
-            event = run(['docker-compose.yml'], 'master', 'ichrisbirch')
+            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'ichrisbirch')
 
             assert isinstance(event, DockerComposeValidateHookEvent)
             assert event.status == 'failed'
@@ -90,9 +86,7 @@ class TestDockerComposeValidateRunner:
 
     def test_docker_compose_validate_runner_skips_non_compose_files(self) -> None:
         """Test runner skips non-compose files."""
-        from stats.hooks.docker_compose_validate import run
-
-        event = run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = docker_compose_validate.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -103,9 +97,6 @@ class TestHadolintSchema:
 
     def test_hadolint_hook_event_with_issues(self) -> None:
         """Test HadolintHookEvent with issues from fixture."""
-        from stats.schemas.hooks.docker import HadolintHookEvent
-        from stats.schemas.hooks.docker import HadolintIssue
-
         raw_issues = json.loads((FIXTURES_DIR / 'hadolint_with_issues.json').read_text())
         issues = [HadolintIssue.model_validate(i) for i in raw_issues]
 
@@ -128,8 +119,6 @@ class TestHadolintSchema:
 
     def test_hadolint_hook_event_clean(self) -> None:
         """Test HadolintHookEvent with no issues."""
-        from stats.schemas.hooks.docker import HadolintHookEvent
-
         event = HadolintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -151,9 +140,6 @@ class TestHadolintRunner:
 
     def test_hadolint_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns HadolintHookEvent for clean output."""
-        from stats.hooks.hadolint import run
-        from stats.schemas.hooks.docker import HadolintHookEvent
-
         clean_output = (FIXTURES_DIR / 'hadolint_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -163,7 +149,7 @@ class TestHadolintRunner:
                 stderr='',
             )
 
-            event = run(['Dockerfile'], 'master', 'ichrisbirch')
+            event = hadolint.run(['Dockerfile'], 'master', 'ichrisbirch')
 
             assert isinstance(event, HadolintHookEvent)
             assert event.status == 'passed'
@@ -172,9 +158,6 @@ class TestHadolintRunner:
 
     def test_hadolint_runner_parses_issues(self) -> None:
         """Test runner parses issues from hadolint output."""
-        from stats.hooks.hadolint import run
-        from stats.schemas.hooks.docker import HadolintHookEvent
-
         issues_output = (FIXTURES_DIR / 'hadolint_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -184,7 +167,7 @@ class TestHadolintRunner:
                 stderr='',
             )
 
-            event = run(['Dockerfile'], 'master', 'ichrisbirch')
+            event = hadolint.run(['Dockerfile'], 'master', 'ichrisbirch')
 
             assert isinstance(event, HadolintHookEvent)
             assert event.status == 'failed'
@@ -195,9 +178,7 @@ class TestHadolintRunner:
 
     def test_hadolint_runner_skips_non_dockerfiles(self) -> None:
         """Test runner skips non-Dockerfile files."""
-        from stats.hooks.hadolint import run
-
-        event = run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = hadolint.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'
         assert not event.files_checked

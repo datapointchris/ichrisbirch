@@ -8,6 +8,7 @@ import argparse
 import logging
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 from .ast_parser import CodeParser
@@ -539,9 +540,6 @@ Examples:
 
 def run_check_mode(syncer: CodeSyncTool, docs_dir: str) -> int:
     """Run in check mode - report if docs are out of sync without modifying."""
-    import tempfile
-    from pathlib import Path
-
     markdown_files = syncer.find_markdown_files(docs_dir)
     out_of_sync = []
 

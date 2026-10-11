@@ -8,14 +8,16 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from stats.collectors.npm_dependencies import run
+from stats.schemas.collectors.npm_dependencies import NpmDependenciesCollectEvent
+from stats.schemas.collectors.npm_dependencies import NpmDependency
+
 
 class TestNpmDependenciesSchema:
     """Tests for NpmDependenciesCollectEvent schema."""
 
     def test_npm_dependency_schema(self) -> None:
         """Test that NpmDependency captures all fields."""
-        from stats.schemas.collectors.npm_dependencies import NpmDependency
-
         dep = NpmDependency(
             name='vue',
             version='3.4.0',
@@ -26,9 +28,6 @@ class TestNpmDependenciesSchema:
 
     def test_npm_dependencies_collect_event_schema(self) -> None:
         """Test NpmDependenciesCollectEvent schema."""
-        from stats.schemas.collectors.npm_dependencies import NpmDependenciesCollectEvent
-        from stats.schemas.collectors.npm_dependencies import NpmDependency
-
         event = NpmDependenciesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -59,8 +58,6 @@ class TestNpmDependenciesRunner:
 
     def test_npm_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None when package.json doesn't exist."""
-        from stats.collectors.npm_dependencies import run
-
         with tempfile.TemporaryDirectory() as tmpdir:
             # Point __file__ to a location where frontend/package.json does not exist
             fake_file = Path(tmpdir) / 'stats' / 'collectors' / 'npm_dependencies.py'
@@ -74,9 +71,6 @@ class TestNpmDependenciesRunner:
 
     def test_npm_runner_parses_package_json(self) -> None:
         """Test runner correctly parses a package.json file."""
-        from stats.collectors.npm_dependencies import run
-        from stats.schemas.collectors.npm_dependencies import NpmDependenciesCollectEvent
-
         package_data = {
             'name': 'ichrisbirch-frontend',
             'dependencies': {

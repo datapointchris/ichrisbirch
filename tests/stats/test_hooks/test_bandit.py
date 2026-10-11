@@ -8,6 +8,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.bandit import run
+from stats.schemas.hooks.bandit import BanditHookEvent
+from stats.schemas.hooks.bandit import BanditIssue
+from stats.schemas.hooks.bandit import BanditMetrics
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -16,8 +21,6 @@ class TestBanditSchema:
 
     def test_bandit_issue_schema_parses_real_output(self) -> None:
         """Test that BanditIssue can parse real bandit output."""
-        from stats.schemas.hooks.bandit import BanditIssue
-
         data = json.loads((FIXTURES_DIR / 'bandit_with_issues.json').read_text())
         results = data.get('results', [])
 
@@ -36,10 +39,6 @@ class TestBanditSchema:
 
     def test_bandit_hook_event_with_issues(self) -> None:
         """Test BanditHookEvent with issues."""
-        from stats.schemas.hooks.bandit import BanditHookEvent
-        from stats.schemas.hooks.bandit import BanditIssue
-        from stats.schemas.hooks.bandit import BanditMetrics
-
         data = json.loads((FIXTURES_DIR / 'bandit_with_issues.json').read_text())
         issues = [BanditIssue.model_validate(i) for i in data.get('results', [])]
 
@@ -61,9 +60,6 @@ class TestBanditSchema:
 
     def test_bandit_hook_event_clean(self) -> None:
         """Test BanditHookEvent with no issues."""
-        from stats.schemas.hooks.bandit import BanditHookEvent
-        from stats.schemas.hooks.bandit import BanditMetrics
-
         event = BanditHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -86,9 +82,6 @@ class TestBanditRunner:
 
     def test_bandit_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns BanditHookEvent for clean output."""
-        from stats.hooks.bandit import run
-        from stats.schemas.hooks.bandit import BanditHookEvent
-
         clean_output = (FIXTURES_DIR / 'bandit_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -107,9 +100,6 @@ class TestBanditRunner:
 
     def test_bandit_runner_parses_issues(self) -> None:
         """Test runner parses issues from bandit output."""
-        from stats.hooks.bandit import run
-        from stats.schemas.hooks.bandit import BanditHookEvent
-
         issues_output = (FIXTURES_DIR / 'bandit_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -128,8 +118,6 @@ class TestBanditRunner:
 
     def test_bandit_runner_parses_metrics(self) -> None:
         """Test runner parses metrics from bandit output."""
-        from stats.hooks.bandit import run
-
         issues_output = (FIXTURES_DIR / 'bandit_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:

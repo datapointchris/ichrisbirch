@@ -7,6 +7,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.actionlint import run
+from stats.schemas.hooks.actionlint import ActionlintHookEvent
+from stats.schemas.hooks.actionlint import ActionlintIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +19,6 @@ class TestActionlintSchema:
 
     def test_actionlint_issue_schema(self) -> None:
         """Test that ActionlintIssue captures all fields."""
-        from stats.schemas.hooks.actionlint import ActionlintIssue
-
         issue = ActionlintIssue(
             message='shellcheck reported issue in this script: SC2086',
             filepath='.github/workflows/deploy-project.yml',
@@ -34,9 +36,6 @@ class TestActionlintSchema:
 
     def test_actionlint_hook_event_with_issues(self) -> None:
         """Test ActionlintHookEvent with issues."""
-        from stats.schemas.hooks.actionlint import ActionlintHookEvent
-        from stats.schemas.hooks.actionlint import ActionlintIssue
-
         event = ActionlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -63,8 +62,6 @@ class TestActionlintSchema:
 
     def test_actionlint_hook_event_clean(self) -> None:
         """Test ActionlintHookEvent with no issues."""
-        from stats.schemas.hooks.actionlint import ActionlintHookEvent
-
         event = ActionlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -86,9 +83,6 @@ class TestActionlintRunner:
 
     def test_actionlint_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns ActionlintHookEvent for clean output."""
-        from stats.hooks.actionlint import run
-        from stats.schemas.hooks.actionlint import ActionlintHookEvent
-
         clean_output = (FIXTURES_DIR / 'actionlint_clean.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -107,9 +101,6 @@ class TestActionlintRunner:
 
     def test_actionlint_runner_parses_issues(self) -> None:
         """Test runner parses issues from actionlint JSON output."""
-        from stats.hooks.actionlint import run
-        from stats.schemas.hooks.actionlint import ActionlintHookEvent
-
         issues_output = (FIXTURES_DIR / 'actionlint_with_issues.json').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -131,8 +122,6 @@ class TestActionlintRunner:
 
     def test_actionlint_runner_measures_duration(self) -> None:
         """Test runner measures execution duration."""
-        from stats.hooks.actionlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -146,9 +135,6 @@ class TestActionlintRunner:
 
     def test_actionlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        from stats.hooks.actionlint import run
-        from stats.schemas.hooks.actionlint import ActionlintHookEvent
-
         event = run([], 'master', 'ichrisbirch')
 
         assert isinstance(event, ActionlintHookEvent)
@@ -159,8 +145,6 @@ class TestActionlintRunner:
 
     def test_actionlint_runner_filters_workflow_files(self) -> None:
         """Test runner only checks workflow YAML files."""
-        from stats.hooks.actionlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,

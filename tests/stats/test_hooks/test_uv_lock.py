@@ -7,6 +7,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.uv_lock import run
+from stats.schemas.hooks.uv_lock import UvLockHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +18,6 @@ class TestUvLockSchema:
 
     def test_uv_lock_hook_event_with_resolution(self) -> None:
         """Test UvLockHookEvent with resolution info."""
-        from stats.schemas.hooks.uv_lock import UvLockHookEvent
-
         event = UvLockHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -38,9 +39,6 @@ class TestUvLockRunner:
 
     def test_uv_lock_runner_parses_resolution(self) -> None:
         """Test runner parses resolution stats from output."""
-        from stats.hooks.uv_lock import run
-        from stats.schemas.hooks.uv_lock import UvLockHookEvent
-
         output = (FIXTURES_DIR / 'uv_lock_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -59,8 +57,6 @@ class TestUvLockRunner:
 
     def test_uv_lock_runner_skips_non_lock_files(self) -> None:
         """Test runner only checks lock-related files."""
-        from stats.hooks.uv_lock import run
-
         event = run(['main.py', 'README.md'], 'master', 'ichrisbirch')
 
         assert event.status == 'passed'

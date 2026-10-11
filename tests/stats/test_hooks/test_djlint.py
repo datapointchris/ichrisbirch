@@ -7,6 +7,10 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.djlint import run
+from stats.schemas.hooks.djlint import DjlintHookEvent
+from stats.schemas.hooks.djlint import DjlintIssue
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +19,6 @@ class TestDjlintSchema:
 
     def test_djlint_issue_schema(self) -> None:
         """Test that DjlintIssue captures all fields."""
-        from stats.schemas.hooks.djlint import DjlintIssue
-
         issue = DjlintIssue(
             path='ichrisbirch/app/templates/base.html',
             line=2,
@@ -33,9 +35,6 @@ class TestDjlintSchema:
 
     def test_djlint_hook_event_with_issues(self) -> None:
         """Test DjlintHookEvent with issues."""
-        from stats.schemas.hooks.djlint import DjlintHookEvent
-        from stats.schemas.hooks.djlint import DjlintIssue
-
         event = DjlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -61,8 +60,6 @@ class TestDjlintSchema:
 
     def test_djlint_hook_event_clean(self) -> None:
         """Test DjlintHookEvent with no issues."""
-        from stats.schemas.hooks.djlint import DjlintHookEvent
-
         event = DjlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -84,9 +81,6 @@ class TestDjlintRunner:
 
     def test_djlint_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns DjlintHookEvent for clean output."""
-        from stats.hooks.djlint import run
-        from stats.schemas.hooks.djlint import DjlintHookEvent
-
         clean_output = (FIXTURES_DIR / 'djlint_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -105,9 +99,6 @@ class TestDjlintRunner:
 
     def test_djlint_runner_parses_issues(self) -> None:
         """Test runner parses issues from djlint output."""
-        from stats.hooks.djlint import run
-        from stats.schemas.hooks.djlint import DjlintHookEvent
-
         issues_output = (FIXTURES_DIR / 'djlint_with_issues.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -130,8 +121,6 @@ class TestDjlintRunner:
 
     def test_djlint_runner_measures_duration(self) -> None:
         """Test runner measures execution duration."""
-        from stats.hooks.djlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,
@@ -145,9 +134,6 @@ class TestDjlintRunner:
 
     def test_djlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        from stats.hooks.djlint import run
-        from stats.schemas.hooks.djlint import DjlintHookEvent
-
         event = run([], 'master', 'ichrisbirch')
 
         assert isinstance(event, DjlintHookEvent)
@@ -158,8 +144,6 @@ class TestDjlintRunner:
 
     def test_djlint_runner_filters_html_files(self) -> None:
         """Test runner only checks HTML/Jinja files."""
-        from stats.hooks.djlint import run
-
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0,

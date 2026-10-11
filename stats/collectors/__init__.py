@@ -21,9 +21,7 @@ def discover_collectors() -> dict[str, Callable[..., Any]]:
     """
     collectors: dict[str, Any] = {}
 
-    import stats.collectors as collectors_package
-
-    for _importer, modname, _ispkg in pkgutil.iter_modules(collectors_package.__path__):
+    for _importer, modname, _ispkg in pkgutil.iter_modules(__path__):
         if modname.startswith('_'):
             continue
         with suppress(ImportError):

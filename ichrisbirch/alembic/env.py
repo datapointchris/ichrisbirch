@@ -1,6 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
+from sqlalchemy import create_engine
 from sqlalchemy import pool
 
 from ichrisbirch.config import get_settings
@@ -116,8 +117,6 @@ def run_migrations_online() -> None:
 
     In this scenario we need to create an Engine and associate a connection with the context.
     """
-    from sqlalchemy import create_engine
-
     url = get_db_url()
     connectable = create_engine(url, poolclass=pool.NullPool)
     with connectable.connect() as connection:

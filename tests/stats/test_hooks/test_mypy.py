@@ -7,6 +7,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+from stats.hooks.mypy import parse_mypy_output
+from stats.hooks.mypy import run
+from stats.schemas.hooks.mypy import MypyError
+from stats.schemas.hooks.mypy import MypyHookEvent
+
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
 
 
@@ -15,8 +20,6 @@ class TestMypySchema:
 
     def test_mypy_error_schema(self) -> None:
         """Test that MypyError captures all fields."""
-        from stats.schemas.hooks.mypy import MypyError
-
         error = MypyError(
             filename='/path/to/file.py',
             line=10,
@@ -33,9 +36,6 @@ class TestMypySchema:
 
     def test_mypy_hook_event_with_errors(self) -> None:
         """Test MypyHookEvent with errors."""
-        from stats.schemas.hooks.mypy import MypyError
-        from stats.schemas.hooks.mypy import MypyHookEvent
-
         event = MypyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -61,8 +61,6 @@ class TestMypySchema:
 
     def test_mypy_hook_event_clean(self) -> None:
         """Test MypyHookEvent with no errors."""
-        from stats.schemas.hooks.mypy import MypyHookEvent
-
         event = MypyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -84,9 +82,6 @@ class TestMypyRunner:
 
     def test_mypy_runner_returns_typed_event_clean(self) -> None:
         """Test runner returns MypyHookEvent for clean output."""
-        from stats.hooks.mypy import run
-        from stats.schemas.hooks.mypy import MypyHookEvent
-
         clean_output = (FIXTURES_DIR / 'mypy_clean.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -104,9 +99,6 @@ class TestMypyRunner:
 
     def test_mypy_runner_parses_errors(self) -> None:
         """Test runner parses errors from mypy output."""
-        from stats.hooks.mypy import run
-        from stats.schemas.hooks.mypy import MypyHookEvent
-
         errors_output = (FIXTURES_DIR / 'mypy_with_errors.txt').read_text()
 
         with patch('subprocess.run') as mock_run:
@@ -126,8 +118,6 @@ class TestMypyRunner:
 
     def test_mypy_runner_skips_notes(self) -> None:
         """Test runner skips note-level messages."""
-        from stats.hooks.mypy import parse_mypy_output
-
         output = """test.py:10: note: This is a note  [annotation-unchecked]
 test.py:15: error: Actual error  [return-value]"""
 

@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import datetime as dt
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
+
+from stats.collectors.radon import run
+from stats.schemas.collectors.radon import FileComplexity
+from stats.schemas.collectors.radon import FunctionComplexity
+from stats.schemas.collectors.radon import RadonCollectEvent
 
 
 class TestRadonSchema:
@@ -12,8 +19,6 @@ class TestRadonSchema:
 
     def test_function_complexity_schema(self) -> None:
         """Test FunctionComplexity captures all fields."""
-        from stats.schemas.collectors.radon import FunctionComplexity
-
         func = FunctionComplexity(
             name='calculate_total',
             complexity=5,
@@ -28,9 +33,6 @@ class TestRadonSchema:
 
     def test_file_complexity_schema(self) -> None:
         """Test FileComplexity captures all fields."""
-        from stats.schemas.collectors.radon import FileComplexity
-        from stats.schemas.collectors.radon import FunctionComplexity
-
         file = FileComplexity(
             path='src/main.py',
             function_count=10,
@@ -51,9 +53,6 @@ class TestRadonSchema:
 
     def test_radon_collect_event_schema(self) -> None:
         """Test RadonCollectEvent schema."""
-        from stats.schemas.collectors.radon import FileComplexity
-        from stats.schemas.collectors.radon import RadonCollectEvent
-
         event = RadonCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
             project='ichrisbirch',
@@ -86,12 +85,6 @@ class TestRadonRunner:
 
     def test_radon_runner_parses_output(self) -> None:
         """Test runner parses radon JSON output."""
-        import tempfile
-        from pathlib import Path
-
-        from stats.collectors.radon import run
-        from stats.schemas.collectors.radon import RadonCollectEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a test Python file
             test_file = Path(tmpdir) / 'test.py'
@@ -117,10 +110,6 @@ class TestRadonRunner:
 
     def test_radon_runner_returns_none_for_no_python_files(self) -> None:
         """Test runner returns None when no Python files found."""
-        import tempfile
-
-        from stats.collectors.radon import run
-
         with tempfile.TemporaryDirectory() as tmpdir:
             # Empty directory with no Python files
             event = run('master', 'ichrisbirch', tmpdir)

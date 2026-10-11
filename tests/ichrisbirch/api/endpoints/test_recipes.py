@@ -8,6 +8,7 @@ from fastapi import status
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AssistantFailure
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
+from ichrisbirch.services.outbound_http import PageFetchError
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
 
@@ -559,8 +560,6 @@ class TestUrlImport:
 
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
     def test_import_returns_422_on_fetch_failure(self, mock_extract, recipe_crud_tester):
-        from ichrisbirch.services.outbound_http import PageFetchError
-
         client, _ = recipe_crud_tester
         mock_extract.side_effect = PageFetchError('https://example.com/dead', 'connection refused')
         response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/dead'})

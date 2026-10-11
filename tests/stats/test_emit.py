@@ -3,17 +3,18 @@
 from __future__ import annotations
 
 import datetime as dt
+import json
 import tempfile
 from pathlib import Path
+
+from stats.emit import emit_event
+from stats.schemas.base import BaseEvent
 
 
 class TestEmitEvent:
     """Tests for emit_event function."""
 
     def test_emit_appends_to_jsonl(self) -> None:
-        from stats.emit import emit_event
-        from stats.schemas.base import BaseEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
@@ -31,9 +32,6 @@ class TestEmitEvent:
             assert content.endswith('\n')
 
     def test_emit_creates_parent_directories(self) -> None:
-        from stats.emit import emit_event
-        from stats.schemas.base import BaseEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'nested' / 'dir' / 'events.jsonl'
 
@@ -48,9 +46,6 @@ class TestEmitEvent:
             assert events_path.exists()
 
     def test_emit_appends_multiple_events(self) -> None:
-        from stats.emit import emit_event
-        from stats.schemas.base import BaseEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
@@ -66,11 +61,6 @@ class TestEmitEvent:
             assert len(lines) == 3
 
     def test_emit_writes_valid_json(self) -> None:
-        import json
-
-        from stats.emit import emit_event
-        from stats.schemas.base import BaseEvent
-
         with tempfile.TemporaryDirectory() as tmpdir:
             events_path = Path(tmpdir) / 'events.jsonl'
 
