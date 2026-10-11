@@ -21,14 +21,14 @@ class TestActionlintSchema:
         """Test that ActionlintIssue captures all fields."""
         issue = ActionlintIssue(
             message='shellcheck reported issue in this script: SC2086',
-            filepath='.github/workflows/deploy-project.yml',
+            filepath='.github/workflows/release.yml',
             line=34,
             column=9,
             kind='shellcheck',
             snippet='        run: |\\n        ^~~~',
         )
 
-        assert issue.filepath == '.github/workflows/deploy-project.yml'
+        assert issue.filepath == '.github/workflows/release.yml'
         assert issue.line == 34
         assert issue.column == 9
         assert issue.kind == 'shellcheck'
@@ -116,7 +116,7 @@ class TestActionlintRunner:
             assert event.status == 'failed'
             assert len(event.issues) == 3
             assert event.issues[0].kind == 'shellcheck'
-            assert event.issues[0].filepath == '.github/workflows/deploy-project.yml'
+            assert event.issues[0].filepath == '.github/workflows/release.yml'
             assert event.issues[1].kind == 'workflow-call'
             assert event.issues[2].kind == 'expression'
 

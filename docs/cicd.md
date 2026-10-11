@@ -71,20 +71,6 @@ runs on its own hosted VM, so no two jobs share a Docker daemon. The job saves
 the stack's logs to `frontend/test-results/stack.log` and uploads that
 directory with the JSON report, on a pass as well as a failure.
 
-### AWS Authentication
-
-`terraform-check.yml` uses OIDC (OpenID Connect) for AWS authentication instead of long-lived credentials:
-
-```yaml
-- name: Configure AWS Credentials
-  uses: aws-actions/configure-aws-credentials@v4
-  with:
-    role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-${{ github.event.repository.name }}-role
-    aws-region: ${{ vars.AWS_REGION }}
-```
-
-This provides temporary credentials that expire after the workflow completes.
-
 ## Deploy MkDocs Workflow
 
 Builds and deploys documentation to GitHub Pages.
@@ -143,18 +129,6 @@ Error: The "code_sync" plugin is not installed
 ```
 
 Ensure workflow uses `uv sync` instead of just `pip install mkdocs-material`.
-
-#### 4. AWS credential issues in `terraform-check.yml`
-
-```yaml
-Error: Unable to locate credentials
-```
-
-Check:
-
-- OIDC role is configured correctly in AWS
-- Repository variables `AWS_ACCOUNT_ID` and `AWS_REGION` are set
-- IAM role trust policy allows the repository
 
 ### Viewing CI Logs
 
