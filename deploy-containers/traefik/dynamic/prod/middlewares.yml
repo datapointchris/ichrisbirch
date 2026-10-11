@@ -63,8 +63,8 @@ http:
         period: 1s
 
     # The API resolves Remote-User and Remote-Email to an account. Only ForwardAuth
-    # may set them, and it runs only in front of api-proxy, so every other router
-    # blanks them. An empty value makes Traefik delete the header.
+    # may set them, and only api-v1 and api-proxy pass them on, so every other
+    # router blanks them. An empty value makes Traefik delete the header.
     strip-authelia-identity-headers:
       headers:
         customRequestHeaders:
@@ -72,6 +72,13 @@ http:
           Remote-Email: ""
           Remote-Name: ""
           Remote-Groups: ""
+
+    # Strip /api for api-proxy, in front of an API serving the unversioned
+    # routes at its root
+    strip-api-prefix:
+      stripPrefix:
+        prefixes:
+          - "/api"
 
     # IP allowlist for admin endpoints
     admin-whitelist:
