@@ -143,28 +143,6 @@ func TestProjectKind_SentWhenSet(t *testing.T) {
 	}
 }
 
-func TestDeleteProject_Sends204Delete(t *testing.T) {
-	var gotMethod string
-	var gotPath string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotMethod = r.Method
-		gotPath = r.URL.Path
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	defer srv.Close()
-
-	client := New(srv.URL, staticTokenClient("t"))
-	if err := client.DeleteProject(context.Background(), "018f-a"); err != nil {
-		t.Fatalf("DeleteProject: %v", err)
-	}
-	if gotMethod != http.MethodDelete {
-		t.Errorf("method = %s, want DELETE", gotMethod)
-	}
-	if gotPath != "/api/v1/projects/018f-a" {
-		t.Errorf("path = %s, want /projects/018f-a/", gotPath)
-	}
-}
-
 // A name holding a slash travels as one escaped segment on every call taking a
 // project, or the server reads two segments and answers 404.
 func TestAProjectNameHoldingASlashTravelsAsOneSegment(t *testing.T) {

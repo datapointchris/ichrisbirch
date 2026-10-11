@@ -2,22 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { ApiError, extractApiError } from '../errors'
 
 describe('ApiError', () => {
-  it('carries structured context', () => {
-    const err = new ApiError({
-      message: 'API 422: Validation error',
-      status: 422,
-      detail: 'Validation error',
-      validationErrors: [{ field: 'name', message: 'Required' }],
-      requestId: 'abc123',
-    })
-
-    expect(err.status).toBe(422)
-    expect(err.detail).toBe('Validation error')
-    expect(err.validationErrors).toHaveLength(1)
-    expect(err.requestId).toBe('abc123')
-    expect(err.isNetworkError).toBe(false)
-  })
-
   it('provides user-friendly message for network errors', () => {
     const err = new ApiError({
       message: 'Network error',

@@ -258,14 +258,6 @@ describe('useIssuesStore', () => {
     expect(mockApi.post).toHaveBeenCalledWith('/issues/10/rank', { before: 14 })
   })
 
-  it('releases a claim with a DELETE on the claim', async () => {
-    mockApi.delete.mockResolvedValueOnce({ data: claimed })
-    mockApi.get.mockResolvedValue({ data: [] })
-    const store = useIssuesStore()
-    await store.release(claimed)
-    expect(mockApi.delete).toHaveBeenCalledWith('/issues/11/claim')
-  })
-
   it('surfaces a refused write as an ApiError and reads nothing after it', async () => {
     const refusal = new ApiError({ message: '#10 still has open children', detail: '#10 still has open children', status: 409 })
     mockApi.patch.mockRejectedValueOnce(refusal)

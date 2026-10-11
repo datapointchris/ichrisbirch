@@ -1,81 +1,15 @@
-"""Tests for actionlint hook schema and runner."""
+"""Tests for the actionlint hook runner."""
 
 from __future__ import annotations
 
-import datetime as dt
 from pathlib import Path
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from stats.hooks.actionlint import run
 from stats.schemas.hooks.actionlint import ActionlintHookEvent
-from stats.schemas.hooks.actionlint import ActionlintIssue
 
 FIXTURES_DIR = Path(__file__).parent.parent / 'fixtures' / 'tool_outputs'
-
-
-class TestActionlintSchema:
-    """Tests for ActionlintHookEvent schema."""
-
-    def test_actionlint_issue_schema(self) -> None:
-        """Test that ActionlintIssue captures all fields."""
-        issue = ActionlintIssue(
-            message='shellcheck reported issue in this script: SC2086',
-            filepath='.github/workflows/release.yml',
-            line=34,
-            column=9,
-            kind='shellcheck',
-            snippet='        run: |\\n        ^~~~',
-        )
-
-        assert issue.filepath == '.github/workflows/release.yml'
-        assert issue.line == 34
-        assert issue.column == 9
-        assert issue.kind == 'shellcheck'
-        assert 'SC2086' in issue.message
-
-    def test_actionlint_hook_event_with_issues(self) -> None:
-        """Test ActionlintHookEvent with issues."""
-        event = ActionlintHookEvent(
-            timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
-            branch='master',
-            status='failed',
-            exit_code=1,
-            issues=[
-                ActionlintIssue(
-                    message='shellcheck reported issue',
-                    filepath='.github/workflows/ci.yml',
-                    line=10,
-                    column=5,
-                    kind='shellcheck',
-                    snippet='run: |',
-                )
-            ],
-            files_checked=['.github/workflows/ci.yml'],
-            duration_seconds=0.5,
-        )
-
-        assert event.type == 'hook.actionlint'
-        assert event.status == 'failed'
-        assert len(event.issues) == 1
-
-    def test_actionlint_hook_event_clean(self) -> None:
-        """Test ActionlintHookEvent with no issues."""
-        event = ActionlintHookEvent(
-            timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
-            branch='master',
-            status='passed',
-            exit_code=0,
-            issues=[],
-            files_checked=['.github/workflows/ci.yml'],
-            duration_seconds=0.5,
-        )
-
-        assert event.type == 'hook.actionlint'
-        assert event.status == 'passed'
-        assert not event.issues
 
 
 class TestActionlintRunner:

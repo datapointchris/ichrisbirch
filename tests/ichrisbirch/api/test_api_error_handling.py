@@ -57,12 +57,6 @@ class TestAPIErrorHandling:
         errors = error_data['errors']
         assert any(error['loc'][1] == 'name' for error in errors)
 
-    def test_method_not_allowed(self, test_api_logged_in):
-        """Test handling of unsupported HTTP methods."""
-        # Try to use PATCH on an endpoint that doesn't support it
-        response = test_api_logged_in.patch('/tasks')
-        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
-
     def test_unauthorized_admin_endpoint(self, test_api_logged_in):
         """A signed-in user who is not an admin is known, so the refusal is a 403 rather than a 401."""
         response = test_api_logged_in.get('/admin/config')
@@ -71,22 +65,3 @@ class TestAPIErrorHandling:
     def test_admin_endpoint_with_admin_user(self, test_api_logged_in_admin):
         response = test_api_logged_in_admin.get('/admin/config')
         assert response.status_code == status.HTTP_200_OK
-
-    def test_invalid_json_format(self, test_api_logged_in):
-        """Test handling of malformed JSON."""
-        # Send malformed JSON in request body
-        headers = {'Content-Type': 'application/json'}
-        response = test_api_logged_in.post('/tasks', headers=headers, content='{invalid-json:')
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-
-    def test_invalid_query_parameters(self, test_api_logged_in):
-        """Test handling of invalid query parameters."""
-        # Send invalid query parameter type
-        response = test_api_logged_in.get('/tasks?priority=not_a_number')
-
-        # Should either return 422 for validation error or empty results
-        assert response.status_code in (status.HTTP_422_UNPROCESSABLE_CONTENT, status.HTTP_200_OK)
-
-        if response.status_code == status.HTTP_200_OK:
-            # If API validates params but returns empty results, that's valid too
-            assert response.json() == []

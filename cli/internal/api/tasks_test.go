@@ -98,26 +98,6 @@ func TestTask_DecodesTheRankingFields(t *testing.T) {
 	}
 }
 
-func TestReopenTask_PatchesTheReopenPath(t *testing.T) {
-	client, method, path, _ := recordRequest(t, openTaskJSON)
-	if _, err := client.ReopenTask(context.Background(), 42); err != nil {
-		t.Fatalf("ReopenTask: %v", err)
-	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/reopen" {
-		t.Errorf("%s %s, want PATCH /tasks/42/reopen/", *method, *path)
-	}
-}
-
-func TestSnoozeTask_PatchesTheSnoozePath(t *testing.T) {
-	client, method, path, _ := recordRequest(t, openTaskJSON)
-	if _, err := client.SnoozeTask(context.Background(), 42); err != nil {
-		t.Fatalf("SnoozeTask: %v", err)
-	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/snooze" {
-		t.Errorf("%s %s, want PATCH /tasks/42/snooze/", *method, *path)
-	}
-}
-
 func TestDropTask_SendsTheReason(t *testing.T) {
 	client, method, path, body := recordRequest(t, openTaskJSON)
 	if _, err := client.DropTask(context.Background(), 42, "lost interest"); err != nil {

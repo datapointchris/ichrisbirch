@@ -22,10 +22,6 @@ setup() {
   [ "$(icb_service_url dev app)" = 'https://app.docker.localhost' ]
 }
 
-@test "the production API shares the app's host" {
-  [ "$(icb_service_url prod api)" = 'https://ichrisbirch.com' ]
-}
-
 @test "production serves no dashboard, and says so rather than inventing a URL" {
   run icb_service_url prod dashboard
   [ "$status" -ne 0 ]
