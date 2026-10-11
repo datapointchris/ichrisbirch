@@ -257,6 +257,32 @@ func TestPriorityCell_StarsAnInheritedPriority(t *testing.T) {
 	}
 }
 
+// A star on screen with its meaning only in another command's --help is a
+// symbol the reader has to go and look up.
+func TestNoteInheritedPriority_ExplainsTheStarWhenARowCarriesOne(t *testing.T) {
+	var stderr bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(&stderr)
+
+	noteInheritedPriority(cmd, []api.Issue{{Priority: 2, EffectivePriority: 2}, {Priority: 0, EffectivePriority: 2}})
+
+	if !strings.Contains(stderr.String(), "* priority inherited from what the issue blocks, its parent, or its initiative") {
+		t.Errorf("note = %q, want the star explained", stderr.String())
+	}
+}
+
+func TestNoteInheritedPriority_SilentWhenNoRowIsStarred(t *testing.T) {
+	var stderr bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(&stderr)
+
+	noteInheritedPriority(cmd, []api.Issue{{Priority: 2, EffectivePriority: 2}})
+
+	if stderr.String() != "" {
+		t.Errorf("note = %q, want silence with no star on screen", stderr.String())
+	}
+}
+
 func TestReinvocation_KeepsTheFiltersItWidens(t *testing.T) {
 	cmd := findCommand(t, "issues", "list")
 	if err := cmd.ParseFlags([]string{"--repo", "", "--blocked=false", "--label", "area-cli", "--json"}); err != nil {

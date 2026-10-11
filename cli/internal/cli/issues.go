@@ -316,6 +316,7 @@ func runIssuesCollection(cmd *cobra.Command, asJSON, hidClosed bool, read func(*
 		return encodeJSON(cmd.OutOrStdout(), issues)
 	}
 	printIssuesTable(cmd.OutOrStdout(), issues, time.Now())
+	noteInheritedPriority(cmd, issues)
 	if hidClosed {
 		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nCompleted and canceled issues are hidden: %s\n", reinvocation(cmd, "--status all"))
 	}
@@ -360,7 +361,10 @@ func newIssuesNextCommand() *cobra.Command {
 		Long: "Open, unblocked, not deferred past today, with no open children, and not held\n" +
 			"by a live claim. The first row is what `icb issues claim` with no issue would\n" +
 			"take, under the same flags. Decisions wait on a person and are left out unless\n" +
-			"--type decision asks for them.",
+			"--type decision asks for them.\n" +
+			"\n" +
+			"The priority column is the one the queue sorts by, and a * marks one inherited\n" +
+			"from what the issue blocks, its parent, or its initiative.",
 		Example: "  icb issues next\n" +
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues next --label area-cli --json\n" +
@@ -391,6 +395,7 @@ func newIssuesNextCommand() *cobra.Command {
 			if len(shown) > 0 {
 				printIssuesTable(cmd.OutOrStdout(), shown, time.Now())
 			}
+			noteInheritedPriority(cmd, shown)
 			noteCappedRows(cmd, len(shown), len(ready))
 			return nil
 		},
@@ -582,10 +587,22 @@ func printIssuesTable(out io.Writer, issues []api.Issue, now time.Time) {
 // priorityCell shows the priority the queue sorts by, starred when inherited.
 func priorityCell(issue api.Issue) string {
 	name := priorityName(issue.EffectivePriority)
-	if issue.EffectivePriority != issue.Priority {
+	if isPriorityInherited(issue) {
 		return name + "*"
 	}
 	return name
+}
+
+func isPriorityInherited(issue api.Issue) bool {
+	return issue.EffectivePriority != issue.Priority
+}
+
+// noteInheritedPriority explains the table's * on stderr, when a row carries one.
+func noteInheritedPriority(cmd *cobra.Command, issues []api.Issue) {
+	if !slices.ContainsFunc(issues, isPriorityInherited) {
+		return
+	}
+	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\n* priority inherited from what the issue blocks, its parent, or its initiative")
 }
 
 func orDash(s string) string {

@@ -112,6 +112,7 @@ func newInitiativesShowCommand() *cobra.Command {
 				return nil
 			}
 			printIssuesTable(cmd.OutOrStdout(), issues, time.Now())
+			noteInheritedPriority(cmd, issues)
 			return nil
 		},
 	}
