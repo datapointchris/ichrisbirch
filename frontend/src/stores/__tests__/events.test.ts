@@ -78,7 +78,7 @@ describe('useEventsStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/events/', { params: { when: 'all' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/events', { params: { when: 'all' } })
     expect(store.events).toEqual(testEvents)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -145,7 +145,7 @@ describe('useEventsStore', () => {
       attending: false,
     })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/events/', {
+    expect(mockApi.post).toHaveBeenCalledWith('/events', {
       name: 'Workshop',
       date: '2027-03-10T10:00:00',
       timezone: 'UTC',
@@ -193,7 +193,7 @@ describe('useEventsStore', () => {
 
     const result = await store.update(1, { name: 'Updated Concert', venue: 'MSG', cost: 85.0 })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/events/1/', { name: 'Updated Concert', venue: 'MSG', cost: 85.0 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/events/1', { name: 'Updated Concert', venue: 'MSG', cost: 85.0 })
     expect(result).toEqual(updated)
     expect(store.events.find((e) => e.id === 1)!.name).toBe('Updated Concert')
   })
@@ -216,7 +216,7 @@ describe('useEventsStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/events/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/events/2')
     expect(store.events).toHaveLength(2)
     expect(store.events.find((e) => e.id === 2)).toBeUndefined()
   })
@@ -242,7 +242,7 @@ describe('useEventsStore', () => {
 
     await store.toggleAttending(2)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/events/2/', { attending: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/events/2', { attending: true })
     expect(store.events.find((e) => e.id === 2)!.attending).toBe(true)
   })
 
@@ -254,7 +254,7 @@ describe('useEventsStore', () => {
 
     await store.toggleAttending(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/events/1/', { attending: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/events/1', { attending: false })
     expect(store.events.find((e) => e.id === 1)!.attending).toBe(false)
   })
 

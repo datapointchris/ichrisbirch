@@ -107,7 +107,7 @@ HELD_CALLS = [
     pytest.param(
         'ichrisbirch.services.article_creation.read_article_page',
         'POST',
-        '/articles/create-from-url/',
+        '/articles/create-from-url',
         {'json': {'url': 'https://held.example/article'}},
         'test_api_logged_in_admin',
         id='article-from-url',
@@ -115,12 +115,12 @@ HELD_CALLS = [
     pytest.param(
         'ichrisbirch.api.endpoints.books.get_page',
         'POST',
-        '/books/goodreads/',
+        '/books/goodreads',
         {'json': {'isbn': '9780000000002'}},
         'test_api_logged_in_admin',
         id='goodreads',
     ),
-    pytest.param('docker.from_env', 'GET', '/admin/system/health/', {}, 'test_api_logged_in_admin', id='admin-health'),
+    pytest.param('docker.from_env', 'GET', '/admin/system/health', {}, 'test_api_logged_in_admin', id='admin-health'),
 ]
 
 

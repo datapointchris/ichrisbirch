@@ -19,9 +19,9 @@ from ichrisbirch.database.session import create_session
 from tests.util import show_status_and_response
 from tests.utils.database import get_test_runner_settings
 
-HEALTH_ENDPOINT = '/admin/system/health/'
-ERRORS_ENDPOINT = '/admin/system/errors/'
-CONFIG_ENDPOINT = '/admin/config/'
+HEALTH_ENDPOINT = '/admin/system/health'
+ERRORS_ENDPOINT = '/admin/system/errors'
+CONFIG_ENDPOINT = '/admin/config'
 
 SLOW_PROBE_SECONDS = 2
 SLOW_LISTING_SECONDS = 1

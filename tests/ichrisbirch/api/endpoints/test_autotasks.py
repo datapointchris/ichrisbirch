@@ -21,7 +21,7 @@ NEW_OBJ = schemas.AutoTaskCreate(
     frequency='Biweekly',
 )
 
-ENDPOINT = '/autotasks/'
+ENDPOINT = '/autotasks'
 
 
 @pytest.fixture
@@ -95,7 +95,7 @@ def test_update_autotask(autotask_crud_tester):
     client, crud_tester = autotask_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Name', 'window_days': 9, 'anchor': 'calendar'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'name': 'Updated Name', 'window_days': 9, 'anchor': 'calendar'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     updated = response.json()
@@ -108,7 +108,7 @@ def test_clearing_the_window_falls_back_to_the_category(autotask_crud_tester):
     client, crud_tester = autotask_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'window_days': None})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'window_days': None})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['window_days'] is None
 
@@ -128,7 +128,7 @@ def test_an_unknown_anchor_names_the_known_ones(autotask_crud_tester, method):
         response = client.post(ENDPOINT, json={**NEW_OBJ.model_dump(mode='json'), 'anchor': 'weekly'})
     else:
         first_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.patch(f'{ENDPOINT}{first_id}/', json={'anchor': 'weekly'})
+        response = client.patch(f'{ENDPOINT}/{first_id}', json={'anchor': 'weekly'})
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
     assert 'completion' in response.json()['detail']
@@ -140,11 +140,11 @@ def test_run_autotask(autotask_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     # Get initial state
-    autotask_before = client.get(f'{ENDPOINT}{first_id}/').json()
+    autotask_before = client.get(f'{ENDPOINT}/{first_id}').json()
     initial_run_count = autotask_before['run_count']
 
     # Run the autotask
-    response = client.patch(f'{ENDPOINT}{first_id}/run/')
+    response = client.patch(f'{ENDPOINT}/{first_id}/run')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     # Verify run_count incremented
@@ -152,7 +152,7 @@ def test_run_autotask(autotask_crud_tester):
     assert autotask_after['run_count'] == initial_run_count + 1
     assert autotask_after['last_run_date'] is not None
 
-    tasks_response = client.get('/tasks/')
+    tasks_response = client.get('/tasks')
     assert tasks_response.status_code == status.HTTP_200_OK
     [copy] = [task for task in tasks_response.json() if task['name'] == autotask_before['name']]
     assert copy['autotask_id'] == first_id
@@ -163,25 +163,25 @@ class TestAutoTasksNotFound:
     """Test 404 responses for non-existent autotasks."""
 
     def test_read_one_not_found(self, autotask_crud_tester):
-        """GET /{id}/ returns 404 for non-existent autotask."""
+        """GET /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, autotask_crud_tester):
-        """DELETE /{id}/ returns 404 for non-existent autotask."""
+        """DELETE /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, autotask_crud_tester):
-        """PATCH /{id}/ returns 404 for non-existent autotask."""
+        """PATCH /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Nope'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Nope'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_run_not_found(self, autotask_crud_tester):
-        """PATCH /{id}/run/ returns 404 for non-existent autotask."""
+        """PATCH /{id}/run returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/run/')
+        response = client.patch(f'{ENDPOINT}/99999/run')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

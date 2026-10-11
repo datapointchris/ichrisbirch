@@ -69,7 +69,7 @@ test.describe('Strains Page', () => {
 
     await page.getByTestId('strain-add-button').click()
     await expect(page.getByTestId('add-edit-modal')).toBeVisible({ timeout: 5000 })
-    // The chips are built from GET /strains/vocabulary/, so one rendering here
+    // The chips are built from GET /strains/vocabulary, so one rendering here
     // proves the endpoint answered and the list was not empty.
     await expect(page.getByTestId('strain-effect-relaxed')).toBeVisible()
   })

@@ -92,7 +92,7 @@ acts as the account owner.
 
 `ichrisbirch/api/client_scopes.py` maps each scope to the
 `(method, route template)` pairs it reaches. A template includes the router
-prefix, so `/project-items/{id}/` covers every item.
+prefix, so `/api/v1/project-items/{id}` covers every item.
 
 A router with a route in `SCOPE_ROUTES` takes
 `get_current_user_or_scoped_client`. It admits a scoped client only on a listed

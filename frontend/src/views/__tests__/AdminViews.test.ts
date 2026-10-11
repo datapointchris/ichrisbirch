@@ -58,7 +58,7 @@ const testRecentErrors: RecentError[] = [
   {
     timestamp: '2026-03-29T11:30:00Z',
     method: 'GET',
-    path: '/api/tasks/',
+    path: '/api/tasks',
     status: 500,
     duration_ms: 120,
     request_id: 'req-abc-123',
@@ -227,7 +227,7 @@ describe('AdminSystemView', () => {
       recentErrors: testRecentErrors,
     })
     expect(wrapper.text()).toContain('GET')
-    expect(wrapper.text()).toContain('/api/tasks/')
+    expect(wrapper.text()).toContain('/api/tasks')
     expect(wrapper.text()).toContain('500')
     expect(wrapper.text()).toContain('120ms')
   })
@@ -591,9 +591,9 @@ describe('AdminSmokeView', () => {
         duration_ms: 450,
         all_passed: false,
         results: [
-          { path: '/api/tasks/', name: 'tasks list', status_code: 200, response_time_ms: 50, passed: true, error: null },
+          { path: '/api/tasks', name: 'tasks list', status_code: 200, response_time_ms: 50, passed: true, error: null },
           {
-            path: '/api/broken/',
+            path: '/api/broken',
             name: 'broken endpoint',
             status_code: null,
             response_time_ms: 0,

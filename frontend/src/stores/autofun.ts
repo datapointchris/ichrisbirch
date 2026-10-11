@@ -23,7 +23,7 @@ export const useAutoFunStore = defineStore('autofun', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<AutoFun[]>('/autofun/')
+      const response = await api.get<AutoFun[]>('/autofun')
       items.value = response.data
       logger.info('autofun_fetched', { count: response.data.length })
     } catch (e) {
@@ -39,7 +39,7 @@ export const useAutoFunStore = defineStore('autofun', () => {
   async function create(input: AutoFunCreate) {
     error.value = null
     try {
-      const response = await api.post<AutoFun>('/autofun/', input)
+      const response = await api.post<AutoFun>('/autofun', input)
       items.value.unshift(response.data)
       logger.info('autofun_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -54,7 +54,7 @@ export const useAutoFunStore = defineStore('autofun', () => {
   async function update(id: number, input: AutoFunUpdate) {
     error.value = null
     try {
-      const response = await api.patch<AutoFun>(`/autofun/${id}/`, input)
+      const response = await api.patch<AutoFun>(`/autofun/${id}`, input)
       const index = items.value.findIndex((i) => i.id === id)
       if (index !== -1) items.value[index] = response.data
       logger.info('autofun_updated', { id })
@@ -70,7 +70,7 @@ export const useAutoFunStore = defineStore('autofun', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/autofun/${id}/`)
+      await api.delete(`/autofun/${id}`)
       items.value = items.value.filter((i) => i.id !== id)
       logger.info('autofun_deleted', { id })
     } catch (e) {

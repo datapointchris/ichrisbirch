@@ -185,8 +185,8 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	}
 
 	// A {name} in these templates is a UUID, or for an issue its number. Matched
-	// as any segment, /project-items/{id}/ would also take /project-items/search/
-	// and /issues/{id}/ would take /issues/vocabulary/, both of which FastAPI
+	// as any segment, /project-items/{id} would also take /project-items/search
+	// and /issues/{id} would take /issues/vocabulary, both of which FastAPI
 	// routes to another handler.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)

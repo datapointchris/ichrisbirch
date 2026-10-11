@@ -133,7 +133,7 @@ export const useHabitsStore = defineStore('habits', () => {
   // decide which answer wins before anything reaches the state.
   async function loadHabits(params?: Record<string, string | boolean>) {
     try {
-      const response = await api.get<Habit[]>('/habits/', { params })
+      const response = await api.get<Habit[]>('/habits', { params })
       logger.info('habits_fetched', { count: response.data.length })
       return response.data
     } catch (e) {
@@ -157,7 +157,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function createHabit(input: HabitCreate) {
     error.value = null
     try {
-      const response = await api.post<Habit>('/habits/', input)
+      const response = await api.post<Habit>('/habits', input)
       habits.value.push(response.data)
       logger.info('habit_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -172,7 +172,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function updateHabit(id: number, input: HabitUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Habit>(`/habits/${id}/`, input)
+      const response = await api.patch<Habit>(`/habits/${id}`, input)
       const index = habits.value.findIndex((h) => h.id === id)
       if (index !== -1) {
         habits.value[index] = response.data
@@ -190,7 +190,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function deleteHabit(id: number) {
     error.value = null
     try {
-      await api.delete(`/habits/${id}/`)
+      await api.delete(`/habits/${id}`)
       habits.value = habits.value.filter((h) => h.id !== id)
       logger.info('habit_deleted', { id })
     } catch (e) {
@@ -214,7 +214,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function fetchCategories(params?: Record<string, string | boolean>) {
     error.value = null
     try {
-      const response = await api.get<HabitCategory[]>('/habits/categories/', { params })
+      const response = await api.get<HabitCategory[]>('/habits/categories', { params })
       categories.value = response.data
       logger.info('categories_fetched', { count: response.data.length })
     } catch (e) {
@@ -228,7 +228,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function createCategory(input: HabitCategoryCreate) {
     error.value = null
     try {
-      const response = await api.post<HabitCategory>('/habits/categories/', input)
+      const response = await api.post<HabitCategory>('/habits/categories', input)
       categories.value.push(response.data)
       logger.info('category_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -243,7 +243,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function updateCategory(id: number, input: HabitCategoryUpdate) {
     error.value = null
     try {
-      const response = await api.patch<HabitCategory>(`/habits/categories/${id}/`, input)
+      const response = await api.patch<HabitCategory>(`/habits/categories/${id}`, input)
       const index = categories.value.findIndex((c) => c.id === id)
       if (index !== -1) {
         categories.value[index] = response.data
@@ -261,7 +261,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function deleteCategory(id: number) {
     error.value = null
     try {
-      await api.delete(`/habits/categories/${id}/`)
+      await api.delete(`/habits/categories/${id}`)
       categories.value = categories.value.filter((c) => c.id !== id)
       logger.info('category_deleted', { id })
     } catch (e) {
@@ -285,7 +285,7 @@ export const useHabitsStore = defineStore('habits', () => {
   /** The returning counterpart to fetchCompleted, for the same reason as loadHabits. */
   async function loadCompleted(params?: Record<string, string>) {
     try {
-      const response = await api.get<HabitCompleted[]>('/habits/completed/', { params })
+      const response = await api.get<HabitCompleted[]>('/habits/completed', { params })
       logger.info('completed_fetched', { count: response.data.length })
       return response.data
     } catch (e) {
@@ -304,7 +304,7 @@ export const useHabitsStore = defineStore('habits', () => {
   /** One day's board, already split and ordered by the server. */
   async function loadDay(dayKey: string) {
     try {
-      const response = await api.get<HabitsDay>('/habits/day/', { params: { date: dayKey } })
+      const response = await api.get<HabitsDay>('/habits/day', { params: { date: dayKey } })
       logger.info('habit_day_fetched', {
         date: response.data.date,
         timezone: response.data.timezone,
@@ -339,7 +339,7 @@ export const useHabitsStore = defineStore('habits', () => {
         category_id: habit.category_id,
         complete_date: day,
       }
-      const response = await api.post<HabitCompleted>('/habits/completed/', payload)
+      const response = await api.post<HabitCompleted>('/habits/completed', payload)
       if (day === selectedDate.value) moveToDone(habit.id, response.data)
       logger.info('habit_completed', { id: response.data.id, name: habit.name, day })
       return response.data
@@ -354,7 +354,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function deleteCompleted(id: number) {
     error.value = null
     try {
-      await api.delete(`/habits/completed/${id}/`)
+      await api.delete(`/habits/completed/${id}`)
       const wasOnTheDay = dayCompleted.value.some((c) => c.id === id)
       completedHabits.value = completedHabits.value.filter((c) => c.id !== id)
       logger.info('completed_deleted', { id })

@@ -88,7 +88,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Box[]>('/box-packing/boxes/')
+      const response = await api.get<Box[]>('/box-packing/boxes')
       boxes.value = response.data
       logger.info('boxes_fetched', { count: response.data.length })
     } catch (e) {
@@ -104,7 +104,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function fetchBox(id: number) {
     error.value = null
     try {
-      const response = await api.get<Box>(`/box-packing/boxes/${id}/`)
+      const response = await api.get<Box>(`/box-packing/boxes/${id}`)
       const index = boxes.value.findIndex((b) => b.id === id)
       if (index !== -1) {
         boxes.value[index] = response.data
@@ -122,7 +122,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function createBox(input: BoxCreate) {
     error.value = null
     try {
-      const response = await api.post<Box>('/box-packing/boxes/', input)
+      const response = await api.post<Box>('/box-packing/boxes', input)
       boxes.value.push(response.data)
       logger.info('box_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -137,7 +137,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function updateBox(id: number, input: BoxUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Box>(`/box-packing/boxes/${id}/`, input)
+      const response = await api.patch<Box>(`/box-packing/boxes/${id}`, input)
       const index = boxes.value.findIndex((b) => b.id === id)
       if (index !== -1) {
         boxes.value[index] = response.data
@@ -155,7 +155,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function deleteBox(id: number) {
     error.value = null
     try {
-      await api.delete(`/box-packing/boxes/${id}/`)
+      await api.delete(`/box-packing/boxes/${id}`)
       boxes.value = boxes.value.filter((b) => b.id !== id)
       logger.info('box_deleted', { id })
     } catch (e) {
@@ -171,7 +171,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function createItem(input: BoxItemCreate) {
     error.value = null
     try {
-      const response = await api.post<BoxItem>('/box-packing/items/', input)
+      const response = await api.post<BoxItem>('/box-packing/items', input)
       logger.info('item_created', { id: response.data.id, name: response.data.name })
       // Re-fetch parent box to get updated derived attributes
       await fetchBox(input.box_id)
@@ -187,7 +187,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function deleteItem(id: number, boxId?: number) {
     error.value = null
     try {
-      await api.delete(`/box-packing/items/${id}/`)
+      await api.delete(`/box-packing/items/${id}`)
       logger.info('item_deleted', { id })
       // Re-fetch parent box to get updated derived attributes
       if (boxId) {
@@ -204,7 +204,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function orphanItem(id: number, boxId: number) {
     error.value = null
     try {
-      const response = await api.patch<BoxItem>(`/box-packing/items/${id}/`, { box_id: null })
+      const response = await api.patch<BoxItem>(`/box-packing/items/${id}`, { box_id: null })
       logger.info('item_orphaned', { id })
       // Re-fetch the box the item was removed from
       await fetchBox(boxId)
@@ -220,7 +220,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function assignOrphanToBox(itemId: number, boxId: number) {
     error.value = null
     try {
-      const response = await api.patch<BoxItem>(`/box-packing/items/${itemId}/`, { box_id: boxId })
+      const response = await api.patch<BoxItem>(`/box-packing/items/${itemId}`, { box_id: boxId })
       orphans.value = orphans.value.filter((o) => o.id !== itemId)
       logger.info('orphan_assigned', { itemId, boxId })
       // Re-fetch target box to get updated derived attributes
@@ -240,7 +240,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<BoxItem[]>('/box-packing/items/orphans/')
+      const response = await api.get<BoxItem[]>('/box-packing/items/orphans')
       orphans.value = response.data
       logger.info('orphans_fetched', { count: response.data.length })
     } catch (e) {
@@ -256,7 +256,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
   async function deleteOrphan(id: number) {
     error.value = null
     try {
-      await api.delete(`/box-packing/items/${id}/`)
+      await api.delete(`/box-packing/items/${id}`)
       orphans.value = orphans.value.filter((o) => o.id !== id)
       logger.info('orphan_deleted', { id })
     } catch (e) {
@@ -273,7 +273,7 @@ export const useBoxPackingStore = defineStore('boxPacking', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<[Box, BoxItem][]>('/box-packing/search/', { params: { q: query } })
+      const response = await api.get<[Box, BoxItem][]>('/box-packing/search', { params: { q: query } })
       searchResults.value = response.data.map(([box, item]) => ({ box, item }))
       logger.info('search_completed', { query, count: searchResults.value.length })
     } catch (e) {

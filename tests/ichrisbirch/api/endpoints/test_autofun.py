@@ -16,7 +16,7 @@ NEW_OBJ = schemas.AutoFunCreate(
     notes='Opens at 11am, cash only',
 )
 
-ENDPOINT = '/autofun/'
+ENDPOINT = '/autofun'
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def test_read_many_filter_completed(autofun_crud_tester):
 def test_update_autofun(autofun_crud_tester):
     client, crud_tester = autofun_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated name', 'notes': 'Updated notes'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'name': 'Updated name', 'notes': 'Updated notes'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['name'] == 'Updated name'
     assert response.json()['notes'] == 'Updated notes'
@@ -82,15 +82,15 @@ def test_update_autofun(autofun_crud_tester):
 class TestAutoFunNotFound:
     def test_read_one_not_found(self, autofun_crud_tester):
         client, _ = autofun_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, autofun_crud_tester):
         client, _ = autofun_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, autofun_crud_tester):
         client, _ = autofun_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Nope'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Nope'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

@@ -273,11 +273,11 @@ def single_view(session: Session, issue: models.Issue, zone: str) -> schemas.Iss
     return issue_views(session, [load_issue(session, issue.id)], zone)[0]
 
 
-# `/ready/` and `/vocabulary/` are declared ahead of `/{id}/`, which would
+# `/ready` and `/vocabulary` are declared ahead of `/{id}`, which would
 # otherwise take either segment as an issue reference.
 
 
-@router.get('/', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     zone: RequestZone,
@@ -375,7 +375,7 @@ def ready_issues(
     return sorted(session.scalars(query).all(), key=readiness.sort_key), readiness
 
 
-@router.get('/ready/', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
+@router.get('/ready', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
 def read_ready(
     session: DbSession,
     zone: RequestZone,
@@ -412,7 +412,7 @@ def claimable(now: dt.datetime, claimant: str | None = None):
     return or_(free, and_(models.Issue.status == 'in_progress', models.Issue.claimed_by == claimant))
 
 
-@router.post('/ready/claim/', response_model=schemas.IssueClaimResult, status_code=status.HTTP_200_OK)
+@router.post('/ready/claim', response_model=schemas.IssueClaimResult, status_code=status.HTTP_200_OK)
 def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone: RequestZone):
     """Take the head of the ready queue in one step.
 
@@ -437,7 +437,7 @@ def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone
     return schemas.IssueClaimResult(issue=None)
 
 
-@router.get('/vocabulary/', response_model=schemas.IssueVocabulary, status_code=status.HTTP_200_OK)
+@router.get('/vocabulary', response_model=schemas.IssueVocabulary, status_code=status.HTTP_200_OK)
 def read_vocabulary(session: DbSession):
     """Every value the closed issue fields accept, with the open issue count per label.
 
@@ -461,7 +461,7 @@ def in_declared_order(values: set[str], declared: list[str]) -> list[str]:
     return [v for v in declared if v in values] + sorted(values - set(declared))
 
 
-@router.post('/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
 def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
     if issue.status not in CREATE_STATUSES:
         raise HTTPException(
@@ -506,12 +506,12 @@ def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
     return fresh_issue_detail(session, db_issue, zone)
 
 
-@router.get('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
 def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     return fresh_issue_detail(session, issue, zone)
 
 
-@router.patch('/{id}/', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
 def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone, user: CurrentUser):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
@@ -556,7 +556,7 @@ def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession
     return fresh_issue_detail(session, issue, zone)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(issue: IssueFromPath, session: DbSession):
     session.delete(issue)
     session.commit()
@@ -594,7 +594,7 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
     return reasons
 
 
-@router.post('/{id}/claim/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
+@router.post('/{id}/claim', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
 def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
     """Take this issue, or extend the claim already held under the same name.
 
@@ -626,7 +626,7 @@ def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbS
     return single_view(session, issue, zone)
 
 
-@router.delete('/{id}/claim/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
+@router.delete('/{id}/claim', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
 def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     """Give the issue back to the ready queue. Releasing an issue not in progress changes nothing.
 
@@ -658,7 +658,7 @@ def ensure_same_priority(issue: models.Issue, neighbor: models.Issue, readiness:
         )
 
 
-@router.post('/{id}/rank/', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
+@router.post('/{id}/rank', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
 def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSession, zone: RequestZone):
     """Place this issue directly before or after another of the same effective priority.
 
@@ -679,7 +679,7 @@ def rank(issue: IssueFromPath, move: schemas.IssueRankMove, session: DbSession, 
     return single_view(session, issue, zone)
 
 
-@router.post('/{id}/dependencies/', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
+@router.post('/{id}/dependencies', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
 def add_dependency(issue: IssueFromPath, dependency: schemas.IssueDependencyCreate, session: DbSession, zone: RequestZone):
     depends_on = resolve_issue(session, dependency.depends_on)
     if depends_on.id == issue.id:
@@ -700,7 +700,7 @@ def path_dependency(dep_id: str, session: DbSession) -> models.Issue:
     return resolve_issue(session, dep_id)
 
 
-@router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}/dependencies/{dep_id}', status_code=status.HTTP_204_NO_CONTENT)
 def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.Issue, Depends(path_dependency)], session: DbSession):
     edge = session.get(models.IssueDependency, (issue.id, depends_on.id))
     if edge is None:
@@ -714,7 +714,7 @@ def remove_dependency(issue: IssueFromPath, depends_on: Annotated[models.Issue, 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get('/{id}/comments/', response_model=list[schemas.IssueComment], status_code=status.HTTP_200_OK)
+@router.get('/{id}/comments', response_model=list[schemas.IssueComment], status_code=status.HTTP_200_OK)
 def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimit = None):
     """The issue's comments, oldest first, so a thread reads in the order it was written."""
     query = (
@@ -727,7 +727,7 @@ def read_comments(issue: IssueFromPath, session: DbSession, limit: RowLimit = No
     return list(session.scalars(query).all())
 
 
-@router.post('/{id}/comments/', response_model=schemas.IssueComment, status_code=status.HTTP_201_CREATED)
+@router.post('/{id}/comments', response_model=schemas.IssueComment, status_code=status.HTTP_201_CREATED)
 def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, session: DbSession):
     db_comment = models.IssueComment(issue_id=issue.id, body=comment.body, author=comment.author)
     session.add(db_comment)
@@ -737,7 +737,7 @@ def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, se
     return db_comment
 
 
-@router.delete('/{id}/comments/{comment_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}/comments/{comment_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_comment(issue: IssueFromPath, comment_id: UUID, session: DbSession):
     deleted = session.execute(
         sql_delete(models.IssueComment)

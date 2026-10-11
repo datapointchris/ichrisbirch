@@ -15,7 +15,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.Pattern], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Pattern], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession, search: str | None = None, limit: RowLimit = None):
     query = select(models.Pattern).order_by(models.Pattern.recorded_at.desc())
     if search:
@@ -23,7 +23,7 @@ def read_many(session: DbSession, search: str | None = None, limit: RowLimit = N
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/', response_model=schemas.Pattern, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Pattern, status_code=status.HTTP_201_CREATED)
 def create(pattern: schemas.PatternCreate, session: DbSession):
     db_obj = models.Pattern(**pattern.model_dump(exclude_none=True))
     session.add(db_obj)
@@ -32,14 +32,14 @@ def create(pattern: schemas.PatternCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if pattern := session.get(models.Pattern, id):
         return pattern
     raise NotFoundException('pattern', id, logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if pattern := session.get(models.Pattern, id):
         session.delete(pattern)
@@ -49,7 +49,7 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('pattern', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Pattern, status_code=status.HTTP_200_OK)
 def update(id: int, update: schemas.PatternUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('pattern_update', pattern_id=id, update_data=update_data)

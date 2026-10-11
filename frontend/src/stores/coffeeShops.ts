@@ -66,7 +66,7 @@ export const useCoffeeShopsStore = defineStore('coffeeShops', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<CoffeeShop[]>('/coffee/shops/')
+      const response = await api.get<CoffeeShop[]>('/coffee/shops')
       items.value = response.data
       logger.info('coffee_shops_fetched', { count: response.data.length })
     } catch (e) {
@@ -82,7 +82,7 @@ export const useCoffeeShopsStore = defineStore('coffeeShops', () => {
   async function create(input: CoffeeShopCreate) {
     error.value = null
     try {
-      const response = await api.post<CoffeeShop>('/coffee/shops/', input)
+      const response = await api.post<CoffeeShop>('/coffee/shops', input)
       items.value.push(response.data)
       logger.info('coffee_shop_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -97,7 +97,7 @@ export const useCoffeeShopsStore = defineStore('coffeeShops', () => {
   async function update(id: number, input: CoffeeShopUpdate) {
     error.value = null
     try {
-      const response = await api.patch<CoffeeShop>(`/coffee/shops/${id}/`, input)
+      const response = await api.patch<CoffeeShop>(`/coffee/shops/${id}`, input)
       const index = items.value.findIndex((s) => s.id === id)
       if (index !== -1) {
         items.value[index] = response.data
@@ -115,7 +115,7 @@ export const useCoffeeShopsStore = defineStore('coffeeShops', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/coffee/shops/${id}/`)
+      await api.delete(`/coffee/shops/${id}`)
       items.value = items.value.filter((s) => s.id !== id)
       logger.info('coffee_shop_deleted', { id })
     } catch (e) {

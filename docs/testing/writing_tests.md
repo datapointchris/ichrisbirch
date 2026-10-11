@@ -56,7 +56,7 @@ def insert_testing_data():
 
 
 def test_read_events(test_api_logged_in):
-    response = test_api_logged_in.get('/events/')
+    response = test_api_logged_in.get('/events')
     assert response.status_code == status.HTTP_200_OK
     assert len(response.json()) > 0
 
@@ -71,7 +71,7 @@ def test_create_event(test_api_logged_in):
 
 ```python
 def test_api_endpoint(test_api_logged_in):
-    response = test_api_logged_in.get('/endpoint/')
+    response = test_api_logged_in.get('/endpoint')
     assert response.status_code == status.HTTP_200_OK
     assert response.json() is not None
 ```
@@ -93,7 +93,7 @@ NEW_OBJ = schemas.EventCreate(
     notes='Notes for Event 4',
 )
 
-ENDPOINT = '/events/'
+ENDPOINT = '/events'
 
 crud_tests = ApiCrudTester(endpoint=ENDPOINT, new_obj=NEW_OBJ)
 
@@ -110,7 +110,7 @@ def test_create(test_api_logged_in):
 
 ```python
 def test_app_route(test_app_logged_in):
-    response = test_app_logged_in.get('/route/')
+    response = test_app_logged_in.get('/route')
     assert response.status_code == status.HTTP_200_OK
     assert b'Expected Content' in response.data
 ```
@@ -124,7 +124,7 @@ def test_form_submission(test_app_logged_in):
         'field2': 'value2',
         'action': 'submit',
     }
-    response = test_app_logged_in.post('/form-route/', data=form_data)
+    response = test_app_logged_in.post('/form-route', data=form_data)
     assert response.status_code == status.HTTP_200_OK
 ```
 
@@ -230,11 +230,11 @@ def test_model_method(test_user):
 
 ```python
 def test_admin_only_endpoint(test_api_logged_in_admin):
-    response = test_api_logged_in_admin.get('/admin-only/')
+    response = test_api_logged_in_admin.get('/admin-only')
     assert response.status_code == status.HTTP_200_OK
 
 def test_admin_only_endpoint_unauthorized(test_api_logged_in):
-    response = test_api_logged_in.get('/admin-only/')
+    response = test_api_logged_in.get('/admin-only')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 ```
 
@@ -251,7 +251,7 @@ def test_task_categories(test_api_logged_in, category):
         category=category,
         priority=3,
     )
-    response = test_api_logged_in.post('/tasks/', json=test_task.model_dump())
+    response = test_api_logged_in.post('/tasks', json=test_task.model_dump())
     assert response.status_code == status.HTTP_201_CREATED
 ```
 
@@ -260,7 +260,7 @@ def test_task_categories(test_api_logged_in, category):
 ```python
 def test_invalid_input(test_api_logged_in):
     invalid_data = {'incomplete': 'data'}
-    response = test_api_logged_in.post('/endpoint/', json=invalid_data)
+    response = test_api_logged_in.post('/endpoint', json=invalid_data)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 ```
 
@@ -278,7 +278,7 @@ def test_external_api(mock_get, test_api_logged_in):
     mock_get.return_value = mock_response
 
     # Test the function that uses httpx2.get
-    response = test_api_logged_in.get('/endpoint-using-external-api/')
+    response = test_api_logged_in.get('/endpoint-using-external-api')
     assert response.status_code == status.HTTP_200_OK
 ```
 
@@ -306,12 +306,12 @@ async def test_async_function(async_client):
 ```python
 def test_database_operation(test_api_logged_in):
     # Create an entity
-    create_response = test_api_logged_in.post('/entity/', json={'name': 'Test'})
+    create_response = test_api_logged_in.post('/entity', json={'name': 'Test'})
     assert create_response.status_code == status.HTTP_201_CREATED
     entity_id = create_response.json()['id']
 
     # Verify it's in the database
-    get_response = test_api_logged_in.get(f'/entity/{entity_id}/')
+    get_response = test_api_logged_in.get(f'/entity/{entity_id}')
     assert get_response.status_code == status.HTTP_200_OK
     assert get_response.json()['name'] == 'Test'
 ```

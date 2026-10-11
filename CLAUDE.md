@@ -29,7 +29,7 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 
 ### Issues and Projects Are Separate Stores
 
-Issues (`/issues/`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects/`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
+Issues (`/issues`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
 The two share the item number sequence, so a bare number is never ambiguous between them.
 Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every read in `services/issue_readiness.py`; a client filters on those flags and never re-derives them.
 `docs/issues.md` explains the ready queue, the order and the claim.
@@ -185,7 +185,7 @@ Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `
 
 The `icb` CLI is the programmatic data surface. The installed binary is **not** repo-aware: it targets its config file's `api`, which is **production** (`https://ichrisbirch.com`, Authelia OIDC bearer token), regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
 
-To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/api/v1/tasks/`. Pass `--api https://api.docker.localhost` if you need `icb` itself pointed at dev.
+To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/api/v1/tasks`. Pass `--api https://api.docker.localhost` if you need `icb` itself pointed at dev.
 
 ### Always "Cooking Technique", never the bare word "technique"
 

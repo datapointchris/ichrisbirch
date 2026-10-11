@@ -47,7 +47,7 @@ func TestCreateItem_SendsProjectIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateItem: %v", err)
 	}
-	if gotPath != "/api/v1/project-items/" {
+	if gotPath != "/api/v1/project-items" {
 		t.Errorf("path = %s, want /project-items/", gotPath)
 	}
 	ids, ok := gotBody["project_ids"].([]any)
@@ -102,7 +102,7 @@ func TestReorderItem_PathAndBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReorderItem: %v", err)
 	}
-	if gotPath != "/api/v1/project-items/item-1/reorder/" {
+	if gotPath != "/api/v1/project-items/item-1/reorder" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotBody["project_id"] != "p1" || gotBody["position"] != float64(3) {
@@ -158,7 +158,7 @@ func TestItemTasks_ListCreateUpdateDelete(t *testing.T) {
 	if _, err := client.CreateItemTask(ctx, "item-1", ProjectItemTaskCreateInput{Title: "t"}); err != nil {
 		t.Fatalf("CreateItemTask: %v", err)
 	}
-	if lastPath != "/api/v1/project-items/item-1/tasks/" || lastMethod != http.MethodPost {
+	if lastPath != "/api/v1/project-items/item-1/tasks" || lastMethod != http.MethodPost {
 		t.Errorf("create: %s %s", lastMethod, lastPath)
 	}
 
@@ -166,14 +166,14 @@ func TestItemTasks_ListCreateUpdateDelete(t *testing.T) {
 	if _, err := client.UpdateItemTask(ctx, "item-1", "task-1", ProjectItemTaskUpdateInput{Completed: &done}); err != nil {
 		t.Fatalf("UpdateItemTask: %v", err)
 	}
-	if lastPath != "/api/v1/project-items/item-1/tasks/task-1/" || lastMethod != http.MethodPatch {
+	if lastPath != "/api/v1/project-items/item-1/tasks/task-1" || lastMethod != http.MethodPatch {
 		t.Errorf("update: %s %s", lastMethod, lastPath)
 	}
 
 	if err := client.DeleteItemTask(ctx, "item-1", "task-1"); err != nil {
 		t.Fatalf("DeleteItemTask: %v", err)
 	}
-	if lastPath != "/api/v1/project-items/item-1/tasks/task-1/" || lastMethod != http.MethodDelete {
+	if lastPath != "/api/v1/project-items/item-1/tasks/task-1" || lastMethod != http.MethodDelete {
 		t.Errorf("delete: %s %s", lastMethod, lastPath)
 	}
 }

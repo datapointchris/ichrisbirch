@@ -16,8 +16,8 @@ from fastapi import status
 from ichrisbirch.models.project import ITEM_STATUSES
 from tests.util import show_status_and_response
 
-PROJECTS_ENDPOINT = '/projects/'
-PROJECT_ITEMS_ENDPOINT = '/project-items/'
+PROJECTS_ENDPOINT = '/projects'
+PROJECT_ITEMS_ENDPOINT = '/project-items'
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def project_with_items(txn_api_logged_in):
         created[title] = response.json()['id']
 
     for title, patch in (('completed item', {'completed': True}), ('archived item', {'archived': True})):
-        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created[title]}/', json=patch)
+        response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{created[title]}', json=patch)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     return client, project_id, created
@@ -57,14 +57,14 @@ def test_the_list_carries_a_status_for_every_item(project_with_items):
 
 def test_the_detail_read_carries_a_status(project_with_items):
     client, _, created = project_with_items
-    response = client.get(f'{PROJECT_ITEMS_ENDPOINT}{created["completed item"]}/')
+    response = client.get(f'{PROJECT_ITEMS_ENDPOINT}/{created["completed item"]}')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['status'] == 'completed'
 
 
 def test_the_project_scoped_list_carries_a_status(project_with_items):
     client, project_id, _ = project_with_items
-    response = client.get(f'{PROJECTS_ENDPOINT}{project_id}/items/', params={'status': 'all'})
+    response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items', params={'status': 'all'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     rows = by_title(response.json())
     assert rows['open item']['status'] == 'open'
@@ -84,14 +84,14 @@ def test_the_create_response_carries_a_status(txn_api_logged_in):
 def test_completing_an_item_moves_its_status(project_with_items):
     """The write's own response reports the status it just produced."""
     client, _, created = project_with_items
-    response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}{created["open item"]}/', json={'completed': True})
+    response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{created["open item"]}', json={'completed': True})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['status'] == 'completed'
 
 
 def test_the_search_read_carries_a_status(project_with_items):
     client, _, _ = project_with_items
-    response = client.get(f'{PROJECT_ITEMS_ENDPOINT}search/', params={'q': 'open item'})
+    response = client.get(f'{PROJECT_ITEMS_ENDPOINT}/search', params={'q': 'open item'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert all('status' in row for row in response.json())
 

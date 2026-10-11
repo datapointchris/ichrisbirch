@@ -22,13 +22,13 @@ def habit_test_data(txn_api_logged_in):
 
 def get_first_category_id(test_api_client):
     """Get the ID of the first category."""
-    categories = test_api_client.get('/habits/categories/')
+    categories = test_api_client.get('/habits/categories')
     return categories.json()[0]['id']
 
 
 def get_current_category(test_api_client):
     """Find a category with is_current=True."""
-    categories = test_api_client.get('/habits/categories/')
+    categories = test_api_client.get('/habits/categories')
     for cat in categories.json():
         if cat['is_current']:
             return cat
@@ -37,7 +37,7 @@ def get_current_category(test_api_client):
 
 def get_non_current_category(test_api_client):
     """Find a category with is_current=False."""
-    categories = test_api_client.get('/habits/categories/')
+    categories = test_api_client.get('/habits/categories')
     for cat in categories.json():
         if not cat['is_current']:
             return cat
@@ -46,10 +46,10 @@ def get_non_current_category(test_api_client):
 
 def get_category_with_habits(test_api_client):
     """Find a category that has habits assigned to it."""
-    habits = test_api_client.get('/habits/')
+    habits = test_api_client.get('/habits')
     if habits.json():
         category_id = habits.json()[0]['category_id']
-        category = test_api_client.get(f'/habits/categories/{category_id}/')
+        category = test_api_client.get(f'/habits/categories/{category_id}')
         return category.json()
     raise ValueError('No category with habits found')
 
@@ -61,7 +61,7 @@ def create_habit_crud_tester(category_id: int):
         category_id=category_id,
         is_current=True,
     )
-    return ApiCrudTester(endpoint='/habits/', new_obj=new_obj)
+    return ApiCrudTester(endpoint='/habits', new_obj=new_obj)
 
 
 def create_completed_habit_crud_tester(category_id: int):
@@ -71,11 +71,11 @@ def create_completed_habit_crud_tester(category_id: int):
         category_id=category_id,
         complete_date=dt.date(2024, 3, 15),
     )
-    return ApiCrudTester(endpoint='/habits/completed/', new_obj=new_obj)
+    return ApiCrudTester(endpoint='/habits/completed', new_obj=new_obj)
 
 
 class TestHabits:
-    ENDPOINT = '/habits/'
+    ENDPOINT = '/habits'
 
     def test_read_one(self, habit_test_data):
         client = habit_test_data
@@ -127,7 +127,7 @@ class TestHabits:
         habits = client.get(self.ENDPOINT, params={'current': True})
         current_habit = habits.json()[0]
         habit_id = current_habit['id']
-        habit = client.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': False})
+        habit = client.patch(f'{self.ENDPOINT}/{habit_id}', json={'is_current': False})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is False
 
@@ -137,13 +137,13 @@ class TestHabits:
         habits = client.get(self.ENDPOINT, params={'current': False})
         non_current_habit = habits.json()[0]
         habit_id = non_current_habit['id']
-        habit = client.patch(f'{self.ENDPOINT}{habit_id}/', json={'is_current': True})
+        habit = client.patch(f'{self.ENDPOINT}/{habit_id}', json={'is_current': True})
         assert habit.status_code == status.HTTP_200_OK, show_status_and_response(habit)
         assert habit.json()['is_current'] is True
 
 
 class TestHabitCategories:
-    ENDPOINT = '/habits/categories/'
+    ENDPOINT = '/habits/categories'
     NEW_OBJ = schemas.HabitCategoryCreate(
         name='NEW Category Do Things',
         is_current=True,
@@ -208,7 +208,7 @@ class TestHabitCategories:
         # Find a current category to hibernate
         current_cat = get_current_category(client)
         category_id = current_cat['id']
-        endpoint = f'{self.ENDPOINT}{category_id}/'
+        endpoint = f'{self.ENDPOINT}/{category_id}'
         category = client.patch(endpoint, json={'is_current': False})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is False
@@ -218,7 +218,7 @@ class TestHabitCategories:
         # Find a non-current category to revive
         non_current_cat = get_non_current_category(client)
         category_id = non_current_cat['id']
-        endpoint = f'{self.ENDPOINT}{category_id}/'
+        endpoint = f'{self.ENDPOINT}/{category_id}'
         category = client.patch(endpoint, json={'is_current': True})
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         assert category.json()['is_current'] is True
@@ -237,7 +237,7 @@ class TestHabitCategories:
         # Find a category that has habits assigned to it
         cat_with_habits = get_category_with_habits(client)
         category_id = cat_with_habits['id']
-        endpoint = f'{self.ENDPOINT}{category_id}/'
+        endpoint = f'{self.ENDPOINT}/{category_id}'
         category = client.get(endpoint)
         assert category.status_code == status.HTTP_200_OK, show_status_and_response(category)
         with pytest.raises(sa.exc.PendingRollbackError):
@@ -251,11 +251,11 @@ class TestCompletedHabitLinksToItsHabit:
     stops matching and the habit reads as due again for the rest of the day.
     """
 
-    ENDPOINT = '/habits/completed/'
+    ENDPOINT = '/habits/completed'
 
     def test_completion_round_trips_its_habit_id(self, habit_test_data):
         client = habit_test_data
-        habit = client.get('/habits/').json()[0]
+        habit = client.get('/habits').json()[0]
 
         created = client.post(
             self.ENDPOINT,
@@ -286,7 +286,7 @@ class TestCompletedHabitLinksToItsHabit:
     def test_deleting_a_habit_keeps_the_completion(self, habit_test_data):
         """A completion is a historical fact — it outlives the habit it names."""
         client = habit_test_data
-        habit = client.get('/habits/').json()[0]
+        habit = client.get('/habits').json()[0]
         completion = client.post(
             self.ENDPOINT,
             json={
@@ -297,10 +297,10 @@ class TestCompletedHabitLinksToItsHabit:
             },
         ).json()
 
-        deleted = client.delete(f'/habits/{habit["id"]}/')
+        deleted = client.delete(f'/habits/{habit["id"]}')
         assert deleted.status_code in (status.HTTP_200_OK, status.HTTP_204_NO_CONTENT), show_status_and_response(deleted)
 
-        survivor = client.get(f'{self.ENDPOINT}{completion["id"]}/')
+        survivor = client.get(f'{self.ENDPOINT}/{completion["id"]}')
         assert survivor.status_code == status.HTTP_200_OK, show_status_and_response(survivor)
         assert survivor.json()['name'] == habit['name'], 'the denormalized name is what makes it survive'
         assert survivor.json()['habit_id'] is None, 'the link clears, the record does not'
@@ -314,7 +314,7 @@ class TestCompletedHabitRefusesAFutureDate:
     so every caller gets the same answer.
     """
 
-    ENDPOINT = '/habits/completed/'
+    ENDPOINT = '/habits/completed'
 
     def _payload(self, category_id: int, complete_date: str) -> dict:
         return {'name': 'Way Ahead Of Myself', 'category_id': category_id, 'complete_date': complete_date}
@@ -358,7 +358,7 @@ class TestCompletedHabitRefusesAFutureDate:
 
 
 class TestCompletedHabits:
-    ENDPOINT = '/habits/completed/'
+    ENDPOINT = '/habits/completed'
     # Completed habits sorted by date for first/last queries
     FIRST_COMPLETED_HABIT = 'Completed Habit 1 Category 3'  # 2024-01-01 (earliest)
     LAST_COMPLETED_HABIT = 'Completed Habit 3 Category 2'  # 2024-01-03 (latest)
@@ -467,9 +467,9 @@ class TestHabitsQueryParameters:
     - 3 completed habits with dates: 2024-01-01, 2024-01-02, 2024-01-03
     """
 
-    HABITS_ENDPOINT = '/habits/'
-    CATEGORIES_ENDPOINT = '/habits/categories/'
-    COMPLETED_ENDPOINT = '/habits/completed/'
+    HABITS_ENDPOINT = '/habits'
+    CATEGORIES_ENDPOINT = '/habits/categories'
+    COMPLETED_ENDPOINT = '/habits/completed'
 
     def test_habits_limit_parameter(self, habit_test_data):
         """Test that limit parameter works correctly."""
@@ -542,19 +542,19 @@ class TestHabitsQueryParameters:
     def test_habits_not_found_returns_404(self, habit_test_data):
         """Test that non-existent habit returns 404."""
         client = habit_test_data
-        response = client.get(f'{self.HABITS_ENDPOINT}99999/')
+        response = client.get(f'{self.HABITS_ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_categories_not_found_returns_404(self, habit_test_data):
         """Test that non-existent category returns 404."""
         client = habit_test_data
-        response = client.get(f'{self.CATEGORIES_ENDPOINT}99999/')
+        response = client.get(f'{self.CATEGORIES_ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_completed_not_found_returns_404(self, habit_test_data):
         """Test that non-existent completed habit returns 404."""
         client = habit_test_data
-        response = client.get(f'{self.COMPLETED_ENDPOINT}99999/')
+        response = client.get(f'{self.COMPLETED_ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -566,7 +566,7 @@ class TestHabitsDay:
     cannot read, and that the three fields agree with each other.
     """
 
-    ENDPOINT = '/habits/day/'
+    ENDPOINT = '/habits/day'
 
     def _complete(self, client, habit: dict, day: dt.date):
         payload = {
@@ -575,7 +575,7 @@ class TestHabitsDay:
             'category_id': habit['category_id'],
             'complete_date': day.isoformat(),
         }
-        response = client.post('/habits/completed/', json=payload)
+        response = client.post('/habits/completed', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
 
     def test_an_untouched_day_has_every_current_habit_due(self, habit_test_data):
@@ -591,7 +591,7 @@ class TestHabitsDay:
 
     def test_a_completion_moves_its_habit_out_of_due(self, habit_test_data):
         client = habit_test_data
-        current = [h for h in client.get('/habits/', params={'current': True}).json()]
+        current = [h for h in client.get('/habits', params={'current': True}).json()]
         target = current[0]
         self._complete(client, target, dt.date(2020, 1, 1))
 
@@ -607,7 +607,7 @@ class TestHabitsDay:
         A stored moment would move between boards with the zone it was read in.
         """
         client = habit_test_data
-        target = client.get('/habits/', params={'current': True}).json()[0]
+        target = client.get('/habits', params={'current': True}).json()[0]
         self._complete(client, target, dt.date(2020, 1, 1))
 
         for zone in ('America/New_York', 'UTC', 'Pacific/Auckland'):
@@ -660,7 +660,7 @@ class TestHabitsDay:
         """`current_total` counts what you are tracking, so a hibernating habit is
         neither due nor part of the denominator."""
         client = habit_test_data
-        hibernating = client.get('/habits/', params={'current': False}).json()
+        hibernating = client.get('/habits', params={'current': False}).json()
         assert hibernating, 'the seed gives this nothing to exclude'
 
         day = client.get(self.ENDPOINT, params={'date': '2020-01-01'}).json()
@@ -679,10 +679,10 @@ class TestHabitsDay:
     def test_completions_carrying_no_habit_id_come_back_newest_first(self, habit_test_data):
         """Every one of them ties on the sort key, so the query has to break it."""
         client = habit_test_data
-        category_id = client.get('/habits/categories/').json()[0]['id']
+        category_id = client.get('/habits/categories').json()[0]['id']
         for name in ('earliest', 'middle', 'latest'):
             payload = {'name': name, 'category_id': category_id, 'complete_date': '2020-01-01'}
-            created = client.post('/habits/completed/', json=payload)
+            created = client.post('/habits/completed', json=payload)
             assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 
         day = client.get(self.ENDPOINT, params={'date': '2020-01-01', 'timezone': 'UTC'}).json()

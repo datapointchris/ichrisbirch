@@ -63,7 +63,7 @@ func (e *APIError) Forbidden() bool { return e.StatusCode == http.StatusForbidde
 // NotFound reports whether the error is a 404.
 func (e *APIError) NotFound() bool { return e.StatusCode == http.StatusNotFound }
 
-// get issues a GET to path (e.g. "/projects/") and decodes a 2xx JSON body into
+// get issues a GET to path (e.g. "/projects") and decodes a 2xx JSON body into
 // out. A non-2xx response becomes an *APIError.
 func (c *Client) get(ctx context.Context, path string, out any) error {
 	return c.send(ctx, http.MethodGet, path, nil, out)

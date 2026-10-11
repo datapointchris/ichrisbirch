@@ -80,7 +80,7 @@ export const useStrainsStore = defineStore('strains', () => {
 
   /**
    * The rows to render, sorted. Narrowing is the server's — `filters()` is sent
-   * to `GET /strains/`, which is where the CLI's filters resolve too, so one
+   * to `GET /strains`, which is where the CLI's filters resolve too, so one
    * definition answers both.
    */
   const sortedItems = computed(() => {
@@ -107,7 +107,7 @@ export const useStrainsStore = defineStore('strains', () => {
     return sorted
   })
 
-  /** The filters currently set, in the shape `GET /strains/` takes. */
+  /** The filters currently set, in the shape `GET /strains` takes. */
   function filters(): StrainFilters {
     const selected: StrainFilters = {}
     if (statusFilter.value !== 'all') selected.status = statusFilter.value
@@ -161,7 +161,7 @@ export const useStrainsStore = defineStore('strains', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Strain[]>('/strains/', { params: filters() })
+      const response = await api.get<Strain[]>('/strains', { params: filters() })
       items.value = response.data
       logger.info('strains_fetched', { count: response.data.length })
     } catch (e) {
@@ -177,7 +177,7 @@ export const useStrainsStore = defineStore('strains', () => {
   async function fetchVocabulary() {
     error.value = null
     try {
-      const response = await api.get<StrainVocabulary>('/strains/vocabulary/')
+      const response = await api.get<StrainVocabulary>('/strains/vocabulary')
       vocabulary.value = response.data
       logger.info('strain_vocabulary_fetched', { effects: response.data.effects.length })
       return response.data
@@ -208,7 +208,7 @@ export const useStrainsStore = defineStore('strains', () => {
   async function create(input: StrainCreate) {
     error.value = null
     try {
-      const response = await api.post<Strain>('/strains/', input)
+      const response = await api.post<Strain>('/strains', input)
       items.value.push(response.data)
       logger.info('strain_created', { id: response.data.id, name: response.data.name })
       await refreshCounts()
@@ -224,7 +224,7 @@ export const useStrainsStore = defineStore('strains', () => {
   async function update(id: number, input: StrainUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Strain>(`/strains/${id}/`, input)
+      const response = await api.patch<Strain>(`/strains/${id}`, input)
       const index = items.value.findIndex((s) => s.id === id)
       if (index !== -1) {
         items.value[index] = response.data
@@ -243,7 +243,7 @@ export const useStrainsStore = defineStore('strains', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/strains/${id}/`)
+      await api.delete(`/strains/${id}`)
       items.value = items.value.filter((s) => s.id !== id)
       logger.info('strain_deleted', { id })
       await refreshCounts()

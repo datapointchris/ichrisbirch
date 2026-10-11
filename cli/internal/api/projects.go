@@ -39,7 +39,7 @@ type Project struct {
 }
 
 // ProjectItemInProject is a project item as seen within a project's ordered
-// list (GET /projects/{id}/items/), carrying its position in that project.
+// list (GET /projects/{id}/items), carrying its position in that project.
 type ProjectItemInProject struct {
 	ID          string     `json:"id"`
 	Number      int        `json:"number"`
@@ -65,7 +65,7 @@ type ProjectCreateInput struct {
 	Position    *int    `json:"position,omitempty"`
 }
 
-// ProjectUpdateInput is a partial update (PATCH /projects/{id}/): every field is
+// ProjectUpdateInput is a partial update (PATCH /projects/{id}): every field is
 // a pointer with omitempty, so only the fields the user actually changed are
 // sent and the server leaves the rest untouched.
 //
@@ -86,7 +86,7 @@ type ProjectUpdateInput struct {
 // of the lookup table.
 const AllProjectStatuses = "all"
 
-// ListProjects returns projects with their item counts (GET /projects/). An
+// ListProjects returns projects with their item counts (GET /projects). An
 // empty projectStatus takes the server's default, which is the active projects
 // only; pass a status name or AllProjectStatuses to see the closed ones. A nil
 // limit fetches all; a non-nil limit caps the count.
@@ -97,7 +97,7 @@ func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus s
 	}
 	applyLimit(query, limit)
 	var projects []Project
-	if err := c.get(ctx, withQuery("/projects/", query), &projects); err != nil {
+	if err := c.get(ctx, withQuery("/projects", query), &projects); err != nil {
 		return nil, err
 	}
 	return projects, nil
@@ -106,10 +106,10 @@ func (c *Client) ListProjects(ctx context.Context, repo *string, projectStatus s
 // projectPath escapes the reference because a project is addressed by its name,
 // and a name may hold a slash, a question mark or a hash.
 func projectPath(ref string) string {
-	return "/projects/" + url.PathEscape(ref) + "/"
+	return "/projects/" + url.PathEscape(ref)
 }
 
-// GetProject returns a single project with its item count (GET /projects/{id}/).
+// GetProject returns a single project with its item count (GET /projects/{id}).
 // A missing id surfaces as an *APIError with StatusCode 404.
 func (c *Client) GetProject(ctx context.Context, id string) (Project, error) {
 	var project Project
@@ -119,16 +119,16 @@ func (c *Client) GetProject(ctx context.Context, id string) (Project, error) {
 	return project, nil
 }
 
-// CreateProject creates a project (POST /projects/) and returns the created row.
+// CreateProject creates a project (POST /projects) and returns the created row.
 func (c *Client) CreateProject(ctx context.Context, in ProjectCreateInput) (Project, error) {
 	var project Project
-	if err := c.send(ctx, http.MethodPost, "/projects/", in, &project); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/projects", in, &project); err != nil {
 		return Project{}, err
 	}
 	return project, nil
 }
 
-// UpdateProject applies a partial update (PATCH /projects/{id}/) and returns the
+// UpdateProject applies a partial update (PATCH /projects/{id}) and returns the
 // updated project. A missing id surfaces as an *APIError with StatusCode 404.
 func (c *Client) UpdateProject(ctx context.Context, id string, in ProjectUpdateInput) (Project, error) {
 	var project Project
@@ -138,7 +138,7 @@ func (c *Client) UpdateProject(ctx context.Context, id string, in ProjectUpdateI
 	return project, nil
 }
 
-// DeleteProject removes a project (DELETE /projects/{id}/ → 204). The API guards
+// DeleteProject removes a project (DELETE /projects/{id} → 204). The API guards
 // the delete: a project with incomplete items that belong only to it returns
 // 409, which surfaces as an *APIError with StatusCode 409. A missing id is 404.
 func (c *Client) DeleteProject(ctx context.Context, id string) error {
@@ -186,7 +186,7 @@ const (
 // ProjectKinds is what --kind accepts, in the order the form offers them.
 var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 
-// ListProjectItems returns a project's items in order (GET /projects/{id}/items/),
+// ListProjectItems returns a project's items in order (GET /projects/{id}/items),
 // narrowed to one derived status. Its status and bounds mean what they mean to
 // ListItems, because scoping to a project picks which rows come back and not
 // what a filter means. An empty itemStatus leaves the server's default. A
@@ -200,7 +200,7 @@ func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, st
 	}
 	applyDateBounds(query, start, end, zone)
 	applyLimit(query, limit)
-	path := withQuery(projectPath(id)+"items/", query)
+	path := withQuery(projectPath(id)+"/items", query)
 	var items []ProjectItemInProject
 	if err := c.get(ctx, path, &items); err != nil {
 		return nil, err

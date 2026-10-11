@@ -29,15 +29,15 @@ Between `POST` and `PUT`, the choice depends on whether you consider marking a t
 
 If you consider it to be a partial update, you should use a `PUT` request. If you consider it to be a creation of a new state, you should use a `POST` request.
 
-In your current implementation, you're using a `POST` request, which is perfectly fine. If you wanted to use a PUT request, you could change the decorator to `@router.put` and the route to something like `/task/{task_id}/complete/`.
+In your current implementation, you're using a `POST` request, which is perfectly fine. If you wanted to use a PUT request, you could change the decorator to `@router.put` and the route to something like `/task/{task_id}/complete`.
 
 ### Endpoint Resource vs Action Order
 
-The choice between `/tasks/{task_id}/complete/` and `/tasks/complete/{task_id}/` is largely a matter of personal preference and the conventions you've established in your project. However, the most common and RESTful way to design the endpoint would be `/tasks/{task_id}/complete/`.
+The choice between `/tasks/{task_id}/complete` and `/tasks/complete/{task_id}` is largely a matter of personal preference and the conventions you've established in your project. However, the most common and RESTful way to design the endpoint would be `/tasks/{task_id}/complete`.
 
-This is because in REST, URLs are used to represent resources, and the components of the URL are used to form a hierarchy of resources. In this case, the task with a specific task_id is the resource, and complete is an action on that resource. So, it makes sense to structure the URL as `/tasks/{task_id}/complete/`, where complete is a sub-resource of the task.
+This is because in REST, URLs are used to represent resources, and the components of the URL are used to form a hierarchy of resources. In this case, the task with a specific task_id is the resource, and complete is an action on that resource. So, it makes sense to structure the URL as `/tasks/{task_id}/complete`, where complete is a sub-resource of the task.
 
-This structure also has the advantage of being consistent with the other endpoints in your code, which use the structure `/tasks/{task_id}/`.
+This structure also has the advantage of being consistent with the other endpoints in your code, which use the structure `/tasks/{task_id}`.
 
 ### PUT vs PATCH
 

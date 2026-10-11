@@ -7,7 +7,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/coffee/shops/'
+ENDPOINT = '/coffee/shops'
 NEW_OBJ = schemas.CoffeeShopCreate(
     name='Four Barrel Coffee',
     city='San Francisco',
@@ -55,10 +55,10 @@ def test_lifecycle(shop_crud_tester):
 def test_update_shop(shop_crud_tester):
     client, crud_tester = shop_crud_tester
     shop_id = crud_tester.item_id_by_position(client, position=1)
-    original = client.get(f'{ENDPOINT}{shop_id}/').json()
+    original = client.get(f'{ENDPOINT}/{shop_id}').json()
 
     # Update rating and review
-    response = client.patch(f'{ENDPOINT}{shop_id}/', json={'rating': 4.9, 'review': 'Outstanding espresso program.'})
+    response = client.patch(f'{ENDPOINT}/{shop_id}', json={'rating': 4.9, 'review': 'Outstanding espresso program.'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert data['rating'] == 4.9
@@ -66,7 +66,7 @@ def test_update_shop(shop_crud_tester):
     assert data['name'] == original['name'], 'Untouched fields should not change'
 
     # Update location fields
-    response = client.patch(f'{ENDPOINT}{shop_id}/', json={'city': 'Berkeley', 'state': 'CA'})
+    response = client.patch(f'{ENDPOINT}/{shop_id}', json={'city': 'Berkeley', 'state': 'CA'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert data['city'] == 'Berkeley'
@@ -91,15 +91,15 @@ def test_filter_shops_by_city_no_results(shop_crud_tester):
 class TestCoffeeShopsNotFound:
     def test_read_one_not_found(self, shop_crud_tester):
         client, _ = shop_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, shop_crud_tester):
         client, _ = shop_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Ghost Shop'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Ghost Shop'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, shop_crud_tester):
         client, _ = shop_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

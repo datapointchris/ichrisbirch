@@ -66,7 +66,7 @@ class ApiCrudTester[SchemaType: BaseModel]:
 
     def test_read_one(self, test_api_client: TestClient):
         first_id = self.item_id_by_position(test_api_client, position=1)
-        response = test_api_client.get(f'{self.endpoint}{first_id}/')
+        response = test_api_client.get(f'{self.endpoint}/{first_id}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     def test_read_many(self, test_api_client: TestClient):
@@ -89,7 +89,7 @@ class ApiCrudTester[SchemaType: BaseModel]:
         self._verify_length(all_before_delete, self.expected_length)
 
         first_id = all_before_delete.json()[0]['id']
-        response = test_api_client.delete(f'{self.endpoint}{first_id}/')
+        response = test_api_client.delete(f'{self.endpoint}/{first_id}')
         assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
 
         all_after_delete = self._list(test_api_client)
@@ -106,7 +106,7 @@ class ApiCrudTester[SchemaType: BaseModel]:
         self._verify_attribute(created, self.verify_attr)
 
         created_id = created.json().get('id')
-        response = test_api_client.get(f'{self.endpoint}{created_id}/')
+        response = test_api_client.get(f'{self.endpoint}/{created_id}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         self._verify_attribute(response, self.verify_attr)
 
@@ -114,7 +114,7 @@ class ApiCrudTester[SchemaType: BaseModel]:
         assert all_obj_new.status_code == status.HTTP_200_OK, show_status_and_response(all_obj_new)
         self._verify_length(all_obj_new, self.expected_length + 1)
 
-        deleted = test_api_client.delete(f'{self.endpoint}{created_id}/')
+        deleted = test_api_client.delete(f'{self.endpoint}/{created_id}')
         assert deleted.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(deleted)
 
         all_obj_after_delete = self._list(test_api_client)

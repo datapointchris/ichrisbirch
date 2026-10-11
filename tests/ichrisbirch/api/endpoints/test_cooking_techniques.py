@@ -7,7 +7,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/recipes/cooking-techniques/'
+ENDPOINT = '/recipes/cooking-techniques'
 NEW_OBJ = schemas.CookingTechniqueCreate(
     name='Maillard Sear',
     category='heat_application',
@@ -92,7 +92,7 @@ def test_list_filter_by_rating_min(cooking_technique_crud_tester):
 
 def test_search_by_name(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'vinaigrette'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'vinaigrette'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
     assert response.json()[0]['name'] == 'Test Vinaigrette Ratio'
@@ -100,7 +100,7 @@ def test_search_by_name(cooking_technique_crud_tester):
 
 def test_search_by_body(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'brick'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'brick'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
     assert response.json()[0]['name'] == 'Test Caramelize Paste'
@@ -108,7 +108,7 @@ def test_search_by_body(cooking_technique_crud_tester):
 
 def test_search_by_tag(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'beans'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'beans'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
     assert response.json()[0]['name'] == 'Test Bean Soak'
@@ -116,7 +116,7 @@ def test_search_by_tag(cooking_technique_crud_tester):
 
 def test_categories_endpoint_includes_all_nine(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}categories/')
+    response = client.get(f'{ENDPOINT}/categories')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert len(data) == 9
@@ -132,14 +132,14 @@ def test_categories_endpoint_includes_all_nine(cooking_technique_crud_tester):
 
 def test_read_by_slug(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}slug/test-vinaigrette-ratio/')
+    response = client.get(f'{ENDPOINT}/slug/test-vinaigrette-ratio')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['name'] == 'Test Vinaigrette Ratio'
 
 
 def test_read_by_slug_not_found(cooking_technique_crud_tester):
     client, _ = cooking_technique_crud_tester
-    response = client.get(f'{ENDPOINT}slug/does-not-exist/')
+    response = client.get(f'{ENDPOINT}/slug/does-not-exist')
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -147,10 +147,10 @@ def test_update_does_not_change_slug(cooking_technique_crud_tester):
     """Renaming a technique must preserve the existing slug."""
     client, crud_tester = cooking_technique_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    before = client.get(f'{ENDPOINT}{first_id}/').json()
+    before = client.get(f'{ENDPOINT}/{first_id}').json()
     original_slug = before['slug']
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Renamed Technique'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'name': 'Renamed Technique'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['name'] == 'Renamed Technique'
     assert response.json()['slug'] == original_slug

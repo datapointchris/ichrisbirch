@@ -46,7 +46,7 @@ from tests.utils.database import test_settings
 logger = logging.getLogger(__name__)
 logger.warning('<-- file imported')
 
-# A test names a resource route as the frontend does, below the prefix: `/tasks/` reaches `/api/v1/tasks/`.
+# A test names a resource route as the frontend does, below the prefix: `/tasks` reaches `/api/v1/tasks`.
 API_BASE_URL = f'http://testserver{API_PREFIX}'
 
 # Cached API apps to avoid expensive recreation for every test
@@ -376,7 +376,7 @@ def txn_api(insert_users_for_login):
             # Insert data directly or use factories
             session.add(models.Article(title='Test'))
             session.flush()  # Make data visible to API calls
-            response = client.get('/articles/')
+            response = client.get('/articles')
     """
     with create_transactional_api_client() as (client, session):
         yield client, session
@@ -393,7 +393,7 @@ def txn_api_logged_in(insert_users_for_login):
             client, session = txn_api_logged_in
             from tests.factories import TaskFactory
             TaskFactory(name='Test Task')  # Uses transactional session
-            response = client.get('/tasks/')
+            response = client.get('/tasks')
     """
     with create_transactional_api_client(login=True) as (client, session):
         yield client, session

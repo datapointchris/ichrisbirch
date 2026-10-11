@@ -16,7 +16,7 @@ from tests.utils.database import make_invalid_internal_service_headers
 from .crud_test import ApiCrudTester
 
 DEFAULT_USER_PREFERENCES = models.User.default_preferences()
-ENDPOINT = '/users/'
+ENDPOINT = '/users'
 
 # User counts: default users (user@icb.com, admin@icb.com) are always present,
 # test login users are inserted by the insert_users_for_login fixture,
@@ -118,7 +118,7 @@ def test_admin_user(users_test_context):
 def test_read_one_requires_admin_or_internal_service(users_logged_in_context):
     """Test that regular users cannot access other users by ID."""
     client, _, _ = users_logged_in_context
-    response = client.get(f'{ENDPOINT}1/')
+    response = client.get(f'{ENDPOINT}/1')
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'can only access your own user data' in response.json()['detail']
 
@@ -188,7 +188,7 @@ def test_create_reads_the_signup_state_an_admin_just_set(txn_multi_client):
     client, admin_client = txn_multi_client['client'], txn_multi_client['client_admin']
     assert client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json')).status_code == status.HTTP_400_BAD_REQUEST
 
-    opened = admin_client.patch('/admin/settings/', json={'is_signup_open': True})
+    opened = admin_client.patch('/admin/settings', json={'is_signup_open': True})
     assert opened.status_code == status.HTTP_200_OK, show_status_and_response(opened)
 
     created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
@@ -205,14 +205,14 @@ def test_create_refuses_an_email_another_account_holds(users_admin_context):
 
 def test_update_refuses_an_email_another_account_holds(users_admin_context):
     client, _, users = users_admin_context
-    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[0]['email']})
+    response = client.patch(f'{ENDPOINT}/{users["regular_2"].id}', json={'email': TEST_USERS[0]['email']})
     assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
     assert response.json()['detail'] == Refusal.EMAIL_TAKEN
 
 
 def test_update_accepts_an_account_resending_its_own_email(users_admin_context):
     client, _, users = users_admin_context
-    response = client.patch(f'{ENDPOINT}{users["regular_2"].id}/', json={'email': TEST_USERS[1]['email']})
+    response = client.patch(f'{ENDPOINT}/{users["regular_2"].id}', json={'email': TEST_USERS[1]['email']})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
@@ -225,7 +225,7 @@ def test_delete(users_admin_context):
     crud_tests._verify_length(all_before_delete, EXPECTED_LENGTH)
 
     first_id = all_before_delete.json()[0]['id']
-    response = client.delete(f'{ENDPOINT}{first_id}/')
+    response = client.delete(f'{ENDPOINT}/{first_id}')
     assert response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(response)
 
     all_after_delete = client.get(ENDPOINT)
@@ -249,7 +249,7 @@ def test_patch_user(txn_multi_client):
 
     # Admin should be able to update any user
     new_name = 'Updated User 1 Name'
-    response = admin_client.patch(f'{ENDPOINT}{user_id}/', json={'name': new_name})
+    response = admin_client.patch(f'{ENDPOINT}/{user_id}', json={'name': new_name})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['name'] == new_name
 
@@ -258,22 +258,22 @@ def test_patch_user(txn_multi_client):
 def test_read_one_user_by_email(users_test_context, email):
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
-    response = client.get(f'/users/email/{email}/', headers=headers)
+    response = client.get(f'/users/email/{email}', headers=headers)
     user = schemas.User(**response.json())
     assert user.email == email
 
 
 def test_read_one_user_by_alt_id(users_logged_in_context):
-    """Since alternative id is assigned by the database, get the user by /me/ then query with alternative id and see if they match."""
+    """Since alternative id is assigned by the database, get the user by /me then query with alternative id and see if they match."""
     client, _, _ = users_logged_in_context
 
-    # Get user details via /me/ endpoint
-    response = client.get('/users/me/')
+    # Get user details via /me endpoint
+    response = client.get('/users/me')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     me_user = schemas.User(**response.json())
 
     # Now get the same user by alternative ID
-    response = client.get(f'/users/alt/{me_user.alternative_id}/')
+    response = client.get(f'/users/alt/{me_user.alternative_id}')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     alt_user = schemas.User(**response.json())
 
@@ -286,7 +286,7 @@ def test_a_password_sent_through_patch_is_not_stored_as_sent(users_test_context,
     password = 'a-password-set-through-patch'
     headers = make_app_headers_for_user(test_regular_user)
 
-    response = client.patch(f'{ENDPOINT}{test_regular_user.id}/', json={'password': password}, headers=headers)
+    response = client.patch(f'{ENDPOINT}/{test_regular_user.id}', json={'password': password}, headers=headers)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
     session.refresh(test_regular_user)
@@ -296,7 +296,7 @@ def test_a_password_sent_through_patch_is_not_stored_as_sent(users_test_context,
 def test_create_user_password_hashed(users_logged_in_context):
     client, session, _ = users_logged_in_context
     open_signups(session)
-    created_response = client.post('/users/', json=NEW_OBJ.model_dump(mode='json'))
+    created_response = client.post('/users', json=NEW_OBJ.model_dump(mode='json'))
     assert created_response.status_code == status.HTTP_201_CREATED, show_status_and_response(created_response)
     stored = session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).one()
     assert stored.password != NEW_OBJ.password
@@ -306,8 +306,8 @@ def test_create_user_password_hashed(users_logged_in_context):
 def test_no_user_response_carries_the_password(users_admin_context):
     client, _, _ = users_admin_context
     created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
-    me = client.get('/users/me/')
-    by_email = client.get(f'/users/email/{NEW_OBJ.email}/')
+    me = client.get('/users/me')
+    by_email = client.get(f'/users/email/{NEW_OBJ.email}')
     listed = client.get(ENDPOINT)
     for response in (created, me, by_email, listed):
         assert response.is_success, show_status_and_response(response)
@@ -317,9 +317,9 @@ def test_no_user_response_carries_the_password(users_admin_context):
 
 
 def test_get_user_me(users_logged_in_context):
-    """Test the /me/ endpoint to get the current user's information."""
+    """Test the /me endpoint to get the current user's information."""
     client, _, _ = users_logged_in_context
-    response = client.get('/users/me/')
+    response = client.get('/users/me')
     assert response.status_code == status.HTTP_200_OK
     user = schemas.User(**response.json())
     assert user.name == 'Test Login Regular User'
@@ -328,7 +328,7 @@ def test_get_user_me(users_logged_in_context):
 def test_get_user_me_application_headers(users_test_context, test_regular_user):
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
-    response = client.get('/users/me/', headers=headers)
+    response = client.get('/users/me', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['name'] == test_regular_user.name
 
@@ -351,7 +351,7 @@ def assert_preference_key_equal(preferences, default_preferences, key):
 def test_update_user_simple_preferences_valid(users_logged_in_context):
     client, _, _ = users_logged_in_context
     new_preferences = {'theme_color': 'green', 'notifications': True}
-    response = client.patch('/users/me/preferences/', json=new_preferences)
+    response = client.patch('/users/me/preferences', json=new_preferences)
     assert response.status_code == status.HTTP_200_OK
     updated_user = schemas.User(**response.json())
     assert updated_user.preferences['theme_color'] == new_preferences['theme_color']
@@ -367,7 +367,7 @@ def test_update_user_preferences_deep_nested_key(users_logged_in_context):
     """Test updating user preferences with a deep nested key."""
     client, _, _ = users_logged_in_context
     new_preferences = {'box_packing': {'pages': {'all': {'view_type': 'compact'}}}}
-    response = client.patch('/users/me/preferences/', json=new_preferences)
+    response = client.patch('/users/me/preferences', json=new_preferences)
     assert response.status_code == status.HTTP_200_OK
     updated_user = schemas.User(**response.json())
     key = 'box_packing.pages.all.view_type'
@@ -380,7 +380,7 @@ def test_update_user_preferences_invalid_key(users_logged_in_context):
     """Test updating user preferences with an invalid key."""
     client, _, _ = users_logged_in_context
     invalid_preferences = {'invalid_key': 'value'}
-    response = client.patch('/users/me/preferences/', json=invalid_preferences)
+    response = client.patch('/users/me/preferences', json=invalid_preferences)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
     assert 'detail' in error_data
@@ -394,7 +394,7 @@ def test_a_preference_retired_from_the_defaults_does_not_block_the_next_save(use
     # A Core update skips the model's validator, which is how a key the defaults later dropped sits in storage.
     session.execute(update(models.User).where(models.User.id == user.id).values(preferences=stored))
 
-    response = client.patch(f'/users/{user.id}/preferences/', json={'timezone': 'America/New_York', 'autofun': {'interval_days': 5}})
+    response = client.patch(f'/users/{user.id}/preferences', json={'timezone': 'America/New_York', 'autofun': {'interval_days': 5}})
 
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     preferences = response.json()['preferences']
@@ -407,7 +407,7 @@ def test_update_user_preferences_invalid_value(users_logged_in_context):
     """Test updating user preferences with invalid data."""
     client, _, _ = users_logged_in_context
     invalid_preferences = {'theme': 'invalid_theme', 'notifications': True}
-    response = client.patch('/users/me/preferences/', json=invalid_preferences)
+    response = client.patch('/users/me/preferences', json=invalid_preferences)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
     assert 'detail' in error_data
@@ -415,7 +415,7 @@ def test_update_user_preferences_invalid_value(users_logged_in_context):
 
 def test_preferences_that_are_not_an_object_answer_422(users_logged_in_context):
     client, _, _ = users_logged_in_context
-    response = client.patch('/users/me/preferences/', json=['theme_color'])
+    response = client.patch('/users/me/preferences', json=['theme_color'])
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json()['detail'][0]['loc'] == ['body']
 
@@ -424,7 +424,7 @@ def test_list_users_requires_admin_or_internal_service(users_test_context, test_
     """Test that regular users cannot list all users."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user_2)
-    response = client.get('/users/', headers=headers)
+    response = client.get('/users', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
 
@@ -433,7 +433,7 @@ def test_list_users_allows_admin(users_test_context, test_admin_user):
     """Test that admin users can list all users."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
-    response = client.get('/users/', headers=headers)
+    response = client.get('/users', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     users = response.json()
     assert len(users) > 0
@@ -443,7 +443,7 @@ def test_list_users_allows_internal_service(users_test_context):
     """Test that internal service can list all users."""
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
-    response = client.get('/users/', headers=headers)
+    response = client.get('/users', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     users = response.json()
     assert len(users) > 0
@@ -454,7 +454,7 @@ def test_read_user_by_id_requires_own_data_or_admin(users_test_context, test_reg
     client, _, _ = users_test_context
     # Regular user trying to access another user's data
     headers = make_app_headers_for_user(test_regular_user_2)
-    response = client.get(f'/users/{test_regular_user.id}/', headers=headers)
+    response = client.get(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'can only access your own user data' in response.json()['detail']
 
@@ -463,7 +463,7 @@ def test_read_user_by_id_allows_own_data(users_test_context, test_regular_user):
     """Test that users can read their own data."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
-    response = client.get(f'/users/{test_regular_user.id}/', headers=headers)
+    response = client.get(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['id'] == test_regular_user.id
@@ -474,7 +474,7 @@ def test_read_user_by_id_allows_admin(users_test_context, test_admin_user, test_
     """Test that admin users can read any user's data."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
-    response = client.get(f'/users/{test_regular_user.id}/', headers=headers)
+    response = client.get(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['id'] == test_regular_user.id
@@ -484,7 +484,7 @@ def test_read_user_by_id_allows_internal_service(users_test_context, test_regula
     """Test that internal service can read any user's data."""
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
-    response = client.get(f'/users/{test_regular_user.id}/', headers=headers)
+    response = client.get(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['id'] == test_regular_user.id
@@ -494,7 +494,7 @@ def test_read_user_by_email_requires_admin_or_internal_service(users_test_contex
     """Test that regular users cannot look up users by email."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user_2)
-    response = client.get(f'/users/email/{test_regular_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_regular_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
 
@@ -503,7 +503,7 @@ def test_read_user_by_email_requires_internal_service_only(users_test_context, t
     """Test that admin users can look up users by email."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
-    response = client.get(f'/users/email/{test_regular_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_regular_user.email}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['email'] == test_regular_user.email
@@ -513,7 +513,7 @@ def test_read_user_by_email_allows_internal_service(users_test_context, test_reg
     """Test that internal service can look up users by email."""
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
-    response = client.get(f'/users/email/{test_regular_user.email}/', headers=headers)
+    response = client.get(f'/users/email/{test_regular_user.email}', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['email'] == test_regular_user.email
@@ -524,7 +524,7 @@ def test_update_user_requires_own_data_or_admin(users_test_context, test_regular
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user_2)
     update_data = {'name': 'Updated Name'}
-    response = client.patch(f'/users/{test_regular_user.id}/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'can only update your own user data' in response.json()['detail']
 
@@ -534,7 +534,7 @@ def test_update_user_allows_own_data(users_test_context, test_regular_user):
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
     update_data = {'name': 'Updated Name'}
-    response = client.patch(f'/users/{test_regular_user.id}/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['name'] == 'Updated Name'
@@ -545,7 +545,7 @@ def test_update_user_allows_admin(users_test_context, test_admin_user, test_regu
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
     update_data = {'name': 'Admin Updated Name'}
-    response = client.patch(f'/users/{test_regular_user.id}/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['name'] == 'Admin Updated Name'
@@ -556,7 +556,7 @@ def test_update_user_allows_internal_service(users_test_context, test_regular_us
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
     update_data = {'name': 'Service Updated Name'}
-    response = client.patch(f'/users/{test_regular_user.id}/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['name'] == 'Service Updated Name'
@@ -565,16 +565,16 @@ def test_update_user_allows_internal_service(users_test_context, test_regular_us
 def test_update_user_refuses_own_is_admin(users_test_context, test_regular_user):
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
-    response = client.patch(f'/users/{test_regular_user.id}/', json={'is_admin': True}, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json={'is_admin': True}, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
-    assert client.get(f'/users/{test_regular_user.id}/', headers=headers).json()['is_admin'] is False
+    assert client.get(f'/users/{test_regular_user.id}', headers=headers).json()['is_admin'] is False
 
 
 def test_update_user_lets_admin_grant_is_admin(users_test_context, test_admin_user, test_regular_user):
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
-    response = client.patch(f'/users/{test_regular_user.id}/', json={'is_admin': True}, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}', json={'is_admin': True}, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['is_admin'] is True
 
@@ -583,7 +583,7 @@ def test_delete_user_requires_admin_or_internal_service(users_test_context, test
     """Test that regular users cannot delete any users."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user_2)
-    response = client.delete(f'/users/{test_regular_user.id}/', headers=headers)
+    response = client.delete(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Refusal.ADMIN_REQUIRED in response.json()['detail']
 
@@ -592,7 +592,7 @@ def test_delete_user_prevents_self_deletion(users_test_context, test_admin_user)
     """Test that even admin users cannot delete themselves."""
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
-    response = client.delete(f'/users/{test_admin_user.id}/', headers=headers)
+    response = client.delete(f'/users/{test_admin_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert Refusal.CANNOT_DELETE_OWN_ACCOUNT in response.json()['detail']
 
@@ -602,7 +602,7 @@ def test_update_user_preferences_requires_own_data_or_admin(users_test_context, 
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user_2)
     update_data = {'dark_mode': True}
-    response = client.patch(f'/users/{test_regular_user.id}/preferences/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}/preferences', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert 'can only update your own preferences' in response.json()['detail']
 
@@ -612,7 +612,7 @@ def test_update_user_preferences_allows_own_data(users_test_context, test_regula
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_regular_user)
     update_data = {'dark_mode': True}
-    response = client.patch(f'/users/{test_regular_user.id}/preferences/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}/preferences', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['preferences']['dark_mode'] is True
@@ -623,7 +623,7 @@ def test_update_user_preferences_allows_admin(users_test_context, test_admin_use
     client, _, _ = users_test_context
     headers = make_app_headers_for_user(test_admin_user)
     update_data = {'dark_mode': True}
-    response = client.patch(f'/users/{test_regular_user.id}/preferences/', json=update_data, headers=headers)
+    response = client.patch(f'/users/{test_regular_user.id}/preferences', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_200_OK
     user_data = response.json()
     assert user_data['preferences']['dark_mode'] is True
@@ -633,7 +633,7 @@ def test_internal_service_auth_invalid_key(users_test_context, test_regular_user
     """Test that invalid internal service key returns 401."""
     client, _, _ = users_test_context
     headers = make_invalid_internal_service_headers()
-    response = client.get(f'/users/{test_regular_user_2.id}/', headers=headers)
+    response = client.get(f'/users/{test_regular_user_2.id}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert Refusal.AUTH_REQUIRED in response.json()['detail']
 
@@ -641,12 +641,12 @@ def test_internal_service_auth_invalid_key(users_test_context, test_regular_user
 def test_no_authentication_returns_401(users_test_context, test_regular_user_2):
     """Test that requests without authentication return 401."""
     client, _, _ = users_test_context
-    response = client.get(f'/users/{test_regular_user_2.id}/')
+    response = client.get(f'/users/{test_regular_user_2.id}')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 def test_read_many_with_limit(users_test_context):
-    """Test limit parameter on GET /users/."""
+    """Test limit parameter on GET /users."""
     client, _, _ = users_test_context
     headers = make_internal_service_headers()
 
@@ -666,43 +666,43 @@ class TestUsersNotFound:
     """Test 404 responses for non-existent users."""
 
     def test_read_one_not_found(self, users_test_context):
-        """GET /{id}/ returns 404 for non-existent user."""
+        """GET /{id} returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_internal_service_headers()
-        response = client.get(f'{ENDPOINT}99999/', headers=headers)
+        response = client.get(f'{ENDPOINT}/99999', headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, users_test_context, test_admin_user):
-        """DELETE /{id}/ returns 404 for non-existent user."""
+        """DELETE /{id} returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_app_headers_for_user(test_admin_user)
-        response = client.delete(f'{ENDPOINT}99999/', headers=headers)
+        response = client.delete(f'{ENDPOINT}/99999', headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, users_test_context):
-        """PATCH /{id}/ returns 404 for non-existent user."""
+        """PATCH /{id} returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_internal_service_headers()
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'}, headers=headers)
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'}, headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_read_by_alt_id_not_found(self, users_test_context):
-        """GET /alt/{alternative_id}/ returns 404 for non-existent user."""
+        """GET /alt/{alternative_id} returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_internal_service_headers()
-        response = client.get(f'{ENDPOINT}alt/99999/', headers=headers)
+        response = client.get(f'{ENDPOINT}/alt/99999', headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_read_by_email_not_found(self, users_test_context):
-        """GET /email/{email}/ returns 404 for non-existent user."""
+        """GET /email/{email} returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_internal_service_headers()
-        response = client.get(f'{ENDPOINT}email/nonexistent@test.com/', headers=headers)
+        response = client.get(f'{ENDPOINT}/email/nonexistent@test.com', headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_preferences_not_found(self, users_test_context, test_admin_user):
-        """PATCH /{id}/preferences/ returns 404 for non-existent user."""
+        """PATCH /{id}/preferences returns 404 for non-existent user."""
         client, _, _ = users_test_context
         headers = make_app_headers_for_user(test_admin_user)
-        response = client.patch(f'{ENDPOINT}99999/preferences/', json={'dark_mode': True}, headers=headers)
+        response = client.patch(f'{ENDPOINT}/99999/preferences', json={'dark_mode': True}, headers=headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

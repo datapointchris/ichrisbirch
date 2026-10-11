@@ -79,7 +79,7 @@ describe('useAutoTasksStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/autotasks/')
+    expect(mockApi.get).toHaveBeenCalledWith('/autotasks')
     expect(store.autotasks).toEqual(testAutoTasks)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -149,13 +149,13 @@ describe('useAutoTasksStore', () => {
       frequency: 'Daily',
     })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/autotasks/', {
+    expect(mockApi.post).toHaveBeenCalledWith('/autotasks', {
       name: 'Water Plants',
       category: 'Home',
       window_days: 3,
       frequency: 'Daily',
     })
-    expect(mockApi.patch).toHaveBeenCalledWith('/autotasks/4/run/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/autotasks/4/run')
     expect(result).toEqual(afterRun)
     expect(store.autotasks).toHaveLength(1)
     expect(store.autotasks[0]!.run_count).toBe(1)
@@ -212,7 +212,7 @@ describe('useAutoTasksStore', () => {
 
     const result = await store.run(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/autotasks/1/run/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/autotasks/1/run')
     expect(result).toEqual(afterRun)
     expect(store.autotasks.find((a) => a.id === 1)!.run_count).toBe(11)
   })
@@ -238,7 +238,7 @@ describe('useAutoTasksStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/autotasks/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/autotasks/2')
     expect(store.autotasks).toHaveLength(2)
     expect(store.autotasks.find((a) => a.id === 2)).toBeUndefined()
   })

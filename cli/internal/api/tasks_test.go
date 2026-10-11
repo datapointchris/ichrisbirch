@@ -27,7 +27,7 @@ func TestListTasks_LimitQueryParam(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListTasks: %v", err)
 	}
-	if gotPath != "/api/v1/tasks/" || gotQuery != "limit=5" {
+	if gotPath != "/api/v1/tasks" || gotQuery != "limit=5" {
 		t.Errorf("path=%q query=%q, want /tasks/ limit=5", gotPath, gotQuery)
 	}
 	if len(tasks) != 1 || tasks[0].Completed() {
@@ -57,7 +57,7 @@ func TestCompleteTask_PatchPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CompleteTask: %v", err)
 	}
-	if gotMethod != http.MethodPatch || gotPath != "/api/v1/tasks/42/complete/" {
+	if gotMethod != http.MethodPatch || gotPath != "/api/v1/tasks/42/complete" {
 		t.Errorf("%s %s, want PATCH /tasks/42/complete/", gotMethod, gotPath)
 	}
 	if !task.Completed() {
@@ -103,7 +103,7 @@ func TestReopenTask_PatchesTheReopenPath(t *testing.T) {
 	if _, err := client.ReopenTask(context.Background(), 42); err != nil {
 		t.Fatalf("ReopenTask: %v", err)
 	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/reopen/" {
+	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/reopen" {
 		t.Errorf("%s %s, want PATCH /tasks/42/reopen/", *method, *path)
 	}
 }
@@ -113,7 +113,7 @@ func TestSnoozeTask_PatchesTheSnoozePath(t *testing.T) {
 	if _, err := client.SnoozeTask(context.Background(), 42); err != nil {
 		t.Fatalf("SnoozeTask: %v", err)
 	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/snooze/" {
+	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/snooze" {
 		t.Errorf("%s %s, want PATCH /tasks/42/snooze/", *method, *path)
 	}
 }
@@ -123,7 +123,7 @@ func TestDropTask_SendsTheReason(t *testing.T) {
 	if _, err := client.DropTask(context.Background(), 42, "lost interest"); err != nil {
 		t.Fatalf("DropTask: %v", err)
 	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/drop/" {
+	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/drop" {
 		t.Errorf("%s %s, want PATCH /tasks/42/drop/", *method, *path)
 	}
 	if (*body)["reason"] != "lost interest" {
@@ -146,7 +146,7 @@ func TestSetTaskPinned_SendsFalseRatherThanOmittingIt(t *testing.T) {
 	if _, err := client.SetTaskPinned(context.Background(), 42, false); err != nil {
 		t.Fatalf("SetTaskPinned: %v", err)
 	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/42/" {
+	if *method != http.MethodPatch || *path != "/api/v1/tasks/42" {
 		t.Errorf("%s %s, want PATCH /tasks/42/", *method, *path)
 	}
 	if pinned, ok := (*body)["pinned"]; !ok || pinned != false {
@@ -173,7 +173,7 @@ func TestListTaskCategories_DecodesWindows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListTaskCategories: %v", err)
 	}
-	if *path != "/api/v1/tasks/categories/" || len(categories) != 1 || categories[0].WindowDays != 7 {
+	if *path != "/api/v1/tasks/categories" || len(categories) != 1 || categories[0].WindowDays != 7 {
 		t.Errorf("path %s categories %+v", *path, categories)
 	}
 }
@@ -183,7 +183,7 @@ func TestUpdateTaskCategory_PatchesTheWindow(t *testing.T) {
 	if _, err := client.UpdateTaskCategory(context.Background(), "Home", 12); err != nil {
 		t.Fatalf("UpdateTaskCategory: %v", err)
 	}
-	if *method != http.MethodPatch || *path != "/api/v1/tasks/categories/Home/" {
+	if *method != http.MethodPatch || *path != "/api/v1/tasks/categories/Home" {
 		t.Errorf("%s %s, want PATCH /tasks/categories/Home/", *method, *path)
 	}
 	if (*body)["window_days"] != float64(12) {

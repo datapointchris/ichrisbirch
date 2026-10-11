@@ -13,7 +13,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.AutoFun], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.AutoFun], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession, completed: bool | None = None):
     query = select(models.AutoFun).order_by(models.AutoFun.added_date.desc())
     if completed is not None:
@@ -21,7 +21,7 @@ def read_many(session: DbSession, completed: bool | None = None):
     return list(session.scalars(query).all())
 
 
-@router.post('/', response_model=schemas.AutoFun, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.AutoFun, status_code=status.HTTP_201_CREATED)
 def create(autofun: schemas.AutoFunCreate, session: DbSession):
     db_obj = models.AutoFun(**autofun.model_dump())
     session.add(db_obj)
@@ -30,7 +30,7 @@ def create(autofun: schemas.AutoFunCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if autofun := session.get(models.AutoFun, id):
         return autofun
@@ -38,7 +38,7 @@ def read_one(id: int, session: DbSession):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoFun {id} not found')
 
 
-@router.patch('/{id}/', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.AutoFun, status_code=status.HTTP_200_OK)
 def update(id: int, autofun_update: schemas.AutoFunUpdate, session: DbSession):
     if db_obj := session.get(models.AutoFun, id):
         for field, value in autofun_update.model_dump(exclude_unset=True).items():
@@ -50,7 +50,7 @@ def update(id: int, autofun_update: schemas.AutoFunUpdate, session: DbSession):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoFun {id} not found')
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if autofun := session.get(models.AutoFun, id):
         # Remove any active task junction record before deleting the item

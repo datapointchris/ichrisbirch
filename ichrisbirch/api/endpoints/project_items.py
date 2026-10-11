@@ -151,7 +151,7 @@ def next_position_in_project(session: Session, project_id: UUID) -> int:
 # --- List and filters (must be before /{id}/ routes) ---
 
 
-@router.get('/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     zone: RequestZone,
@@ -185,7 +185,7 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.get('/blocked/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
+@router.get('/blocked', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 def list_blocked(session: DbSession, repo: str | None = None):
     """List items that have at least one incomplete dependency."""
     query = (
@@ -205,7 +205,7 @@ def list_blocked(session: DbSession, repo: str | None = None):
     return list(session.scalars(query).all())
 
 
-@router.get('/search/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
+@router.get('/search', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 def search(q: str, session: DbSession, repo: str | None = None):
     logger.debug('project_item_search', query=q)
     query = (
@@ -223,7 +223,7 @@ def search(q: str, session: DbSession, repo: str | None = None):
 # --- CRUD ---
 
 
-@router.post('/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
 def create(item: schemas.ProjectItemCreate, session: DbSession):
     if not item.project_ids:
         raise HTTPException(
@@ -261,12 +261,12 @@ def create(item: schemas.ProjectItemCreate, session: DbSession):
     return project_item_detail(session, db_item)
 
 
-@router.get('/{id}/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_200_OK)
 def read_one(item: ItemFromPath, session: DbSession):
     return project_item_detail(session, item)
 
 
-@router.patch('/{id}/', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.ProjectItem, status_code=status.HTTP_200_OK)
 def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('project_item_update', item_id=item.id, update_data=update_data)
@@ -290,7 +290,7 @@ def update(item: ItemFromPath, update: schemas.ProjectItemUpdate, session: DbSes
     return item
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(item: ItemFromPath, session: DbSession):
     session.delete(item)
     session.commit()
@@ -300,7 +300,7 @@ def delete(item: ItemFromPath, session: DbSession):
 # --- Reorder ---
 
 
-@router.patch('/{id}/reorder/', response_model=schemas.ProjectItemInProject, status_code=status.HTTP_200_OK)
+@router.patch('/{id}/reorder', response_model=schemas.ProjectItemInProject, status_code=status.HTTP_200_OK)
 def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, session: DbSession):
     project = resolve_project(session, reorder.project_id)
 
@@ -334,7 +334,7 @@ def reorder(item: ItemFromPath, reorder: schemas.ProjectItemReorder, session: Db
 # --- Multi-project membership ---
 
 
-@router.get('/{id}/projects/', response_model=list[schemas.Project], status_code=status.HTTP_200_OK)
+@router.get('/{id}/projects', response_model=list[schemas.Project], status_code=status.HTTP_200_OK)
 def list_projects(item: ItemFromPath, session: DbSession):
     query = (
         select(models.Project)
@@ -345,7 +345,7 @@ def list_projects(item: ItemFromPath, session: DbSession):
     return list(session.scalars(query).all())
 
 
-@router.post('/{id}/projects/', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
+@router.post('/{id}/projects', response_model=schemas.Project, status_code=status.HTTP_201_CREATED)
 def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembershipCreate, session: DbSession):
     project = resolve_project(session, membership.project_id)
 
@@ -364,7 +364,7 @@ def add_to_project(item: ItemFromPath, membership: schemas.ProjectItemMembership
 
 # `{project_id:path}` because a project name may hold a slash, which reaches
 # routing decoded. It is the last segment, so nothing after it competes.
-@router.delete('/{id}/projects/{project_id:path}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}/projects/{project_id:path}', status_code=status.HTTP_204_NO_CONTENT)
 def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: DbSession):
     membership = session.get(ProjectItemMembership, (item.id, project.id))
     if not membership:
@@ -389,7 +389,7 @@ def remove_from_project(item: ItemFromPath, project: ProjectFromPath, session: D
 # --- Dependencies ---
 
 
-@router.post('/{id}/dependencies/', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
+@router.post('/{id}/dependencies', response_model=schemas.ProjectItemDetail, status_code=status.HTTP_201_CREATED)
 def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate, session: DbSession):
     depends_on = resolve_item(session, dep.depends_on_id)
 
@@ -414,7 +414,7 @@ def add_dependency(item: ItemFromPath, dep: schemas.ProjectItemDependencyCreate,
     return project_item_detail(session, item)
 
 
-@router.delete('/{id}/dependencies/{dep_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}/dependencies/{dep_id}', status_code=status.HTTP_204_NO_CONTENT)
 def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPath, session: DbSession):
     dep = session.get(ProjectItemDependency, (item.id, depends_on.id))
     if not dep:
@@ -428,7 +428,7 @@ def remove_dependency(item: ItemFromPath, depends_on: DependencyItemFromPath, se
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get('/{id}/blockers/', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
+@router.get('/{id}/blockers', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 def get_blockers(item: ItemFromPath, session: DbSession):
     """Get incomplete dependencies (items that block this item)."""
     query = (

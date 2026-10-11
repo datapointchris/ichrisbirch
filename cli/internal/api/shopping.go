@@ -67,7 +67,7 @@ func (f ShoppingItemFilter) query() url.Values {
 	return params
 }
 
-// ShoppingItemAddInput puts a name on the list (POST /shopping/items/). A name
+// ShoppingItemAddInput puts a name on the list (POST /shopping/items). A name
 // already in the catalog is listed again rather than created. Section omitted
 // keeps a known item where it was; clearing it with mergeClearNulls sends an
 // explicit null, which is Unsorted.
@@ -77,7 +77,7 @@ type ShoppingItemAddInput struct {
 	Section *string `json:"section,omitempty"`
 }
 
-// ShoppingItemUpdateInput is a partial update (PATCH /shopping/items/{ref}/).
+// ShoppingItemUpdateInput is a partial update (PATCH /shopping/items/{ref}).
 // An empty Note clears it. Section is cleared to Unsorted through
 // mergeClearNulls. IsNeeded false takes the item off the list without a
 // purchase.
@@ -95,19 +95,19 @@ type ShoppingSectionMove struct {
 }
 
 func shoppingSectionPath(ref string) string {
-	return "/shopping/sections/" + url.PathEscape(ref) + "/"
+	return "/shopping/sections/" + url.PathEscape(ref)
 }
 
 func shoppingItemPath(ref string) string {
-	return "/shopping/items/" + url.PathEscape(ref) + "/"
+	return "/shopping/items/" + url.PathEscape(ref)
 }
 
-// ListShoppingSections returns the sections in list order (GET /shopping/sections/).
+// ListShoppingSections returns the sections in list order (GET /shopping/sections).
 func (c *Client) ListShoppingSections(ctx context.Context, limit *int) ([]ShoppingSection, error) {
 	params := url.Values{}
 	applyLimit(params, limit)
 	var sections []ShoppingSection
-	if err := c.get(ctx, withQuery("/shopping/sections/", params), &sections); err != nil {
+	if err := c.get(ctx, withQuery("/shopping/sections", params), &sections); err != nil {
 		return nil, err
 	}
 	return sections, nil
@@ -118,7 +118,7 @@ func (c *Client) ListShoppingSections(ctx context.Context, limit *int) ([]Shoppi
 func (c *Client) CreateShoppingSection(ctx context.Context, name string) (ShoppingSection, error) {
 	var section ShoppingSection
 	body := map[string]string{"name": name}
-	if err := c.send(ctx, http.MethodPost, "/shopping/sections/", body, &section); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/shopping/sections", body, &section); err != nil {
 		return ShoppingSection{}, err
 	}
 	return section, nil
@@ -137,7 +137,7 @@ func (c *Client) RenameShoppingSection(ctx context.Context, ref, name string) (S
 // MoveShoppingSection places a section before or after another.
 func (c *Client) MoveShoppingSection(ctx context.Context, ref string, move ShoppingSectionMove) (ShoppingSection, error) {
 	var section ShoppingSection
-	if err := c.send(ctx, http.MethodPost, shoppingSectionPath(ref)+"rank/", move, &section); err != nil {
+	if err := c.send(ctx, http.MethodPost, shoppingSectionPath(ref)+"/rank", move, &section); err != nil {
 		return ShoppingSection{}, err
 	}
 	return section, nil
@@ -149,12 +149,12 @@ func (c *Client) DeleteShoppingSection(ctx context.Context, ref string) error {
 }
 
 // ListShoppingItems returns items in list order, section by section with
-// Unsorted first (GET /shopping/items/). A Query reorders by name instead.
+// Unsorted first (GET /shopping/items). A Query reorders by name instead.
 func (c *Client) ListShoppingItems(ctx context.Context, filter ShoppingItemFilter, limit *int) ([]ShoppingItem, error) {
 	params := filter.query()
 	applyLimit(params, limit)
 	var items []ShoppingItem
-	if err := c.get(ctx, withQuery("/shopping/items/", params), &items); err != nil {
+	if err := c.get(ctx, withQuery("/shopping/items", params), &items); err != nil {
 		return nil, err
 	}
 	return items, nil
@@ -177,7 +177,7 @@ func (c *Client) AddShoppingItem(ctx context.Context, in ShoppingItemAddInput, c
 		return ShoppingItem{}, err
 	}
 	var item ShoppingItem
-	if err := c.send(ctx, http.MethodPost, "/shopping/items/", body, &item); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/shopping/items", body, &item); err != nil {
 		return ShoppingItem{}, err
 	}
 	return item, nil
@@ -206,21 +206,21 @@ func (c *Client) DeleteShoppingItem(ctx context.Context, ref string) error {
 // item not on the list is a 409.
 func (c *Client) CheckOffShoppingItem(ctx context.Context, ref string) (ShoppingPurchase, error) {
 	var purchase ShoppingPurchase
-	if err := c.send(ctx, http.MethodPost, shoppingItemPath(ref)+"purchases/", nil, &purchase); err != nil {
+	if err := c.send(ctx, http.MethodPost, shoppingItemPath(ref)+"/purchases", nil, &purchase); err != nil {
 		return ShoppingPurchase{}, err
 	}
 	return purchase, nil
 }
 
 // ListShoppingPurchases returns the purchase log, newest first (GET
-// /shopping/purchases/). A nil limit takes the server's default, the newest
+// /shopping/purchases). A nil limit takes the server's default, the newest
 // hundred, because the log only grows.
 func (c *Client) ListShoppingPurchases(ctx context.Context, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ShoppingPurchase, error) {
 	params := url.Values{}
 	applyDateBounds(params, start, end, zone)
 	applyLimit(params, limit)
 	var purchases []ShoppingPurchase
-	if err := c.get(ctx, withQuery("/shopping/purchases/", params), &purchases); err != nil {
+	if err := c.get(ctx, withQuery("/shopping/purchases", params), &purchases); err != nil {
 		return nil, err
 	}
 	return purchases, nil

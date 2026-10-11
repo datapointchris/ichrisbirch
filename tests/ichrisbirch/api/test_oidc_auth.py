@@ -142,7 +142,7 @@ def make_request(authorization: str | None = None) -> Request:
         'scheme': 'http',
         'server': ('testserver', 80),
         'root_path': '',
-        'path': '/tasks/',
+        'path': '/tasks',
         'query_string': b'',
         'headers': headers,
     }

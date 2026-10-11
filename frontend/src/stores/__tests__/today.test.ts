@@ -56,9 +56,9 @@ function serve(data: Record<string, unknown> = {}, failing: string[] = []) {
   mockApi.get.mockImplementation(async (url: string) => {
     if (failing.includes(url)) throw new ApiError({ message: 'down', detail: 'down', status: 503 })
     const defaults: Record<string, unknown> = {
-      '/tasks/todo/': [task(1, 'trim nails'), task(2, 'clean gutters')],
-      '/tasks/completed/': [task(3, 'water plants', { complete_date: '2026-10-10T08:00:00Z' })],
-      '/habits/day/': day,
+      '/tasks/todo': [task(1, 'trim nails'), task(2, 'clean gutters')],
+      '/tasks/completed': [task(3, 'water plants', { complete_date: '2026-10-10T08:00:00Z' })],
+      '/habits/day': day,
     }
     return { data: data[url] ?? defaults[url] ?? [] }
   })
@@ -115,7 +115,7 @@ describe('useTodayStore', () => {
   })
 
   function dayLoadsFor(day: string) {
-    return mockApi.get.mock.calls.filter(([url, config]) => url === '/habits/day/' && config?.params?.date === day)
+    return mockApi.get.mock.calls.filter(([url, config]) => url === '/habits/day' && config?.params?.date === day)
   }
 
   it("loads today's completed tasks into its own list and leaves the shared one empty", async () => {
@@ -124,8 +124,8 @@ describe('useTodayStore', () => {
     const failed = await store.load()
 
     expect(failed).toEqual([])
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed/', { params: { start_date: '2026-10-10', end_date: '2026-10-10' } })
-    expect(mockApi.get).toHaveBeenCalledWith('/habits/day/', { params: { date: '2026-10-10' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: { start_date: '2026-10-10', end_date: '2026-10-10' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/habits/day', { params: { date: '2026-10-10' } })
     expect(store.doneTasks.map((t) => t.name)).toEqual(['water plants'])
     expect(useTasksStore().completedTasks).toEqual([])
     expect(store.openTasks.map((t) => t.name)).toEqual(['trim nails', 'clean gutters'])
@@ -133,7 +133,7 @@ describe('useTodayStore', () => {
   })
 
   it('names the lists that failed and still shows the rest', async () => {
-    serve({}, ['/events/', '/habits/day/'])
+    serve({}, ['/events', '/habits/day'])
     const store = useTodayStore()
     const failed = await store.load()
 
@@ -162,12 +162,12 @@ describe('useTodayStore', () => {
     await store.syncDay()
     expect(store.today).toBe('2026-10-11')
     expect(dayLoadsFor('2026-10-11')).toHaveLength(1)
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed/', { params: { start_date: '2026-10-11', end_date: '2026-10-11' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: { start_date: '2026-10-11', end_date: '2026-10-11' } })
   })
 
   it('still moves to the new day when a habit was undone just after midnight', async () => {
     const completion = { id: 40, habit_id: 7, name: 'Morning run', complete_date: '2026-10-10' } as HabitCompleted
-    serve({ '/habits/day/': { ...day, completed: [completion], due: [] } })
+    serve({ '/habits/day': { ...day, completed: [completion], due: [] } })
     const store = useTodayStore()
     await store.load()
 
@@ -188,13 +188,13 @@ describe('useTodayStore', () => {
     mockApi.patch.mockResolvedValueOnce({ data: { ...nails, complete_date: '2026-10-10T09:00:00Z' } })
 
     await store.completeTask(nails)
-    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/1/complete/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/tasks/1/complete')
     expect(store.doneTasks.map((t) => t.name)).toEqual(['trim nails', 'water plants'])
     expect(store.openTasks.map((t) => t.name)).toEqual(['clean gutters'])
 
     mockApi.patch.mockResolvedValueOnce({ data: { ...nails, complete_date: null } })
     await store.reopenTask(store.doneTasks[0]!)
-    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1/reopen/')
+    expect(mockApi.patch).toHaveBeenLastCalledWith('/tasks/1/reopen')
     expect(store.doneTasks.map((t) => t.name)).toEqual(['water plants'])
     expect(store.openTasks.map((t) => t.name)).toEqual(['trim nails', 'clean gutters'])
   })

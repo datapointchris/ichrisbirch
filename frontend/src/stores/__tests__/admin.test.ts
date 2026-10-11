@@ -155,7 +155,7 @@ describe('useAdminStore', () => {
       mockApi.get.mockResolvedValueOnce({ data: { is_signup_open: false } })
       const store = useAdminStore()
       await store.fetchSettings()
-      expect(mockApi.get).toHaveBeenCalledWith('/admin/settings/')
+      expect(mockApi.get).toHaveBeenCalledWith('/admin/settings')
       expect(store.settings).toEqual({ is_signup_open: false })
       expect(store.settingsLoading).toBe(false)
     })
@@ -167,7 +167,7 @@ describe('useAdminStore', () => {
       const store = useAdminStore()
       store.settings = { is_signup_open: false }
       await store.updateSettings({ is_signup_open: true })
-      expect(mockApi.patch).toHaveBeenCalledWith('/admin/settings/', { is_signup_open: true })
+      expect(mockApi.patch).toHaveBeenCalledWith('/admin/settings', { is_signup_open: true })
       expect(store.settings).toEqual({ is_signup_open: true })
     })
 

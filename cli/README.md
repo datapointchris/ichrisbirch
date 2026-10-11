@@ -162,7 +162,7 @@ grants it.
 header from stdin, so the token never appears in another process's arguments:
 
 ```bash
-printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/v1/tasks/
+printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/v1/tasks
 ```
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.

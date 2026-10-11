@@ -31,7 +31,7 @@ def anchor_every_autotask(anchor: str) -> None:
 
 
 def all_tasks(client) -> list[dict]:
-    response = client.get('/tasks/', params={'status': 'all'})
+    response = client.get('/tasks', params={'status': 'all'})
     assert response.status_code == 200, show_status_and_response(response)
     return response.json()
 
@@ -77,7 +77,7 @@ class TestCompletionAnchor:
             jobs.check_and_run_autotasks(test_settings)
         [copy] = self.weekly_copies(test_api_logged_in)
         with freeze_time('2021-04-10 12:00'):
-            test_api_logged_in.patch(f'/tasks/{copy["id"]}/complete/')
+            test_api_logged_in.patch(f'/tasks/{copy["id"]}/complete')
 
         with freeze_time('2021-04-16 12:00'):
             jobs.check_and_run_autotasks(test_settings)
@@ -92,7 +92,7 @@ class TestCompletionAnchor:
             jobs.check_and_run_autotasks(test_settings)
         [copy] = self.weekly_copies(test_api_logged_in)
         with freeze_time('2021-04-10 12:00'):
-            test_api_logged_in.patch(f'/tasks/{copy["id"]}/drop/')
+            test_api_logged_in.patch(f'/tasks/{copy["id"]}/drop')
 
         with freeze_time('2021-04-17 12:00'):
             jobs.check_and_run_autotasks(test_settings)
@@ -106,19 +106,19 @@ def test_check_and_run_autotasks_max_concurrent(test_api_logged_in):
     # base data has run dates of 2020
     with freeze_time('2021-03-20'):
         jobs.check_and_run_autotasks(test_settings)
-        add_tasks = test_api_logged_in.get('/tasks/', params={'status': 'all'})
+        add_tasks = test_api_logged_in.get('/tasks', params={'status': 'all'})
         assert add_tasks.status_code == 200, show_status_and_response(add_tasks)
         assert len(add_tasks.json()) == 6, add_tasks.json()
     # run autotask check again, giving all conccurent of 2
     with freeze_time('2022-03-20'):
         jobs.check_and_run_autotasks(test_settings)
-        add_tasks_again = test_api_logged_in.get('/tasks/', params={'status': 'all'})
+        add_tasks_again = test_api_logged_in.get('/tasks', params={'status': 'all'})
         assert add_tasks_again.status_code == 200, show_status_and_response(add_tasks_again)
         assert len(add_tasks_again.json()) == 9, add_tasks_again.json()
     # run autotask check, no new tasks should be added as all are at max_concurrent
     with freeze_time('2023-03-20'):
         jobs.check_and_run_autotasks(test_settings)
-        no_add_tasks = test_api_logged_in.get('/tasks/', params={'status': 'all'})
+        no_add_tasks = test_api_logged_in.get('/tasks', params={'status': 'all'})
         assert no_add_tasks.status_code == 200, show_status_and_response(no_add_tasks)
         assert len(no_add_tasks.json()) == 9, no_add_tasks.json()
 
@@ -130,23 +130,23 @@ def test_check_and_run_autotasks_completing_frees_a_slot(test_api_logged_in):
     could ever fire, and every autotask stalled once its history reached the cap.
     """
     anchor_every_autotask('calendar')
-    baseline_ids = {task['id'] for task in test_api_logged_in.get('/tasks/', params={'status': 'all'}).json()}
+    baseline_ids = {task['id'] for task in test_api_logged_in.get('/tasks', params={'status': 'all'}).json()}
     with freeze_time('2021-03-20'):
         jobs.check_and_run_autotasks(test_settings)
     with freeze_time('2022-03-20'):
         jobs.check_and_run_autotasks(test_settings)
-    at_max = test_api_logged_in.get('/tasks/', params={'status': 'all'}).json()
+    at_max = test_api_logged_in.get('/tasks', params={'status': 'all'}).json()
     assert len(at_max) == 9, at_max
 
     spawned = [task for task in at_max if task['id'] not in baseline_ids]
     assert spawned, at_max
     for task in spawned:
-        completed = test_api_logged_in.patch(f'/tasks/{task["id"]}/complete/')
+        completed = test_api_logged_in.patch(f'/tasks/{task["id"]}/complete')
         assert completed.status_code == 200, show_status_and_response(completed)
 
     with freeze_time('2023-03-20'):
         jobs.check_and_run_autotasks(test_settings)
-    after = test_api_logged_in.get('/tasks/', params={'status': 'all'}).json()
+    after = test_api_logged_in.get('/tasks', params={'status': 'all'}).json()
     assert len(after) == 12, after
 
 
@@ -192,7 +192,7 @@ def insert_daily_template_run_on_the_20th() -> None:
 
 
 def spawned_from_daily_template(client) -> list[dict]:
-    return [task for task in client.get('/tasks/', params={'status': 'all'}).json() if task['name'] == DAILY_NAME]
+    return [task for task in client.get('/tasks', params={'status': 'all'}).json() if task['name'] == DAILY_NAME]
 
 
 def test_an_autotask_is_due_by_the_admins_calendar(test_api_logged_in, admin_in_new_york):

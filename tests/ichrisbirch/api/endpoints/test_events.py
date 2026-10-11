@@ -20,7 +20,7 @@ NEW_OBJ = schemas.EventCreate(
     notes='Notes for Event 4',
 )
 
-ENDPOINT = '/events/'
+ENDPOINT = '/events'
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_create_event_date_formats(txn_api_logged_in, event_date, output):
     )
     response = client.post(ENDPOINT, json=event_obj.model_dump(mode='json'))
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
-    event = client.get(f'{ENDPOINT}{response.json()["id"]}/')
+    event = client.get(f'{ENDPOINT}/{response.json()["id"]}')
     assert event.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert event.json()['date'] == output
 
@@ -96,12 +96,12 @@ def test_attend_event(event_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     # Mark as attending
-    response = client.patch(f'{ENDPOINT}{first_id}/attend/')
+    response = client.patch(f'{ENDPOINT}/{first_id}/attend')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['attending'] is True
 
     # Verify persistence
-    response = client.get(f'{ENDPOINT}{first_id}/')
+    response = client.get(f'{ENDPOINT}/{first_id}')
     assert response.json()['attending'] is True
 
 
@@ -111,10 +111,10 @@ def test_partial_update(event_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     # Get original event
-    original = client.get(f'{ENDPOINT}{first_id}/').json()
+    original = client.get(f'{ENDPOINT}/{first_id}').json()
 
     # Update only venue
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'venue': 'Updated Venue'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'venue': 'Updated Venue'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['venue'] == 'Updated Venue'
@@ -125,27 +125,27 @@ class TestEventsNotFound:
     """Test 404 responses for non-existent events."""
 
     def test_read_one_not_found(self, event_crud_tester):
-        """GET /{id}/ returns 404 for non-existent event."""
+        """GET /{id} returns 404 for non-existent event."""
         client, _ = event_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, event_crud_tester):
-        """DELETE /{id}/ returns 404 for non-existent event."""
+        """DELETE /{id} returns 404 for non-existent event."""
         client, _ = event_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, event_crud_tester):
-        """PATCH /{id}/ returns 404 for non-existent event."""
+        """PATCH /{id} returns 404 for non-existent event."""
         client, _ = event_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_attend_not_found(self, event_crud_tester):
-        """PATCH /{id}/attend/ returns 404 for non-existent event."""
+        """PATCH /{id}/attend returns 404 for non-existent event."""
         client, _ = event_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/attend/')
+        response = client.patch(f'{ENDPOINT}/99999/attend')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -224,7 +224,7 @@ class TestEventWallClock:
         )
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 
-        response = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'timezone': None})
+        response = client.patch(f'{ENDPOINT}/{created.json()["id"]}', json={'timezone': None})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
@@ -243,7 +243,7 @@ class TestEventWallClock:
         )
         assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
 
-        updated = client.patch(f'{ENDPOINT}{created.json()["id"]}/', json={'name': 'Renamed'})
+        updated = client.patch(f'{ENDPOINT}/{created.json()["id"]}', json={'name': 'Renamed'})
 
         assert updated.status_code == status.HTTP_200_OK, show_status_and_response(updated)
         assert updated.json()['timezone'] == 'Asia/Tokyo'

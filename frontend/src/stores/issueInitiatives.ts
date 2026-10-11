@@ -29,7 +29,7 @@ export const useIssueInitiativesStore = defineStore('issueInitiatives', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Initiative[]>('/issues/initiatives/', { params: { status: statusFilter.value } })
+      const response = await api.get<Initiative[]>('/issues/initiatives', { params: { status: statusFilter.value } })
       items.value = response.data
       logger.info('initiatives_fetched', { count: response.data.length, status: statusFilter.value })
     } catch (e) {
@@ -71,14 +71,14 @@ export const useIssueInitiativesStore = defineStore('issueInitiatives', () => {
   }
 
   function create(input: InitiativeCreate) {
-    return write('create', { name: input.name }, async () => (await api.post<Initiative>('/issues/initiatives/', input)).data)
+    return write('create', { name: input.name }, async () => (await api.post<Initiative>('/issues/initiatives', input)).data)
   }
 
   function update(initiative: Initiative, input: InitiativeUpdate) {
     return write(
       'update',
       { id: initiative.id, fields: Object.keys(input) },
-      async () => (await api.patch<Initiative>(`/issues/initiatives/${initiative.id}/`, input)).data
+      async () => (await api.patch<Initiative>(`/issues/initiatives/${initiative.id}`, input)).data
     )
   }
 
@@ -91,7 +91,7 @@ export const useIssueInitiativesStore = defineStore('issueInitiatives', () => {
 
   function remove(initiative: Initiative) {
     return write('delete', { id: initiative.id }, async () => {
-      await api.delete(`/issues/initiatives/${initiative.id}/`)
+      await api.delete(`/issues/initiatives/${initiative.id}`)
     })
   }
 

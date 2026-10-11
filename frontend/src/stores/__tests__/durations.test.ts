@@ -71,7 +71,7 @@ describe('useDurationsStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/durations/')
+    expect(mockApi.get).toHaveBeenCalledWith('/durations')
     expect(store.durations).toEqual(testDurations)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -121,7 +121,7 @@ describe('useDurationsStore', () => {
 
     const result = await store.create({ name: 'New Hobby', start_date: '2025-01-01' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/durations/', { name: 'New Hobby', start_date: '2025-01-01' })
+    expect(mockApi.post).toHaveBeenCalledWith('/durations', { name: 'New Hobby', start_date: '2025-01-01' })
     expect(result).toEqual(newDuration)
     expect(store.durations).toContainEqual(newDuration)
   })
@@ -146,7 +146,7 @@ describe('useDurationsStore', () => {
 
     const result = await store.update(1, { name: 'Updated Piano' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/durations/1/', { name: 'Updated Piano' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/durations/1', { name: 'Updated Piano' })
     expect(result).toEqual(updated)
     expect(store.durations.find((d) => d.id === 1)!.name).toBe('Updated Piano')
   })
@@ -160,7 +160,7 @@ describe('useDurationsStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/durations/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/durations/2')
     expect(store.durations).toHaveLength(2)
     expect(store.durations.find((d) => d.id === 2)).toBeUndefined()
   })
@@ -197,7 +197,7 @@ describe('useDurationsStore', () => {
 
     const result = await store.addNote(1, { date: '2025-06-15', content: 'New milestone' })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/durations/1/notes/', { date: '2025-06-15', content: 'New milestone' })
+    expect(mockApi.post).toHaveBeenCalledWith('/durations/1/notes', { date: '2025-06-15', content: 'New milestone' })
     expect(result).toEqual(newNote)
     const duration = store.durations.find((d) => d.id === 1)!
     expect(duration.duration_notes).toContainEqual(newNote)
@@ -213,7 +213,7 @@ describe('useDurationsStore', () => {
 
     const result = await store.updateNote(1, 1, { content: 'Updated content' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/durations/1/notes/1/', { content: 'Updated content' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/durations/1/notes/1', { content: 'Updated content' })
     expect(result).toEqual(updatedNote)
     const duration = store.durations.find((d) => d.id === 1)!
     expect(duration.duration_notes.find((n) => n.id === 1)!.content).toBe('Updated content')
@@ -228,7 +228,7 @@ describe('useDurationsStore', () => {
 
     await store.removeNote(1, 1)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/durations/1/notes/1/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/durations/1/notes/1')
     const duration = store.durations.find((d) => d.id === 1)!
     expect(duration.duration_notes.find((n) => n.id === 1)).toBeUndefined()
     expect(duration.duration_notes).toHaveLength(1)

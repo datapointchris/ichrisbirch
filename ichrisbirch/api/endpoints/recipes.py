@@ -63,7 +63,7 @@ def scaled_recipe_response(recipe: models.Recipe, servings: int | None) -> schem
     return response
 
 
-@router.get('/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     cuisine: str | None = None,
@@ -87,7 +87,7 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
 def create(recipe: schemas.RecipeCreate, session: DbSession):
     ingredients_data = recipe.ingredients
     recipe_data = recipe.model_dump(exclude={'ingredients'})
@@ -105,7 +105,7 @@ def create(recipe: schemas.RecipeCreate, session: DbSession):
     return reloaded
 
 
-@router.get('/search/', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
+@router.get('/search', response_model=list[schemas.Recipe], status_code=status.HTTP_200_OK)
 def search(q: str, session: DbSession):
     """Search recipes by name, tags, or instructions.
 
@@ -130,7 +130,7 @@ def search(q: str, session: DbSession):
 
 
 @router.get(
-    '/search-by-ingredients/',
+    '/search-by-ingredients',
     response_model=list[schemas.RecipeIngredientSearchResult],
     status_code=status.HTTP_200_OK,
 )
@@ -201,7 +201,7 @@ def search_by_ingredients(
     ]
 
 
-@router.get('/stats/', response_model=schemas.RecipeStats, status_code=status.HTTP_200_OK)
+@router.get('/stats', response_model=schemas.RecipeStats, status_code=status.HTTP_200_OK)
 def stats(session: DbSession):
     total_recipes = session.scalar(select(func.count(models.Recipe.id))) or 0
     total_times_cooked = session.scalar(select(func.coalesce(func.sum(models.Recipe.times_made), 0))) or 0
@@ -280,14 +280,14 @@ def stats(session: DbSession):
     )
 
 
-@router.post('/ai-suggest/', response_model=schemas.RecipeSuggestionResponse, status_code=status.HTTP_200_OK)
+@router.post('/ai-suggest', response_model=schemas.RecipeSuggestionResponse, status_code=status.HTTP_200_OK)
 async def ai_suggest(
     request: schemas.RecipeSuggestionRequest,
     settings: Settings = Depends(get_settings),
 ):
     """Ask Claude (with WebSearch) to find recipes matching the user's inputs.
 
-    Returns candidates WITHOUT saving — the user reviews and saves via /ai-save/.
+    Returns candidates WITHOUT saving — the user reviews and saves via /ai-save.
     """
     assistant = AnthropicAssistant(
         name='Recipe Suggestions',
@@ -304,7 +304,7 @@ async def ai_suggest(
     return await assistant.generate_structured(user_message, schemas.RecipeSuggestionResponse, max_tokens=8192)
 
 
-@router.post('/ai-save/', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
+@router.post('/ai-save', response_model=schemas.Recipe, status_code=status.HTTP_201_CREATED)
 def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
     """Save an AI-generated candidate to the recipes table."""
     payload = candidate.model_dump()
@@ -325,7 +325,7 @@ def ai_save(candidate: schemas.RecipeCandidate, session: DbSession):
 # =============================================================================
 
 
-@router.post('/import-from-url/', response_model=schemas.UrlImportResponse, status_code=status.HTTP_200_OK)
+@router.post('/import-from-url', response_model=schemas.UrlImportResponse, status_code=status.HTTP_200_OK)
 async def import_from_url(
     request: schemas.UrlImportRequest,
     session: DbSession,
@@ -364,7 +364,7 @@ async def import_from_url(
     return schemas.UrlImportResponse(candidate=candidate)
 
 
-@router.post('/save-url-import/', response_model=schemas.UrlImportSaveResult, status_code=status.HTTP_201_CREATED)
+@router.post('/save-url-import', response_model=schemas.UrlImportSaveResult, status_code=status.HTTP_201_CREATED)
 def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
     """Persist a reviewed URL-import candidate atomically.
 
@@ -413,10 +413,10 @@ def save_url_import(candidate: schemas.UrlImportCandidate, session: DbSession):
 # =============================================================================
 # Cooking techniques are part of the Recipes domain — reusable cooking patterns
 # (e.g. "3:1 vinaigrette ratio", "caramelize tomato paste before liquids") that
-# multiple recipes can reference. Served as sub-resources under /recipes/cooking-techniques/.
+# multiple recipes can reference. Served as sub-resources under /recipes/cooking-techniques.
 
 
-@router.get('/cooking-techniques/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
+@router.get('/cooking-techniques', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
 def list_cooking_techniques(
     session: DbSession,
     category: str | None = None,
@@ -431,7 +431,7 @@ def list_cooking_techniques(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/cooking-techniques/', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)
+@router.post('/cooking-techniques', response_model=schemas.CookingTechnique, status_code=status.HTTP_201_CREATED)
 def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session: DbSession):
     data = technique.model_dump()
     data['slug'] = unique_cooking_technique_slug(session, slugify(data['name']))
@@ -442,7 +442,7 @@ def create_cooking_technique(technique: schemas.CookingTechniqueCreate, session:
     return obj
 
 
-@router.get('/cooking-techniques/search/', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
+@router.get('/cooking-techniques/search', response_model=list[schemas.CookingTechnique], status_code=status.HTTP_200_OK)
 def search_cooking_techniques(q: str, session: DbSession):
     """Search cooking techniques by name, summary, body, or tags.
 
@@ -466,7 +466,7 @@ def search_cooking_techniques(q: str, session: DbSession):
 
 
 @router.get(
-    '/cooking-techniques/categories/',
+    '/cooking-techniques/categories',
     response_model=list[schemas.CookingTechniqueCategoryBreakdown],
     status_code=status.HTTP_200_OK,
 )
@@ -482,7 +482,7 @@ def list_cooking_technique_categories(session: DbSession):
     return [schemas.CookingTechniqueCategoryBreakdown(name=name, count=counts.get(name, 0)) for name in category_names]
 
 
-@router.get('/cooking-techniques/slug/{slug}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+@router.get('/cooking-techniques/slug/{slug}', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
 def read_cooking_technique_by_slug(slug: str, session: DbSession):
     technique = session.scalar(select(models.CookingTechnique).where(models.CookingTechnique.slug == slug))
     if technique is None:
@@ -490,7 +490,7 @@ def read_cooking_technique_by_slug(slug: str, session: DbSession):
     return technique
 
 
-@router.get('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+@router.get('/cooking-techniques/{id}', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
 def read_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
@@ -498,7 +498,7 @@ def read_cooking_technique(id: int, session: DbSession):
     return technique
 
 
-@router.delete('/cooking-techniques/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/cooking-techniques/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_cooking_technique(id: int, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
@@ -508,7 +508,7 @@ def delete_cooking_technique(id: int, session: DbSession):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.patch('/cooking-techniques/{id}/', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
+@router.patch('/cooking-techniques/{id}', response_model=schemas.CookingTechnique, status_code=status.HTTP_200_OK)
 def update_cooking_technique(id: int, technique_update: schemas.CookingTechniqueUpdate, session: DbSession):
     technique = session.get(models.CookingTechnique, id)
     if technique is None:
@@ -534,7 +534,7 @@ def update_cooking_technique(id: int, technique_update: schemas.CookingTechnique
 # =============================================================================
 
 
-@router.get('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
 def read_one(
     id: int,
     session: DbSession,
@@ -546,7 +546,7 @@ def read_one(
     return scaled_recipe_response(recipe, servings)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     recipe = session.get(models.Recipe, id)
     if recipe is None:
@@ -556,7 +556,7 @@ def delete(id: int, session: DbSession):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.patch('/{id}/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
 def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
     recipe = load_recipe(session, id)
     if recipe is None:
@@ -581,7 +581,7 @@ def update(id: int, recipe_update: schemas.RecipeUpdate, session: DbSession):
     return load_recipe(session, id)
 
 
-@router.post('/{id}/mark-made/', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
+@router.post('/{id}/mark-made', response_model=schemas.Recipe, status_code=status.HTTP_200_OK)
 def mark_made(id: int, session: DbSession):
     """Increment times_made and set last_made_date to now."""
     recipe = session.get(models.Recipe, id)

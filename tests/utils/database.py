@@ -323,7 +323,7 @@ def insert_test_data_transactional(session: Session, *datasets):
             client, session = txn_api_logged_in
             insert_test_data_transactional(session, 'tasks')
             session.flush()  # Make data visible to API calls
-            response = client.get('/tasks/')
+            response = client.get('/tasks')
 
     Unlike insert_test_data(), this:
     - Uses the provided session instead of creating a new one

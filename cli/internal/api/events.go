@@ -36,7 +36,7 @@ type EventCreateInput struct {
 	Notes     *string `json:"notes,omitempty"`
 }
 
-// EventUpdateInput is a partial update (PATCH /events/{id}/). Date is a string
+// EventUpdateInput is a partial update (PATCH /events/{id}). Date is a string
 // pointer for the same parsing reason as create.
 type EventUpdateInput struct {
 	Name      *string  `json:"name,omitempty"`
@@ -63,7 +63,7 @@ const (
 // EventScopes lists every scope, in the order help text names them.
 var EventScopes = []EventScope{EventsUpcoming, EventsPast, EventsAll}
 
-// ListEvents returns one scope of events (GET /events/). Today is read in zone,
+// ListEvents returns one scope of events (GET /events). Today is read in zone,
 // or in the user's preference when zone is empty. A nil limit fetches the whole
 // scope, and a limit takes from its front: the soonest upcoming, the latest past.
 func (c *Client) ListEvents(ctx context.Context, when EventScope, zone DayZone, limit *int) ([]Event, error) {
@@ -74,48 +74,48 @@ func (c *Client) ListEvents(ctx context.Context, when EventScope, zone DayZone, 
 	}
 	applyLimit(params, limit)
 	var events []Event
-	if err := c.get(ctx, withQuery("/events/", params), &events); err != nil {
+	if err := c.get(ctx, withQuery("/events", params), &events); err != nil {
 		return nil, err
 	}
 	return events, nil
 }
 
-// GetEvent returns a single event (GET /events/{id}/). Missing is 404.
+// GetEvent returns a single event (GET /events/{id}). Missing is 404.
 func (c *Client) GetEvent(ctx context.Context, id int) (Event, error) {
 	var event Event
-	if err := c.get(ctx, fmt.Sprintf("/events/%d/", id), &event); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/events/%d", id), &event); err != nil {
 		return Event{}, err
 	}
 	return event, nil
 }
 
-// CreateEvent creates an event (POST /events/).
+// CreateEvent creates an event (POST /events).
 func (c *Client) CreateEvent(ctx context.Context, in EventCreateInput) (Event, error) {
 	var event Event
-	if err := c.send(ctx, http.MethodPost, "/events/", in, &event); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/events", in, &event); err != nil {
 		return Event{}, err
 	}
 	return event, nil
 }
 
-// UpdateEvent applies a partial update (PATCH /events/{id}/).
+// UpdateEvent applies a partial update (PATCH /events/{id}).
 func (c *Client) UpdateEvent(ctx context.Context, id int, in EventUpdateInput) (Event, error) {
 	var event Event
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/events/%d/", id), in, &event); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/events/%d", id), in, &event); err != nil {
 		return Event{}, err
 	}
 	return event, nil
 }
 
-// DeleteEvent removes an event (DELETE /events/{id}/ → 204).
+// DeleteEvent removes an event (DELETE /events/{id} → 204).
 func (c *Client) DeleteEvent(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/events/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/events/%d", id), nil, nil)
 }
 
-// AttendEvent marks an event as attending (PATCH /events/{id}/attend/).
+// AttendEvent marks an event as attending (PATCH /events/{id}/attend).
 func (c *Client) AttendEvent(ctx context.Context, id int) (Event, error) {
 	var event Event
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/events/%d/attend/", id), nil, &event); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/events/%d/attend", id), nil, &event); err != nil {
 		return Event{}, err
 	}
 	return event, nil

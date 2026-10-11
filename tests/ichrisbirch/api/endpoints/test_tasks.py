@@ -11,7 +11,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/tasks/'
+ENDPOINT = '/tasks'
 NEW_OBJ = schemas.TaskCreate(
     name='Task 4 Computer with notes',
     notes='Notes task 4',
@@ -57,14 +57,14 @@ def test_lifecycle(task_crud_tester):
 
 def test_read_many_tasks_completed(task_crud_tester):
     client, _ = task_crud_tester
-    response = client.get('/tasks/completed/')
+    response = client.get('/tasks/completed')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
 
 
 def test_read_many_tasks_not_completed(task_crud_tester):
     client, _ = task_crud_tester
-    response = client.get(f'{ENDPOINT}todo/')
+    response = client.get(f'{ENDPOINT}/todo')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 2
 
@@ -72,13 +72,13 @@ def test_read_many_tasks_not_completed(task_crud_tester):
 def test_complete_task(task_crud_tester):
     client, crud_tester = task_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.patch(f'{ENDPOINT}{first_id}/complete/')
+    response = client.patch(f'{ENDPOINT}/{first_id}/complete')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
 
 def test_read_completed_tasks(task_crud_tester):
     client, _ = task_crud_tester
-    completed = client.get('/tasks/completed/')
+    completed = client.get('/tasks/completed')
     assert completed.status_code == status.HTTP_200_OK, show_status_and_response(completed)
     assert len(completed.json()) == 1
 
@@ -86,12 +86,12 @@ def test_read_completed_tasks(task_crud_tester):
 def test_search_task(task_crud_tester):
     client, _ = task_crud_tester
     search_term = 'chore'
-    search_results = client.get('/tasks/search/', params={'q': search_term})
+    search_results = client.get('/tasks/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     search_term = 'home'
-    search_results = client.get('/tasks/search/', params={'q': search_term})
+    search_results = client.get('/tasks/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 2
 
@@ -113,7 +113,7 @@ def create(client, **fields):
 
 
 def todo_ids(client):
-    response = client.get(f'{ENDPOINT}todo/')
+    response = client.get(f'{ENDPOINT}/todo')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     return [task['id'] for task in response.json()]
 
@@ -165,7 +165,7 @@ class TestQueueOrder:
         client, _ = txn_api_logged_in
         task = create(client, name='Keep me', window_days=12)
 
-        pinned = client.patch(f'{ENDPOINT}{task["id"]}/', json={'pinned': True}).json()
+        pinned = client.patch(f'{ENDPOINT}/{task["id"]}', json={'pinned': True}).json()
         assert pinned['pinned'] is True
         assert (pinned['name'], pinned['window_days'], pinned['rank_at']) == (task['name'], task['window_days'], task['rank_at'])
 
@@ -177,7 +177,7 @@ class TestQueueOrder:
         third = create(client, name='Third', window_days=3)
         between = (dt.datetime.fromisoformat(first['rank_at']) - dt.timedelta(hours=1)).isoformat()
 
-        response = client.patch(f'{ENDPOINT}{third["id"]}/', json={'rank_at': between})
+        response = client.patch(f'{ENDPOINT}/{third["id"]}', json={'rank_at': between})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert todo_ids(client) == [third['id'], first['id'], second['id']]
 
@@ -186,10 +186,10 @@ class TestSnooze:
     def test_snooze_restarts_the_window_from_now(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Later', window_days=5)
-        client.patch(f'{ENDPOINT}{task["id"]}/', json={'rank_at': '2020-01-01T00:00:00+00:00'})
+        client.patch(f'{ENDPOINT}/{task["id"]}', json={'rank_at': '2020-01-01T00:00:00+00:00'})
 
         before = dt.datetime.now(dt.UTC)
-        response = client.patch(f'{ENDPOINT}{task["id"]}/snooze/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/snooze')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert dt.datetime.fromisoformat(response.json()['rank_at']) >= before + dt.timedelta(days=5)
 
@@ -197,25 +197,25 @@ class TestSnooze:
         client, _ = txn_api_logged_in
         first = create(client, name='First', window_days=5)
         second = create(client, name='Second', window_days=1)
-        client.patch(f'{ENDPOINT}{first["id"]}/', json={'rank_at': '2020-01-01T00:00:00+00:00'})
+        client.patch(f'{ENDPOINT}/{first["id"]}', json={'rank_at': '2020-01-01T00:00:00+00:00'})
         assert todo_ids(client) == [first['id'], second['id']]
 
-        client.patch(f'{ENDPOINT}{first["id"]}/snooze/')
+        client.patch(f'{ENDPOINT}/{first["id"]}/snooze')
         assert todo_ids(client) == [second['id'], first['id']]
 
     def test_snooze_unpins(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Pinned', pinned=True)
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/snooze/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/snooze')
         assert response.json()['pinned'] is False
 
     def test_a_closed_task_cannot_be_snoozed(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Done')
-        client.patch(f'{ENDPOINT}{task["id"]}/complete/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/complete')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/snooze/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/snooze')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
 
@@ -224,7 +224,7 @@ class TestDrop:
         client, _ = txn_api_logged_in
         task = create(client, name='Learn the theremin')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/drop/', json={'reason': 'Lost interest'})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/drop', json={'reason': 'Lost interest'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['drop_date'] is not None
         assert response.json()['drop_reason'] == 'Lost interest'
@@ -234,7 +234,7 @@ class TestDrop:
         client, _ = txn_api_logged_in
         task = create(client, name='Whatever')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/drop/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/drop')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['drop_reason'] is None
 
@@ -242,36 +242,36 @@ class TestDrop:
         client, _ = txn_api_logged_in
         dropped = create(client, name='Dropped')
         completed = create(client, name='Completed')
-        client.patch(f'{ENDPOINT}{dropped["id"]}/drop/')
-        client.patch(f'{ENDPOINT}{completed["id"]}/complete/')
+        client.patch(f'{ENDPOINT}/{dropped["id"]}/drop')
+        client.patch(f'{ENDPOINT}/{completed["id"]}/complete')
 
         assert [t['id'] for t in client.get(ENDPOINT, params={'status': 'dropped'}).json()] == [dropped['id']]
         assert [t['id'] for t in client.get(ENDPOINT, params={'status': 'completed'}).json()] == [completed['id']]
-        assert [t['id'] for t in client.get(f'{ENDPOINT}completed/').json()] == [completed['id']]
+        assert [t['id'] for t in client.get(f'{ENDPOINT}/completed').json()] == [completed['id']]
 
     def test_a_completed_task_cannot_be_dropped(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Done')
-        client.patch(f'{ENDPOINT}{task["id"]}/complete/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/complete')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/drop/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/drop')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
         assert 'completed' in response.json()['detail']
 
     def test_a_dropped_task_cannot_be_completed(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Let go')
-        client.patch(f'{ENDPOINT}{task["id"]}/drop/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/drop')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/complete/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/complete')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
     def test_an_update_cannot_set_both_closed_dates(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Both')
-        client.patch(f'{ENDPOINT}{task["id"]}/drop/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/drop')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'complete_date': '2026-10-01T12:00:00+00:00'})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}', json={'complete_date': '2026-10-01T12:00:00+00:00'})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
 
@@ -280,9 +280,9 @@ class TestReopen:
     def test_a_closed_task_returns_to_the_list_at_its_rank(self, txn_api_logged_in, verb):
         client, _ = txn_api_logged_in
         task = create(client, name='Back again')
-        client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/{verb}')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/reopen/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/reopen')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['complete_date'] is None
         assert response.json()['drop_date'] is None
@@ -292,15 +292,15 @@ class TestReopen:
     def test_reopening_a_dropped_task_clears_its_reason(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Meh')
-        client.patch(f'{ENDPOINT}{task["id"]}/drop/', json={'reason': 'meh'})
+        client.patch(f'{ENDPOINT}/{task["id"]}/drop', json={'reason': 'meh'})
 
-        assert client.patch(f'{ENDPOINT}{task["id"]}/reopen/').json()['drop_reason'] is None
+        assert client.patch(f'{ENDPOINT}/{task["id"]}/reopen').json()['drop_reason'] is None
 
     def test_an_open_task_cannot_be_reopened(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Open')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/reopen/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/reopen')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
         assert 'already open' in response.json()['detail']
 
@@ -313,14 +313,14 @@ class TestClosedState:
         client, _ = txn_api_logged_in
         task = create(client, name='Pinned', pinned=True)
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+        response = client.patch(f'{ENDPOINT}/{task["id"]}/{verb}')
         assert response.json()['pinned'] is False
 
     def test_closing_through_an_update_unpins(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Pinned', pinned=True)
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'complete_date': '2026-10-01T12:00:00+00:00'})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}', json={'complete_date': '2026-10-01T12:00:00+00:00'})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['pinned'] is False
 
@@ -328,18 +328,18 @@ class TestClosedState:
     def test_a_closed_task_cannot_be_pinned(self, txn_api_logged_in, verb):
         client, _ = txn_api_logged_in
         task = create(client, name='Closed')
-        client.patch(f'{ENDPOINT}{task["id"]}/{verb}/')
+        client.patch(f'{ENDPOINT}/{task["id"]}/{verb}')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'pinned': True})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}', json={'pinned': True})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-        assert client.get(f'{ENDPOINT}{task["id"]}/').json()['pinned'] is False
+        assert client.get(f'{ENDPOINT}/{task["id"]}').json()['pinned'] is False
 
     def test_clearing_the_drop_date_clears_the_reason(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
         task = create(client, name='Back again')
-        client.patch(f'{ENDPOINT}{task["id"]}/drop/', json={'reason': 'meh'})
+        client.patch(f'{ENDPOINT}/{task["id"]}/drop', json={'reason': 'meh'})
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'drop_date': None})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}', json={'drop_date': None})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['drop_reason'] is None
         assert task['id'] in todo_ids(client)
@@ -348,37 +348,37 @@ class TestClosedState:
         client, _ = txn_api_logged_in
         task = create(client, name='Open')
 
-        response = client.patch(f'{ENDPOINT}{task["id"]}/', json={'drop_reason': 'meh'})
+        response = client.patch(f'{ENDPOINT}/{task["id"]}', json={'drop_reason': 'meh'})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
 
 
 class TestCategoryWindows:
     def test_every_category_is_listed_with_its_window(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        response = client.get(f'{ENDPOINT}categories/')
+        response = client.get(f'{ENDPOINT}/categories')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert {c['name']: c['window_days'] for c in response.json()} == TASK_CATEGORY_WINDOW_DAYS
 
     def test_a_changed_window_applies_to_the_next_task(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        response = client.patch(f'{ENDPOINT}categories/Home/', json={'window_days': 12})
+        response = client.patch(f'{ENDPOINT}/categories/Home', json={'window_days': 12})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
 
         assert create(client, name='Fix the fence', category='Home')['window_days'] == 12
 
     def test_an_unknown_category_is_not_found(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        response = client.patch(f'{ENDPOINT}categories/Hobby/', json={'window_days': 12})
+        response = client.patch(f'{ENDPOINT}/categories/Hobby', json={'window_days': 12})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_a_window_below_one_day_is_refused(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        response = client.patch(f'{ENDPOINT}categories/Home/', json={'window_days': 0})
+        response = client.patch(f'{ENDPOINT}/categories/Home', json={'window_days': 0})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
 def test_completed_with_date_filter(task_crud_tester):
-    """Test /tasks/completed/ endpoint with date filtering.
+    """Test /tasks/completed endpoint with date filtering.
 
     The test data has one completed task with complete_date=2020-04-20.
     This test verifies:
@@ -391,7 +391,7 @@ def test_completed_with_date_filter(task_crud_tester):
 
     # Date range that INCLUDES the completed task (2020-04-20)
     response_with_match = client.get(
-        '/tasks/completed/',
+        '/tasks/completed',
         params={
             'start_date': '2020-04-01T00:00:00',
             'end_date': '2020-04-30T23:59:59',
@@ -402,7 +402,7 @@ def test_completed_with_date_filter(task_crud_tester):
 
     # Date range that EXCLUDES the completed task (2020-04-20)
     response_no_match = client.get(
-        '/tasks/completed/',
+        '/tasks/completed',
         params={
             'start_date': '2025-01-01T00:00:00',
             'end_date': '2025-12-31T23:59:59',
@@ -426,13 +426,13 @@ def test_completed_with_one_bound_is_open_ended(task_crud_tester):
         ({'end_date': '2019-12-31T23:59:59'}, 0),
     ]
     for params, expected in cases:
-        response = client.get('/tasks/completed/', params=params)
+        response = client.get('/tasks/completed', params=params)
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == expected, f'{params} expected {expected} completed tasks'
 
 
 def test_completed_with_invalid_dates(task_crud_tester):
-    """Test /tasks/completed/ endpoint with invalid date formats.
+    """Test /tasks/completed endpoint with invalid date formats.
 
     API should return 422 Unprocessable Entity for malformed dates.
     """
@@ -440,7 +440,7 @@ def test_completed_with_invalid_dates(task_crud_tester):
 
     # Invalid date format
     response = client.get(
-        '/tasks/completed/',
+        '/tasks/completed',
         params={
             'start_date': 'not-a-date',
             'end_date': '2020-04-30T23:59:59',
@@ -450,27 +450,27 @@ def test_completed_with_invalid_dates(task_crud_tester):
 
 
 def test_todo_with_limit(task_crud_tester):
-    """Test /tasks/todo/ endpoint with limit parameter.
+    """Test /tasks/todo endpoint with limit parameter.
 
     Test data has 2 uncompleted tasks, the Chore one ranked first.
     Limit should restrict the number of results.
     """
     client, _ = task_crud_tester
 
-    response_all = client.get('/tasks/todo/')
+    response_all = client.get('/tasks/todo')
     assert response_all.status_code == status.HTTP_200_OK, show_status_and_response(response_all)
     assert len(response_all.json()) == 2, 'Expected 2 uncompleted tasks without limit'
 
-    response_limited = client.get('/tasks/todo/', params={'limit': 1})
+    response_limited = client.get('/tasks/todo', params={'limit': 1})
     assert response_limited.status_code == status.HTTP_200_OK, show_status_and_response(response_limited)
     assert len(response_limited.json()) == 1, 'Expected 1 task with limit=1'
     assert response_limited.json()[0]['category'] == 'Chore', 'Expected the earliest-ranked task first'
 
 
 class TestTaskStatusFilter:
-    """GET /tasks/?status= — one list that can express every status.
+    """GET /tasks?status= — one list that can express every status.
 
-    `/todo/` and `/completed/` answer narrower versions of the same question and
+    `/todo` and `/completed` answer narrower versions of the same question and
     stay for the web app. The CLI asks this one, so it has to reach every status
     rather than one per path.
 

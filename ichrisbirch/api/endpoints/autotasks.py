@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession, limit: RowLimit = None):
     query = select(models.AutoTask).order_by(models.AutoTask.last_run_date.desc())
     return list(session.scalars(apply_row_limit(query, limit)).all())
@@ -33,7 +33,7 @@ def refuse_unknown_anchor(anchor: str | None) -> None:
         )
 
 
-@router.post('/', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
 def create(autotask: schemas.AutoTaskCreate, session: DbSession):
     refuse_unknown_anchor(autotask.anchor)
     db_obj = models.AutoTask(**autotask.model_dump(exclude_none=True))
@@ -43,7 +43,7 @@ def create(autotask: schemas.AutoTaskCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if autotask := session.get(models.AutoTask, id):
         return autotask
@@ -52,7 +52,7 @@ def read_one(id: int, session: DbSession):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
 
 
-@router.patch('/{id}/', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
 def update(id: int, autotask_update: schemas.AutoTaskUpdate, session: DbSession):
     refuse_unknown_anchor(autotask_update.anchor)
     if db_obj := session.get(models.AutoTask, id):
@@ -66,7 +66,7 @@ def update(id: int, autotask_update: schemas.AutoTaskUpdate, session: DbSession)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if autotask := session.get(models.AutoTask, id):
         session.delete(autotask)
@@ -77,7 +77,7 @@ def delete(id: int, session: DbSession):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
 
 
-@router.patch('/{id}/run/', status_code=status.HTTP_200_OK)
+@router.patch('/{id}/run', status_code=status.HTTP_200_OK)
 def run(id: int, session: DbSession):
     if autotask := session.get(models.AutoTask, id):
         task = new_task(

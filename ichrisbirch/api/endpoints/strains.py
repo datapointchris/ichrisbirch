@@ -113,7 +113,7 @@ def vocabulary_entries(session: Session, lookup: InstrumentedAttribute, counts: 
     return [schemas.StrainVocabularyEntry(name=name, count=counts.get(name, 0)) for name in names]
 
 
-@router.get('/', response_model=list[schemas.Strain], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Strain], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     strain_type: str | None = Query(None),
@@ -132,7 +132,7 @@ def read_many(
     an empty catalog.
 
     `q` searches name, breeder, lineage, notes and tags, and narrows alongside
-    the filters rather than from its own route. A separate `/search/` would be a
+    the filters rather than from its own route. A separate `/search` would be a
     second collection read that has to grow every filter and the limit again.
 
     `limit` caps last, so it takes the first names of whatever the filters left
@@ -162,7 +162,7 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/', response_model=schemas.Strain, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Strain, status_code=status.HTTP_201_CREATED)
 def create(strain: schemas.StrainCreate, session: DbSession):
     data = strain.model_dump()
     reject_unknown_vocabulary(session, data, WRITE_VOCABULARIES)
@@ -193,7 +193,7 @@ def search_clause(q: str):
     return or_(*matches)
 
 
-@router.get('/vocabulary/', response_model=schemas.StrainVocabulary, status_code=status.HTTP_200_OK)
+@router.get('/vocabulary', response_model=schemas.StrainVocabulary, status_code=status.HTTP_200_OK)
 def vocabulary(session: DbSession):
     """Every value each vocabulary defines, with how many strains carry it.
 
@@ -209,14 +209,14 @@ def vocabulary(session: DbSession):
     )
 
 
-@router.get('/{id}/', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if strain := session.get(models.Strain, id):
         return strain
     raise NotFoundException('strain', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Strain, status_code=status.HTTP_200_OK)
 def update(id: int, strain_update: schemas.StrainUpdate, session: DbSession):
     strain = session.get(models.Strain, id)
     if strain is None:
@@ -241,7 +241,7 @@ def update(id: int, strain_update: schemas.StrainUpdate, session: DbSession):
     return strain
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if strain := session.get(models.Strain, id):
         session.delete(strain)

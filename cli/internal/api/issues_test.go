@@ -113,7 +113,7 @@ func TestRemoveIssueDependency_NamesBothIssuesInThePath(t *testing.T) {
 	if err := client.RemoveIssueDependency(context.Background(), "412", "411"); err != nil {
 		t.Fatalf("RemoveIssueDependency: %v", err)
 	}
-	if *method != http.MethodDelete || *path != "/api/v1/issues/412/dependencies/411/" {
+	if *method != http.MethodDelete || *path != "/api/v1/issues/412/dependencies/411" {
 		t.Errorf("request = %s %s", *method, *path)
 	}
 }

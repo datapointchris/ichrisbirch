@@ -14,7 +14,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/recipes/'
+ENDPOINT = '/recipes'
 NEW_OBJ = schemas.RecipeCreate(
     name='Margherita Pizza',
     description='Classic Neapolitan',
@@ -73,7 +73,7 @@ def test_lifecycle(recipe_crud_tester):
 
 
 def test_create_persists_ingredients(recipe_crud_tester):
-    """POST /recipes/ with nested ingredients should round-trip fully."""
+    """POST /recipes with nested ingredients should round-trip fully."""
     client, _ = recipe_crud_tester
     created = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
@@ -88,7 +88,7 @@ def test_create_persists_ingredients(recipe_crud_tester):
 def test_read_one_includes_ingredients(recipe_crud_tester):
     client, crud_tester = recipe_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
-    response = client.get(f'{ENDPOINT}{first_id}/')
+    response = client.get(f'{ENDPOINT}/{first_id}')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert len(data['ingredients']) > 0
@@ -136,7 +136,7 @@ def test_list_filter_by_max_total_time(recipe_crud_tester):
 
 def test_search_by_name(recipe_crud_tester):
     client, _ = recipe_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'pasta'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'pasta'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert len(response.json()) == 1
     assert response.json()[0]['name'] == 'Test Pasta'
@@ -144,7 +144,7 @@ def test_search_by_name(recipe_crud_tester):
 
 def test_search_by_tag(recipe_crud_tester):
     client, _ = recipe_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'fresh'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'fresh'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     # 'fresh' appears in Test Salad's tags
     assert len(response.json()) == 1
@@ -153,7 +153,7 @@ def test_search_by_tag(recipe_crud_tester):
 
 def test_search_by_instructions(recipe_crud_tester):
     client, _ = recipe_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': 'golden'})
+    response = client.get(f'{ENDPOINT}/search', params={'q': 'golden'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     # 'golden' appears in Test Dessert's instructions ('Bake until golden.')
     assert len(response.json()) == 1
@@ -162,7 +162,7 @@ def test_search_by_instructions(recipe_crud_tester):
 
 def test_search_empty_query_returns_empty(recipe_crud_tester):
     client, _ = recipe_crud_tester
-    response = client.get(f'{ENDPOINT}search/', params={'q': '   '})
+    response = client.get(f'{ENDPOINT}/search', params={'q': '   '})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json() == []
 
@@ -172,7 +172,7 @@ class TestSearchByIngredients:
         """match=any: Test Pasta uses garlic and tomato sauce — 2 hits; Test Salad uses tomato — 1 hit."""
         client, _ = recipe_crud_tester
         response = client.get(
-            f'{ENDPOINT}search-by-ingredients/',
+            f'{ENDPOINT}/search-by-ingredients',
             params={'have': 'garlic,tomato', 'match': 'any'},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -187,7 +187,7 @@ class TestSearchByIngredients:
         """match=all: only recipes containing every listed ingredient."""
         client, _ = recipe_crud_tester
         response = client.get(
-            f'{ENDPOINT}search-by-ingredients/',
+            f'{ENDPOINT}/search-by-ingredients',
             params={'have': 'garlic,tomato', 'match': 'all'},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -198,7 +198,7 @@ class TestSearchByIngredients:
     def test_total_ingredients_reported(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
         response = client.get(
-            f'{ENDPOINT}search-by-ingredients/',
+            f'{ENDPOINT}/search-by-ingredients',
             params={'have': 'flour', 'match': 'any'},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -209,7 +209,7 @@ class TestSearchByIngredients:
 
     def test_empty_have_returns_empty(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.get(f'{ENDPOINT}search-by-ingredients/', params={'have': ''})
+        response = client.get(f'{ENDPOINT}/search-by-ingredients', params={'have': ''})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json() == []
 
@@ -218,7 +218,7 @@ class TestServingScaling:
     def test_no_scaling_param_returns_base(self, recipe_crud_tester):
         client, crud_tester = recipe_crud_tester
         first_id = crud_tester.item_id_by_position(client, position=1)
-        response = client.get(f'{ENDPOINT}{first_id}/')
+        response = client.get(f'{ENDPOINT}/{first_id}')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         for ing in response.json()['ingredients']:
             assert ing['scaled_quantity'] is None
@@ -228,7 +228,7 @@ class TestServingScaling:
         client, _ = recipe_crud_tester
         all_recipes = client.get(ENDPOINT).json()
         pasta = next(r for r in all_recipes if r['name'] == 'Test Pasta')
-        response = client.get(f'{ENDPOINT}{pasta["id"]}/', params={'servings': 8})
+        response = client.get(f'{ENDPOINT}/{pasta["id"]}', params={'servings': 8})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         # All base quantities should double
@@ -242,7 +242,7 @@ class TestServingScaling:
         client, _ = recipe_crud_tester
         all_recipes = client.get(ENDPOINT).json()
         pasta = next(r for r in all_recipes if r['name'] == 'Test Pasta')
-        response = client.get(f'{ENDPOINT}{pasta["id"]}/', params={'servings': 2})
+        response = client.get(f'{ENDPOINT}/{pasta["id"]}', params={'servings': 2})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         by_item = {ing['item']: ing for ing in response.json()['ingredients']}
         assert by_item['spaghetti']['scaled_quantity'] == 0.5
@@ -253,10 +253,10 @@ class TestMarkMade:
     def test_mark_made_increments_count(self, recipe_crud_tester):
         client, crud_tester = recipe_crud_tester
         first_id = crud_tester.item_id_by_position(client, position=1)
-        before = client.get(f'{ENDPOINT}{first_id}/').json()
+        before = client.get(f'{ENDPOINT}/{first_id}').json()
         before_count = before['times_made']
 
-        response = client.post(f'{ENDPOINT}{first_id}/mark-made/')
+        response = client.post(f'{ENDPOINT}/{first_id}/mark-made')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['times_made'] == before_count + 1
@@ -268,13 +268,13 @@ class TestMarkMade:
         all_recipes = client.get(ENDPOINT).json()
         dessert = next(r for r in all_recipes if r['name'] == 'Test Dessert')
         assert dessert['times_made'] == 0
-        response = client.post(f'{ENDPOINT}{dessert["id"]}/mark-made/')
+        response = client.post(f'{ENDPOINT}/{dessert["id"]}/mark-made')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert response.json()['times_made'] == 1
 
     def test_mark_made_not_found(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.post(f'{ENDPOINT}99999/mark-made/')
+        response = client.post(f'{ENDPOINT}/99999/mark-made')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
@@ -283,7 +283,7 @@ class TestUpdateRecipe:
         client, crud_tester = recipe_crud_tester
         first_id = crud_tester.item_id_by_position(client, position=1)
         response = client.patch(
-            f'{ENDPOINT}{first_id}/',
+            f'{ENDPOINT}/{first_id}',
             json={'rating': 5, 'notes': 'Amazing!', 'tags': ['updated', 'favorite']},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -300,7 +300,7 @@ class TestUpdateRecipe:
             {'position': 1, 'quantity': 200, 'unit': 'g', 'item': 'new ingredient 2'},
         ]
         response = client.patch(
-            f'{ENDPOINT}{first_id}/',
+            f'{ENDPOINT}/{first_id}',
             json={'ingredients': new_ingredients},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -310,14 +310,14 @@ class TestUpdateRecipe:
 
     def test_update_not_found(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'rating': 5})
+        response = client.patch(f'{ENDPOINT}/99999', json={'rating': 5})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
 
 class TestStats:
     def test_stats_returns_expected_shape(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.get(f'{ENDPOINT}stats/')
+        response = client.get(f'{ENDPOINT}/stats')
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         data = response.json()
         assert data['total_recipes'] == 3
@@ -386,7 +386,7 @@ class TestAISuggest:
         mock_assistant_cls.return_value = mock_assistant
 
         response = client.post(
-            f'{ENDPOINT}ai-suggest/',
+            f'{ENDPOINT}/ai-suggest',
             json={'have': ['chicken', 'soy sauce'], 'want': 'quick dinner', 'count': 1},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -409,7 +409,7 @@ class TestAISuggest:
         mock_assistant.generate_structured = AsyncMock(side_effect=invalid)
         mock_assistant_cls.return_value = mock_assistant
 
-        response = client.post(f'{ENDPOINT}ai-suggest/', json={'have': ['chicken'], 'count': 1})
+        response = client.post(f'{ENDPOINT}/ai-suggest', json={'have': ['chicken'], 'count': 1})
 
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         detail = response.json()['detail']
@@ -444,7 +444,7 @@ class TestAISuggest:
                 },
             ],
         }
-        response = client.post(f'{ENDPOINT}ai-save/', json=candidate)
+        response = client.post(f'{ENDPOINT}/ai-save', json=candidate)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         saved = response.json()
         assert saved['name'] == 'Saved AI Recipe'
@@ -505,7 +505,7 @@ class TestUrlImport:
             recipe=schemas.RecipeCandidate(**self._RECIPE_CANDIDATE),
         )
         response = client.post(
-            f'{ENDPOINT}import-from-url/',
+            f'{ENDPOINT}/import-from-url',
             json={'url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc', 'hint': 'auto'},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -526,7 +526,7 @@ class TestUrlImport:
             technique_mention='Uses the 3:1 vinaigrette ratio technique',
         )
         response = client.post(
-            f'{ENDPOINT}import-from-url/',
+            f'{ENDPOINT}/import-from-url',
             json={'url': 'https://www.youtube.com/watch?v=qEb96qFi2Tc'},
         )
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
@@ -538,8 +538,8 @@ class TestUrlImport:
         client, _ = recipe_crud_tester
         url = 'https://example.com/existing-recipe'
         existing = self._RECIPE_CANDIDATE | {'source_url': url}
-        client.post(f'{ENDPOINT}ai-save/', json=existing)
-        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': url})
+        client.post(f'{ENDPOINT}/ai-save', json=existing)
+        response = client.post(f'{ENDPOINT}/import-from-url', json={'url': url})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['recipe_id'] is not None
@@ -549,10 +549,10 @@ class TestUrlImport:
         client, _ = recipe_crud_tester
         url = 'https://example.com/existing-technique'
         client.post(
-            f'{ENDPOINT}cooking-techniques/',
+            f'{ENDPOINT}/cooking-techniques',
             json=self._TECHNIQUE_CANDIDATE | {'source_url': url},
         )
-        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': url})
+        response = client.post(f'{ENDPOINT}/import-from-url', json={'url': url})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['technique_id'] is not None
@@ -562,7 +562,7 @@ class TestUrlImport:
     def test_import_returns_422_on_fetch_failure(self, mock_extract, recipe_crud_tester):
         client, _ = recipe_crud_tester
         mock_extract.side_effect = PageFetchError('https://example.com/dead', 'connection refused')
-        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/dead'})
+        response = client.post(f'{ENDPOINT}/import-from-url', json={'url': 'https://example.com/dead'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
     @patch('ichrisbirch.services.url_ingest.classify_url_content')
@@ -572,7 +572,7 @@ class TestUrlImport:
         client, _ = recipe_crud_tester
         mock_extract.return_value = 'fake'
         mock_classify.side_effect = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
-        response = client.post(f'{ENDPOINT}import-from-url/', json={'url': 'https://example.com/broken'})
+        response = client.post(f'{ENDPOINT}/import-from-url', json={'url': 'https://example.com/broken'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
         detail = response.json()['detail']
         assert detail['reason'] == AssistantFailure.FAILED
@@ -584,7 +584,7 @@ class TestUrlImport:
             'kind': 'recipe',
             'recipe': self._RECIPE_CANDIDATE | {'source_url': 'https://example.com/save-recipe-only'},
         }
-        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        response = client.post(f'{ENDPOINT}/save-url-import', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
         assert data['recipe'] is not None
@@ -597,7 +597,7 @@ class TestUrlImport:
             'kind': 'technique',
             'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-technique-only'},
         }
-        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        response = client.post(f'{ENDPOINT}/save-url-import', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
         assert data['recipe'] is None
@@ -613,7 +613,7 @@ class TestUrlImport:
             'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-both'},
             'technique_mention': 'Uses the 3:1 vinaigrette ratio technique',
         }
-        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        response = client.post(f'{ENDPOINT}/save-url-import', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         data = response.json()
         assert data['recipe'] is not None
@@ -632,7 +632,7 @@ class TestUrlImport:
             'technique': self._TECHNIQUE_CANDIDATE | {'source_url': 'https://example.com/save-both-with-notes'},
             'technique_mention': 'Uses the 3:1 vinaigrette ratio technique',
         }
-        response = client.post(f'{ENDPOINT}save-url-import/', json=payload)
+        response = client.post(f'{ENDPOINT}/save-url-import', json=payload)
         assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
         notes = response.json()['recipe']['notes']
         assert 'Rest overnight for best flavor.' in notes
@@ -642,10 +642,10 @@ class TestUrlImport:
 class TestRecipesNotFound:
     def test_read_one_not_found(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

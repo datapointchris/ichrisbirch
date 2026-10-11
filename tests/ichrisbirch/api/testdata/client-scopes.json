@@ -1,16 +1,16 @@
 {
   "icb.issues.read": [
-    "GET /api/v1/issues/",
-    "GET /api/v1/issues/ready/",
-    "GET /api/v1/issues/{id}/"
+    "GET /api/v1/issues",
+    "GET /api/v1/issues/ready",
+    "GET /api/v1/issues/{id}"
   ],
   "icb.project-items.read": [
-    "GET /api/v1/project-items/",
-    "GET /api/v1/project-items/blocked/",
-    "GET /api/v1/project-items/search/",
-    "GET /api/v1/project-items/{id}/",
-    "GET /api/v1/project-items/{id}/blockers/",
-    "GET /api/v1/project-items/{item_id}/tasks/",
-    "GET /api/v1/projects/{id:path}/items/"
+    "GET /api/v1/project-items",
+    "GET /api/v1/project-items/blocked",
+    "GET /api/v1/project-items/search",
+    "GET /api/v1/project-items/{id}",
+    "GET /api/v1/project-items/{id}/blockers",
+    "GET /api/v1/project-items/{item_id}/tasks",
+    "GET /api/v1/projects/{id:path}/items"
   ]
 }

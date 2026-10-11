@@ -27,7 +27,7 @@ func TestCreateCountdown_SendsDateString(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateCountdown: %v", err)
 	}
-	if gotPath != "/api/v1/countdowns/" {
+	if gotPath != "/api/v1/countdowns" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotBody["due_date"] != "2027-03-01" {
@@ -107,7 +107,7 @@ func TestAttendEvent_PatchPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AttendEvent: %v", err)
 	}
-	if gotMethod != http.MethodPatch || gotPath != "/api/v1/events/7/attend/" {
+	if gotMethod != http.MethodPatch || gotPath != "/api/v1/events/7/attend" {
 		t.Errorf("%s %s, want PATCH /events/7/attend/", gotMethod, gotPath)
 	}
 	if !event.Attending {

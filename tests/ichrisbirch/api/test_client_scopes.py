@@ -29,16 +29,16 @@ SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 # One request per route any scope lists, keyed by its template. The issue reads are the ones the
 # CLI sends: search widens the status to all, and show names the issue by number.
 SCOPED_URLS = {
-    f'{API_PREFIX}/issues/': '/issues/?search=scheduler&status=all',
-    f'{API_PREFIX}/issues/ready/': '/issues/ready/',
-    f'{API_PREFIX}/issues/{{id}}/': '/issues/{issue}/',
-    f'{API_PREFIX}/project-items/': '/project-items/',
-    f'{API_PREFIX}/project-items/blocked/': '/project-items/blocked/',
-    f'{API_PREFIX}/project-items/search/': '/project-items/search/?q=scheduler',
-    f'{API_PREFIX}/project-items/{{id}}/': '/project-items/{item}/',
-    f'{API_PREFIX}/project-items/{{id}}/blockers/': '/project-items/{item}/blockers/',
-    f'{API_PREFIX}/project-items/{{item_id}}/tasks/': '/project-items/{item}/tasks/',
-    f'{API_PREFIX}/projects/{{id:path}}/items/': '/projects/{project}/items/',
+    f'{API_PREFIX}/issues': '/issues?search=scheduler&status=all',
+    f'{API_PREFIX}/issues/ready': '/issues/ready',
+    f'{API_PREFIX}/issues/{{id}}': '/issues/{issue}',
+    f'{API_PREFIX}/project-items': '/project-items',
+    f'{API_PREFIX}/project-items/blocked': '/project-items/blocked',
+    f'{API_PREFIX}/project-items/search': '/project-items/search?q=scheduler',
+    f'{API_PREFIX}/project-items/{{id}}': '/project-items/{item}',
+    f'{API_PREFIX}/project-items/{{id}}/blockers': '/project-items/{item}/blockers',
+    f'{API_PREFIX}/project-items/{{item_id}}/tasks': '/project-items/{item}/tasks',
+    f'{API_PREFIX}/projects/{{id:path}}/items': '/projects/{project}/items',
 }
 
 
@@ -52,8 +52,8 @@ SCOPED_ROUTES = sorted(scoped_routes())
 
 # How a refusal's list of what each scope reaches begins.
 REACHES = {
-    ISSUES: f'GET {API_PREFIX}/issues/, GET {API_PREFIX}/issues/ready/, GET {API_PREFIX}/issues/{{id}}/',
-    PROJECT_ITEMS: f'GET {API_PREFIX}/project-items/, ',
+    ISSUES: f'GET {API_PREFIX}/issues, GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}',
+    PROJECT_ITEMS: f'GET {API_PREFIX}/project-items, ',
 }
 
 
@@ -97,22 +97,22 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
 @pytest.mark.parametrize(
     ('scope', 'method', 'url'),
     [
-        (PROJECT_ITEMS, 'POST', '/project-items/'),
-        (PROJECT_ITEMS, 'GET', '/projects/'),
-        (PROJECT_ITEMS, 'GET', '/issues/'),
-        (PROJECT_ITEMS, 'GET', '/tasks/'),
-        (PROJECT_ITEMS, 'GET', '/users/me/'),
-        (PROJECT_ITEMS, 'GET', '/users/1/'),
-        (ISSUES, 'POST', '/issues/'),
-        (ISSUES, 'PATCH', '/issues/{issue}/'),
-        (ISSUES, 'DELETE', '/issues/{issue}/'),
-        (ISSUES, 'POST', '/issues/ready/claim/'),
-        (ISSUES, 'POST', '/issues/{issue}/claim/'),
-        (ISSUES, 'POST', '/issues/{issue}/comments/'),
-        (ISSUES, 'GET', '/issues/{issue}/comments/'),
-        (ISSUES, 'GET', '/issues/vocabulary/'),
-        (ISSUES, 'GET', '/issues/labels/'),
-        (ISSUES, 'GET', '/project-items/'),
+        (PROJECT_ITEMS, 'POST', '/project-items'),
+        (PROJECT_ITEMS, 'GET', '/projects'),
+        (PROJECT_ITEMS, 'GET', '/issues'),
+        (PROJECT_ITEMS, 'GET', '/tasks'),
+        (PROJECT_ITEMS, 'GET', '/users/me'),
+        (PROJECT_ITEMS, 'GET', '/users/1'),
+        (ISSUES, 'POST', '/issues'),
+        (ISSUES, 'PATCH', '/issues/{issue}'),
+        (ISSUES, 'DELETE', '/issues/{issue}'),
+        (ISSUES, 'POST', '/issues/ready/claim'),
+        (ISSUES, 'POST', '/issues/{issue}/claim'),
+        (ISSUES, 'POST', '/issues/{issue}/comments'),
+        (ISSUES, 'GET', '/issues/{issue}/comments'),
+        (ISSUES, 'GET', '/issues/vocabulary'),
+        (ISSUES, 'GET', '/issues/labels'),
+        (ISSUES, 'GET', '/project-items'),
     ],
     ids=[
         'project-items-write-on-a-scoped-router',
@@ -142,7 +142,7 @@ def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url
 
 @pytest.mark.parametrize(
     ('scope', 'method', 'url'),
-    [(PROJECT_ITEMS, 'GET', '/tasks/'), (PROJECT_ITEMS, 'PATCH', '/project-items/{item}/'), (ISSUES, 'PATCH', '/issues/{issue}/')],
+    [(PROJECT_ITEMS, 'GET', '/tasks'), (PROJECT_ITEMS, 'PATCH', '/project-items/{item}'), (ISSUES, 'PATCH', '/issues/{issue}')],
 )
 def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope, method, url):
     """The header strategy resolves that account, so without the refusal the request runs as it."""
@@ -153,19 +153,19 @@ def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope
 
 def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):
     client = as_caller.caller(ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.unknown'})))
-    response = client.get('/project-items/')
+    response = client.get('/project-items')
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
     assert 'they reach no route' in response.json()['detail']
 
 
 def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):
     client = as_caller.caller(OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-macmini'))
-    response = client.post('/project-items/', json={'title': 'written by a person', 'project_ids': [str(as_caller.project.id)]})
+    response = client.post('/project-items', json={'title': 'written by a person', 'project_ids': [str(as_caller.project.id)]})
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
 
 
 def test_no_credentials_on_a_scoped_router_is_still_401(as_caller):
-    response = as_caller.caller(None).get('/project-items/')
+    response = as_caller.caller(None).get('/project-items')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, show_status_and_response(response)
 
 

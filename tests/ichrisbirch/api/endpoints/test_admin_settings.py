@@ -4,7 +4,7 @@ from sqlalchemy import select
 from ichrisbirch import models
 from tests.util import show_status_and_response
 
-ENDPOINT = '/admin/settings/'
+ENDPOINT = '/admin/settings'
 
 
 def stored_is_signup_open(session) -> bool:

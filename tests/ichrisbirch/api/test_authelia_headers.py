@@ -19,7 +19,7 @@ FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': ADMIN_EMAIL}
 
 def test_the_headers_forwardauth_sets_resolve_the_account(txn_api):
     client, _ = txn_api
-    response = client.get('/users/me/', headers=FORGED_HEADERS)
+    response = client.get('/users/me', headers=FORGED_HEADERS)
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['email'] == ADMIN_EMAIL
 
@@ -34,7 +34,7 @@ def test_the_headers_forwardauth_sets_resolve_the_account(txn_api):
 )
 def test_a_rejected_bearer_never_falls_through_to_the_headers(txn_api, authorization):
     client, _ = txn_api
-    response = client.get('/users/me/', headers=FORGED_HEADERS | {'Authorization': authorization})
+    response = client.get('/users/me', headers=FORGED_HEADERS | {'Authorization': authorization})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, show_status_and_response(response)
 
 
@@ -42,6 +42,6 @@ def test_a_valid_bearer_beside_forged_headers_runs_as_the_bearer(txn_api):
     """The headers name an admin who is not the CLI user, so reading them here would run as that admin."""
     client, _ = txn_api
     client.app.dependency_overrides[get_oidc_identity] = lambda: OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-ci')
-    response = client.get('/users/me/', headers=FORGED_HEADERS | {'Authorization': 'Bearer a-verified-access-token'})
+    response = client.get('/users/me', headers=FORGED_HEADERS | {'Authorization': 'Bearer a-verified-access-token'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     assert response.json()['email'] == test_settings.oidc.cli_user_email

@@ -9,7 +9,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/durations/'
+ENDPOINT = '/durations'
 NEW_OBJ = schemas.DurationCreate(
     name='Duration 4 New Feature',
     start_date=dt.date(2025, 1, 1),
@@ -58,9 +58,9 @@ def test_partial_update(duration_crud_tester):
     client, crud_tester = duration_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    original = client.get(f'{ENDPOINT}{first_id}/').json()
+    original = client.get(f'{ENDPOINT}/{first_id}').json()
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'notes': 'Updated notes'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'notes': 'Updated notes'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['notes'] == 'Updated notes'
@@ -72,7 +72,7 @@ def test_duration_has_notes(duration_crud_tester):
     client, crud_tester = duration_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.get(f'{ENDPOINT}{first_id}/')
+    response = client.get(f'{ENDPOINT}/{first_id}')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     data = response.json()
     assert 'duration_notes' in data
@@ -90,11 +90,11 @@ def test_cascade_delete(duration_crud_tester):
     assert duration_with_notes is not None, 'No duration with notes found in test data'
 
     duration_id = duration_with_notes['id']
-    delete_response = client.delete(f'{ENDPOINT}{duration_id}/')
+    delete_response = client.delete(f'{ENDPOINT}/{duration_id}')
     assert delete_response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(delete_response)
 
     # Verify duration is gone
-    get_response = client.get(f'{ENDPOINT}{duration_id}/')
+    get_response = client.get(f'{ENDPOINT}/{duration_id}')
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -107,7 +107,7 @@ def test_create_note(duration_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     note_data = {'date': '2025-06-15', 'content': 'New milestone reached'}
-    response = client.post(f'{ENDPOINT}{first_id}/notes/', json=note_data)
+    response = client.post(f'{ENDPOINT}/{first_id}/notes', json=note_data)
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
     note = response.json()
     assert note['content'] == 'New milestone reached'
@@ -126,7 +126,7 @@ def test_update_note(duration_crud_tester):
     note_id = duration_with_notes['duration_notes'][0]['id']
 
     update_response = client.patch(
-        f'{ENDPOINT}{duration_id}/notes/{note_id}/',
+        f'{ENDPOINT}/{duration_id}/notes/{note_id}',
         json={'content': 'Updated content'},
     )
     assert update_response.status_code == status.HTTP_200_OK, show_status_and_response(update_response)
@@ -145,11 +145,11 @@ def test_delete_note(duration_crud_tester):
     note_id = duration_with_notes['duration_notes'][0]['id']
     original_note_count = len(duration_with_notes['duration_notes'])
 
-    delete_response = client.delete(f'{ENDPOINT}{duration_id}/notes/{note_id}/')
+    delete_response = client.delete(f'{ENDPOINT}/{duration_id}/notes/{note_id}')
     assert delete_response.status_code == status.HTTP_204_NO_CONTENT, show_status_and_response(delete_response)
 
     # Verify note count decreased
-    get_response = client.get(f'{ENDPOINT}{duration_id}/')
+    get_response = client.get(f'{ENDPOINT}/{duration_id}')
     assert len(get_response.json()['duration_notes']) == original_note_count - 1
 
 
@@ -167,13 +167,13 @@ def test_note_belongs_to_duration(duration_crud_tester):
 
     # Try to update note via wrong duration
     update_response = client.patch(
-        f'{ENDPOINT}{other_duration["id"]}/notes/{note_id}/',
+        f'{ENDPOINT}/{other_duration["id"]}/notes/{note_id}',
         json={'content': 'Should fail'},
     )
     assert update_response.status_code == status.HTTP_404_NOT_FOUND
 
     # Try to delete note via wrong duration
-    delete_response = client.delete(f'{ENDPOINT}{other_duration["id"]}/notes/{note_id}/')
+    delete_response = client.delete(f'{ENDPOINT}/{other_duration["id"]}/notes/{note_id}')
     assert delete_response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -181,7 +181,7 @@ def test_create_note_nonexistent_duration(duration_crud_tester):
     """Test adding a note to a non-existent duration returns 404."""
     client, _ = duration_crud_tester
     note_data = {'date': '2025-06-15', 'content': 'Should fail'}
-    response = client.post(f'{ENDPOINT}99999/notes/', json=note_data)
+    response = client.post(f'{ENDPOINT}/99999/notes', json=note_data)
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
@@ -190,15 +190,15 @@ class TestDurationsNotFound:
 
     def test_read_one_not_found(self, duration_crud_tester):
         client, _ = duration_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, duration_crud_tester):
         client, _ = duration_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, duration_crud_tester):
         client, _ = duration_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

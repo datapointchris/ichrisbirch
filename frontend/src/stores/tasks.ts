@@ -57,7 +57,7 @@ export const useTasksStore = defineStore('tasks', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Task[]>('/tasks/todo/')
+      const response = await api.get<Task[]>('/tasks/todo')
       tasks.value = response.data
       logger.info('tasks_fetched', { count: response.data.length })
     } catch (e) {
@@ -77,7 +77,7 @@ export const useTasksStore = defineStore('tasks', () => {
       const params: Record<string, string> = {}
       if (startDate) params.start_date = startDate
       if (endDate) params.end_date = endDate
-      const response = await api.get<CompletedTask[]>('/tasks/completed/', { params })
+      const response = await api.get<CompletedTask[]>('/tasks/completed', { params })
       completedTasks.value = response.data
       logger.info('completed_tasks_fetched', { count: response.data.length })
     } catch (e) {
@@ -97,7 +97,7 @@ export const useTasksStore = defineStore('tasks', () => {
       const params: Record<string, string> = { status: 'dropped' }
       if (startDate) params.start_date = startDate
       if (endDate) params.end_date = endDate
-      const response = await api.get<DroppedTask[]>('/tasks/', { params })
+      const response = await api.get<DroppedTask[]>('/tasks', { params })
       droppedTasks.value = response.data
       logger.info('dropped_tasks_fetched', { count: response.data.length })
     } catch (e) {
@@ -114,7 +114,7 @@ export const useTasksStore = defineStore('tasks', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Task[]>('/tasks/search/', { params: { q: query } })
+      const response = await api.get<Task[]>('/tasks/search', { params: { q: query } })
       const results = response.data
       tasks.value = results.filter((t) => !t.complete_date && !t.drop_date)
       completedTasks.value = results.filter((t) => t.complete_date) as CompletedTask[]
@@ -138,7 +138,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function create(input: TaskCreate) {
     error.value = null
     try {
-      const response = await api.post<Task>('/tasks/', input)
+      const response = await api.post<Task>('/tasks', input)
       tasks.value.push(response.data)
       logger.info('task_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -153,7 +153,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function complete(id: number): Promise<CompletedTask> {
     error.value = null
     try {
-      const response = await api.patch<CompletedTask>(`/tasks/${id}/complete/`)
+      const response = await api.patch<CompletedTask>(`/tasks/${id}/complete`)
       tasks.value = tasks.value.filter((t) => t.id !== id)
       logger.info('task_completed', { id })
       return response.data
@@ -175,7 +175,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function snooze(id: number) {
     error.value = null
     try {
-      const response = await api.patch<Task>(`/tasks/${id}/snooze/`)
+      const response = await api.patch<Task>(`/tasks/${id}/snooze`)
       replaceTask(response.data)
       logger.info('task_snoozed', { id })
     } catch (e) {
@@ -189,7 +189,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function drop(id: number, reason?: string) {
     error.value = null
     try {
-      await api.patch<Task>(`/tasks/${id}/drop/`, reason ? { reason } : undefined)
+      await api.patch<Task>(`/tasks/${id}/drop`, reason ? { reason } : undefined)
       tasks.value = tasks.value.filter((t) => t.id !== id)
       logger.info('task_dropped', { id })
     } catch (e) {
@@ -203,7 +203,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function reopen(id: number): Promise<Task> {
     error.value = null
     try {
-      const response = await api.patch<Task>(`/tasks/${id}/reopen/`)
+      const response = await api.patch<Task>(`/tasks/${id}/reopen`)
       droppedTasks.value = droppedTasks.value.filter((t) => t.id !== id)
       completedTasks.value = completedTasks.value.filter((t) => t.id !== id)
       tasks.value.push(response.data)
@@ -220,7 +220,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/tasks/${id}/`)
+      await api.delete(`/tasks/${id}`)
       tasks.value = tasks.value.filter((t) => t.id !== id)
       completedTasks.value = completedTasks.value.filter((t) => t.id !== id)
       droppedTasks.value = droppedTasks.value.filter((t) => t.id !== id)
@@ -236,7 +236,7 @@ export const useTasksStore = defineStore('tasks', () => {
   async function update(id: number, changes: TaskUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Task>(`/tasks/${id}/`, changes)
+      const response = await api.patch<Task>(`/tasks/${id}`, changes)
       replaceTask(response.data)
       logger.info('task_updated', { id, fields: Object.keys(changes) })
       return response.data

@@ -30,28 +30,28 @@ from tests.utils.database import insert_test_data_transactional
 # Every list read, with the dataset that seeds it. A resource whose rows arrive
 # through a parent relationship is seeded by naming the parent.
 LIMITED_READS = [
-    ('/articles/', 'articles'),
-    ('/autotasks/', 'autotasks'),
-    ('/books/', 'books'),
-    ('/box-packing/boxes/', 'boxes'),
-    ('/box-packing/items/', 'boxes'),
-    ('/countdowns/', 'countdowns'),
-    ('/events/', 'events'),
-    ('/habits/', 'habitcategories'),
-    ('/habits/categories/', 'habitcategories'),
-    ('/habits/completed/', 'habitcategories'),
-    ('/issues/', 'issues'),
-    ('/issues/ready/', 'issues'),
-    ('/issues/initiatives/', 'issue_initiatives'),
-    ('/patterns/', 'patterns'),
-    ('/projects/', 'projects'),
-    ('/recipes/', 'recipes'),
-    ('/recipes/cooking-techniques/', 'cooking_techniques'),
-    ('/shopping/items/', 'shopping_sections'),
-    ('/shopping/sections/', 'shopping_sections'),
-    ('/strains/', 'strains'),
-    ('/tasks/', 'tasks'),
-    ('/tasks/todo/', 'tasks'),
+    ('/articles', 'articles'),
+    ('/autotasks', 'autotasks'),
+    ('/books', 'books'),
+    ('/box-packing/boxes', 'boxes'),
+    ('/box-packing/items', 'boxes'),
+    ('/countdowns', 'countdowns'),
+    ('/events', 'events'),
+    ('/habits', 'habitcategories'),
+    ('/habits/categories', 'habitcategories'),
+    ('/habits/completed', 'habitcategories'),
+    ('/issues', 'issues'),
+    ('/issues/ready', 'issues'),
+    ('/issues/initiatives', 'issue_initiatives'),
+    ('/patterns', 'patterns'),
+    ('/projects', 'projects'),
+    ('/recipes', 'recipes'),
+    ('/recipes/cooking-techniques', 'cooking_techniques'),
+    ('/shopping/items', 'shopping_sections'),
+    ('/shopping/sections', 'shopping_sections'),
+    ('/strains', 'strains'),
+    ('/tasks', 'tasks'),
+    ('/tasks/todo', 'tasks'),
 ]
 
 READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
@@ -61,52 +61,52 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 # `RowLimit`. The ones listed here are decided rather than pending, and each
 # answers something a cap would make wrong rather than shorter:
 #
-#   /admin/config/         a config block, not a paged collection
-#   /admin/system/health/  one status report
-#   /strains/vocabulary/   the whole declared vocabulary, which a client reads to
-#                          build its dropdowns — a short one offers fewer values
-#   /issues/vocabulary/    every value an issue's closed fields accept, for the
-#                          same reason
-#   /issues/labels/        the closed label vocabulary, which a picker must
-#                          offer whole
-#   /tasks/categories/     every task category with its window, for the same reason
-#   /habits/day/           one day's board, bounded by the habits you track. A cap
-#                          hides a habit you still owe, and `current_total` would
-#                          then disagree with the list beside it
+#   /admin/config         a config block, not a paged collection
+#   /admin/system/health  one status report
+#   /strains/vocabulary   the whole declared vocabulary, which a client reads to
+#                         build its dropdowns — a short one offers fewer values
+#   /issues/vocabulary    every value an issue's closed fields accept, for the
+#                         same reason
+#   /issues/labels        the closed label vocabulary, which a picker must
+#                         offer whole
+#   /tasks/categories     every task category with its window, for the same reason
+#   /habits/day           one day's board, bounded by the habits you track. A cap
+#                         hides a habit you still owe, and `current_total` would
+#                         then disagree with the list beside it
 #
 # It is a ratchet. The walk below fails on a new uncapped read, so the set can
 # only shrink, and removing an entry is what capping that read looks like.
 UNCAPPED_READS = {
-    '/admin/config/',
-    '/admin/scheduler/jobs/',
-    '/admin/system/errors/',
-    '/admin/system/health/',
-    '/articles/search/',
-    '/autofun/',
-    '/books/search/',
-    '/box-packing/items/orphans/',
-    '/box-packing/search/',
-    '/coffee/beans/',
-    '/coffee/shops/',
-    '/durations/',
-    '/habits/day/',
-    '/issues/labels/',
-    '/issues/vocabulary/',
-    '/money-wasted/',
-    '/project-items/blocked/',
-    '/project-items/search/',
-    '/project-items/{id}/blockers/',
-    '/project-items/{id}/projects/',
-    '/project-items/{item_id}/tasks/',
-    '/recipes/cooking-techniques/categories/',
-    '/recipes/cooking-techniques/search/',
-    '/recipes/search-by-ingredients/',
-    '/recipes/search/',
-    '/recipes/stats/',
-    '/strains/vocabulary/',
-    '/tasks/categories/',
-    '/tasks/completed/',
-    '/tasks/search/',
+    '/admin/config',
+    '/admin/scheduler/jobs',
+    '/admin/system/errors',
+    '/admin/system/health',
+    '/articles/search',
+    '/autofun',
+    '/books/search',
+    '/box-packing/items/orphans',
+    '/box-packing/search',
+    '/coffee/beans',
+    '/coffee/shops',
+    '/durations',
+    '/habits/day',
+    '/issues/labels',
+    '/issues/vocabulary',
+    '/money-wasted',
+    '/project-items/blocked',
+    '/project-items/search',
+    '/project-items/{id}/blockers',
+    '/project-items/{id}/projects',
+    '/project-items/{item_id}/tasks',
+    '/recipes/cooking-techniques/categories',
+    '/recipes/cooking-techniques/search',
+    '/recipes/search-by-ingredients',
+    '/recipes/search',
+    '/recipes/stats',
+    '/strains/vocabulary',
+    '/tasks/categories',
+    '/tasks/completed',
+    '/tasks/search',
 }
 
 # The two declarations a read may take. Both carry the floor; they differ only in
@@ -164,7 +164,7 @@ class TestEveryListReadTakesALimit:
 
 
 class TestProjectItemReadsTakeALimit:
-    """`/project-items/` and `/projects/{id}/items/` are seeded through the API.
+    """`/project-items` and `/projects/{id}/items` are seeded through the API.
 
     A scope selects which rows come back, never what a filter means, so both
     paths take the same parameter and read zero the same way.
@@ -173,39 +173,39 @@ class TestProjectItemReadsTakeALimit:
     @pytest.fixture
     def seeded_project(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
-        project = client.post('/projects/', json={'name': 'Row limited reads'})
+        project = client.post('/projects', json={'name': 'Row limited reads'})
         assert project.status_code == status.HTTP_201_CREATED, show_status_and_response(project)
         project_id = project.json()['id']
         for title in ('first item', 'second item', 'third item'):
-            created = client.post('/project-items/', json={'title': title, 'project_ids': [project_id]})
+            created = client.post('/project-items', json={'title': title, 'project_ids': [project_id]})
             assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
         return client, project_id
 
     def test_the_flat_list_caps(self, seeded_project):
         client, _ = seeded_project
-        assert len(rows(client.get('/project-items/', params={'limit': 2}))) == 2
+        assert len(rows(client.get('/project-items', params={'limit': 2}))) == 2
 
     def test_the_flat_list_reads_zero_as_no_rows(self, seeded_project):
         client, _ = seeded_project
-        assert rows(client.get('/project-items/', params={'limit': 0})) == []
+        assert rows(client.get('/project-items', params={'limit': 0})) == []
 
     def test_the_project_scoped_list_caps(self, seeded_project):
         client, project_id = seeded_project
-        assert len(rows(client.get(f'/projects/{project_id}/items/', params={'limit': 2}))) == 2
+        assert len(rows(client.get(f'/projects/{project_id}/items', params={'limit': 2}))) == 2
 
     def test_the_project_scoped_list_reads_zero_as_no_rows(self, seeded_project):
         client, project_id = seeded_project
-        assert rows(client.get(f'/projects/{project_id}/items/', params={'limit': 0})) == []
+        assert rows(client.get(f'/projects/{project_id}/items', params={'limit': 0})) == []
 
     def test_the_limit_composes_with_status(self, seeded_project):
         """Two narrowing filters both apply, rather than the last one winning."""
         client, _ = seeded_project
-        response = client.get('/project-items/', params={'status': 'all', 'limit': 1})
+        response = client.get('/project-items', params={'status': 'all', 'limit': 1})
         assert len(rows(response)) == 1
 
     def test_a_negative_limit_is_a_422(self, seeded_project):
         client, _ = seeded_project
-        response = client.get('/project-items/', params={'limit': -1})
+        response = client.get('/project-items', params={'limit': -1})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
@@ -285,7 +285,7 @@ def test_every_collection_read_takes_a_limit(txn_api_logged_in):
     """A new collection read takes a limit, and an uncapped one is named in the set.
 
     The caller that cannot cap has to fetch the whole collection to discard most of
-    it, and nothing on screen says so. `/habits/completed/` sat like that while its
+    it, and nothing on screen says so. `/habits/completed` sat like that while its
     two sibling reads had a limit, which is the drift this catches.
 
     Both directions are asserted, so capping a read fails here until its entry comes

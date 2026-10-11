@@ -51,7 +51,7 @@ const topTasks = computed(() => [...tasks.value].sort(compareQueueOrder).slice(0
 async function fetchTasks() {
   loading.value = true
   try {
-    const response = await api.get<Task[]>('/tasks/todo/')
+    const response = await api.get<Task[]>('/tasks/todo')
     tasks.value = response.data
     logger.info('tasks_fetched', { count: response.data.length })
   } catch (e) {
@@ -63,7 +63,7 @@ async function fetchTasks() {
 
 async function completeTask(id: number) {
   try {
-    await api.patch(`/tasks/${id}/complete/`)
+    await api.patch(`/tasks/${id}/complete`)
     tasks.value = tasks.value.filter((t) => t.id !== id)
     logger.info('task_completed', { id })
   } catch (e) {

@@ -2,7 +2,7 @@
 
 A `ScopedClient` reaches a route only when one of its scopes lists it here. Every other route that
 resolves a user answers 403. A template is FastAPI's with every router prefix included, so
-`/api/v1/project-items/{id}/` covers every item.
+`/api/v1/project-items/{id}` covers every item.
 """
 
 from itertools import chain
@@ -12,24 +12,24 @@ from starlette.routing import BaseRoute
 from ichrisbirch.api import API_PREFIX
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
-    # The reads `icb issues list`, `search`, `next` and `show` make. `--blocked` filters `/issues/`.
+    # The reads `icb issues list`, `search`, `next` and `show` make. `--blocked` filters `/issues`.
     'icb.issues.read': frozenset(
         {
-            ('GET', f'{API_PREFIX}/issues/'),
-            ('GET', f'{API_PREFIX}/issues/ready/'),
-            ('GET', f'{API_PREFIX}/issues/{{id}}/'),
+            ('GET', f'{API_PREFIX}/issues'),
+            ('GET', f'{API_PREFIX}/issues/ready'),
+            ('GET', f'{API_PREFIX}/issues/{{id}}'),
         }
     ),
     # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
         {
-            ('GET', f'{API_PREFIX}/project-items/'),
-            ('GET', f'{API_PREFIX}/project-items/blocked/'),
-            ('GET', f'{API_PREFIX}/project-items/search/'),
-            ('GET', f'{API_PREFIX}/project-items/{{id}}/'),
-            ('GET', f'{API_PREFIX}/project-items/{{id}}/blockers/'),
-            ('GET', f'{API_PREFIX}/project-items/{{item_id}}/tasks/'),
-            ('GET', f'{API_PREFIX}/projects/{{id:path}}/items/'),
+            ('GET', f'{API_PREFIX}/project-items'),
+            ('GET', f'{API_PREFIX}/project-items/blocked'),
+            ('GET', f'{API_PREFIX}/project-items/search'),
+            ('GET', f'{API_PREFIX}/project-items/{{id}}'),
+            ('GET', f'{API_PREFIX}/project-items/{{id}}/blockers'),
+            ('GET', f'{API_PREFIX}/project-items/{{item_id}}/tasks'),
+            ('GET', f'{API_PREFIX}/projects/{{id:path}}/items'),
         }
     ),
 }

@@ -7,7 +7,7 @@ For this document example we will be creating a new app called `Widgets`
 | :material-database: db table | `widgets` |
 | :simple-sqlalchemy: sqlalchemy model | `Widget` |
 | :simple-pydantic: pydantic schema | `Widget` |
-| :material-api: api endpoint | `/widgets/` |
+| :material-api: api endpoint | `/api/v1/widgets` |
 | :material-application: frontend | `/widgets` |
 
 ## Backend (Required for All Features)

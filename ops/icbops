@@ -431,7 +431,7 @@ function dev-usage() {
 function dev-smoke() {
   echo "Running smoke tests on ${blue}DEV${reset} environment"
   local response
-  response=$(curl --silent -X POST "$DEV_API_URL/api/v1/admin/smoke-tests/" \
+  response=$(curl --silent -X POST "$DEV_API_URL/api/v1/admin/smoke-tests" \
     -H "Remote-User: user@icb.com" \
     -H "Remote-Email: user@icb.com" \
     -k 2>/dev/null)
@@ -1022,7 +1022,7 @@ function prod-apihealth() {
 function prod-smoke() {
   echo "Running smoke tests on ${magenta}PRODUCTION${reset} environment"
   local response
-  if ! response=$(prod-api-curl --silent --show-error --fail-with-body -X POST "$PROD_API_URL/api/v1/admin/smoke-tests/"); then
+  if ! response=$(prod-api-curl --silent --show-error --fail-with-body -X POST "$PROD_API_URL/api/v1/admin/smoke-tests"); then
     echo "${red}Error: the smoke-test request to $PROD_API_URL failed${reset}"
     [[ -n "$response" ]] && echo "$response"
     return 1

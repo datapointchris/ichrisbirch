@@ -45,7 +45,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<AutoTask[]>('/autotasks/')
+      const response = await api.get<AutoTask[]>('/autotasks')
       autotasks.value = response.data
       logger.info('autotasks_fetched', { count: response.data.length })
     } catch (e) {
@@ -61,7 +61,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
   async function create(input: AutoTaskCreate) {
     error.value = null
     try {
-      const response = await api.post<AutoTask>('/autotasks/', input)
+      const response = await api.post<AutoTask>('/autotasks', input)
       autotasks.value.push(response.data)
       logger.info('autotask_created', { id: response.data.id, name: response.data.name })
       // Replicate Flask behavior: immediately run after creation
@@ -78,7 +78,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
   async function run(id: number) {
     error.value = null
     try {
-      const response = await api.patch<AutoTask>(`/autotasks/${id}/run/`)
+      const response = await api.patch<AutoTask>(`/autotasks/${id}/run`)
       const index = autotasks.value.findIndex((a) => a.id === id)
       if (index !== -1) {
         autotasks.value[index] = response.data
@@ -96,7 +96,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
   async function update(id: number, input: AutoTaskUpdate) {
     error.value = null
     try {
-      const response = await api.patch<AutoTask>(`/autotasks/${id}/`, input)
+      const response = await api.patch<AutoTask>(`/autotasks/${id}`, input)
       const index = autotasks.value.findIndex((a) => a.id === id)
       if (index !== -1) autotasks.value[index] = response.data
       logger.info('autotask_updated', { id })
@@ -112,7 +112,7 @@ export const useAutoTasksStore = defineStore('autotasks', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/autotasks/${id}/`)
+      await api.delete(`/autotasks/${id}`)
       autotasks.value = autotasks.value.filter((a) => a.id !== id)
       logger.info('autotask_deleted', { id })
     } catch (e) {

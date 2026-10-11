@@ -144,7 +144,7 @@ To use fixtures in tests, you can either:
 
    ```python
    def test_api_endpoint(test_api_logged_in):
-       response = test_api_logged_in.get('/some-endpoint/')
+       response = test_api_logged_in.get('/some-endpoint')
        assert response.status_code == 200
    ```
 

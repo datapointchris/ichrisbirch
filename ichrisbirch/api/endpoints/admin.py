@@ -43,7 +43,7 @@ def format_time_until(next_run_time) -> str:
     return pendulum.interval(pendulum.now(next_run_time.tzinfo), next_run_time).in_words()
 
 
-@router.get('/scheduler/jobs/', response_model=list[schemas.SchedulerJob])
+@router.get('/scheduler/jobs', response_model=list[schemas.SchedulerJob])
 def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
     """List all APScheduler jobs with their status."""
     jobstore = get_jobstore(settings=settings)
@@ -61,7 +61,7 @@ def list_scheduler_jobs(settings: Settings = Depends(get_settings)):
     ]
 
 
-@router.post('/scheduler/jobs/{job_id}/pause/', response_model=schemas.SchedulerJob)
+@router.post('/scheduler/jobs/{job_id}/pause', response_model=schemas.SchedulerJob)
 def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Pause a scheduler job by setting next_run_time to None."""
     jobstore = get_jobstore(settings=settings)
@@ -81,7 +81,7 @@ def pause_scheduler_job(job_id: str, settings: Settings = Depends(get_settings))
     )
 
 
-@router.post('/scheduler/jobs/{job_id}/resume/', response_model=schemas.SchedulerJob)
+@router.post('/scheduler/jobs/{job_id}/resume', response_model=schemas.SchedulerJob)
 def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Resume a paused scheduler job by recalculating next_run_time."""
     jobstore = get_jobstore(settings=settings)
@@ -101,7 +101,7 @@ def resume_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)
     )
 
 
-@router.delete('/scheduler/jobs/{job_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/scheduler/jobs/{job_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)):
     """Delete a scheduler job from the jobstore."""
     jobstore = get_jobstore(settings=settings)
@@ -112,7 +112,7 @@ def delete_scheduler_job(job_id: str, settings: Settings = Depends(get_settings)
     logger.info('scheduler_job_deleted', job_id=job_id)
 
 
-@router.get('/scheduler/history/', response_model=list[schemas.SchedulerJobRun])
+@router.get('/scheduler/history', response_model=list[schemas.SchedulerJobRun])
 def get_scheduler_history(
     session: DbSession,
     job_id: str | None = None,
@@ -128,7 +128,7 @@ def get_scheduler_history(
 # --- Smoke tests ---
 
 
-@router.post('/smoke-tests/', response_model=schemas.admin.SmokeTestReport)
+@router.post('/smoke-tests', response_model=schemas.admin.SmokeTestReport)
 async def run_smoke_tests_endpoint(
     request: Request,
     user: models.User = Depends(get_admin_user),
@@ -142,12 +142,12 @@ async def run_smoke_tests_endpoint(
 # --- Admin settings ---
 
 
-@router.get('/settings/', response_model=schemas.AdminSettings)
+@router.get('/settings', response_model=schemas.AdminSettings)
 def get_admin_settings(session: DbSession):
     return session.scalars(select(models.AdminSettings)).one()
 
 
-@router.patch('/settings/', response_model=schemas.AdminSettings)
+@router.patch('/settings', response_model=schemas.AdminSettings)
 def update_admin_settings(
     update: schemas.AdminSettingsUpdate,
     session: DbSession,
@@ -283,7 +283,7 @@ def serialize_settings_section(section: object) -> dict:
     return result
 
 
-@router.get('/system/health/', response_model=schemas.admin.SystemHealth)
+@router.get('/system/health', response_model=schemas.admin.SystemHealth)
 def get_system_health(
     session: DbSession,
     settings: Settings = Depends(get_settings),
@@ -303,13 +303,13 @@ def get_system_health(
     )
 
 
-@router.get('/system/errors/', response_model=list[schemas.admin.RecentError])
+@router.get('/system/errors', response_model=list[schemas.admin.RecentError])
 def get_recent_errors():
     """Get recent 4xx/5xx errors from the in-memory ring buffer."""
     return list(recent_errors)
 
 
-@router.get('/config/', response_model=list[schemas.admin.EnvironmentConfigSection])
+@router.get('/config', response_model=list[schemas.admin.EnvironmentConfigSection])
 def get_environment_config(settings: Settings = Depends(get_settings)):
     """Get environment configuration with sensitive values masked."""
     sections = []

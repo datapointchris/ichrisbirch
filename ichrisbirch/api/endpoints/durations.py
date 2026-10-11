@@ -14,13 +14,13 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=list[schemas.Duration], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Duration], status_code=status.HTTP_200_OK)
 def read_many(session: DbSession):
     query = select(models.Duration).options(selectinload(models.Duration.duration_notes)).order_by(models.Duration.start_date.asc())
     return list(session.scalars(query).all())
 
 
-@router.post('/', response_model=schemas.Duration, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Duration, status_code=status.HTTP_201_CREATED)
 def create(duration: schemas.DurationCreate, session: DbSession):
     db_obj = models.Duration(**duration.model_dump())
     session.add(db_obj)
@@ -29,7 +29,7 @@ def create(duration: schemas.DurationCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     query = select(models.Duration).options(selectinload(models.Duration.duration_notes)).where(models.Duration.id == id)
     if duration := session.scalars(query).first():
@@ -37,7 +37,7 @@ def read_one(id: int, session: DbSession):
     raise NotFoundException('duration', id, logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if duration := session.get(models.Duration, id):
         session.delete(duration)
@@ -46,7 +46,7 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('duration', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Duration, status_code=status.HTTP_200_OK)
 def update(id: int, update: schemas.DurationUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('duration_update', duration_id=id, update_data=update_data)
@@ -63,7 +63,7 @@ def update(id: int, update: schemas.DurationUpdate, session: DbSession):
 # --- Note endpoints ---
 
 
-@router.post('/{id}/notes/', response_model=schemas.DurationNote, status_code=status.HTTP_201_CREATED)
+@router.post('/{id}/notes', response_model=schemas.DurationNote, status_code=status.HTTP_201_CREATED)
 def create_note(id: int, note: schemas.DurationNoteCreate, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)
@@ -74,7 +74,7 @@ def create_note(id: int, note: schemas.DurationNoteCreate, session: DbSession):
     return db_obj
 
 
-@router.patch('/{id}/notes/{note_id}/', response_model=schemas.DurationNote, status_code=status.HTTP_200_OK)
+@router.patch('/{id}/notes/{note_id}', response_model=schemas.DurationNote, status_code=status.HTTP_200_OK)
 def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)
@@ -90,7 +90,7 @@ def update_note(id: int, note_id: int, update: schemas.DurationNoteUpdate, sessi
     return note_obj
 
 
-@router.delete('/{id}/notes/{note_id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}/notes/{note_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_note(id: int, note_id: int, session: DbSession):
     if not session.get(models.Duration, id):
         raise NotFoundException('duration', id, logger)

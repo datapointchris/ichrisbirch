@@ -7,7 +7,7 @@ from fastapi import status
 from ichrisbirch.api import API_PREFIX
 from tests.util import show_status_and_response
 
-SMOKE_ENDPOINT = '/admin/smoke-tests/'
+SMOKE_ENDPOINT = '/admin/smoke-tests'
 
 
 class TestSmokeTestAuth:
@@ -42,6 +42,6 @@ class TestSmokeTests:
         data = response.json()
         paths = {r['path'] for r in data['results']}
         assert '/health' in paths
-        assert f'{API_PREFIX}/tasks/' in paths
-        assert f'{API_PREFIX}/articles/' in paths
-        assert f'{API_PREFIX}/books/' in paths
+        assert f'{API_PREFIX}/tasks' in paths
+        assert f'{API_PREFIX}/articles' in paths
+        assert f'{API_PREFIX}/books' in paths

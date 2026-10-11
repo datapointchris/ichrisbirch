@@ -14,7 +14,7 @@ ITEMS_ROUTE_SUFFIX = '/items'
 def refuse_items_route_suffix(name: str) -> str:
     """A project is addressed by name in the path, so `x/items` would read as project `x`'s items."""
     if name.endswith(ITEMS_ROUTE_SUFFIX):
-        raise ValueError(f'cannot end in {ITEMS_ROUTE_SUFFIX!r}, which /projects/<name>/items/ reads as an item list')
+        raise ValueError(f'cannot end in {ITEMS_ROUTE_SUFFIX!r}, which /projects/<name>/items reads as an item list')
     return name
 
 

@@ -152,7 +152,7 @@ describe('useArticlesStore', () => {
       save_date: '2026-03-14T10:00:00Z',
     })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/articles/', {
+    expect(mockApi.post).toHaveBeenCalledWith('/articles', {
       title: 'New Article',
       url: 'https://example.com/new',
       summary: 'Summary',
@@ -181,7 +181,7 @@ describe('useArticlesStore', () => {
 
     await store.update(1, { title: 'Updated Title' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/1/', { title: 'Updated Title' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/1', { title: 'Updated Title' })
     expect(store.articles.find((a) => a.id === 1)!.title).toBe('Updated Title')
   })
 
@@ -206,7 +206,7 @@ describe('useArticlesStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/articles/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/articles/2')
     expect(store.articles).toHaveLength(2)
     expect(store.articles.find((a) => a.id === 2)).toBeUndefined()
   })
@@ -242,7 +242,7 @@ describe('useArticlesStore', () => {
 
     await store.toggleFavorite(1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/1/', { is_favorite: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/1', { is_favorite: false })
     expect(store.articles.find((a) => a.id === 1)!.is_favorite).toBe(false)
   })
 
@@ -256,7 +256,7 @@ describe('useArticlesStore', () => {
 
     await store.toggleArchive(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3/', { is_archived: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3', { is_archived: true })
     expect(store.articles.find((a) => a.id === 3)).toBeUndefined()
   })
 
@@ -269,7 +269,7 @@ describe('useArticlesStore', () => {
 
     await store.toggleArchive(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3/', { is_archived: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3', { is_archived: false })
     expect(store.articles.find((a) => a.id === 3)).toBeUndefined()
   })
 
@@ -282,7 +282,7 @@ describe('useArticlesStore', () => {
     await store.setShowArchived(true)
 
     expect(store.showArchived).toBe(true)
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/', { params: { archived: true } })
+    expect(mockApi.get).toHaveBeenCalledWith('/articles', { params: { archived: true } })
   })
 
   // --- makeCurrent ---
@@ -295,7 +295,7 @@ describe('useArticlesStore', () => {
 
     await store.makeCurrent(3)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3/', { is_current: true })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/3', { is_current: true })
     expect(store.currentArticle!.id).toBe(3)
   })
 
@@ -310,7 +310,7 @@ describe('useArticlesStore', () => {
 
     await store.removeCurrent(2)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/articles/2/', { is_current: false })
+    expect(mockApi.patch).toHaveBeenCalledWith('/articles/2', { is_current: false })
     expect(store.currentArticle).toBeNull()
   })
 
@@ -326,7 +326,7 @@ describe('useArticlesStore', () => {
     await store.markRead(2)
 
     expect(mockApi.patch).toHaveBeenCalledWith(
-      '/articles/2/',
+      '/articles/2',
       expect.objectContaining({
         is_archived: true,
         is_current: false,
@@ -375,7 +375,7 @@ describe('useArticlesStore', () => {
 
     await store.search('typescript')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/articles/search/', { params: { q: 'typescript' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/articles/search', { params: { q: 'typescript' } })
     expect(store.searchQuery).toBe('typescript')
     expect(store.searchResults).toEqual(results)
     expect(store.isSearchActive).toBe(true)

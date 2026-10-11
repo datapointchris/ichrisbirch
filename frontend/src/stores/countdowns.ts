@@ -22,7 +22,7 @@ export const useCountdownsStore = defineStore('countdowns', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Countdown[]>('/countdowns/')
+      const response = await api.get<Countdown[]>('/countdowns')
       countdowns.value = response.data
       logger.info('countdowns_fetched', { count: response.data.length })
     } catch (e) {
@@ -38,7 +38,7 @@ export const useCountdownsStore = defineStore('countdowns', () => {
   async function create(input: CountdownCreate) {
     error.value = null
     try {
-      const response = await api.post<Countdown>('/countdowns/', input)
+      const response = await api.post<Countdown>('/countdowns', input)
       countdowns.value.push(response.data)
       logger.info('countdown_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -53,7 +53,7 @@ export const useCountdownsStore = defineStore('countdowns', () => {
   async function update(id: number, input: CountdownUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Countdown>(`/countdowns/${id}/`, input)
+      const response = await api.patch<Countdown>(`/countdowns/${id}`, input)
       const index = countdowns.value.findIndex((c) => c.id === id)
       if (index !== -1) {
         countdowns.value[index] = response.data
@@ -71,7 +71,7 @@ export const useCountdownsStore = defineStore('countdowns', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/countdowns/${id}/`)
+      await api.delete(`/countdowns/${id}`)
       countdowns.value = countdowns.value.filter((c) => c.id !== id)
       logger.info('countdown_deleted', { id })
     } catch (e) {

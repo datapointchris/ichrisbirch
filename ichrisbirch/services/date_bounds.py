@@ -6,7 +6,7 @@ and cutting it up client-side. `data.md` § "Filtering is server-side" puts the
 `WHERE` here instead, once, so the CLI and the web client share one definition of
 what a bound means.
 
-The semantics are the ones `/habits/completed/` established: both bounds are
+The semantics are the ones `/habits/completed` established: both bounds are
 inclusive, each narrows on its own so one without the other is an open-ended
 range, and an unparsable value is a 422 rather than a silently ignored filter.
 

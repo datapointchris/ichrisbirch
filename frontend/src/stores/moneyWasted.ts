@@ -24,7 +24,7 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<MoneyWasted[]>('/money-wasted/')
+      const response = await api.get<MoneyWasted[]>('/money-wasted')
       items.value = response.data
       logger.info('money_wasted_fetched', { count: response.data.length })
     } catch (e) {
@@ -40,7 +40,7 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
   async function create(input: MoneyWastedCreate) {
     error.value = null
     try {
-      const response = await api.post<MoneyWasted>('/money-wasted/', input)
+      const response = await api.post<MoneyWasted>('/money-wasted', input)
       items.value.push(response.data)
       logger.info('money_wasted_created', { id: response.data.id, item: response.data.item })
       return response.data
@@ -55,7 +55,7 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
   async function update(id: number, input: MoneyWastedUpdate) {
     error.value = null
     try {
-      const response = await api.patch<MoneyWasted>(`/money-wasted/${id}/`, input)
+      const response = await api.patch<MoneyWasted>(`/money-wasted/${id}`, input)
       const index = items.value.findIndex((i) => i.id === id)
       if (index !== -1) items.value[index] = response.data
       logger.info('money_wasted_updated', { id })
@@ -71,7 +71,7 @@ export const useMoneyWastedStore = defineStore('moneyWasted', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/money-wasted/${id}/`)
+      await api.delete(`/money-wasted/${id}`)
       items.value = items.value.filter((i) => i.id !== id)
       logger.info('money_wasted_deleted', { id })
     } catch (e) {

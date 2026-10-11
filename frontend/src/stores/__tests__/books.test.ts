@@ -97,7 +97,7 @@ describe('useBooksStore', () => {
 
     await store.fetchAll()
 
-    expect(mockApi.get).toHaveBeenCalledWith('/books/')
+    expect(mockApi.get).toHaveBeenCalledWith('/books')
     expect(store.books).toEqual(testBooks)
     expect(store.loading).toBe(false)
     expect(store.error).toBeNull()
@@ -149,7 +149,7 @@ describe('useBooksStore', () => {
 
     const result = await store.create({ title: 'New Book', author: 'Test Author', tags: ['test'] })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/books/', { title: 'New Book', author: 'Test Author', tags: ['test'] })
+    expect(mockApi.post).toHaveBeenCalledWith('/books', { title: 'New Book', author: 'Test Author', tags: ['test'] })
     expect(result).toEqual(newBook)
     expect(store.books).toContainEqual(newBook)
   })
@@ -179,7 +179,7 @@ describe('useBooksStore', () => {
 
     const result = await store.update(1, { title: 'Clean Code 2nd Ed' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/books/1/', { title: 'Clean Code 2nd Ed' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/books/1', { title: 'Clean Code 2nd Ed' })
     expect(result).toEqual(updated)
     expect(store.books.find((b) => b.id === 1)!.title).toBe('Clean Code 2nd Ed')
   })
@@ -202,7 +202,7 @@ describe('useBooksStore', () => {
 
     await store.remove(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/books/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/books/2')
     expect(store.books).toHaveLength(4)
     expect(store.books.find((b) => b.id === 2)).toBeUndefined()
   })
@@ -232,7 +232,7 @@ describe('useBooksStore', () => {
 
     const result = await store.fetchGoodreadsInfo('978-0132350884')
 
-    expect(mockApi.post).toHaveBeenCalledWith('/books/goodreads/', { isbn: '978-0132350884' })
+    expect(mockApi.post).toHaveBeenCalledWith('/books/goodreads', { isbn: '978-0132350884' })
     expect(result).toEqual(goodreadsInfo)
     expect(store.books).toEqual([])
   })
@@ -382,7 +382,7 @@ describe('useBooksStore', () => {
 
     await store.search('clean code')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/books/search/', { params: { q: 'clean code' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/books/search', { params: { q: 'clean code' } })
     expect(store.books).toEqual(searchResults)
     expect(store.searchQuery).toBe('clean code')
     expect(store.isSearchActive).toBe(true)
@@ -411,7 +411,7 @@ describe('useBooksStore', () => {
 
     expect(store.searchQuery).toBe('')
     expect(store.isSearchActive).toBe(false)
-    expect(mockApi.get).toHaveBeenCalledWith('/books/')
+    expect(mockApi.get).toHaveBeenCalledWith('/books')
     expect(store.books).toEqual(testBooks)
   })
 

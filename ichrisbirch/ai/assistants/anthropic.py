@@ -285,7 +285,7 @@ class AnthropicAssistant:
         """Classify a session that ended in an error or ran past the output cap.
 
         A capped reply is a fragment that reads as a whole one, so it is refused
-        rather than returned — /articles/insights/ would otherwise render the resumed
+        rather than returned — /articles/insights would otherwise render the resumed
         tail of an answer with a 200.
         """
         if signals.usage_limit_reached:

@@ -36,7 +36,7 @@ func TestCreateProject_SendsPostBody(t *testing.T) {
 	if gotMethod != http.MethodPost {
 		t.Errorf("method = %s, want POST", gotMethod)
 	}
-	if gotPath != "/api/v1/projects/" {
+	if gotPath != "/api/v1/projects" {
 		t.Errorf("path = %s, want /projects/", gotPath)
 	}
 	if gotBody["name"] != "New" || gotBody["description"] != "a description" {
@@ -75,7 +75,7 @@ func TestUpdateProject_SendsPatchPartialBody(t *testing.T) {
 	if gotMethod != http.MethodPatch {
 		t.Errorf("method = %s, want PATCH", gotMethod)
 	}
-	if gotPath != "/api/v1/projects/018f-a/" {
+	if gotPath != "/api/v1/projects/018f-a" {
 		t.Errorf("path = %s, want /projects/018f-a/", gotPath)
 	}
 	if gotBody["name"] != "Renamed" {
@@ -160,7 +160,7 @@ func TestDeleteProject_Sends204Delete(t *testing.T) {
 	if gotMethod != http.MethodDelete {
 		t.Errorf("method = %s, want DELETE", gotMethod)
 	}
-	if gotPath != "/api/v1/projects/018f-a/" {
+	if gotPath != "/api/v1/projects/018f-a" {
 		t.Errorf("path = %s, want /projects/018f-a/", gotPath)
 	}
 }
@@ -176,7 +176,7 @@ func TestAProjectNameHoldingASlashTravelsAsOneSegment(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if strings.HasSuffix(r.URL.Path, "/items/") {
+		if strings.HasSuffix(r.URL.Path, "/items") {
 			_, _ = w.Write([]byte(`[]`))
 			return
 		}
@@ -195,11 +195,11 @@ func TestAProjectNameHoldingASlashTravelsAsOneSegment(t *testing.T) {
 
 	escaped := "Linux-first%20%2F%20De-Big-Tech"
 	want := []string{
-		"/api/v1/projects/" + escaped + "/",
-		"/api/v1/projects/" + escaped + "/",
-		"/api/v1/projects/" + escaped + "/",
-		"/api/v1/projects/" + escaped + "/items/",
-		"/api/v1/project-items/5/projects/" + escaped + "/",
+		"/api/v1/projects/" + escaped,
+		"/api/v1/projects/" + escaped,
+		"/api/v1/projects/" + escaped,
+		"/api/v1/projects/" + escaped + "/items",
+		"/api/v1/project-items/5/projects/" + escaped,
 	}
 	if !slices.Equal(gotPaths, want) {
 		t.Errorf("paths = %q, want %q", gotPaths, want)
@@ -272,7 +272,7 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListProjectItems: %v", err)
 	}
-	if gotPath != "/api/v1/projects/018f-a/items/" {
+	if gotPath != "/api/v1/projects/018f-a/items" {
 		t.Errorf("path = %s, want /projects/018f-a/items/", gotPath)
 	}
 	if gotQuery != "status=all" {

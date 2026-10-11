@@ -26,7 +26,7 @@ router = APIRouter()
 EventScope = Literal['upcoming', 'past', 'all']
 
 
-@router.get('/', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Event], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     zone: RequestZone,
@@ -57,7 +57,7 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.post('/', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Event, status_code=status.HTTP_201_CREATED)
 def create(event: schemas.EventCreate, session: DbSession):
     logger.debug('event_create', date_from_app=str(event.date))
     db_obj = models.Event(**event.model_dump())
@@ -68,14 +68,14 @@ def create(event: schemas.EventCreate, session: DbSession):
     return db_obj
 
 
-@router.get('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Event, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         return event
     raise NotFoundException('event', id, logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         session.delete(event)
@@ -85,7 +85,7 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('event', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Event, status_code=status.HTTP_200_OK)
 def update(id: int, update: schemas.EventUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('event_update', event_id=id, update_data=update_data)
@@ -100,7 +100,7 @@ def update(id: int, update: schemas.EventUpdate, session: DbSession):
     raise NotFoundException('event', id, logger)
 
 
-@router.patch('/{id}/attend/', response_model=schemas.Event, status_code=status.HTTP_200_OK)
+@router.patch('/{id}/attend', response_model=schemas.Event, status_code=status.HTTP_200_OK)
 def attend(id: int, session: DbSession):
     if event := session.get(models.Event, id):
         event.attending = True

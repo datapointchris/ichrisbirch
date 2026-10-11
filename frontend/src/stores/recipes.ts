@@ -122,7 +122,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Recipe[]>('/recipes/')
+      const response = await api.get<Recipe[]>('/recipes')
       recipes.value = response.data
       logger.info('recipes_fetched', { count: response.data.length })
     } catch (e) {
@@ -139,7 +139,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     error.value = null
     try {
       const params = servings ? { servings } : undefined
-      const response = await api.get<Recipe>(`/recipes/${id}/`, { params })
+      const response = await api.get<Recipe>(`/recipes/${id}`, { params })
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -152,7 +152,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function create(input: RecipeCreate) {
     error.value = null
     try {
-      const response = await api.post<Recipe>('/recipes/', input)
+      const response = await api.post<Recipe>('/recipes', input)
       recipes.value.push(response.data)
       logger.info('recipe_created', { id: response.data.id, name: response.data.name })
       return response.data
@@ -167,7 +167,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function update(id: number, input: RecipeUpdate) {
     error.value = null
     try {
-      const response = await api.patch<Recipe>(`/recipes/${id}/`, input)
+      const response = await api.patch<Recipe>(`/recipes/${id}`, input)
       const index = recipes.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         recipes.value[index] = response.data
@@ -185,7 +185,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function remove(id: number) {
     error.value = null
     try {
-      await api.delete(`/recipes/${id}/`)
+      await api.delete(`/recipes/${id}`)
       recipes.value = recipes.value.filter((r) => r.id !== id)
       logger.info('recipe_deleted', { id })
     } catch (e) {
@@ -199,7 +199,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function markMade(id: number) {
     error.value = null
     try {
-      const response = await api.post<Recipe>(`/recipes/${id}/mark-made/`)
+      const response = await api.post<Recipe>(`/recipes/${id}/mark-made`)
       const index = recipes.value.findIndex((r) => r.id === id)
       if (index !== -1) {
         recipes.value[index] = response.data
@@ -218,7 +218,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.get<Recipe[]>('/recipes/search/', { params: { q: query } })
+      const response = await api.get<Recipe[]>('/recipes/search', { params: { q: query } })
       recipes.value = response.data
       searchQuery.value = query
       isSearchActive.value = true
@@ -238,7 +238,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     error.value = null
     ingredientSearchActive.value = true
     try {
-      const response = await api.get<RecipeIngredientSearchResult[]>('/recipes/search-by-ingredients/', {
+      const response = await api.get<RecipeIngredientSearchResult[]>('/recipes/search-by-ingredients', {
         params: { have: have.join(','), match },
       })
       ingredientSearchResults.value = response.data
@@ -265,7 +265,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function fetchStats(): Promise<RecipeStats> {
     error.value = null
     try {
-      const response = await api.get<RecipeStats>('/recipes/stats/')
+      const response = await api.get<RecipeStats>('/recipes/stats')
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -279,7 +279,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     aiLoading.value = true
     error.value = null
     try {
-      const response = await api.post<RecipeSuggestionResponse>('/recipes/ai-suggest/', request, { timeout: 180_000 })
+      const response = await api.post<RecipeSuggestionResponse>('/recipes/ai-suggest', request, { timeout: 180_000 })
       aiCandidates.value = response.data.candidates
       logger.info('recipe_ai_suggest', { count: response.data.candidates.length })
       return response.data.candidates
@@ -296,7 +296,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function aiSave(candidate: RecipeCandidate) {
     error.value = null
     try {
-      const response = await api.post<Recipe>('/recipes/ai-save/', candidate)
+      const response = await api.post<Recipe>('/recipes/ai-save', candidate)
       recipes.value.push(response.data)
       aiCandidates.value = aiCandidates.value.filter((c) => c.source_url !== candidate.source_url)
       logger.info('recipe_ai_saved', { id: response.data.id })
@@ -317,7 +317,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     urlImportLoading.value = true
     error.value = null
     try {
-      const response = await api.post<UrlImportResponse>('/recipes/import-from-url/', request, { timeout: 180_000 })
+      const response = await api.post<UrlImportResponse>('/recipes/import-from-url', request, { timeout: 180_000 })
       urlImportCandidate.value = response.data.candidate
       logger.info('recipe_url_import_classified', { kind: response.data.candidate.kind })
       return response.data.candidate
@@ -334,7 +334,7 @@ export const useRecipesStore = defineStore('recipes', () => {
   async function saveUrlImport(candidate: UrlImportCandidate) {
     error.value = null
     try {
-      const response = await api.post<UrlImportSaveResult>('/recipes/save-url-import/', candidate)
+      const response = await api.post<UrlImportSaveResult>('/recipes/save-url-import', candidate)
       if (response.data.recipe) recipes.value.push(response.data.recipe)
       urlImportCandidate.value = null
       logger.info('recipe_url_import_saved', {

@@ -29,7 +29,7 @@ const logger = createLogger('ProjectsStore')
 // reopens it, and an archived row has styling of its own — and none of that is
 // reachable if the default decides for it.
 function projectItemsPath(projectId: string) {
-  return `/projects/${projectId}/items/?status=all`
+  return `/projects/${projectId}/items?status=all`
 }
 
 export const useProjectsStore = defineStore('projects', () => {
@@ -70,7 +70,7 @@ export const useProjectsStore = defineStore('projects', () => {
       // Always explicit, unlike the CLI: the filter is a control on the page, so
       // leaving it to the server's default would make the select's `active`
       // position mean something the store never said.
-      const response = await api.get<ProjectWithItemCount[]>('/projects/', {
+      const response = await api.get<ProjectWithItemCount[]>('/projects', {
         params: { status: statusFilter.value },
       })
       projects.value = response.data
@@ -88,7 +88,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function createProject(input: ProjectCreate) {
     error.value = null
     try {
-      await api.post('/projects/', input)
+      await api.post('/projects', input)
       await fetchProjects()
       logger.info('project_created', { name: input.name })
     } catch (e) {
@@ -102,7 +102,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function updateProject(id: string, input: ProjectUpdate) {
     error.value = null
     try {
-      await api.patch(`/projects/${id}/`, input)
+      await api.patch(`/projects/${id}`, input)
       await fetchProjects()
       logger.info('project_updated', { id })
     } catch (e) {
@@ -150,7 +150,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function removeProject(id: string) {
     error.value = null
     try {
-      await api.delete(`/projects/${id}/`)
+      await api.delete(`/projects/${id}`)
       dropSelection(id)
       logger.info('project_deleted', { id })
     } catch (e) {
@@ -287,7 +287,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function createItem(input: ProjectItemCreate) {
     error.value = null
     try {
-      const response = await api.post<ProjectItemDetail>('/project-items/', input)
+      const response = await api.post<ProjectItemDetail>('/project-items', input)
       logger.info('item_created', { id: response.data.id, title: input.title })
       // Refresh both projects (item counts) and items list
       await fetchProjects()
@@ -306,7 +306,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function updateItem(id: string, input: ProjectItemUpdate) {
     error.value = null
     try {
-      const response = await api.patch<ProjectItem>(`/project-items/${id}/`, input)
+      const response = await api.patch<ProjectItem>(`/project-items/${id}`, input)
       const index = items.value.findIndex((i) => i.id === id)
       const existing = items.value[index]
       if (index !== -1 && existing) {
@@ -325,7 +325,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function removeItem(id: string) {
     error.value = null
     try {
-      await api.delete(`/project-items/${id}/`)
+      await api.delete(`/project-items/${id}`)
       items.value = items.value.filter((i) => i.id !== id)
       await fetchProjects()
       logger.info('item_deleted', { id })
@@ -340,7 +340,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function reorderItem(id: string, input: ProjectItemReorder) {
     error.value = null
     try {
-      await api.patch(`/project-items/${id}/reorder/`, input)
+      await api.patch(`/project-items/${id}/reorder`, input)
       logger.info('item_reordered', { id, project_id: input.project_id, position: input.position })
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -361,7 +361,7 @@ export const useProjectsStore = defineStore('projects', () => {
       for (const [index, id] of orderedIds.entries()) {
         const item = items.value.find((i) => i.id === id)
         if (item && item.position !== index) {
-          updates.push(api.patch(`/project-items/${id}/reorder/`, { project_id: projectId, position: index }))
+          updates.push(api.patch(`/project-items/${id}/reorder`, { project_id: projectId, position: index }))
         }
       }
 
@@ -391,7 +391,7 @@ export const useProjectsStore = defineStore('projects', () => {
       for (const [index, id] of orderedIds.entries()) {
         const project = projects.value.find((p) => p.id === id)
         if (project && project.position !== index) {
-          updates.push(api.patch(`/projects/${id}/`, { position: index }))
+          updates.push(api.patch(`/projects/${id}`, { position: index }))
         }
       }
 
@@ -428,7 +428,7 @@ export const useProjectsStore = defineStore('projects', () => {
     await Promise.all(
       items.value.map(async (item) => {
         try {
-          const response = await api.get<ProjectItem[]>(`/project-items/${item.id}/blockers/`)
+          const response = await api.get<ProjectItem[]>(`/project-items/${item.id}/blockers`)
           if (response.data.length > 0) {
             blockerMap[item.id] = response.data
           }
@@ -443,7 +443,7 @@ export const useProjectsStore = defineStore('projects', () => {
   }
 
   async function fetchItemDetail(id: string) {
-    const response = await api.get<ProjectItemDetail>(`/project-items/${id}/`)
+    const response = await api.get<ProjectItemDetail>(`/project-items/${id}`)
     return response.data
   }
 
@@ -452,7 +452,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function addDependency(itemId: string, input: ProjectItemDependencyCreate) {
     error.value = null
     try {
-      const response = await api.post<ProjectItemDetail>(`/project-items/${itemId}/dependencies/`, input)
+      const response = await api.post<ProjectItemDetail>(`/project-items/${itemId}/dependencies`, input)
       logger.info('dependency_added', { item_id: itemId, depends_on: input.depends_on_id })
       return response.data
     } catch (e) {
@@ -470,7 +470,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function removeDependency(itemId: string, depId: string) {
     error.value = null
     try {
-      await api.delete(`/project-items/${itemId}/dependencies/${depId}/`)
+      await api.delete(`/project-items/${itemId}/dependencies/${depId}`)
       logger.info('dependency_removed', { item_id: itemId, dep_id: depId })
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -486,7 +486,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function getBlockers(itemId: string) {
     try {
-      const response = await api.get<ProjectItem[]>(`/project-items/${itemId}/blockers/`)
+      const response = await api.get<ProjectItem[]>(`/project-items/${itemId}/blockers`)
       return response.data
     } catch (e) {
       const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
@@ -504,7 +504,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function addToProject(itemId: string, input: ProjectItemMembershipCreate) {
     error.value = null
     try {
-      await api.post(`/project-items/${itemId}/projects/`, input)
+      await api.post(`/project-items/${itemId}/projects`, input)
       logger.info('item_added_to_project', { item_id: itemId, project_id: input.project_id })
       await fetchProjects()
     } catch (e) {
@@ -517,7 +517,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function removeFromProject(itemId: string, projectId: string) {
     error.value = null
     try {
-      await api.delete(`/project-items/${itemId}/projects/${projectId}/`)
+      await api.delete(`/project-items/${itemId}/projects/${projectId}`)
       logger.info('item_removed_from_project', { item_id: itemId, project_id: projectId })
       await fetchProjects()
       if (selectedProjectId.value !== null) {
@@ -534,7 +534,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function searchItems(query: string) {
     try {
-      const response = await api.get<ProjectItem[]>('/project-items/search/', {
+      const response = await api.get<ProjectItem[]>('/project-items/search', {
         params: { q: query },
       })
       logger.info('items_searched', { query, count: response.data.length })
@@ -550,7 +550,7 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function fetchItemTasks(itemId: string) {
     try {
-      const response = await api.get<ProjectItemTask[]>(`/project-items/${itemId}/tasks/`)
+      const response = await api.get<ProjectItemTask[]>(`/project-items/${itemId}/tasks`)
       itemTasks.value[itemId] = response.data
       return response.data
     } catch (e) {
@@ -563,7 +563,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function createItemTask(itemId: string, input: ProjectItemTaskCreate) {
     error.value = null
     try {
-      const response = await api.post<ProjectItemTask>(`/project-items/${itemId}/tasks/`, input)
+      const response = await api.post<ProjectItemTask>(`/project-items/${itemId}/tasks`, input)
       logger.info('item_task_created', { item_id: itemId, title: input.title })
       await fetchItemTasks(itemId)
       return response.data
@@ -578,7 +578,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function updateItemTask(itemId: string, taskId: string, input: ProjectItemTaskUpdate) {
     error.value = null
     try {
-      const response = await api.patch<ProjectItemTask>(`/project-items/${itemId}/tasks/${taskId}/`, input)
+      const response = await api.patch<ProjectItemTask>(`/project-items/${itemId}/tasks/${taskId}`, input)
       logger.info('item_task_updated', { item_id: itemId, task_id: taskId })
       await fetchItemTasks(itemId)
       return response.data
@@ -593,7 +593,7 @@ export const useProjectsStore = defineStore('projects', () => {
   async function removeItemTask(itemId: string, taskId: string) {
     error.value = null
     try {
-      await api.delete(`/project-items/${itemId}/tasks/${taskId}/`)
+      await api.delete(`/project-items/${itemId}/tasks/${taskId}`)
       logger.info('item_task_deleted', { item_id: itemId, task_id: taskId })
       await fetchItemTasks(itemId)
     } catch (e) {

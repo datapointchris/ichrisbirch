@@ -68,7 +68,7 @@ def read_page_for_request(url: str) -> ArticlePage:
         raise page_error(e) from e
 
 
-@router.get('/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
+@router.get('', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
     zone: RequestZone,
@@ -114,13 +114,13 @@ def read_many(
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
-@router.get('/current/', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
+@router.get('/current', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
 def current(session: DbSession):
     query = select(models.Article).where(models.Article.is_current.is_(True))
     return session.scalars(query).first()
 
 
-@router.get('/url/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+@router.get('/url', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 def read_one_url(url: str, session: DbSession):
     url = clean_url(url)
     if article := session.scalar(select(models.Article).where(models.Article.url == url)):
@@ -128,7 +128,7 @@ def read_one_url(url: str, session: DbSession):
     raise NotFoundException('article', f'url={url}', logger)
 
 
-@router.post('/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
+@router.post('', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
 def create(article: schemas.ArticleCreate, session: DbSession):
     obj = models.Article(**article.model_dump())
     session.add(obj)
@@ -137,7 +137,7 @@ def create(article: schemas.ArticleCreate, session: DbSession):
     return obj
 
 
-@router.post('/create-from-url/', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
+@router.post('/create-from-url', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
 async def create_from_url(
     body: schemas.ArticleCreateFromUrl,
     session: DbSession,
@@ -152,7 +152,7 @@ async def create_from_url(
         raise page_error(e) from e
 
 
-@router.post('/bulk-import/', status_code=status.HTTP_202_ACCEPTED)
+@router.post('/bulk-import', status_code=status.HTTP_202_ACCEPTED)
 def bulk_import(body: schemas.ArticleBulkImport, request: Request):
     """Enqueue URLs for bulk import. Returns batch_id for status polling."""
     if not body.urls:
@@ -162,7 +162,7 @@ def bulk_import(body: schemas.ArticleBulkImport, request: Request):
     return {'batch_id': batch_id, 'total': len(body.urls), 'status': 'queued'}
 
 
-@router.get('/bulk-import/{batch_id}/', status_code=status.HTTP_200_OK)
+@router.get('/bulk-import/{batch_id}', status_code=status.HTTP_200_OK)
 def bulk_import_status(batch_id: str, request: Request):
     """Check status of a bulk article import batch."""
     redis_client = request.app.state.redis_client
@@ -172,7 +172,7 @@ def bulk_import_status(batch_id: str, request: Request):
     return batch
 
 
-@router.get('/search/', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
+@router.get('/search', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 def search(q: str, session: DbSession):
     """Search for comma-separated list of tags.
 
@@ -192,7 +192,7 @@ def search(q: str, session: DbSession):
     return list(results)
 
 
-@router.post('/summarize/', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
+@router.post('/summarize', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
 async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
@@ -213,7 +213,7 @@ async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_s
     return schemas.ArticleSummary(title=page.title, summary=written.summary, tags=written.tags)
 
 
-@router.post('/insights/', response_model=None, status_code=status.HTTP_200_OK)
+@router.post('/insights', response_model=None, status_code=status.HTTP_200_OK)
 async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
     """Summarize youtube video or article based on the url.
 
@@ -255,14 +255,14 @@ async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_se
     return Response(html)
 
 
-@router.get('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+@router.get('/{id}', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 def read_one(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         return article
     raise NotFoundException('article', id, logger)
 
 
-@router.delete('/{id}/', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete(id: int, session: DbSession):
     if article := session.get(models.Article, id):
         session.delete(article)
@@ -271,7 +271,7 @@ def delete(id: int, session: DbSession):
     raise NotFoundException('article', id, logger)
 
 
-@router.patch('/{id}/', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+@router.patch('/{id}', response_model=schemas.Article, status_code=status.HTTP_200_OK)
 def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('article_update', article_id=id, update_data=update_data)

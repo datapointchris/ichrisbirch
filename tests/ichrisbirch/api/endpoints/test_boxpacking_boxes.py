@@ -16,7 +16,7 @@ NEW_OBJ = schemas.BoxCreate(
     warm=False,
     liquid=False,
 )
-ENDPOINT = '/box-packing/boxes/'
+ENDPOINT = '/box-packing/boxes'
 
 
 @pytest.fixture
@@ -56,12 +56,12 @@ def test_lifecycle(box_crud_tester):
 def test_search_box_items(box_crud_tester):
     client, _ = box_crud_tester
     search_term = 'find'
-    search_results = client.get('/box-packing/search/', params={'q': search_term})
+    search_results = client.get('/box-packing/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 1
 
     search_term = 'home'
-    search_results = client.get('/box-packing/search/', params={'q': search_term})
+    search_results = client.get('/box-packing/search', params={'q': search_term})
     assert search_results.status_code == status.HTTP_200_OK, show_status_and_response(search_results)
     assert len(search_results.json()) == 0
 
@@ -114,7 +114,7 @@ def test_create_box_refuses_a_box_without_a_number(txn_api_logged_in, number):
 
 
 def test_read_many_boxes_with_limit(box_crud_tester):
-    """Test limit parameter on GET /boxes/."""
+    """Test limit parameter on GET /boxes."""
     client, _ = box_crud_tester
     # Get all boxes first
     all_boxes = client.get(ENDPOINT)
@@ -133,8 +133,8 @@ def test_partial_update_box(box_crud_tester):
     client, crud_tester = box_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    original = client.get(f'{ENDPOINT}{first_id}/').json()
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'name': 'Updated Box Name'})
+    original = client.get(f'{ENDPOINT}/{first_id}').json()
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'name': 'Updated Box Name'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['name'] == 'Updated Box Name'
@@ -145,7 +145,7 @@ def test_partial_update_refuses_a_null_number(box_crud_tester):
     client, crud_tester = box_crud_tester
     first_id = crud_tester.item_id_by_position(client, position=1)
 
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'number': None})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'number': None})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
     assert response.json()['detail'][0]['loc'] == ['body', 'number']
 
@@ -154,19 +154,19 @@ class TestBoxesNotFound:
     """Test 404 responses for non-existent boxes."""
 
     def test_read_one_not_found(self, box_crud_tester):
-        """GET /boxes/{id}/ returns 404 for non-existent box."""
+        """GET /boxes/{id} returns 404 for non-existent box."""
         client, _ = box_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, box_crud_tester):
-        """DELETE /boxes/{id}/ returns 404 for non-existent box."""
+        """DELETE /boxes/{id} returns 404 for non-existent box."""
         client, _ = box_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, box_crud_tester):
-        """PATCH /boxes/{id}/ returns 404 for non-existent box."""
+        """PATCH /boxes/{id} returns 404 for non-existent box."""
         client, _ = box_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

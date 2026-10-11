@@ -43,10 +43,10 @@ describe('useIssueInitiativesStore', () => {
     mockApi.get.mockResolvedValue({ data: [initiative] })
     const store = useIssueInitiativesStore()
     await store.fetchAll()
-    expect(mockApi.get).toHaveBeenCalledWith('/issues/initiatives/', { params: { status: 'active' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/issues/initiatives', { params: { status: 'active' } })
 
     await store.setStatusFilter('all')
-    expect(mockApi.get).toHaveBeenLastCalledWith('/issues/initiatives/', { params: { status: 'all' } })
+    expect(mockApi.get).toHaveBeenLastCalledWith('/issues/initiatives', { params: { status: 'all' } })
   })
 
   it('drops an initiative with its reason and reads the list again', async () => {
@@ -54,7 +54,7 @@ describe('useIssueInitiativesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssueInitiativesStore()
     await store.setStatus(initiative, 'dropped', 'Superseded')
-    expect(mockApi.patch).toHaveBeenCalledWith('/issues/initiatives/init-1/', { status: 'dropped', status_reason: 'Superseded' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/issues/initiatives/init-1', { status: 'dropped', status_reason: 'Superseded' })
     expect(mockApi.get).toHaveBeenCalledOnce()
   })
 
@@ -63,7 +63,7 @@ describe('useIssueInitiativesStore', () => {
     mockApi.get.mockResolvedValue({ data: [] })
     const store = useIssueInitiativesStore()
     await store.setStatus(initiative, 'completed')
-    expect(mockApi.patch).toHaveBeenCalledWith('/issues/initiatives/init-1/', { status: 'completed' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/issues/initiatives/init-1', { status: 'completed' })
   })
 
   it('surfaces a refused write and leaves the list alone', async () => {

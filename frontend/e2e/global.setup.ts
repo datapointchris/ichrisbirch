@@ -9,7 +9,7 @@ const appURL = isDevEnv ? 'https://app.docker.localhost' : 'https://app.test.loc
 test('API is reachable', async ({ request }) => {
   test.setTimeout(180_000)
   await expect(async () => {
-    const response = await request.get('/api/v1/users/me/', {
+    const response = await request.get('/api/v1/users/me', {
       headers: { 'Remote-User': 'admin@icb.com' },
     })
     expect(response.ok()).toBeTruthy()

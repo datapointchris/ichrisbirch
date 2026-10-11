@@ -101,7 +101,7 @@ describe('useBoxPackingStore', () => {
 
     const result = await store.fetchBox(1)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1/')
+    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1')
     expect(result).toEqual(updatedBox)
     expect(store.boxes.find((b) => b.id === 1)!.name).toBe('Updated Kitchen')
   })
@@ -115,7 +115,7 @@ describe('useBoxPackingStore', () => {
 
     const result = await store.createBox({ name: 'Books', number: 4, size: 'Book', essential: false, warm: false, liquid: false })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/box-packing/boxes/', expect.objectContaining({ name: 'Books' }))
+    expect(mockApi.post).toHaveBeenCalledWith('/box-packing/boxes', expect.objectContaining({ name: 'Books' }))
     expect(result).toEqual(newBox)
     expect(store.boxes).toContainEqual(newBox)
   })
@@ -142,7 +142,7 @@ describe('useBoxPackingStore', () => {
 
     const result = await store.updateBox(1, { name: 'Updated Kitchen' })
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/boxes/1/', { name: 'Updated Kitchen' })
+    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/boxes/1', { name: 'Updated Kitchen' })
     expect(result).toEqual(updated)
     expect(store.boxes.find((b) => b.id === 1)!.name).toBe('Updated Kitchen')
   })
@@ -156,7 +156,7 @@ describe('useBoxPackingStore', () => {
 
     await store.deleteBox(2)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/boxes/2/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/boxes/2')
     expect(store.boxes).toHaveLength(2)
     expect(store.boxes.find((b) => b.id === 2)).toBeUndefined()
   })
@@ -183,8 +183,8 @@ describe('useBoxPackingStore', () => {
 
     await store.createItem({ box_id: 1, name: 'Bowls', essential: false, warm: false, liquid: false })
 
-    expect(mockApi.post).toHaveBeenCalledWith('/box-packing/items/', expect.objectContaining({ name: 'Bowls' }))
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1/')
+    expect(mockApi.post).toHaveBeenCalledWith('/box-packing/items', expect.objectContaining({ name: 'Bowls' }))
+    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1')
   })
 
   // --- deleteItem ---
@@ -197,8 +197,8 @@ describe('useBoxPackingStore', () => {
 
     await store.deleteItem(10, 1)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/items/10/')
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/items/10')
+    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1')
   })
 
   // --- orphanItem ---
@@ -211,8 +211,8 @@ describe('useBoxPackingStore', () => {
 
     await store.orphanItem(10, 1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/items/10/', { box_id: null })
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1/')
+    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/items/10', { box_id: null })
+    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/boxes/1')
   })
 
   // --- assignOrphanToBox ---
@@ -226,7 +226,7 @@ describe('useBoxPackingStore', () => {
 
     await store.assignOrphanToBox(20, 1)
 
-    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/items/20/', { box_id: 1 })
+    expect(mockApi.patch).toHaveBeenCalledWith('/box-packing/items/20', { box_id: 1 })
     expect(store.orphans.find((o) => o.id === 20)).toBeUndefined()
   })
 
@@ -239,7 +239,7 @@ describe('useBoxPackingStore', () => {
 
     await store.deleteOrphan(20)
 
-    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/items/20/')
+    expect(mockApi.delete).toHaveBeenCalledWith('/box-packing/items/20')
     expect(store.orphans).toHaveLength(1)
     expect(store.orphans.find((o) => o.id === 20)).toBeUndefined()
   })
@@ -256,7 +256,7 @@ describe('useBoxPackingStore', () => {
 
     await store.search('plate')
 
-    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/search/', { params: { q: 'plate' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/box-packing/search', { params: { q: 'plate' } })
     expect(store.searchResults).toHaveLength(2)
     expect(store.searchResults[0]!.box).toEqual(testBoxes[0])
     expect(store.searchResults[0]!.item).toEqual(testItems[0])

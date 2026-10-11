@@ -35,7 +35,7 @@ func runProjectsNext(t *testing.T, open []api.ProjectItem, blocked []api.Project
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		rows := open
-		if r.URL.Path == "/api/v1/project-items/blocked/" {
+		if r.URL.Path == "/api/v1/project-items/blocked" {
 			rows = blocked
 		}
 		_ = json.NewEncoder(w).Encode(rows)

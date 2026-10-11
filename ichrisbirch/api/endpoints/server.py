@@ -15,7 +15,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 
-@router.get('/', response_model=schemas.ServerStats, status_code=status.HTTP_200_OK)
+@router.get('', response_model=schemas.ServerStats, status_code=status.HTTP_200_OK)
 def health(settings: Settings = Depends(get_settings)) -> schemas.ServerStats:
     return schemas.ServerStats(
         name=settings.fastapi.title,

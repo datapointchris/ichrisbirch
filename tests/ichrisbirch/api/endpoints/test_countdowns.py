@@ -9,7 +9,7 @@ from tests.utils.database import insert_test_data_transactional
 
 from .crud_test import ApiCrudTester
 
-ENDPOINT = '/countdowns/'
+ENDPOINT = '/countdowns'
 NEW_OBJ = schemas.CountdownCreate(
     name='Countdown 4 Computer with notes priority 3',
     notes='Notes Countdown 4',
@@ -57,10 +57,10 @@ def test_partial_update(countdown_crud_tester):
     first_id = crud_tester.item_id_by_position(client, position=1)
 
     # Get original countdown
-    original = client.get(f'{ENDPOINT}{first_id}/').json()
+    original = client.get(f'{ENDPOINT}/{first_id}').json()
 
     # Update only notes
-    response = client.patch(f'{ENDPOINT}{first_id}/', json={'notes': 'Updated notes'})
+    response = client.patch(f'{ENDPOINT}/{first_id}', json={'notes': 'Updated notes'})
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
     updated = response.json()
     assert updated['notes'] == 'Updated notes'
@@ -71,19 +71,19 @@ class TestCountdownsNotFound:
     """Test 404 responses for non-existent countdowns."""
 
     def test_read_one_not_found(self, countdown_crud_tester):
-        """GET /{id}/ returns 404 for non-existent countdown."""
+        """GET /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
-        response = client.get(f'{ENDPOINT}99999/')
+        response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, countdown_crud_tester):
-        """DELETE /{id}/ returns 404 for non-existent countdown."""
+        """DELETE /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
-        response = client.delete(f'{ENDPOINT}99999/')
+        response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, countdown_crud_tester):
-        """PATCH /{id}/ returns 404 for non-existent countdown."""
+        """PATCH /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
-        response = client.patch(f'{ENDPOINT}99999/', json={'name': 'Does Not Exist'})
+        response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

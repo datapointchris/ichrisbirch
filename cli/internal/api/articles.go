@@ -29,7 +29,7 @@ type Article struct {
 	ReviewDays   *int       `json:"review_days"`
 }
 
-// ArticleCreateFromURLInput is the body for POST /articles/create-from-url/. The
+// ArticleCreateFromURLInput is the body for POST /articles/create-from-url. The
 // server fetches the URL and AI-summarizes it to fill title/summary/tags — the
 // only create path the CLI exposes, since the raw POST demands a hand-written
 // title and summary.
@@ -38,7 +38,7 @@ type ArticleCreateFromURLInput struct {
 	Notes *string `json:"notes,omitempty"`
 }
 
-// ArticleUpdateInput is a partial update (PATCH /articles/{id}/): only changed
+// ArticleUpdateInput is a partial update (PATCH /articles/{id}): only changed
 // fields are sent. Tags omitempty means an empty list is not sent (leaving tags
 // as-is). LastReadDate is a datetime string parsed server-side.
 type ArticleUpdateInput struct {
@@ -54,7 +54,7 @@ type ArticleUpdateInput struct {
 	ReviewDays   *int     `json:"review_days,omitempty"`
 }
 
-// ArticleBulkImportInput is the body for POST /articles/bulk-import/ — a list of
+// ArticleBulkImportInput is the body for POST /articles/bulk-import — a list of
 // URLs to fetch and AI-summarize asynchronously. The server returns a batch id to
 // poll for progress.
 type ArticleBulkImportInput struct {
@@ -81,7 +81,7 @@ type ArticleImportResult struct {
 }
 
 // ArticleBulkImportStatus is the batch progress payload (GET
-// /articles/bulk-import/{batch_id}/). The timestamps are ISO 8601 strings read
+// /articles/bulk-import/{batch_id}). The timestamps are ISO 8601 strings read
 // back out of Redis. They stay strings because the CLI only prints them, and
 // shortTimestamp prints one it cannot parse as written rather than failing the
 // whole decode. ResumesAt is set only while the status is "paused", when the
@@ -101,62 +101,62 @@ type ArticleBulkImportStatus struct {
 }
 
 // BulkImportArticles enqueues URLs for async fetch + AI-summarize (POST
-// /articles/bulk-import/ → 202). Returns the batch handle for polling.
+// /articles/bulk-import → 202). Returns the batch handle for polling.
 func (c *Client) BulkImportArticles(ctx context.Context, urls []string) (ArticleBulkImportBatch, error) {
 	var batch ArticleBulkImportBatch
-	if err := c.send(ctx, http.MethodPost, "/articles/bulk-import/", ArticleBulkImportInput{URLs: urls}, &batch); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/articles/bulk-import", ArticleBulkImportInput{URLs: urls}, &batch); err != nil {
 		return ArticleBulkImportBatch{}, err
 	}
 	return batch, nil
 }
 
-// BulkImportStatus polls a batch (GET /articles/bulk-import/{batch_id}/). An
+// BulkImportStatus polls a batch (GET /articles/bulk-import/{batch_id}). An
 // unknown batch id is a 404.
 func (c *Client) BulkImportStatus(ctx context.Context, batchID string) (ArticleBulkImportStatus, error) {
 	var status ArticleBulkImportStatus
-	if err := c.get(ctx, fmt.Sprintf("/articles/bulk-import/%s/", url.PathEscape(batchID)), &status); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/articles/bulk-import/%s", url.PathEscape(batchID)), &status); err != nil {
 		return ArticleBulkImportStatus{}, err
 	}
 	return status, nil
 }
 
-// ListArticles returns articles ordered by title (GET /articles/). Each of
+// ListArticles returns articles ordered by title (GET /articles). Each of
 // favorites/archived/unread, when non-nil, adds a tri-state filter query param
 // (favorites=true returns only favorites due for re-read). start and end narrow
 // to articles last read within an inclusive range, interpreted in zone. A nil
 // limit fetches all; a non-nil limit caps the count.
 func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]Article, error) {
 	var articles []Article
-	if err := c.get(ctx, "/articles/"+articleListQuery(favorites, archived, unread, start, end, zone, limit), &articles); err != nil {
+	if err := c.get(ctx, "/articles"+articleListQuery(favorites, archived, unread, start, end, zone, limit), &articles); err != nil {
 		return nil, err
 	}
 	return articles, nil
 }
 
-// GetArticle returns a single article (GET /articles/{id}/). Missing is 404.
+// GetArticle returns a single article (GET /articles/{id}). Missing is 404.
 func (c *Client) GetArticle(ctx context.Context, id int) (Article, error) {
 	var article Article
-	if err := c.get(ctx, fmt.Sprintf("/articles/%d/", id), &article); err != nil {
+	if err := c.get(ctx, fmt.Sprintf("/articles/%d", id), &article); err != nil {
 		return Article{}, err
 	}
 	return article, nil
 }
 
-// GetCurrentArticle returns the article marked current (GET /articles/current/),
+// GetCurrentArticle returns the article marked current (GET /articles/current),
 // or nil when none is current — the endpoint responds with JSON null, which
 // decodes into a nil pointer rather than an error.
 func (c *Client) GetCurrentArticle(ctx context.Context) (*Article, error) {
 	var article *Article
-	if err := c.get(ctx, "/articles/current/", &article); err != nil {
+	if err := c.get(ctx, "/articles/current", &article); err != nil {
 		return nil, err
 	}
 	return article, nil
 }
 
-// SearchArticles returns articles whose tags match q (GET /articles/search/?q=).
+// SearchArticles returns articles whose tags match q (GET /articles/search?q=).
 // Comma-separated terms are matched independently (OR).
 func (c *Client) SearchArticles(ctx context.Context, q string) ([]Article, error) {
-	path := "/articles/search/?" + url.Values{"q": {q}}.Encode()
+	path := "/articles/search?" + url.Values{"q": {q}}.Encode()
 	var articles []Article
 	if err := c.get(ctx, path, &articles); err != nil {
 		return nil, err
@@ -165,27 +165,27 @@ func (c *Client) SearchArticles(ctx context.Context, q string) ([]Article, error
 }
 
 // CreateArticleFromURL creates an article by fetching and AI-summarizing a URL
-// (POST /articles/create-from-url/). A duplicate URL is a 409.
+// (POST /articles/create-from-url). A duplicate URL is a 409.
 func (c *Client) CreateArticleFromURL(ctx context.Context, in ArticleCreateFromURLInput) (Article, error) {
 	var article Article
-	if err := c.send(ctx, http.MethodPost, "/articles/create-from-url/", in, &article); err != nil {
+	if err := c.send(ctx, http.MethodPost, "/articles/create-from-url", in, &article); err != nil {
 		return Article{}, err
 	}
 	return article, nil
 }
 
-// UpdateArticle applies a partial update (PATCH /articles/{id}/).
+// UpdateArticle applies a partial update (PATCH /articles/{id}).
 func (c *Client) UpdateArticle(ctx context.Context, id int, in ArticleUpdateInput) (Article, error) {
 	var article Article
-	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/articles/%d/", id), in, &article); err != nil {
+	if err := c.send(ctx, http.MethodPatch, fmt.Sprintf("/articles/%d", id), in, &article); err != nil {
 		return Article{}, err
 	}
 	return article, nil
 }
 
-// DeleteArticle removes an article (DELETE /articles/{id}/ → 204).
+// DeleteArticle removes an article (DELETE /articles/{id} → 204).
 func (c *Client) DeleteArticle(ctx context.Context, id int) error {
-	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/articles/%d/", id), nil, nil)
+	return c.send(ctx, http.MethodDelete, fmt.Sprintf("/articles/%d", id), nil, nil)
 }
 
 // articleListQuery renders the tri-state list filters, omitting any that is nil

@@ -15,7 +15,7 @@ Quick Start:
         TaskFactory(name='Work project', category='Work')
 
         # Test behavior
-        response = test_api_logged_in.get('/tasks/search/', params={'q': 'home'})
+        response = test_api_logged_in.get('/tasks/search', params={'q': 'home'})
         assert len(response.json()) == 2  # Exactly 2 home tasks
 
 Session Management:
