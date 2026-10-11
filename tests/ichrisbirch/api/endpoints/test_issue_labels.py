@@ -50,7 +50,7 @@ def test_moving_a_label_into_a_group_an_issue_already_uses_is_refused(client):
     carrier = ok(client.post('/issues', json={'title': 'both', 'labels': ['area-api', 'needs-design']}), status.HTTP_201_CREATED)
     response = client.patch(f'{LABELS}/needs-design', json={'group_slug': 'area'})
     assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-    assert f'#{carrier["number"]}' in response.json()['detail']
+    assert f'#{carrier["number"]}' in response.json()['message']
 
 
 def test_deleting_a_label_takes_it_off_its_issues(client):

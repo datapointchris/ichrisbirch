@@ -57,7 +57,7 @@
 ---
 
 !!! failure "Error"
-    `PATCH` endpoint giving: 422 Unprocessable Entity: {"detail":[{"type":"missing","loc":["body","id"],"msg":"Field required"
+    `PATCH` endpoint giving: 422 Unprocessable Content: {"error":"Unprocessable Content","message":"id: Field required","errors":[{"type":"missing","loc":["body","id"],"msg":"Field required"
 
 !!! success "Solution"
     `PATCH` endpoints require the ID in the endpoint, but *also* the ID must be passed in the payload for the model so it can update the record in the DB by ID.

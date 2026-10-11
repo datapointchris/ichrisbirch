@@ -21,8 +21,8 @@ class TestAPIErrorHandling:
 
         # Check for proper error message structure
         error_data = response.json()
-        assert 'detail' in error_data
-        assert 'Invalid credentials' in error_data['detail']
+        assert 'message' in error_data
+        assert 'Invalid credentials' in error_data['message']
 
     def test_invalid_auth_token(self, test_api):
         """Test handling of invalid authentication token."""
@@ -51,10 +51,10 @@ class TestAPIErrorHandling:
 
         # Check error details
         error_data = response.json()
-        assert 'detail' in error_data
+        assert 'errors' in error_data
 
         # Find the specific validation error for the missing name field
-        errors = error_data['detail']
+        errors = error_data['errors']
         assert any(error['loc'][1] == 'name' for error in errors)
 
     def test_method_not_allowed(self, test_api_logged_in):

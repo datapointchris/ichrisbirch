@@ -112,62 +112,25 @@ func (c *Client) send(ctx context.Context, method, path string, body, out any) e
 }
 
 // decodeAPIError builds an *APIError from a non-2xx response, best-effort
-// decoding the ichrisbirch/FastAPI error envelope. FastAPI's HTTPException yields
-// {"detail": "..."} (a string); request validation (422) yields
-// {"detail": [{"loc": [...], "msg": "..."}]}; the API's 500 handler yields
-// {"message": "..."}. A body that is none of these (a proxy error page, an
-// Authelia redirect) still yields a usable status-only error.
+// decoding the error envelope. The API writes errors as
+// {"error": "<status phrase>", "message": "<reason>"}, and the reason is always
+// a string; a body that is not that shape (a proxy error page, an Authelia
+// redirect) still yields a usable status-only error.
 func decodeAPIError(resp *http.Response) error {
 	apiErr := &APIError{StatusCode: resp.StatusCode, Status: resp.Status}
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 16<<10))
 
 	var envelope struct {
-		Detail  json.RawMessage `json:"detail"`
-		Message string          `json:"message"`
+		Error   string `json:"error"`
+		Message string `json:"message"`
 	}
 	if json.Unmarshal(body, &envelope) == nil {
-		apiErr.Message = messageFromEnvelope(envelope.Detail, envelope.Message)
+		switch {
+		case envelope.Message != "":
+			apiErr.Message = envelope.Message
+		case envelope.Error != "":
+			apiErr.Message = envelope.Error
+		}
 	}
 	return apiErr
-}
-
-// messageFromEnvelope extracts a human message from the decoded error body:
-// a string `detail`, a validation-error array `detail`, or the 500 `message`.
-func messageFromEnvelope(detail json.RawMessage, message string) string {
-	if len(detail) > 0 {
-		var asString string
-		if json.Unmarshal(detail, &asString) == nil && asString != "" {
-			return asString
-		}
-		var validation []struct {
-			Loc []any  `json:"loc"`
-			Msg string `json:"msg"`
-		}
-		if json.Unmarshal(detail, &validation) == nil && len(validation) > 0 {
-			parts := make([]string, 0, len(validation))
-			for _, v := range validation {
-				if field := validationField(v.Loc); field != "" {
-					parts = append(parts, field+": "+v.Msg)
-				} else {
-					parts = append(parts, v.Msg)
-				}
-			}
-			return strings.Join(parts, "; ")
-		}
-	}
-	return message
-}
-
-// validationField renders a FastAPI error `loc` (e.g. ["body","name"]) as a
-// dotted field path, dropping the leading "body"/"query" scope for brevity.
-func validationField(loc []any) string {
-	parts := make([]string, 0, len(loc))
-	for i, seg := range loc {
-		s := fmt.Sprintf("%v", seg)
-		if i == 0 && (s == "body" || s == "query" || s == "path") {
-			continue
-		}
-		parts = append(parts, s)
-	}
-	return strings.Join(parts, ".")
 }

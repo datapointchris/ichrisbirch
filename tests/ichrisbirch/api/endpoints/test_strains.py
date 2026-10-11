@@ -257,12 +257,12 @@ class TestAFilterTypoIsRefusedRatherThanAnsweredEmpty:
         client, _ = strain_crud_tester
         response = client.get(ENDPOINT, params={param: value})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert value in response.json()['detail']
+        assert value in response.json()['message']
 
     def test_the_rejection_names_what_would_have_worked(self, strain_crud_tester):
         client, _ = strain_crud_tester
         response = client.get(ENDPOINT, params={'effect': 'sleepyy'})
-        assert 'sleepy' in response.json()['detail']
+        assert 'sleepy' in response.json()['message']
 
     def test_a_known_value_with_no_rows_is_still_an_empty_list(self, strain_crud_tester):
         """The refusal separates a typo from a real negative; it does not replace it."""
@@ -288,7 +288,7 @@ class TestTheNaturalKeyRefusesADuplicate:
 
         second = client.post(ENDPOINT, json={'name': 'Gelato', 'breeder': 'Cookie Fam'})
         assert second.status_code == status.HTTP_409_CONFLICT, show_status_and_response(second)
-        assert str(first.json()['id']) in second.json()['detail'], 'The refusal names the row holding the key'
+        assert str(first.json()['id']) in second.json()['message'], 'The refusal names the row holding the key'
 
     def test_the_same_name_with_no_breeder_twice_is_a_409(self, strain_crud_tester):
         """NULLS NOT DISTINCT — the unknown breeder is the common case.
@@ -332,12 +332,12 @@ class TestVocabularyIsEnforcedOnWrite:
         client, _ = strain_crud_tester
         response = client.post(ENDPOINT, json={'name': 'Typo Kush', 'effects': ['sedative']})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'sedative' in response.json()['detail']
+        assert 'sedative' in response.json()['message']
 
     def test_the_rejection_names_what_would_have_worked(self, strain_crud_tester):
         client, _ = strain_crud_tester
         response = client.post(ENDPOINT, json={'name': 'Typo Kush', 'effects': ['sedative']})
-        assert 'sleepy' in response.json()['detail'], 'A rejection that does not say the valid values is a dead end'
+        assert 'sleepy' in response.json()['message'], 'A rejection that does not say the valid values is a dead end'
 
     def test_an_unknown_flavor_is_rejected(self, strain_crud_tester):
         client, _ = strain_crud_tester
@@ -374,7 +374,7 @@ class TestVocabularyIsEnforcedOnWrite:
         # Asserted, because a 500 raised inside the check would also leave notes
         # alone and satisfy the assertion below on its own.
         assert rejected.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(rejected)
-        assert 'sedative' in rejected.json()['detail']
+        assert 'sedative' in rejected.json()['message']
 
         after = client.get(f'{ENDPOINT}/{strain_id}').json()
         assert after['notes'] == before['notes'], 'The valid half of a rejected patch must not land'
@@ -406,7 +406,7 @@ class TestVocabularyEndpoint:
         assert set(vocabulary) == {'strain_type', 'status', 'effects', 'flavors', 'terpenes'}
 
         rejection = client.post(ENDPOINT, json={'name': 'Typo Kush', 'strain_type': 'indicaa'})
-        assert rejection.json()['detail'].startswith('strain_type:')
+        assert rejection.json()['message'].startswith('strain_type:')
 
     def test_an_unused_value_counts_zero_rather_than_going_missing(self, strain_crud_tester):
         client, _ = strain_crud_tester

@@ -143,7 +143,7 @@ class TestQueueOrder:
         client, _ = txn_api_logged_in
         response = client.post(ENDPOINT, json={'name': 'Lost', 'category': 'Hobby'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'Hobby' in response.json()['detail']
+        assert 'Hobby' in response.json()['message']
 
     def test_a_shorter_window_sorts_ahead_of_an_older_longer_one(self, txn_api_logged_in):
         """Research is made first and still sorts last, so a new task does not land on top for being new."""
@@ -256,7 +256,7 @@ class TestDrop:
 
         response = client.patch(f'{ENDPOINT}/{task["id"]}/drop')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-        assert 'completed' in response.json()['detail']
+        assert 'completed' in response.json()['message']
 
     def test_a_dropped_task_cannot_be_completed(self, txn_api_logged_in):
         client, _ = txn_api_logged_in
@@ -302,7 +302,7 @@ class TestReopen:
 
         response = client.patch(f'{ENDPOINT}/{task["id"]}/reopen')
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-        assert 'already open' in response.json()['detail']
+        assert 'already open' in response.json()['message']
 
 
 class TestClosedState:
@@ -519,7 +519,7 @@ class TestTaskStatusFilter:
         response = client.get(ENDPOINT, params={'status': 'todo'})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'open' in response.json()['detail'], 'the error must name the word that was meant'
+        assert 'open' in response.json()['message'], 'the error must name the word that was meant'
 
     def test_limit_still_applies(self, task_crud_tester):
         client, _ = task_crud_tester
@@ -558,7 +558,7 @@ class TestTaskStatusFilter:
         response = client.get(ENDPOINT, params={'category': 'Hobby'})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'Personal' in response.json()['detail'], 'the error must name the word that was meant'
+        assert 'Personal' in response.json()['message'], 'the error must name the word that was meant'
 
     def test_omitting_the_category_lists_every_one(self, task_crud_tester):
         client, _ = task_crud_tester

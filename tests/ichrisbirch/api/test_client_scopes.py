@@ -136,8 +136,8 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
 def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
     response = as_caller.caller(scoped(scope)).request(method, as_caller.url(url), json={'title': 'written by a scoped client'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
-    assert Refusal.OUTSIDE_CLIENT_SCOPES in response.json()['detail']
-    assert f'they reach only {REACHES[scope]}' in response.json()['detail']
+    assert Refusal.OUTSIDE_CLIENT_SCOPES in response.json()['message']
+    assert f'they reach only {REACHES[scope]}' in response.json()['message']
 
 
 @pytest.mark.parametrize(
@@ -155,7 +155,7 @@ def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):
     client = as_caller.caller(ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.unknown'})))
     response = client.get('/project-items')
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
-    assert 'they reach no route' in response.json()['detail']
+    assert 'they reach no route' in response.json()['message']
 
 
 def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):

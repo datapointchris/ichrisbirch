@@ -194,7 +194,7 @@ def test_insights_refuses_a_truncated_reply(mock_youtube_transcript_fetch, mock_
         response = client.post(f'{ENDPOINT}/insights', json={'url': 'https://example.com/test-article'})
 
     assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-    assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
+    assert response.json()['reason'] == AssistantFailure.TRUNCATED
 
 
 @patch('ichrisbirch.api.endpoints.articles.read_article_page')
@@ -455,7 +455,7 @@ def test_a_page_request_without_a_url_names_the_field(txn_api_logged_in, route, 
     client, _ = txn_api_logged_in
     response = client.post(f'{ENDPOINT}/{route}', json=payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-    assert response.json()['detail'][0]['loc'] == ['body', 'url']
+    assert response.json()['errors'][0]['loc'] == ['body', 'url']
 
 
 # ---------------------------------------------------------------------------
@@ -529,7 +529,7 @@ class TestCreateFromUrl:
         with patch(f'{CREATION_MODULE}.read_article_page', side_effect=failure), assistant_patch:
             response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/dead'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        assert response.json()['detail'] == str(failure)
+        assert response.json()['message'] == str(failure)
 
     def test_create_from_url_reports_invalid_output_as_a_failed_dependency(self, txn_api_logged_in):
         """The raw output comes back, so prompt drift is diagnosable without the logs."""
@@ -541,9 +541,9 @@ class TestCreateFromUrl:
         with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/prose'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
-        assert detail['raw_assistant_output'] == 'I could not summarize that page.'
+        body = response.json()
+        assert body['reason'] == AssistantFailure.INVALID_OUTPUT
+        assert body['raw_assistant_output'] == 'I could not summarize that page.'
 
     def test_create_from_url_reports_a_truncated_reply_as_a_failed_dependency(self, txn_api_logged_in):
         """A reply stopped at the cap is a fragment, and must not be saved as an article."""
@@ -553,7 +553,7 @@ class TestCreateFromUrl:
         with get_page_patch, assistant_patch:
             response = client.post(f'{ENDPOINT}/create-from-url', json={'url': 'https://example.com/truncated'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        assert response.json()['detail']['reason'] == AssistantFailure.TRUNCATED
+        assert response.json()['reason'] == AssistantFailure.TRUNCATED
 
     def test_an_unusable_reply_gives_the_bulk_worker_a_short_message(self, txn_api_logged_in):
         """The worker records str(e) in a database column and a Redis payload.

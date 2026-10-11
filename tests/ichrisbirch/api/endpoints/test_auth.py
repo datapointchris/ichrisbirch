@@ -75,7 +75,7 @@ def test_internal_service_authentication_invalid_key(auth_test_context, test_use
     headers = make_invalid_internal_service_headers()
     response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_headers(auth_test_context, test_user):
@@ -83,7 +83,7 @@ def test_internal_service_authentication_missing_headers(auth_test_context, test
     client, _, _, _ = auth_test_context
     response = client.get(f'/users/email/{test_user.email}')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_service_header(auth_test_context, test_user):
@@ -92,7 +92,7 @@ def test_internal_service_authentication_missing_service_header(auth_test_contex
     headers = {'X-Service-Key': test_settings.auth.internal_service_key}
     response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_internal_service_authentication_missing_key_header(auth_test_context, test_user):
@@ -101,4 +101,4 @@ def test_internal_service_authentication_missing_key_header(auth_test_context, t
     headers = {'X-Internal-Service': 'internal-service'}
     response = client.get(f'/users/email/{test_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']

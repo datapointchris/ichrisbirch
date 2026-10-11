@@ -111,7 +111,7 @@ reason, and a scoped client that names no `timezone` gets UTC.
 requests every listed route as a scoped client and requires 200, so a renamed
 path parameter fails it with 403.
 
-A refused scoped client's 403 detail names the routes its scopes reach. The same
+A refused scoped client's 403 message names the routes its scopes reach. The same
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
 The CLI's suite runs each read a scheduled job makes as a service:
 `icb projects items search`, and `icb issues list`, `list --blocked`, `search`,

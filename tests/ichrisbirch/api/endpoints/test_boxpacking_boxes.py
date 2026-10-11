@@ -110,7 +110,7 @@ def test_create_box_refuses_a_box_without_a_number(txn_api_logged_in, number):
         body['number'] = number
     response = client.post(ENDPOINT, json=body)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-    assert response.json()['detail'][0]['loc'] == ['body', 'number']
+    assert response.json()['errors'][0]['loc'] == ['body', 'number']
 
 
 def test_read_many_boxes_with_limit(box_crud_tester):
@@ -147,7 +147,7 @@ def test_partial_update_refuses_a_null_number(box_crud_tester):
 
     response = client.patch(f'{ENDPOINT}/{first_id}', json={'number': None})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-    assert response.json()['detail'][0]['loc'] == ['body', 'number']
+    assert response.json()['errors'][0]['loc'] == ['body', 'number']
 
 
 class TestBoxesNotFound:

@@ -63,7 +63,7 @@ func TestGetProject_NotFoundIsAPIError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(`{"detail":"project 018f-x not found"}`))
+		_, _ = w.Write([]byte(`{"error":"Not Found","message":"project 018f-x not found"}`))
 	}))
 	defer srv.Close()
 
@@ -121,49 +121,5 @@ func TestSend_NonJSONErrorBody(t *testing.T) {
 	}
 	if apiErr.Message != "" {
 		t.Errorf("Message = %q, want empty for non-JSON body", apiErr.Message)
-	}
-}
-
-// FastAPI request-validation errors (422) return a detail *array*; the client
-// must summarize it into a readable message rather than dropping it.
-func TestDecodeAPIError_ValidationArray(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte(`{"detail":[{"type":"missing","loc":["body","name"],"msg":"Field required"}]}`))
-	}))
-	defer srv.Close()
-
-	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.CreateProject(context.Background(), ProjectCreateInput{})
-
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("expected *APIError, got %v", err)
-	}
-	if apiErr.Message != "name: Field required" {
-		t.Errorf("Message = %q, want %q", apiErr.Message, "name: Field required")
-	}
-}
-
-// The 500 handler returns {"message": ...} with no detail; the client must fall
-// back to that field.
-func TestDecodeAPIError_MessageFallback(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"message":"Internal server error: ValueError"}`))
-	}))
-	defer srv.Close()
-
-	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.ListProjects(context.Background(), nil, "", nil)
-
-	var apiErr *APIError
-	if !errors.As(err, &apiErr) {
-		t.Fatalf("expected *APIError, got %v", err)
-	}
-	if apiErr.Message != "Internal server error: ValueError" {
-		t.Errorf("Message = %q", apiErr.Message)
 	}
 }

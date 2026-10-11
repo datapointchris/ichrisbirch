@@ -13,7 +13,7 @@
 interface AxiosLikeError {
   response?: {
     status: number
-    data?: { detail?: string | Record<string, unknown>[] }
+    data?: { message?: string; errors?: Record<string, unknown>[] }
     headers?: Record<string, string>
   }
   message?: string
@@ -88,17 +88,16 @@ export function extractApiError(error: unknown): ApiError {
   const { status, data, headers } = axiosError.response
   const requestId = (headers?.['x-request-id'] as string) || undefined
 
-  // Extract detail from various API response formats
+  // {"error": <status phrase>, "message": <reason>}, and a 422 adds FastAPI's refused fields as `errors`
   let detail = 'An unexpected error occurred'
   const validationErrors: ValidationError[] = []
 
   if (data) {
-    if (typeof data.detail === 'string') {
-      detail = data.detail
-    } else if (Array.isArray(data.detail)) {
-      // FastAPI validation error format: [{loc: [...], msg: "...", type: "..."}]
-      detail = 'Validation error'
-      for (const err of data.detail) {
+    if (typeof data.message === 'string' && data.message) {
+      detail = data.message
+    }
+    if (Array.isArray(data.errors)) {
+      for (const err of data.errors) {
         const loc = (err as Record<string, unknown>).loc as string[] | undefined
         const msg = (err as Record<string, unknown>).msg as string | undefined
         if (loc && msg) {

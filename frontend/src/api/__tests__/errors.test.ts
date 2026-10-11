@@ -54,11 +54,11 @@ describe('ApiError', () => {
 })
 
 describe('extractApiError', () => {
-  it('extracts error from HTTP response with string detail', () => {
+  it('extracts error from HTTP response with a message', () => {
     const axiosError = {
       response: {
         status: 404,
-        data: { detail: 'Countdown not found' },
+        data: { error: 'Not Found', message: 'Countdown not found' },
         headers: { 'x-request-id': 'req-123' },
       },
       message: 'Request failed with status code 404',
@@ -78,7 +78,7 @@ describe('extractApiError', () => {
       response: {
         status: 422,
         data: {
-          detail: [
+          errors: [
             { loc: ['body', 'name'], msg: 'Field required', type: 'missing' },
             { loc: ['body', 'due_date'], msg: 'Invalid date format', type: 'value_error' },
           ],
@@ -111,7 +111,7 @@ describe('extractApiError', () => {
     expect(err.userMessage).toBe('Unable to reach the server. Check your connection.')
   })
 
-  it('handles empty/missing detail in response', () => {
+  it('handles empty/missing message in response', () => {
     const axiosError = {
       response: {
         status: 500,
@@ -157,7 +157,7 @@ describe('extractApiError', () => {
       response: {
         status: 422,
         data: {
-          detail: [
+          errors: [
             { loc: ['body', 'name'], msg: 'Required', type: 'missing' },
             { msg: 'No loc field', type: 'missing' },
             { loc: ['body', 'age'], type: 'missing' },
@@ -177,7 +177,7 @@ describe('extractApiError', () => {
     const axiosError = {
       response: {
         status: 403,
-        data: { detail: 'Forbidden' },
+        data: { error: 'Forbidden', message: 'Forbidden' },
         headers: {},
       },
       message: 'Forbidden',

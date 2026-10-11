@@ -426,7 +426,7 @@ func overviewServer(t *testing.T, failures map[string]int) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if status, failed := failures[r.URL.Path]; failed {
 			w.WriteHeader(status)
-			_, _ = w.Write([]byte(`{"detail":"boom"}`))
+			_, _ = w.Write([]byte(`{"error":"Internal Server Error","message":"boom"}`))
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")

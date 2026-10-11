@@ -33,7 +33,7 @@ def ok(response, code=status.HTTP_200_OK):
 
 def refused(response, code):
     assert response.status_code == code, show_status_and_response(response)
-    return response.json()['detail']
+    return response.json()['message']
 
 
 def names(rows) -> list[str]:

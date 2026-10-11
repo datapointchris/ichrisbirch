@@ -151,7 +151,7 @@ class TestProjectKind:
         """422 rather than the foreign key's 500, and the message names the valid kinds."""
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad kind', 'kind': 'errand'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'build' in response.json()['detail']
+        assert 'build' in response.json()['message']
 
     def test_unknown_kind_is_rejected_on_patch(self, client_with_projects):
         project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
@@ -219,7 +219,7 @@ class TestProjectStatus:
         response = self.patch(client_with_projects, project['id'], status='dropped')
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'reason' in response.json()['detail'].lower()
+        assert 'reason' in response.json()['message'].lower()
 
     def test_dropping_with_a_reason_stores_it(self, client_with_projects):
         project = self.create(client_with_projects, name='Abandoned effort')
@@ -269,7 +269,7 @@ class TestProjectStatus:
     def test_unknown_status_is_rejected_on_create(self, client_with_projects):
         response = client_with_projects.post(PROJECTS_ENDPOINT, json={'name': 'Bad status', 'status': 'finished'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'dropped' in response.json()['detail']
+        assert 'dropped' in response.json()['message']
 
     def test_unknown_status_is_rejected_on_patch(self, client_with_projects):
         project = client_with_projects.get(PROJECTS_ENDPOINT).json()[0]
@@ -334,7 +334,7 @@ class TestProjectNameOwnership:
         second = self.create(client_with_projects, name='clisteno')
 
         assert second.status_code == status.HTTP_409_CONFLICT, show_status_and_response(second)
-        assert first.json()['id'] in second.json()['detail'], 'the conflict must name what already holds it'
+        assert first.json()['id'] in second.json()['message'], 'the conflict must name what already holds it'
 
     def test_a_finished_project_gives_its_name_back(self, client_with_projects):
         first = self.create(client_with_projects, name='clisteno').json()
@@ -375,8 +375,8 @@ class TestProjectNameOwnership:
         resolved = client_with_projects.get(f'{PROJECTS_ENDPOINT}/clisteno')
 
         assert resolved.status_code == status.HTTP_409_CONFLICT, show_status_and_response(resolved)
-        detail = resolved.json()['detail']
-        assert all(project_id in detail for project_id in ids), 'the caller needs the ids to disambiguate'
+        message = resolved.json()['message']
+        assert all(project_id in message for project_id in ids), 'the caller needs the ids to disambiguate'
 
     def test_reopening_into_a_taken_name_is_refused(self, client_with_projects):
         finished = self.create(client_with_projects, name='clisteno').json()
@@ -517,7 +517,7 @@ class TestProjectItemCounts:
         response = client.get(f'{PROJECTS_ENDPOINT}/{project_id}/items?status=finished')
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'finished' in response.json()['detail']
+        assert 'finished' in response.json()['message']
 
     def test_scoped_and_flat_lists_agree_on_every_status(self, project_with_mixed_items):
         """One filter implementation behind both reads, so they cannot drift apart."""
@@ -782,7 +782,7 @@ class TestProjectItemCompletionGuard:
 
         response = client.patch(f'{PROJECT_ITEMS_ENDPOINT}/{item_id}', json={'completed': True})
         assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
-        assert 'incomplete task' in response.json()['detail'].lower()
+        assert 'incomplete task' in response.json()['message'].lower()
 
     def test_can_complete_item_when_all_tasks_done(self, item_with_tasks):
         """Completing an item succeeds once all tasks are finished."""
@@ -869,7 +869,7 @@ class TestProjectItemStatusFilter:
         response = one_of_each_state.get(PROJECT_ITEMS_ENDPOINT, params={'status': 'done'})
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'completed' in response.json()['detail'], 'the error must name the word that was meant'
+        assert 'completed' in response.json()['message'], 'the error must name the word that was meant'
 
     def test_status_composes_with_repo(self, one_of_each_state):
         """Two narrowing filters both apply, rather than the last one winning."""
@@ -1307,11 +1307,11 @@ class TestProjectNameAsReference:
         response = client.get(f'{PROJECTS_ENDPOINT}/{quote(typed, safe="")}')
 
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
-        assert "'ypl — YouTube playlist CLI'" in response.json()['detail']
+        assert "'ypl — YouTube playlist CLI'" in response.json()['message']
 
     def test_a_name_near_nothing_names_nothing(self, project_and_client):
         client, _ = project_and_client
-        assert client.get(f'{PROJECTS_ENDPOINT}/zzqx').json()['detail'] == 'project zzqx not found'
+        assert client.get(f'{PROJECTS_ENDPOINT}/zzqx').json()['message'] == 'project zzqx not found'
 
 
 class TestProjectNameHoldingASlash:

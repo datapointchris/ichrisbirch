@@ -412,9 +412,9 @@ class TestAISuggest:
         response = client.post(f'{ENDPOINT}/ai-suggest', json={'have': ['chicken'], 'count': 1})
 
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['reason'] == AssistantFailure.INVALID_OUTPUT
-        assert detail['raw_assistant_output'] == '{"candidates": "none"}'
+        body = response.json()
+        assert body['reason'] == AssistantFailure.INVALID_OUTPUT
+        assert body['raw_assistant_output'] == '{"candidates": "none"}'
 
     def test_ai_save_persists_candidate(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
@@ -541,9 +541,9 @@ class TestUrlImport:
         client.post(f'{ENDPOINT}/ai-save', json=existing)
         response = client.post(f'{ENDPOINT}/import-from-url', json={'url': url})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['recipe_id'] is not None
-        assert detail['technique_id'] is None
+        body = response.json()
+        assert body['recipe_id'] is not None
+        assert body['technique_id'] is None
 
     def test_import_returns_409_when_url_already_exists_as_technique(self, recipe_crud_tester):
         client, _ = recipe_crud_tester
@@ -554,9 +554,9 @@ class TestUrlImport:
         )
         response = client.post(f'{ENDPOINT}/import-from-url', json={'url': url})
         assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['technique_id'] is not None
-        assert detail['recipe_id'] is None
+        body = response.json()
+        assert body['technique_id'] is not None
+        assert body['recipe_id'] is None
 
     @patch('ichrisbirch.services.url_ingest.extract_content_for_classifier')
     def test_import_returns_422_on_fetch_failure(self, mock_extract, recipe_crud_tester):
@@ -574,9 +574,9 @@ class TestUrlImport:
         mock_classify.side_effect = AssistantOutputError(AssistantFailure.FAILED, 'failed (HTTP 401)', 'API Error: 401')
         response = client.post(f'{ENDPOINT}/import-from-url', json={'url': 'https://example.com/broken'})
         assert response.status_code == status.HTTP_424_FAILED_DEPENDENCY, show_status_and_response(response)
-        detail = response.json()['detail']
-        assert detail['reason'] == AssistantFailure.FAILED
-        assert detail['raw_assistant_output'] == 'API Error: 401'
+        body = response.json()
+        assert body['reason'] == AssistantFailure.FAILED
+        assert body['raw_assistant_output'] == 'API Error: 401'
 
     def test_save_recipe_only_persists_recipe(self, recipe_crud_tester):
         client, _ = recipe_crud_tester

@@ -131,7 +131,7 @@ def test_an_unknown_anchor_names_the_known_ones(autotask_crud_tester, method):
         response = client.patch(f'{ENDPOINT}/{first_id}', json={'anchor': 'weekly'})
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-    assert 'completion' in response.json()['detail']
+    assert 'completion' in response.json()['message']
 
 
 def test_run_autotask(autotask_crud_tester):

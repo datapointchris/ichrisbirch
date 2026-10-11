@@ -117,7 +117,7 @@ func TestRemoveItemFromProject_LastProjectConflict(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
-		_, _ = w.Write([]byte(`{"detail":"Cannot remove item from its last project. Delete the item instead."}`))
+		_, _ = w.Write([]byte(`{"error":"Conflict","message":"Cannot remove item from its last project. Delete the item instead."}`))
 	}))
 	defer srv.Close()
 

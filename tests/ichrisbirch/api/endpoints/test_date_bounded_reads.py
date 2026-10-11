@@ -129,7 +129,7 @@ class TestArticleReadDateBounds:
         """An empty list would read as a real answer to a question nobody asked."""
         response = client_with_read_dates.get(ARTICLES_ENDPOINT, params={'start_date': 'last tuesday'})
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'date' in response.json()['detail'].lower()
+        assert 'date' in response.json()['message'].lower()
 
 
 class TestBookFinishDateBounds:

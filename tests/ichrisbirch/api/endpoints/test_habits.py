@@ -537,7 +537,7 @@ class TestHabitsQueryParameters:
             },
         )
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'not-a-date' in response.json()['detail'], 'the error must name the value that was rejected'
+        assert 'not-a-date' in response.json()['message'], 'the error must name the value that was rejected'
 
     def test_habits_not_found_returns_404(self, habit_test_data):
         """Test that non-existent habit returns 404."""

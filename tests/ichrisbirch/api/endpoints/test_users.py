@@ -120,7 +120,7 @@ def test_read_one_requires_admin_or_internal_service(users_logged_in_context):
     client, _, _ = users_logged_in_context
     response = client.get(f'{ENDPOINT}/1')
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'can only access your own user data' in response.json()['detail']
+    assert 'can only access your own user data' in response.json()['message']
 
 
 def test_read_many_regular_user_unauthorized(users_logged_in_context):
@@ -166,7 +166,7 @@ def test_create_is_refused_while_signups_are_closed(txn_api):
     client, session = txn_api
     response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
-    assert response.json()['detail'] == Refusal.SIGNUPS_CLOSED
+    assert response.json()['message'] == Refusal.SIGNUPS_CLOSED
     assert session.scalars(select(models.User).where(models.User.email == NEW_OBJ.email)).first() is None
 
 
@@ -174,7 +174,7 @@ def test_a_logged_in_non_admin_is_refused_while_signups_are_closed(users_logged_
     client, _, _ = users_logged_in_context
     response = client.post(ENDPOINT, json=NEW_OBJ.model_dump(mode='json'))
     assert response.status_code == status.HTTP_400_BAD_REQUEST, show_status_and_response(response)
-    assert response.json()['detail'] == Refusal.SIGNUPS_CLOSED
+    assert response.json()['message'] == Refusal.SIGNUPS_CLOSED
 
 
 def test_an_admin_creates_an_account_while_signups_are_closed(users_admin_context):
@@ -200,14 +200,14 @@ def test_create_refuses_an_email_another_account_holds(users_admin_context):
     taken = NEW_OBJ.model_copy(update={'email': TEST_USERS[0]['email']})
     response = client.post(ENDPOINT, json=taken.model_dump(mode='json'))
     assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+    assert response.json()['message'] == Refusal.EMAIL_TAKEN
 
 
 def test_update_refuses_an_email_another_account_holds(users_admin_context):
     client, _, users = users_admin_context
     response = client.patch(f'{ENDPOINT}/{users["regular_2"].id}', json={'email': TEST_USERS[0]['email']})
     assert response.status_code == status.HTTP_409_CONFLICT, show_status_and_response(response)
-    assert response.json()['detail'] == Refusal.EMAIL_TAKEN
+    assert response.json()['message'] == Refusal.EMAIL_TAKEN
 
 
 def test_update_accepts_an_account_resending_its_own_email(users_admin_context):
@@ -383,7 +383,7 @@ def test_update_user_preferences_invalid_key(users_logged_in_context):
     response = client.patch('/users/me/preferences', json=invalid_preferences)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
-    assert 'detail' in error_data
+    assert 'message' in error_data
 
 
 def test_a_preference_retired_from_the_defaults_does_not_block_the_next_save(users_admin_context):
@@ -410,14 +410,14 @@ def test_update_user_preferences_invalid_value(users_logged_in_context):
     response = client.patch('/users/me/preferences', json=invalid_preferences)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     error_data = response.json()
-    assert 'detail' in error_data
+    assert 'message' in error_data
 
 
 def test_preferences_that_are_not_an_object_answer_422(users_logged_in_context):
     client, _, _ = users_logged_in_context
     response = client.patch('/users/me/preferences', json=['theme_color'])
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-    assert response.json()['detail'][0]['loc'] == ['body']
+    assert response.json()['errors'][0]['loc'] == ['body']
 
 
 def test_list_users_requires_admin_or_internal_service(users_test_context, test_regular_user_2):
@@ -426,7 +426,7 @@ def test_list_users_requires_admin_or_internal_service(users_test_context, test_
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.get('/users', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_list_users_allows_admin(users_test_context, test_admin_user):
@@ -456,7 +456,7 @@ def test_read_user_by_id_requires_own_data_or_admin(users_test_context, test_reg
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.get(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'can only access your own user data' in response.json()['detail']
+    assert 'can only access your own user data' in response.json()['message']
 
 
 def test_read_user_by_id_allows_own_data(users_test_context, test_regular_user):
@@ -496,7 +496,7 @@ def test_read_user_by_email_requires_admin_or_internal_service(users_test_contex
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.get(f'/users/email/{test_regular_user.email}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
 
 
 def test_read_user_by_email_requires_internal_service_only(users_test_context, test_admin_user, test_regular_user):
@@ -526,7 +526,7 @@ def test_update_user_requires_own_data_or_admin(users_test_context, test_regular
     update_data = {'name': 'Updated Name'}
     response = client.patch(f'/users/{test_regular_user.id}', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'can only update your own user data' in response.json()['detail']
+    assert 'can only update your own user data' in response.json()['message']
 
 
 def test_update_user_allows_own_data(users_test_context, test_regular_user):
@@ -567,7 +567,7 @@ def test_update_user_refuses_own_is_admin(users_test_context, test_regular_user)
     headers = make_app_headers_for_user(test_regular_user)
     response = client.patch(f'/users/{test_regular_user.id}', json={'is_admin': True}, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_OR_INTERNAL_REQUIRED in response.json()['message']
     assert client.get(f'/users/{test_regular_user.id}', headers=headers).json()['is_admin'] is False
 
 
@@ -585,7 +585,7 @@ def test_delete_user_requires_admin_or_internal_service(users_test_context, test
     headers = make_app_headers_for_user(test_regular_user_2)
     response = client.delete(f'/users/{test_regular_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert Refusal.ADMIN_REQUIRED in response.json()['detail']
+    assert Refusal.ADMIN_REQUIRED in response.json()['message']
 
 
 def test_delete_user_prevents_self_deletion(users_test_context, test_admin_user):
@@ -594,7 +594,7 @@ def test_delete_user_prevents_self_deletion(users_test_context, test_admin_user)
     headers = make_app_headers_for_user(test_admin_user)
     response = client.delete(f'/users/{test_admin_user.id}', headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert Refusal.CANNOT_DELETE_OWN_ACCOUNT in response.json()['detail']
+    assert Refusal.CANNOT_DELETE_OWN_ACCOUNT in response.json()['message']
 
 
 def test_update_user_preferences_requires_own_data_or_admin(users_test_context, test_regular_user_2, test_regular_user):
@@ -604,7 +604,7 @@ def test_update_user_preferences_requires_own_data_or_admin(users_test_context, 
     update_data = {'dark_mode': True}
     response = client.patch(f'/users/{test_regular_user.id}/preferences', json=update_data, headers=headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
-    assert 'can only update your own preferences' in response.json()['detail']
+    assert 'can only update your own preferences' in response.json()['message']
 
 
 def test_update_user_preferences_allows_own_data(users_test_context, test_regular_user):
@@ -635,7 +635,7 @@ def test_internal_service_auth_invalid_key(users_test_context, test_regular_user
     headers = make_invalid_internal_service_headers()
     response = client.get(f'/users/{test_regular_user_2.id}', headers=headers)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert Refusal.AUTH_REQUIRED in response.json()['detail']
+    assert Refusal.AUTH_REQUIRED in response.json()['message']
 
 
 def test_no_authentication_returns_401(users_test_context, test_regular_user_2):
