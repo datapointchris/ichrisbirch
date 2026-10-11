@@ -1,26 +1,27 @@
 <template>
   <Teleport to="body">
     <div
-      id="github-issue-background-overlay"
+      id="submit-issue-background-overlay"
       :class="{ visible: visible, 'fade-out': closing }"
       @click="handleClose"
     ></div>
     <div
-      id="github-issue-window"
+      id="submit-issue-window"
       :class="{ visible: visible, 'box-explode': closing }"
       @animationend="onExplodeEnd"
     >
       <form
-        class="github-issue-form"
+        class="submit-issue-form"
         @submit.prevent="handleSubmit"
       >
         <h2>Submit an Issue</h2>
 
-        <div class="github-issue-form__item">
+        <div class="submit-issue-form__item">
           <label for="issue-title">Title</label>
           <input
             id="issue-title"
             v-model="title"
+            data-testid="submit-issue-title-input"
             type="text"
             size="60"
             class="textbox"
@@ -28,11 +29,12 @@
           />
         </div>
 
-        <div class="github-issue-form__item">
+        <div class="submit-issue-form__item">
           <label for="issue-description">Description</label>
           <textarea
             id="issue-description"
             v-model="description"
+            data-testid="submit-issue-description-input"
             rows="16"
             cols="60"
             class="textbox"
@@ -40,34 +42,37 @@
           ></textarea>
         </div>
 
-        <div class="github-issue-form__item">
-          <div class="github-issue-labels">
+        <div class="submit-issue-form__item">
+          <div class="submit-issue-types">
             <label
-              v-for="label in issueLabels"
-              :key="label.name"
-              class="github-issue-labels__wrapper"
+              v-for="issueType in issueTypes"
+              :key="issueType.name"
+              class="submit-issue-types__wrapper"
             >
               <input
-                v-model="selectedLabels"
-                type="checkbox"
-                :value="label.name"
-                class="github-issue-labels__input"
+                v-model="selectedType"
+                type="radio"
+                name="issue-type"
+                :value="issueType.name"
+                :data-testid="`submit-issue-type-${issueType.name}`"
+                class="submit-issue-types__input"
               />
-              <span class="github-issue-labels__tile fa-2x">
-                <i :class="['github-issue-labels__checkbox-icon', label.icon]"></i>
-                <span class="github-issue-labels__checkbox-label">{{ label.name }}</span>
+              <span class="submit-issue-types__tile fa-2x">
+                <i :class="['submit-issue-types__icon', issueType.icon]"></i>
+                <span class="submit-issue-types__label">{{ issueType.name }}</span>
               </span>
             </label>
           </div>
         </div>
 
-        <div class="github-issue-form__buttons">
+        <div class="submit-issue-form__buttons">
           <button
             type="submit"
             class="button"
+            data-testid="submit-issue-create-button"
             :disabled="submitting"
           >
-            <span class="button__text">{{ submitting ? 'Creating...' : 'Create Issue' }}</span>
+            <span class="button__text">{{ submitting ? 'Filing...' : 'File Issue' }}</span>
           </button>
           <button
             type="button"
@@ -84,9 +89,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { useNotifications } from '@/composables/useNotifications'
+import { useIssuesStore } from '@/stores/issues'
 import { createLogger } from '@/utils/logger'
 
 const props = defineProps<{
@@ -99,19 +104,28 @@ const emit = defineEmits<{
 
 const logger = createLogger('SubmitIssueModal')
 const { show: notify } = useNotifications()
+const issues = useIssuesStore()
 
 const title = ref('')
 const description = ref('')
-const selectedLabels = ref<string[]>([])
+const selectedType = ref<string | null>(null)
 const closing = ref(false)
 const submitting = ref(false)
 
-const issueLabels = [
+// The issue types a person files from a page. A decision is left out: it is
+// filed where the choice is being made, never from a passing thought.
+const issueTypes = [
   { name: 'bug', icon: 'fa-solid fa-bug' },
-  { name: 'docs', icon: 'fa-solid fa-file-lines' },
   { name: 'feature', icon: 'fa-regular fa-star' },
-  { name: 'refactor', icon: 'fa-solid fa-code' },
+  { name: 'task', icon: 'fa-solid fa-list-check' },
+  { name: 'chore', icon: 'fa-solid fa-broom' },
 ]
+
+// The page and browser an issue was filed from, which a bug report needs and
+// the person filing it rarely thinks to write.
+function filedFrom(): string {
+  return `Filed from the Submit Issue form on ${window.location.href}, in ${navigator.userAgent}.`
+}
 
 function handleClose() {
   if (!props.visible) return
@@ -132,22 +146,23 @@ async function handleSubmit() {
   }
   submitting.value = true
   try {
-    const response = await api.post('/github/issues/', {
+    const filed = await issues.create({
       title: title.value.trim(),
-      description: description.value.trim() || '',
-      labels: selectedLabels.value,
+      description: [description.value.trim(), filedFrom()].filter(Boolean).join('\n\n'),
+      repo: 'ichrisbirch',
+      status: 'triage',
+      ...(selectedType.value ? { type: selectedType.value } : {}),
     })
-    const { number, html_url } = response.data
-    logger.info('issue_created', { number, url: html_url })
-    notify(`Issue #${number} created`, 'success')
+    logger.info('issue_filed', { number: filed.number })
+    notify(`Issue ${filed.number} filed in triage`, 'success')
     title.value = ''
     description.value = ''
-    selectedLabels.value = []
+    selectedType.value = null
     handleClose()
   } catch (e) {
     const message = e instanceof ApiError ? e.userMessage : String(e)
-    logger.error('issue_create_failed', { error: message })
-    notify(`Failed to create issue: ${message}`, 'error')
+    logger.error('issue_file_failed', { error: message })
+    notify(`Failed to file issue: ${message}`, 'error')
   } finally {
     submitting.value = false
   }

@@ -81,18 +81,6 @@ class FastAPISettings:
         ]
 
 
-class GithubSettings:
-    def __init__(self) -> None:
-        self.api_token: str = os.environ['GITHUB_API_TOKEN']
-        self.api_url_issues: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/issues'
-        self.api_url_labels: str = 'https://api.github.com/repos/datapointchris/ichrisbirch/labels'
-        self.api_headers = {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': f'Bearer {self.api_token}',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
-
-
 class PlaywrightSettings:
     def __init__(self) -> None:
         self.timeout = 5_000
@@ -157,7 +145,6 @@ class Settings:
         self.ai = AISettings()
         self.auth = AuthSettings()
         self.fastapi = FastAPISettings()
-        self.github = GithubSettings()
         self.oidc = OIDCSettings()
         self.playwright = PlaywrightSettings()
         self.postgres = PostgresSettings()

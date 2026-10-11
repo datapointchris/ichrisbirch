@@ -52,6 +52,10 @@ it as `open`. Work noticed in passing is filed there, with `discovered_from`
 naming the issue it was found during. It is recorded without jumping ahead of
 work someone chose.
 
+The web app's Submit Issue form, open from every page, files into triage as
+well. It names this repo and the page and browser it was filed from, and takes
+an optional type, so a passing report waits to be accepted like any other.
+
 ## Order is effective priority, then rank, then number
 
 Priority uses Linear's scale:
