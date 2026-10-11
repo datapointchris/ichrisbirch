@@ -53,12 +53,16 @@ foreign_builds() {
 }
 
 @test "a lockfile change rebuilt in one checkout never reaches another's stack, because each project builds its own app image" {
+  local project resolved images
   for project in icb-test-one icb-test-two; do
-    run bash -c "docker compose --project-name $project -f docker-compose.yml -f docker-compose.test.yml \
-      config --no-env-resolution --format json | jq -r '.services.api.image, .services.scheduler.image' | sort -u"
-    echo "$project: $output"
-    [ "$status" -eq 0 ]
-    [ "$output" = "ichrisbirch:$project" ]
+    resolved=$(docker compose --project-name "$project" -f docker-compose.yml -f docker-compose.test.yml \
+      config --no-env-resolution --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
+      cat "$BATS_TEST_TMPDIR/compose.err"
+      return 1
+    }
+    images=$(jq -r '.services.api.image, .services.scheduler.image' <<<"$resolved" | sort -u)
+    echo "$project: $images"
+    [ "$images" = "ichrisbirch:$project" ]
   done
 }
 
