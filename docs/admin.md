@@ -13,8 +13,10 @@ With auto-refresh on, the page rereads both on a timer.
 The recent errors come from the `recent_errors` ring buffer in `ichrisbirch/api/middleware.py`.
 Each API process keeps its own, up to the buffer's `maxlen`, and it empties when the process restarts.
 
-The deploy color is read from `/var/lib/ichrisbirch/bluegreen-state`.
-Outside production that file is absent, so no color is shown.
+The deploy color is the `DEPLOY_COLOR` the deploy started the API under.
+Traefik routes only to the live color, so the color answering is the one serving the site.
+The host's `/var/lib/ichrisbirch/bluegreen-state` is not mounted into the container.
+Outside production nothing sets the variable, so no color is shown.
 
 ### A slow dependency reads as unavailable, and holds no other request
 

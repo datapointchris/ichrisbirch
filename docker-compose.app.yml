@@ -30,6 +30,7 @@ services:
     env_file: .env
     environment:
       - ENVIRONMENT=production
+      - DEPLOY_COLOR=${DEPLOY_COLOR}
       - FASTAPI_DEBUG=False
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}

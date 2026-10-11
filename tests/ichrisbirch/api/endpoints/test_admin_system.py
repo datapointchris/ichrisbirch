@@ -13,6 +13,7 @@ from fastapi import status
 from sqlalchemy import text
 
 from ichrisbirch.api.endpoints import admin
+from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import create_session
 from tests.util import show_status_and_response
 from tests.utils.database import get_test_runner_settings
@@ -74,6 +75,21 @@ class TestSystemHealth:
         data = response.json()
         assert data['server']['environment'] == 'testing'
         assert 'server_time' in data['server']
+        assert data['server']['deploy_color'] is None
+
+    @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
+    def test_health_names_the_color_this_api_was_deployed_as(self, mock_docker, test_api_logged_in_admin):
+        """The color comes from the process's settings, since the host's state file is not in the container."""
+        mock_docker.return_value = []
+        settings = get_test_runner_settings()
+        settings.deploy_color = 'green'
+        overrides = test_api_logged_in_admin.app.dependency_overrides
+        overrides[get_settings] = lambda: settings
+        try:
+            response = test_api_logged_in_admin.get(HEALTH_ENDPOINT)
+        finally:
+            overrides[get_settings] = get_test_runner_settings
+        assert response.json()['server']['deploy_color'] == 'green', show_status_and_response(response)
 
     @patch('ichrisbirch.api.endpoints.admin.get_docker_containers')
     def test_health_database_stats(self, mock_docker, test_api_logged_in_admin):

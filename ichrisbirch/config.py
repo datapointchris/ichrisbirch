@@ -141,6 +141,8 @@ class Settings:
         self.protocol = os.environ['PROTOCOL']
         self.domain: str = os.environ.get('DOMAIN', 'ichrisbirch.com')
         self.app_id: str = os.environ.get('APP_ID', '')
+        # The blue/green color the deploy started this process as; unset outside production.
+        self.deploy_color: str | None = os.environ.get('DEPLOY_COLOR') or None
 
         self.ai = AISettings()
         self.auth = AuthSettings()
