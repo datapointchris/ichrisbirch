@@ -9,8 +9,6 @@
  * Dev: human-readable structured lines in the browser console.
  * Production: JSON in the browser DevTools — no shipping pipeline. Vue is a
  * static SPA in production, so its logs cannot be scraped by Promtail.
- * Cross-service correlation will land via OpenTelemetry — see
- * .planning/otel-rum.md.
  *
  * Usage:
  *   const logger = createLogger('CountdownsStore')
@@ -116,8 +114,7 @@ const structuredReporter: ConsolaReporter = {
 /**
  * JSON reporter for production. Emits one JSON object per console.info call,
  * shaped identically to the Python backend's structlog output. Lives only in
- * the user's browser DevTools — there is no shipping pipeline. See
- * .planning/otel-rum.md for the planned OTel-based browser observability.
+ * the user's browser DevTools — there is no shipping pipeline.
  */
 const jsonReporter: ConsolaReporter = {
   log(logObj: LogObject) {

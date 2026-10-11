@@ -292,13 +292,12 @@ logger.error('countdown_create_failed', { detail: error.detail, status: error.st
 
 In production the JSON reporter calls `console.info(JSON.stringify(...))`, so
 the entry lands in the user's browser DevTools and nowhere else. There is no
-shipping pipeline today — Vue is a static SPA in production, so its logs
-never reach a container that Promtail can scrape. Cross-service log shipping
-for the browser is planned via OpenTelemetry; see `.planning/otel-rum.md`.
+shipping pipeline. Vue is a static SPA in production, so its logs never reach
+a container that Promtail can scrape.
 
 ### Vue Request Tracing
 
-The Vue API client (`frontend/src/api/client.ts`) adds `X-Request-ID` headers to every outgoing request via an Axios interceptor. This ID is logged in the browser console (consola) and on the server (structlog), enabling correlation when reading both sides simultaneously. End-to-end correlation in a single query becomes possible once the OTel work in `.planning/otel-rum.md` lands.
+The Vue API client (`frontend/src/api/client.ts`) adds `X-Request-ID` headers to every outgoing request via an Axios interceptor. This ID is logged in the browser console (consola) and on the server (structlog), enabling correlation when reading both sides simultaneously. No single query spans both, because the browser's half never leaves the browser.
 
 ### Log Level Control
 
