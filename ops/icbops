@@ -3,6 +3,16 @@
 # shellcheck disable=SC2034
 
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+
+# The installed icbops links into the checkout that ran `icbops install`. Run
+# through that link inside a checkout, it hands over to that checkout's own script.
+if [[ -L "${BASH_SOURCE[0]}" ]]; then
+  checkout_here="$(git rev-parse --show-toplevel 2>/dev/null)"
+  if [[ -n "$checkout_here" && -x "$checkout_here/ops/icbops" && "$(readlink -f "$checkout_here/ops/icbops")" != "$SCRIPT_PATH" ]]; then
+    exec "$checkout_here/ops/icbops" "$@"
+  fi
+fi
+
 ICHRISBIRCH_HOME="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 
 # URLs for each environment, derived from the grid ops/health-check.sh also reads
@@ -20,12 +30,18 @@ PROD_API_URL="$(icb_service_url prod api)"
 PROD_APP_URL="$(icb_service_url prod app)"
 
 # Each checkout runs its own test stack, named after the checkout's directory.
-# Compose project names take lowercase letters, digits, `-` and `_`. Exported
-# for ops/health-check.sh and ops/log_viewer.py.
-ICB_TEST_PROJECT="icb-test-$(basename "$ICHRISBIRCH_HOME" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '-')"
+# Compose project names take lowercase letters, digits, `-` and `_`.
+test-project-name() {
+  echo "icb-test-$(basename "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '-')"
+}
+
+# Exported for ops/health-check.sh and ops/log_viewer.py.
+ICB_TEST_PROJECT="$(test-project-name "$ICHRISBIRCH_HOME")"
 export ICB_TEST_PROJECT
 
-# Docker compose commands
+# Docker compose commands. Every dev and test `up` passes --renew-anon-volumes,
+# because compose otherwise hands a recreated container the anonymous
+# /app/.venv of the one it replaces, and a rebuilt image's venv never runs.
 COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f docker-compose.dev.yml"
 COMPOSE_TEST="docker compose --project-name $ICB_TEST_PROJECT -f docker-compose.yml -f docker-compose.test.yml"
 if [[ "${CI:-}" == true ]]; then
@@ -277,7 +293,7 @@ function ssl-manager() {
 function dev-start() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Starting ${blue}DEV${reset} environment"
-  $COMPOSE_DEV up -d
+  $COMPOSE_DEV up -d --renew-anon-volumes
   env-initialize development || return 1
 
   echo ""
@@ -302,7 +318,7 @@ function dev-stop() {
 function dev-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}DEV${reset} environment"
-  $COMPOSE_DEV up -d
+  $COMPOSE_DEV up -d --renew-anon-volumes
   env-initialize development || return 1
   dev-credentials
 }
@@ -336,19 +352,19 @@ function dev-rebuild() {
     echo "Building all images..."
     $COMPOSE_DEV build
     echo "Starting all services..."
-    $COMPOSE_DEV up -d
+    $COMPOSE_DEV up -d --renew-anon-volumes
   elif [[ "$wipe_volumes" == true ]]; then
     # Volumes wiped, everything is down. Rebuild api only and start everything back up.
     echo "Building app image..."
     $COMPOSE_DEV build api
     echo "Starting all services (volumes were wiped)..."
-    $COMPOSE_DEV up -d
+    $COMPOSE_DEV up -d --renew-anon-volumes
   else
     echo "Rebuilding ${blue}DEV${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
     echo "Building app image..."
     $COMPOSE_DEV build api
     echo "Recreating app services..."
-    $COMPOSE_DEV up -d --force-recreate api scheduler vue
+    $COMPOSE_DEV up -d --renew-anon-volumes --force-recreate api scheduler vue
   fi
 
   env-initialize development || return 1
@@ -452,22 +468,45 @@ function require-test-stack-here() {
   return 1
 }
 
-# A stack whose checkout is gone serves nothing and holds its memory, so
-# starting any checkout's stack removes it. Compose labels every container,
-# volume and network with its project, and the containers with their checkout.
+# A stack whose checkout is gone serves nothing and holds its memory and its
+# image, so starting any checkout's stack removes it. Compose labels every
+# container, volume and network with its project, and the containers with
+# their checkout. The test is `.git`, because Docker recreates a missing
+# bind-mount source as an empty directory whenever a container starts.
 function testing-remove-orphans() {
   local project checkout
+  local -A has_containers=()
   while read -r project checkout; do
-    if [[ -d "$checkout" ]]; then
+    has_containers[$project]=1
+    if [[ -e "$checkout/.git" ]]; then
       continue
     fi
     echo "Removing ${yellow}${project}${reset}: its checkout ${checkout} is gone"
     docker ps -aq --filter "label=com.docker.compose.project=${project}" | xargs -r docker rm -f -v >/dev/null
     docker volume ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker volume rm >/dev/null
     docker network ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker network rm >/dev/null
+    docker image rm "ichrisbirch:${project}" >/dev/null 2>&1
   done < <(docker ps -a --filter label=com.docker.compose.project \
     --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
     | grep '^icb-test-' | sort -u)
+
+  # A stack stopped before its checkout was removed leaves only its image,
+  # which names no checkout. It goes once no worktree of this repository is
+  # named for it, so a separate clone's stopped stack rebuilds at its next start.
+  local worktrees line
+  local -A live=()
+  worktrees=$(git -C "$ICHRISBIRCH_HOME" worktree list --porcelain 2>/dev/null) || return 0
+  while read -r line; do
+    if [[ "$line" == "worktree "* && -e "${line#worktree }/.git" ]]; then
+      live[$(test-project-name "${line#worktree }")]=1
+    fi
+  done <<<"$worktrees"
+  while read -r project; do
+    if [[ -z "${has_containers[$project]:-}" && -z "${live[$project]:-}" ]]; then
+      echo "Removing the image of ${yellow}${project}${reset}: no checkout is named for it"
+      docker image rm "ichrisbirch:${project}" >/dev/null
+    fi
+  done < <(docker image ls ichrisbirch --format '{{.Tag}}' | grep '^icb-test-')
 }
 
 function test-run() {
@@ -534,7 +573,7 @@ function testing-start() {
   testing-remove-orphans
   echo "Starting ${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset}"
   mkdir -p "$TEST_REPORTS_DIR"
-  $COMPOSE_TEST up -d --wait || return 1
+  $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
   env-initialize testing || return 1
 
   echo ""
@@ -555,7 +594,7 @@ function testing-restart() {
   cd "$ICHRISBIRCH_HOME" || exit
   echo "Restarting ${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset}"
   mkdir -p "$TEST_REPORTS_DIR"
-  $COMPOSE_TEST up -d --wait || return 1
+  $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
   env-initialize testing
 }
 
@@ -590,18 +629,18 @@ function testing-rebuild() {
     echo "Building all images..."
     $COMPOSE_TEST build
     echo "Starting all services..."
-    $COMPOSE_TEST up -d --wait || return 1
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
   elif [[ "$wipe_volumes" == true ]]; then
     echo "Building app image..."
     $COMPOSE_TEST build api
     echo "Starting all services (volumes were wiped)..."
-    $COMPOSE_TEST up -d --wait || return 1
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
   else
     echo "Rebuilding ${blue}TESTING${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
     echo "Building app image..."
     $COMPOSE_TEST build api
     echo "Recreating app services..."
-    $COMPOSE_TEST up -d --wait --force-recreate api scheduler vue || return 1
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes --force-recreate api scheduler vue || return 1
   fi
 
   env-initialize testing || return 1

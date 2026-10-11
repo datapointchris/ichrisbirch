@@ -52,6 +52,16 @@ foreign_builds() {
   done
 }
 
+@test "a lockfile change rebuilt in one checkout never reaches another's stack, because each project builds its own app image" {
+  for project in icb-test-one icb-test-two; do
+    run bash -c "docker compose --project-name $project -f docker-compose.yml -f docker-compose.test.yml \
+      config --no-env-resolution --format json | jq -r '.services.api.image, .services.scheduler.image' | sort -u"
+    echo "$project: $output"
+    [ "$status" -eq 0 ]
+    [ "$output" = "ichrisbirch:$project" ]
+  done
+}
+
 @test "every compose file in the repo belongs to a checked set" {
   for file in docker-compose*.yml; do
     [[ " ${COMPOSE_SETS[*]} " == *" $file "* ]] || {

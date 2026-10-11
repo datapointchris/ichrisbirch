@@ -65,8 +65,9 @@ objects.
 ## The API is stuck in `health: starting`
 
 The API container runs `uvicorn` directly rather than `uv run`, and `/app/.venv`
-is an anonymous volume that Docker re-seeds from the image layer on every new
-container.
+is an anonymous volume that Docker seeds from the image layer. Every `icbops`
+`up` passes `--renew-anon-volumes`, because compose otherwise hands a recreated
+container the volume of the one it replaces.
 
 A named volume for `.venv` or for the uv cache breaks both properties. The
 stale virtualenv outlives the image meant to replace it, and `uv` resyncs at

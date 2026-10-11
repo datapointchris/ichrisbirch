@@ -51,6 +51,10 @@ checkout A                          checkout B
 
 `ops/icbops` names the project `icb-test-<checkout directory>`, lowercased to what compose accepts. Compose scopes the containers (`icb-test-<checkout>-api`), the networks and the node_modules volume to it. Nothing is published to the host, so any number of stacks run side by side.
 
+The API and the scheduler run `ichrisbirch:icb-test-<checkout>`, which the stack builds on its first start. So each stack's venv comes from its own checkout's lockfile, and a `testing rebuild` in one checkout reaches no other.
+
+The installed `icbops` is a symlink into the checkout that ran `icbops install`. Run through it inside another checkout, it hands over to that checkout's `ops/icbops`, so a bare `icbops test e2e` tests the code it is run beside.
+
 The browser runs inside the stack for one reason. Chromium in the host's network namespace watches the host's interfaces, and every container that starts or stops anywhere on the machine adds or removes one. Chromium reads that as a network change and aborts its in-flight requests with `ERR_NETWORK_CHANGED`. Inside the vue container it sees only that container's interfaces.
 
 Three pieces route the in-stack browser to Traefik:
@@ -63,7 +67,7 @@ Test Traefik reads its routers and services from files alone, `deploy-containers
 
 The vue service runs Playwright's image, `mcr.microsoft.com/playwright:v<version>-noble`. That image carries Node and the browsers, so the dev server and the suite share one container and one node_modules. Its tag must equal `@playwright/test` in `frontend/package-lock.json`, because the package launches only its own browser build. `tests/playwright-image-version.bats` holds them level.
 
-`icbops test e2e` runs `npx playwright test` there through `docker compose exec`, as your user, so traces and screenshots in `frontend/test-results/` are yours. The JSON report lands in `.test-reports/playwright-report.json`, through a bind mount of the checkout's `.test-reports/`. The container sets `ICB_TEST_STACK=true`. Without it, `playwright.config.ts` refuses to run and names `./ops/icbops test e2e`, so a host run fails at once rather than timing out against ports that no longer exist.
+`icbops test e2e` runs `npx playwright test` there through `docker compose exec`, as your user, so traces and screenshots in `frontend/test-results/` are yours. The JSON report lands in `.test-reports/playwright-report.json`, through a bind mount of the checkout's `.test-reports/`. The container sets `ICB_TEST_STACK=true`. Without it, `playwright.config.ts` refuses to run and names `./ops/icbops test e2e`, so a host run fails at once, naming that command, rather than timing out against a stack the host cannot reach.
 
 ### What the host cannot do
 
@@ -75,11 +79,13 @@ The vue service runs Playwright's image, `mcr.microsoft.com/playwright:v<version
 
 | Verb | What it does |
 | --- | --- |
-| `testing start` | Removes every `icb-test-*` stack whose checkout directory is gone, brings this one up with `up --wait`, then initializes its database |
+| `testing start` | Removes every `icb-test-*` stack whose checkout is gone, with its image, brings this one up with `up --wait`, then initializes its database |
 | `testing ensure` | Starts the stack unless every service with a health check reads `healthy` |
 | `testing stop` | `down --volumes` on this checkout's project alone |
 | `testing restart` / `rebuild` | As for dev, scoped to this project, each ending in database initialization |
 | `test e2e [spec] [args]` | `testing ensure`, then Playwright in the vue container |
+
+A checkout counts as gone when its directory holds no `.git`. The directory alone proves nothing, because Docker recreates a missing bind-mount source as an empty root-owned directory whenever one of the stack's containers starts. A stack stopped before its checkout was removed leaves only its image, which names no checkout. That image goes once no worktree of this repository is named for it, so a separate clone's stopped stack rebuilds its image at its next start.
 
 The project name comes from the directory name, so two clones sharing one would share a stack. Every verb but `testing stop` refuses a stack another checkout started, and names the `stop`/`start` pair that takes it over.
 

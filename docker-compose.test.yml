@@ -19,8 +19,10 @@
 # reads healthy within a second of being ready. Its interval, which governs
 # afterwards, is what a service that is already up is checked at.
 
+# Each project builds its own image, so a stack's venv comes from its own
+# checkout's lockfile whatever another checkout last built.
 x-app-build: &app-build
-  image: ichrisbirch:testing
+  image: ichrisbirch:${COMPOSE_PROJECT_NAME}
   build:
     context: .
     target: testing
