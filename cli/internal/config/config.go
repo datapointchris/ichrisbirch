@@ -50,6 +50,9 @@ const ClientSecretEnv = "ICB_CLIENT_SECRET"
 // A service missing a value is told which key to write rather than to log in,
 // since a service has no login.
 func Load(ctx context.Context, api string) (goclilogin.Deployment, error) {
+	if err := refuseRetiredAPIBase(); err != nil {
+		return goclilogin.Deployment{}, err
+	}
 	d, err := goclilogin.LoadDeployment(ctx, product, api)
 	if !IsService() || !errors.Is(err, goclilogin.ErrNotConfigured) {
 		return d, err
@@ -70,7 +73,25 @@ func Load(ctx context.Context, api string) (goclilogin.Deployment, error) {
 // ForLogin is the deployment `icb auth login` logs in to: the file's values,
 // with whatever it lacks filled in from api, the API's metadata and clientID.
 func ForLogin(ctx context.Context, api, clientID string) (goclilogin.Deployment, error) {
+	if err := refuseRetiredAPIBase(); err != nil {
+		return goclilogin.Deployment{}, err
+	}
 	return goclilogin.DeploymentForLogin(ctx, product, api, clientID)
+}
+
+// retiredAPIBase is how earlier releases were pointed at another API, dev
+// among them. One still set is refused rather than ignored, because ignoring it
+// sends a command meant for dev to the config file's API, which is production.
+//
+// ICB_CLIENT_ID is not refused: a service's environment carries it until the
+// service runs a release that reads client_id from the file instead.
+const retiredAPIBase = "ICB_API_BASE"
+
+func refuseRetiredAPIBase() error {
+	if os.Getenv(retiredAPIBase) == "" {
+		return nil
+	}
+	return fmt.Errorf("%s is set, and icb no longer reads it: pass --api to point one command at another API, or unset it to use the config file's api", retiredAPIBase)
 }
 
 // DefaultClientID is the client id login derives when neither the file nor

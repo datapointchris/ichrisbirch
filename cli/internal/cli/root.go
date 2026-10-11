@@ -116,7 +116,8 @@ func NewRootCommand() *cobra.Command {
 			"\n" +
 			"The noun comes first and the verb last: `icb books list` becomes\n" +
 			"`icb books edit`. Every read verb takes --json. Run any partial command\n" +
-			"bare to see what comes next. Authenticate once with `icb auth login`.",
+			"bare to see what comes next. Authenticate once with `icb auth login <url>`;\n" +
+			"`icb auth status` shows where icb is pointed.",
 		Example: "  icb overview\n" +
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues show 42\n" +
@@ -151,9 +152,8 @@ func NewRootCommand() *cobra.Command {
 		f.Shorthand = ""
 	}
 
-	root.AddCommand(newUpdateCommand())
+	root.AddCommand(newUpdateCommand(), newAuthCommand())
 	for _, cmd := range []*cobra.Command{
-		newAuthCommand(),
 		newOverviewCommand(),
 		newProjectsCommand(),
 		newIssuesCommand(),

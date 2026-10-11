@@ -28,7 +28,8 @@ func newAuthCommand() *cobra.Command {
 		Long: "Authenticate this machine against the identity provider using the OAuth 2.0\n" +
 			"device authorization grant. The CLI prints a code and a URL; approve it in\n" +
 			"any browser on any device, including from a different machine over SSH. The\n" +
-			"resulting token is stored in the OS keychain, never on disk.\n\n" +
+			"resulting token is stored in the OS keychain, or in a file only this user\n" +
+			"can read where there is none.\n\n" +
 			"Where icb is pointed comes from one config file. `icb auth status` prints\n" +
 			"its path and its api, issuer and client_id, and `icb auth login <url>` fills\n" +
 			"in whatever it lacks.\n\n" +
@@ -36,7 +37,7 @@ func newAuthCommand() *cobra.Command {
 			"config file's client_id names, through the client-credentials grant. It\n" +
 			"requests a token per run and stores nothing, so login and logout refuse.",
 	})
-	cmd.AddCommand(newAuthLoginCommand(), newAuthLogoutCommand(), newAuthStatusCommand(), newAuthTokenCommand())
+	cmd.AddCommand(withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand(), withAPIFlag(newAuthStatusCommand()), withAPIFlag(newAuthTokenCommand()))
 	return cmd
 }
 
@@ -138,8 +139,8 @@ func newAuthLogoutCommand() *cobra.Command {
 			// two keys still logs out. A file naming no client falls back to
 			// icb-cli-<short hostname>, the id login uses when the file names
 			// none, so a token stored by a login whose file was never written
-			// is still removed.
-			deployment, err := config.Load(cmd.Context(), apiOverride)
+			// is still removed. No other API is asked, so logout takes no --api.
+			deployment, err := config.Load(cmd.Context(), "")
 			if err != nil && !errors.Is(err, goclilogin.ErrNotConfigured) {
 				return err
 			}
