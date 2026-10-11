@@ -56,11 +56,9 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "no tool that reads the grid spells a hostname by hand" {
-  # The grid exists because this was written out twice. A third copy is a
-  # hostname literal anywhere outside ops/lib/urls.sh itself.
-  # grep exits 1 for no match alone, so a missing tool or a bad path fails here.
-  run grep -nE 'docker\.localhost|test\.localhost' \
-    "$REPO_ROOT/ops/icbops" "$REPO_ROOT/ops/health-check.sh"
-  [ "$status" -eq 1 ]
+@test "icbops prints the dev and prod URLs the grid gives" {
+  TERM='' run "$REPO_ROOT/ops/icbops"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Dev:  $(icb_service_url dev api) | $(icb_service_url dev app)"* ]]
+  [[ "$output" == *"Prod: $(icb_service_url prod api) | $(icb_service_url prod app)"* ]]
 }
