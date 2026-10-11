@@ -112,8 +112,8 @@ type articleSection struct {
 }
 
 // projectItemSection is the focus project and its open items, the ones
-// `projects items next` prints. Project is null when no active project holds an
-// open item.
+// `projects next` prints and the shape its --json answers with. Project is null
+// when no active project holds an open item.
 type projectItemSection struct {
 	Project      *api.Project      `json:"project"`
 	Next         []api.ProjectItem `json:"next"`

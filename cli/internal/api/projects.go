@@ -171,8 +171,8 @@ var ProjectStatuses = []string{
 }
 
 // What sort of work a project is. `kind` separates making something new from
-// the work that merely has to happen, which is what lets `items next` weight a
-// build differently from a chore.
+// the work that merely has to happen, which is what lets `projects next` weight
+// a build differently from a chore.
 //
 // The API's project_kinds table is the authority and rejects anything else.
 // These are here so the flag help, the guided form, and its default all read

@@ -17,11 +17,6 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/repos"
 )
 
-// defaultNextItemLimit caps what `items next` prints. The ordering is the
-// point of the verb, so the head of the list is the answer and the tail is
-// context; a caller who wants more names a larger number.
-const defaultNextItemLimit = 10
-
 // itemHints and the lists built on it name the commands that find a valid id
 // for each thing an items verb takes. Most verbs take an item number alone. The
 // membership verbs take a project name as well, and the task verbs a task id.
@@ -56,7 +51,6 @@ func newItemsCommand() *cobra.Command {
 	withNotFoundHints(cmd, itemHints...)
 	cmd.AddCommand(
 		withNotFoundHints(newItemsListCommand(), itemAndProjectHints...),
-		newItemsNextCommand(),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
 		withNotFoundHints(newItemsShowCommand(), itemNumberHints...),
@@ -247,101 +241,6 @@ func repoFlagValue(cmd *cobra.Command, repo string) *string {
 		return nil
 	}
 	return &repo
-}
-
-// newItemsNextCommand prints the focus project's open items in the order they
-// are taken, as focusQueue picks them. The head is the next thing to do, which
-// is what a caller asking for `--limit 1` wants. `icb overview` shows the same
-// project and items.
-//
-// --kind narrows the focus to projects of one kind, so a question about making
-// things never resolves to an errand filed as a project. The filter runs
-// client-side because every item already carries its projects, so kind rides
-// along and the alternative would be a query parameter that saves no round trip.
-func newItemsNextCommand() *cobra.Command {
-	var (
-		asJSON bool
-		kind   string
-		repo   string
-		limit  int
-	)
-	cmd := &cobra.Command{
-		Use:   "next",
-		Short: "The focus project's open items, in the order to take them",
-		Long: "Projects are worked one at a time. The focus is the highest-ranked active project\n" +
-			"holding an open item, and its items come in their position order, so the first\n" +
-			"row is the next thing to do. No other project's items appear until it is\n" +
-			"completed, shelved, or moved down with `icb projects edit <project> --position <n>`.\n" +
-			"\n" +
-			"If every open item in the focus project is blocked, it keeps the focus and its\n" +
-			"blocked items are listed instead. An item in several projects belongs to the\n" +
-			"highest-ranked active one. `icb overview` shows the same project.",
-		Example: "  icb projects items next\n" +
-			"  icb projects items next --kind chore\n" +
-			"  icb projects items next --repo dotfiles\n" +
-			"  icb projects items next --limit 1 --json",
-		Args: noArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			client, err := newAPIClient(cmd.Context())
-			if err != nil {
-				return handleAPIError(err)
-			}
-			filter := repoFlagValue(cmd, repo)
-			// Every open item, uncapped: the blocked set is computed from the
-			// whole graph, and --limit here caps what is printed rather than
-			// what is read.
-			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, "", "", "", nil)
-			if err != nil {
-				return handleAPIError(err)
-			}
-			// Blocked is deliberately unfiltered: an item is blocked by whatever
-			// blocks it, and a blocker in another repo still blocks. Filtering
-			// here would present blocked work as actionable.
-			blocked, err := client.ListBlockedItems(cmd.Context(), nil)
-			if err != nil {
-				return handleAPIError(err)
-			}
-			focus := focusQueue(all, blocked, kind)
-			items := capItems(focus.Next, limit)
-			if asJSON {
-				return encodeJSON(cmd.OutOrStdout(), items)
-			}
-			out := cmd.OutOrStdout()
-			// The sentences describe the data, so they read the uncapped set. A
-			// --limit the caller chose is not a fact about what is outstanding, and
-			// gating on the capped slice reported an empty subject for --limit 0
-			// against every open item there is.
-			if focus.Project == nil {
-				switch {
-				case kind != "":
-					_, _ = fmt.Fprintf(out, "No open items in %s projects.\n", kind)
-				case filter != nil:
-					_, _ = fmt.Fprintf(out, "No open items for repo %s.\n", *filter)
-				default:
-					_, _ = fmt.Fprintln(out, "No items.")
-				}
-				return nil
-			}
-			if len(focus.Next) == 0 {
-				_, _ = fmt.Fprintf(out, "%s: nothing to take, every open item is blocked.\n", focus.Project.Name)
-				printItemsTable(out, focus.Blocked)
-				return nil
-			}
-			// A zero cap prints nothing, the way `head -n 0` does.
-			if len(items) == 0 {
-				return nil
-			}
-			_, _ = fmt.Fprintln(out, focus.Project.Name)
-			printQueueTable(out, items)
-			noteCappedRows(cmd, len(items), len(focus.Next))
-			return nil
-		},
-	}
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output items as JSON to stdout")
-	cmd.Flags().StringVar(&kind, "kind", "", "Only items in projects of this kind: "+strings.Join(api.ProjectKinds, ", "))
-	cmd.Flags().StringVar(&repo, "repo", "", "Only items tagged with this repo (empty string for untagged work)")
-	addCapFlag(cmd, &limit, defaultNextItemLimit, "Maximum number of items to show")
-	return cmd
 }
 
 // itemsOfKind keeps the items belonging to at least one project of the given
@@ -1334,7 +1233,8 @@ func printItemsTable(out io.Writer, items []api.ProjectItem) {
 }
 
 // printQueueTable is the focus project's queue. Every row is open and in the one
-// project named above it, so neither a status nor a project column is printed.
+// project named above the table, so neither a status nor a project column is
+// printed.
 func printQueueTable(out io.Writer, items []api.ProjectItem) {
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(tw, "TITLE\tID")

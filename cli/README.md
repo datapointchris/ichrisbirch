@@ -177,10 +177,11 @@ concurrently and returned as one payload, so a dashboard needs a single call
 instead of one per app.
 
 Projects are worked one at a time. The focus is the highest-ranked active project
-holding an open item, and it is the only project `overview` and `projects items
-next` show. It keeps the focus while every open item in it is blocked, because
-moving on is a decision: complete it, shelve it, or move it down with `icb
-projects edit <project> --position <n>`.
+holding an open item, and it is the only project `overview` and `projects next`
+show. `projects next --json` answers with the overview's `project_items` section.
+The project keeps the focus while every open item in it is blocked, because
+moving on is a decision: complete it or move it down with `icb projects edit
+<project> --position <n>`.
 
 Its `habits` section and `icb habits today` answer the same question through one
 split, so the two agree on which habits are outstanding. They differ in reach:
@@ -196,7 +197,7 @@ icb overview --limit 3       # a tighter per-section cap
 error. What it counts differs by command: a list read caps rows and omitting the
 flag returns every one of them, except `shopping history`, whose purchase log
 only grows and so comes back capped at its newest rows. `overview` caps each
-section separately, and `projects items next` and `issues next` cap what they
+section separately, and `projects next` and `issues next` cap what they
 print and say on stderr how many rows the cap left out. Each `--help` names its
 own unit and default.
 

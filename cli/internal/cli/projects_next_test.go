@@ -24,13 +24,13 @@ func queuedIn(project api.Project, id string, number int, position int) api.Proj
 	}
 }
 
-type itemsNextRun struct {
+type projectsNextRun struct {
 	stdout string
 	stderr string
 	runErr error
 }
 
-func runItemsNext(t *testing.T, open []api.ProjectItem, blocked []api.ProjectItem, args ...string) itemsNextRun {
+func runProjectsNext(t *testing.T, open []api.ProjectItem, blocked []api.ProjectItem, args ...string) projectsNextRun {
 	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -47,19 +47,19 @@ func runItemsNext(t *testing.T, open []api.ProjectItem, blocked []api.ProjectIte
 	var stdout, stderr bytes.Buffer
 	root.SetOut(&stdout)
 	root.SetErr(&stderr)
-	root.SetArgs(append([]string{"projects", "items", "next"}, args...))
+	root.SetArgs(append([]string{"projects", "next"}, args...))
 	runErr := root.Execute()
-	return itemsNextRun{stdout: stdout.String(), stderr: stderr.String(), runErr: runErr}
+	return projectsNextRun{stdout: stdout.String(), stderr: stderr.String(), runErr: runErr}
 }
 
-func TestItemsNext_ListsTheFocusProjectAloneAndSaysWhatTheCapCut(t *testing.T) {
+func TestProjectsNext_ListsTheFocusProjectAloneAndSaysWhatTheCapCut(t *testing.T) {
 	open := []api.ProjectItem{
 		queuedIn(sellProject, "s1", 11, 0),
 		queuedIn(readingBacklog, "r2", 22, 1),
 		queuedIn(readingBacklog, "r1", 21, 0),
 	}
 
-	run := runItemsNext(t, open, nil, "-n", "1")
+	run := runProjectsNext(t, open, nil, "-n", "1")
 
 	if run.runErr != nil {
 		t.Fatalf("run: %v", run.runErr)
@@ -78,28 +78,33 @@ func TestItemsNext_ListsTheFocusProjectAloneAndSaysWhatTheCapCut(t *testing.T) {
 	}
 }
 
-func TestItemsNext_JSONCarriesNoNote(t *testing.T) {
+// The JSON is the overview's project_items section, so a consumer reads one
+// shape from either command, with the totals the cap cut from.
+func TestProjectsNext_JSONIsTheProjectWithItsCappedItemsAndCarriesNoNote(t *testing.T) {
 	open := []api.ProjectItem{queuedIn(readingBacklog, "r1", 21, 0), queuedIn(readingBacklog, "r2", 22, 1)}
 
-	run := runItemsNext(t, open, nil, "-n", "1", "--json")
+	run := runProjectsNext(t, open, nil, "-n", "1", "--json")
 
-	var items []api.ProjectItem
-	if err := json.Unmarshal([]byte(run.stdout), &items); err != nil {
-		t.Fatalf("stdout is not JSON: %v\n%s", err, run.stdout)
+	var section projectItemSection
+	if err := json.Unmarshal([]byte(run.stdout), &section); err != nil {
+		t.Fatalf("stdout is not the project section: %v\n%s", err, run.stdout)
 	}
-	if len(items) != 1 || items[0].ID != "r1" {
-		t.Errorf("--json items = %s, want r1 alone", itemIDs(items))
+	if section.Project == nil || section.Project.ID != "reading" {
+		t.Errorf("--json project = %v, want the focus project", section.Project)
+	}
+	if len(section.Next) != 1 || section.Next[0].ID != "r1" || section.NextTotal != 2 {
+		t.Errorf("--json next = %s of %d, want r1 of 2", itemIDs(section.Next), section.NextTotal)
 	}
 	if run.stderr != "" {
 		t.Errorf("stderr = %q, want silence under --json", run.stderr)
 	}
 }
 
-func TestItemsNext_ABlockedFocusProjectListsWhatBlocksItInsteadOfMovingOn(t *testing.T) {
+func TestProjectsNext_ABlockedFocusProjectListsWhatBlocksItInsteadOfMovingOn(t *testing.T) {
 	stuck := queuedIn(readingBacklog, "r1", 21, 0)
 	open := []api.ProjectItem{stuck, queuedIn(sellProject, "s1", 11, 0)}
 
-	run := runItemsNext(t, open, []api.ProjectItem{stuck})
+	run := runProjectsNext(t, open, []api.ProjectItem{stuck})
 
 	if run.runErr != nil {
 		t.Fatalf("run: %v", run.runErr)
