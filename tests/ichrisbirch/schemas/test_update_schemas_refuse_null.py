@@ -6,6 +6,7 @@ A null that got through would come back from the database as a 500.
 """
 
 import inspect
+from collections.abc import Iterator
 
 import pytest
 from pydantic import BaseModel
@@ -31,7 +32,13 @@ def not_null_fields(schema: type[BaseModel]) -> list[str]:
     ]
 
 
-CASES = [(name, field) for name, schema in sorted(UPDATE_SCHEMAS.items()) for field in not_null_fields(schema)]
+def not_null_cases() -> Iterator[tuple[str, str]]:
+    for name, schema in sorted(UPDATE_SCHEMAS.items()):
+        for field in not_null_fields(schema):
+            yield name, field
+
+
+CASES = list(not_null_cases())
 
 
 def test_every_update_schema_names_its_model():

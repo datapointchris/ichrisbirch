@@ -9,6 +9,8 @@ name points at, so a new time column is covered without being listed here.
 
 import datetime as dt
 import inspect
+from collections.abc import Iterator
+from itertools import chain
 from typing import Annotated
 
 import pytest
@@ -50,7 +52,13 @@ def time_fields(schema_name: str) -> list[tuple[str, str]]:
     return [(field, kind) for field in fields if field in columns and (kind := time_kind(columns[field]))]
 
 
-CASES = [(name, field, kind) for name in sorted(REQUEST_SCHEMAS) for field, kind in time_fields(name)]
+def time_cases() -> Iterator[tuple[str, str, str]]:
+    for name in sorted(REQUEST_SCHEMAS):
+        for field, kind in time_fields(name):
+            yield name, field, kind
+
+
+CASES = list(time_cases())
 
 
 def field_adapter(schema_name: str, field: str) -> TypeAdapter:
@@ -71,7 +79,7 @@ def test_the_walk_reaches_every_kind():
 
 def test_the_only_wall_clock_column_is_the_event_date():
     """A wall clock means nothing without the zone beside it, and `events.timezone` is the one zone column."""
-    columns = [column for table in Base.metadata.tables.values() for column in table.columns]
+    columns = list(chain.from_iterable(table.columns for table in Base.metadata.tables.values()))
     wall_clocks = {f'{column.table.name}.{column.name}' for column in columns if time_kind(column) == 'wall_clock'}
 
     assert wall_clocks == {'events.date'}

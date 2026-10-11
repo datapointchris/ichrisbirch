@@ -5,6 +5,7 @@ covered in `test_oidc_auth.py`.
 """
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -39,7 +40,14 @@ SCOPED_URLS = {
     '/projects/{id:path}/items/': '/projects/{project}/items/',
 }
 
-SCOPED_ROUTES = sorted((scope, method, template) for scope, routes in SCOPE_ROUTES.items() for method, template in routes)
+
+def scoped_routes() -> Iterator[tuple[str, str, str]]:
+    for scope, routes in SCOPE_ROUTES.items():
+        for method, template in routes:
+            yield scope, method, template
+
+
+SCOPED_ROUTES = sorted(scoped_routes())
 
 # How a refusal's list of what each scope reaches begins.
 REACHES = {

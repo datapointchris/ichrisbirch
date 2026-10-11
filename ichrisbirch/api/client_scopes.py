@@ -5,6 +5,8 @@ resolves a user answers 403. A template is FastAPI's with the router prefix incl
 `/project-items/{id}/` covers every item.
 """
 
+from itertools import chain
+
 from starlette.routing import BaseRoute
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
@@ -38,5 +40,6 @@ def permits(scopes: frozenset[str], method: str, route: BaseRoute | None) -> boo
 
 def reachable(scopes: frozenset[str]) -> str:
     """What `scopes` reach, so a refused client reads what it may call from the table that refused it."""
-    routes = sorted({f'{method} {template}' for scope in scopes for method, template in SCOPE_ROUTES.get(scope, frozenset())})
+    reached = chain.from_iterable(SCOPE_ROUTES.get(scope, frozenset()) for scope in scopes)
+    routes = sorted({f'{method} {template}' for method, template in reached})
     return f'they reach only {", ".join(routes)}' if routes else 'they reach no route'

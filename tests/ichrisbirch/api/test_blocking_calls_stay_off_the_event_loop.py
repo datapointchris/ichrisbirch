@@ -50,7 +50,10 @@ def called_names(node: ast.AST) -> set[str]:
 
 
 def package_functions() -> list[tuple[Path, Function]]:
-    return [(path, node) for path in PACKAGE.rglob('*.py') for node in ast.walk(ast.parse(path.read_text())) if isinstance(node, Function)]
+    functions: list[tuple[Path, Function]] = []
+    for path in PACKAGE.rglob('*.py'):
+        functions.extend((path, node) for node in ast.walk(ast.parse(path.read_text())) if isinstance(node, Function))
+    return functions
 
 
 def outbound_callers(functions: list[tuple[Path, Function]]) -> set[str]:
