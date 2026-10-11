@@ -27,10 +27,10 @@ tasks:
       - npm ci --prefix frontend
       - task: setup-local
 
-  # A worktree is a clean checkout, so everything gitignored is absent. These
-  # four have no manifest to rebuild them from: .env is hand-written, the traefik
-  # dev certs have no generator anywhere in the repo, and .planning points into
-  # the synced planning directory. Copying from the primary is the only source.
+  # A worktree is a clean checkout, so everything gitignored is absent. Two
+  # things have no manifest to rebuild them from: .env is hand-written, and the
+  # traefik dev certs have no generator anywhere in the repo. Copying from the
+  # primary is the only source.
   #
   # PRIMARY is derived rather than configured. Every worktree shares the primary's
   # git directory, so --git-common-dir names it from anywhere, and running this in
@@ -51,7 +51,6 @@ tasks:
       - cp -n {{.PRIMARY}}/.env .env
       - mkdir -p deploy-containers/traefik/certs
       - cp -n {{.PRIMARY}}/deploy-containers/traefik/certs/*.crt {{.PRIMARY}}/deploy-containers/traefik/certs/*.key deploy-containers/traefik/certs/
-      - ln -sfn "$(readlink {{.PRIMARY}}/.planning)" .planning
 
   cli:build:
     desc: Build the icb CLI to bin/icb
