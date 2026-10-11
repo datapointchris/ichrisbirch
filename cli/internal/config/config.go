@@ -1,27 +1,29 @@
 // Package config resolves the icb CLI's settings, of which there are two kinds.
 //
-// Config is which deployment to talk to — OIDC and API settings, environment
-// overrides layered over homelab defaults. MachineConfig is what this machine
-// says about its own layout, read from a config file, and it is the middle rung
-// of the order every shared path resolves through: the ICB_-prefixed variable,
-// then the config key, then a default under icb's own XDG directory.
+// Which deployment to talk to is one file, $XDG_CONFIG_HOME/icb/config.toml,
+// read through goclilogin's config-file contract: its api, issuer and
+// client_id keys, with --api the only thing that outranks them. None of the
+// three is compiled in. Each names one installation, so a value shipped in the
+// binary would point somebody else's copy at this one.
+//
+// MachineConfig is what this machine says about its own layout, read from
+// config.yml beside it. It is the middle rung of the order every shared path
+// resolves through: the ICB_-prefixed variable, then the config key, then a
+// default under icb's own XDG directory.
 package config
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/datapointchris/goclilogin"
 )
 
-const (
-	defaultIssuer = "https://auth.ichrisbirch.com"
-	// The `ichrisbirch-bearer` Traefik router carries a request holding an
-	// Authorization header straight to the app without meeting ForwardAuth, so
-	// this host serves the CLI without the bearer.authz scope the edge would
-	// otherwise demand.
-	defaultAPIBase = "https://ichrisbirch.com/api"
-)
+// product names the config file's directory.
+const product = "icb"
 
 // keyringService namespaces icb's entries in the OS keychain. It is a deployed
 // identifier rather than a path-derived one, so it keeps its spelling
@@ -37,81 +39,71 @@ const (
 	issuesScope       = "icb.issues.read"
 )
 
-type Config struct {
-	Issuer   string
-	ClientID string
-	APIBase  string
+// ClientSecretEnv selects the client-credentials grant, for the client the
+// config file names. It is read from the environment alone, so it is never
+// written to the file and no command prints it.
+const ClientSecretEnv = "ICB_CLIENT_SECRET"
 
-	// ClientSecret selects the client-credentials grant. It is set only where a
-	// service runs icb with no person present to approve a device login.
-	ClientSecret string
-
-	// clientIDSet is whether ICB_CLIENT_ID named the client. Unset, ClientID is
-	// the person's per-machine default.
-	clientIDSet bool
-}
-
-// IsService reports whether icb authenticates as a confidential service client
-// rather than as the person who logged in on this machine.
-func (c Config) IsService() bool {
-	return c.ClientSecret != ""
-}
-
-// CheckService refuses a secret set without ICB_CLIENT_ID. The default is the
-// person's `icb-cli-<host>`, so the secret would be sent to Authelia under that
-// client's id.
-func (c Config) CheckService() error {
-	if c.IsService() && !c.clientIDSet {
-		return errors.New("ICB_CLIENT_SECRET is set but ICB_CLIENT_ID is not: set it to the service client the secret belongs to, such as icb-svc-<machine>")
+// Load reads the deployment every command talks to. api is the --api flag's
+// value, and outranks the file's when it is not empty.
+//
+// A service missing a value is told which key to write rather than to log in,
+// since a service has no login.
+func Load(ctx context.Context, api string) (goclilogin.Deployment, error) {
+	d, err := goclilogin.LoadDeployment(ctx, product, api)
+	if !IsService() || !errors.Is(err, goclilogin.ErrNotConfigured) {
+		return d, err
 	}
-	return nil
+	var missing []string
+	for _, key := range []struct {
+		name string
+		set  goclilogin.Setting
+	}{{"api", d.API}, {"issuer", d.Issuer}, {"client_id", d.ClientID}} {
+		if key.set.Value == "" {
+			missing = append(missing, key.name)
+		}
+	}
+	return d, fmt.Errorf("%w: %s sets no %s; a service names its API, provider and client there, and only %s in its environment",
+		goclilogin.ErrNotConfigured, d.Path, strings.Join(missing, " or "), ClientSecretEnv)
 }
 
-// Service is the goclilogin view of this config for the client-credentials
-// grant. Nothing it obtains is stored, so it names no keyring or state directory.
-func (c Config) Service() goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: c.Issuer, ClientID: c.ClientID, Scopes: []string{projectItemsScope, issuesScope}}
+// ForLogin is the deployment `icb auth login` logs in to: the file's values,
+// with whatever it lacks filled in from api, the API's metadata and clientID.
+func ForLogin(ctx context.Context, api, clientID string) (goclilogin.Deployment, error) {
+	return goclilogin.DeploymentForLogin(ctx, product, api, clientID)
 }
 
-// Login is the goclilogin view of this config: which provider to authenticate
+// DefaultClientID is the client id login derives when neither the file nor
+// --client-id names one: icb-cli-<short hostname>.
+func DefaultClientID() string { return goclilogin.ClientID(product) }
+
+// Login is the goclilogin view of a deployment: which provider to authenticate
 // against, as which client, and where the token and its refresh lock live.
 //
 // StateDir is passed rather than left to goclilogin's default, which would put
 // it under the keyring service name. Naming icb's own state directory keeps the
 // lock where earlier versions wrote it, so two versions running during an
 // upgrade contend for the same file rather than each taking its own.
-func (c Config) Login() goclilogin.Config {
+func Login(d goclilogin.Deployment) goclilogin.Config {
 	return goclilogin.Config{
-		Issuer:         c.Issuer,
-		ClientID:       c.ClientID,
+		Issuer:         d.Issuer.Value,
+		ClientID:       d.ClientID.Value,
 		KeyringService: keyringService,
 		StateDir:       StatePath(),
 	}
 }
 
-// Load resolves settings. Precedence per CLI conventions: env var > default.
-// A config file layer can slot in below env later without changing callers.
-func Load() Config {
-	return Config{
-		Issuer:       getEnv("ICB_OIDC_ISSUER", defaultIssuer),
-		ClientID:     getEnv("ICB_CLIENT_ID", defaultClientID()),
-		APIBase:      getEnv("ICB_API_BASE", defaultAPIBase),
-		ClientSecret: os.Getenv("ICB_CLIENT_SECRET"),
-		clientIDSet:  os.Getenv("ICB_CLIENT_ID") != "",
-	}
-}
+// ClientSecret is ICB_CLIENT_SECRET, set only where a service runs icb with
+// nobody present to approve a device login.
+func ClientSecret() string { return os.Getenv(ClientSecretEnv) }
 
-// defaultClientID derives the per-(machine × app) Authelia client_id from the
-// short hostname: `macmini.trusted` → `icb-cli-macmini`, matching the clients
-// registered in the Authelia template. Machines whose hostname differs from
-// their logical name override with ICB_CLIENT_ID (pyinfra can template this).
-func defaultClientID() string {
-	return goclilogin.ClientID("icb")
-}
+// IsService reports whether icb authenticates as a confidential service client
+// rather than as the person who logged in on this machine.
+func IsService() bool { return ClientSecret() != "" }
 
-func getEnv(key, fallback string) string {
-	if v, ok := os.LookupEnv(key); ok && v != "" {
-		return v
-	}
-	return fallback
+// Service is the goclilogin view of a deployment for the client-credentials
+// grant. Nothing it obtains is stored, so it names no keyring or state
+// directory.
+func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
+	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope}}
 }

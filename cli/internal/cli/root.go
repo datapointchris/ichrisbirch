@@ -21,6 +21,19 @@ var version = "dev"
 // NewRootCommand, so a test never inherits the previous one's value.
 var noInput bool
 
+// apiOverride is bound to --api, the one value that outranks the config file.
+// Binding it as the tree is built resets it, so a test never inherits the
+// previous tree's value.
+var apiOverride string
+
+// withAPIFlag declares --api on cmd and everything under it. Only the commands
+// that reach the API carry it, so one that never reads it does not offer it.
+func withAPIFlag(cmd *cobra.Command) *cobra.Command {
+	cmd.PersistentFlags().StringVar(&apiOverride, "api", "",
+		"Use this API instead of the config file's; it must trust the file's identity provider")
+	return cmd
+}
+
 // usageError marks an invocation mistake (bad flag/args) so Execute can return
 // exit code 2, distinct from a runtime failure (1). Per CLI conventions.
 type usageError struct{ err error }
@@ -138,23 +151,27 @@ func NewRootCommand() *cobra.Command {
 		f.Shorthand = ""
 	}
 
-	root.AddCommand(newAuthCommand())
 	root.AddCommand(newUpdateCommand())
-	root.AddCommand(newOverviewCommand())
-	root.AddCommand(newProjectsCommand())
-	root.AddCommand(newIssuesCommand())
-	root.AddCommand(newTasksCommand())
-	root.AddCommand(newAutotasksCommand())
-	root.AddCommand(newCountdownsCommand())
-	root.AddCommand(newEventsCommand())
-	root.AddCommand(newHabitsCommand())
-	root.AddCommand(newPatternsCommand())
-	root.AddCommand(newBooksCommand())
-	root.AddCommand(newArticlesCommand())
-	root.AddCommand(newRecipesCommand())
-	root.AddCommand(newCookingTechniquesCommand())
-	root.AddCommand(newStrainsCommand())
-	root.AddCommand(newShoppingCommand())
+	for _, cmd := range []*cobra.Command{
+		newAuthCommand(),
+		newOverviewCommand(),
+		newProjectsCommand(),
+		newIssuesCommand(),
+		newTasksCommand(),
+		newAutotasksCommand(),
+		newCountdownsCommand(),
+		newEventsCommand(),
+		newHabitsCommand(),
+		newPatternsCommand(),
+		newBooksCommand(),
+		newArticlesCommand(),
+		newRecipesCommand(),
+		newCookingTechniquesCommand(),
+		newStrainsCommand(),
+		newShoppingCommand(),
+	} {
+		root.AddCommand(withAPIFlag(cmd))
+	}
 
 	// After the tree is assembled: cobra only propagates a usage template to
 	// commands that already exist when it is set.

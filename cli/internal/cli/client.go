@@ -22,27 +22,28 @@ var errNeedsLogin = errors.New("not logged in")
 // (and refreshes) the bearer token on every request via goclilogin's token
 // source, so resource commands never touch tokens directly.
 func newAPIClient(ctx context.Context) (*api.Client, error) {
-	cfg := config.Load()
-	source, err := tokenSource(ctx, cfg)
+	deployment, err := config.Load(ctx, apiOverride)
+	if err != nil {
+		return nil, err
+	}
+	source, err := tokenSource(ctx, deployment)
 	if errors.Is(err, errNeedsLogin) {
 		return nil, err
 	}
 	if err != nil {
 		return nil, fmt.Errorf("prepare API client: %w", err)
 	}
-	return api.New(cfg.APIBase, oauth2.NewClient(ctx, source)), nil
+	return api.New(deployment.API.Value, oauth2.NewClient(ctx, source)), nil
 }
 
 // tokenSource is the client-credentials grant when ICB_CLIENT_SECRET is set,
 // and otherwise the token this machine logged in for.
-func tokenSource(ctx context.Context, cfg config.Config) (oauth2.TokenSource, error) {
-	if err := cfg.CheckService(); err != nil {
-		return nil, err
+func tokenSource(ctx context.Context, d goclilogin.Deployment) (oauth2.TokenSource, error) {
+	if config.IsService() {
+		return goclilogin.ClientCredentialsTokenSource(ctx, config.Service(d), config.ClientSecret())
 	}
-	if cfg.IsService() {
-		return goclilogin.ClientCredentialsTokenSource(ctx, cfg.Service(), cfg.ClientSecret)
-	}
-	source, err := goclilogin.TokenSource(ctx, cfg.Login(), goclilogin.NewTokenStore(cfg.Login()))
+	login := config.Login(d)
+	source, err := goclilogin.TokenSource(ctx, login, goclilogin.NewTokenStore(login))
 	if errors.Is(err, goclilogin.ErrNotLoggedIn) {
 		return nil, errNeedsLogin
 	}
@@ -58,26 +59,28 @@ func handleAPIError(err error) error {
 	if errors.Is(err, errNeedsLogin) {
 		return fmt.Errorf("not logged in — run `icb auth login`")
 	}
+	var apiErr *api.APIError
+	// A service has no login to renew, so it is pointed at its id and secret.
+	// The file is read without --api, so reporting an error sends nothing.
+	if config.IsService() {
+		d, _ := config.Load(context.Background(), "")
+		switch {
+		case goclilogin.IsSessionRejected(err):
+			return fmt.Errorf("%s refused service client %s — check client_id in %s, and %s", d.Issuer.Value, d.ClientID.Value, d.Path, config.ClientSecretEnv)
+		case errors.As(err, &apiErr) && apiErr.Unauthorized():
+			return fmt.Errorf("the API rejected the token issued to service client %s", d.ClientID.Value)
+		case errors.As(err, &apiErr) && apiErr.Forbidden() && apiErr.Message != "":
+			return fmt.Errorf("service client %s: %s", d.ClientID.Value, apiErr.Message)
+		}
+	}
 	// A refusal at the token endpoint arrives as the transport error of the
 	// request that triggered the refresh, so the URL and the raw OAuth error
 	// description are what reach the terminal unless they are named here.
 	if goclilogin.IsSessionRejected(err) {
-		if cfg := config.Load(); cfg.IsService() {
-			return fmt.Errorf("%s refused service client %s — check ICB_CLIENT_ID and ICB_CLIENT_SECRET", cfg.Issuer, cfg.ClientID)
-		}
 		return fmt.Errorf("session expired — run `icb auth login`")
 	}
-	var apiErr *api.APIError
 	if errors.As(err, &apiErr) && apiErr.Unauthorized() {
-		if cfg := config.Load(); cfg.IsService() {
-			return fmt.Errorf("the API rejected the token issued to service client %s", cfg.ClientID)
-		}
 		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
-	}
-	if errors.As(err, &apiErr) && apiErr.Forbidden() {
-		if cfg := config.Load(); cfg.IsService() && apiErr.Message != "" {
-			return fmt.Errorf("service client %s: %s", cfg.ClientID, apiErr.Message)
-		}
 	}
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {
 		return refusal{apiErr}

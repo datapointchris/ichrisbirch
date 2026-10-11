@@ -167,7 +167,7 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"unknown projects subcommand is usage error", []string{"projects", "nope"}, 2},
 		{"unknown flag is usage error", []string{"--nonsense"}, 2},
 		{"overview rejects positional args", []string{"overview", "extra"}, 2},
-		{"auth login rejects positional args", []string{"auth", "login", "extra"}, 2},
+		{"auth login rejects a second positional arg", []string{"auth", "login", "https://a.example", "extra"}, 2},
 		{"auth status rejects positional args", []string{"auth", "status", "extra"}, 2},
 		{"projects show without an id is usage error", []string{"projects", "show"}, 2},
 		{"projects create without --name is usage error", []string{"projects", "create"}, 2},

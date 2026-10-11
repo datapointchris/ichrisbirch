@@ -6,18 +6,15 @@ import (
 	"testing"
 
 	"github.com/datapointchris/goclilogin"
-	"github.com/spf13/cobra"
 )
 
 // Classifying a session lives in goclilogin, which tests it against a provider
 // that rotates and revokes. What is icb's own is how each of the three states
 // reads on the terminal.
 func statusOutput(r statusReport) string {
-	cmd := &cobra.Command{}
 	var out bytes.Buffer
-	cmd.SetOut(&out)
-	cmd.SetErr(&bytes.Buffer{})
-	printStatus(cmd, r)
+	r.Configured = true
+	printStatus(&out, r, goclilogin.Deployment{}, nil)
 	return out.String()
 }
 

@@ -3,27 +3,10 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	"github.com/datapointchris/goclilogin"
 )
-
-func TestLoad_EnvOverrides(t *testing.T) {
-	t.Setenv("ICB_OIDC_ISSUER", "https://idp.example")
-	t.Setenv("ICB_CLIENT_ID", "icb-cli-ci")
-	t.Setenv("ICB_API_BASE", "https://api.example")
-
-	cfg := Load()
-
-	if cfg.Issuer != "https://idp.example" {
-		t.Errorf("Issuer = %q", cfg.Issuer)
-	}
-	if cfg.ClientID != "icb-cli-ci" {
-		t.Errorf("ClientID = %q", cfg.ClientID)
-	}
-	if cfg.APIBase != "https://api.example" {
-		t.Errorf("APIBase = %q", cfg.APIBase)
-	}
-}
 
 // Login is the seam between icb's settings and goclilogin's, so what it carries
 // across is worth pinning. The keyring service is a deployed identifier that
@@ -33,10 +16,11 @@ func TestLoad_EnvOverrides(t *testing.T) {
 // upgrade.
 func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", "/tmp/xdgstate")
-	t.Setenv("ICB_OIDC_ISSUER", "https://auth.example.com")
-	t.Setenv("ICB_CLIENT_ID", "icb-cli-somehost")
 
-	login := Load().Login()
+	login := Login(goclilogin.Deployment{
+		Issuer:   goclilogin.Setting{Value: "https://auth.example.com"},
+		ClientID: goclilogin.Setting{Value: "icb-cli-somehost"},
+	})
 	if login.Issuer != "https://auth.example.com" {
 		t.Errorf("Issuer = %q", login.Issuer)
 	}
@@ -48,59 +32,6 @@ func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
 	}
 	if login.StateDir != "/tmp/xdgstate/icb" {
 		t.Errorf("StateDir = %q, want icb's own state directory", login.StateDir)
-	}
-}
-
-// An env var set to the empty string must fall through to the default, not blank
-// the field — getEnv treats "" as unset.
-func TestLoad_EmptyEnvFallsThroughToDefault(t *testing.T) {
-	t.Setenv("ICB_OIDC_ISSUER", "")
-	t.Setenv("ICB_API_BASE", "")
-
-	cfg := Load()
-
-	if cfg.Issuer != defaultIssuer {
-		t.Errorf("Issuer = %q, want default %q", cfg.Issuer, defaultIssuer)
-	}
-	if cfg.APIBase != defaultAPIBase {
-		t.Errorf("APIBase = %q, want default %q", cfg.APIBase, defaultAPIBase)
-	}
-}
-
-// Without ICB_CLIENT_ID, the client id is derived from the short hostname. The
-// API admits a person's token by the exact `icb-cli-` prefix, hyphen included.
-func TestLoad_DefaultClientIDIsPerMachine(t *testing.T) {
-	t.Setenv("ICB_CLIENT_ID", "")
-
-	cfg := Load()
-
-	if !strings.HasPrefix(cfg.ClientID, "icb-cli-") {
-		t.Errorf("ClientID = %q, want an icb-cli-<host> value", cfg.ClientID)
-	}
-	if strings.ContainsAny(cfg.ClientID, ". ") {
-		t.Errorf("ClientID = %q should be lowercased short hostname without domain/space", cfg.ClientID)
-	}
-	if cfg.ClientID != strings.ToLower(cfg.ClientID) {
-		t.Errorf("ClientID = %q should be lowercase", cfg.ClientID)
-	}
-}
-
-func TestASecretNeedsTheClientItBelongsTo(t *testing.T) {
-	cases := []struct {
-		name, secret, clientID string
-		refused                bool
-	}{
-		{"a person", "", "", false},
-		{"a service naming its client", "s3cret", "icb-svc-worker", false},
-		{"a secret with the person's default", "s3cret", "", true},
-	}
-	for _, c := range cases {
-		t.Setenv("ICB_CLIENT_SECRET", c.secret)
-		t.Setenv("ICB_CLIENT_ID", c.clientID)
-		err := Load().CheckService()
-		if refused := err != nil; refused != c.refused || (refused && !strings.Contains(err.Error(), "ICB_CLIENT_ID")) {
-			t.Errorf("%s: CheckService = %v, want refused %v naming ICB_CLIENT_ID", c.name, err, c.refused)
-		}
 	}
 }
 
