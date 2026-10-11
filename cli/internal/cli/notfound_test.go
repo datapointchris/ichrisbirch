@@ -245,6 +245,7 @@ func TestTheClassifierReportsOnlyABodiedNotFound(t *testing.T) {
 
 var resourceExempt = map[string]bool{
 	"auth":     true,
+	"config":   true,
 	"update":   true,
 	"overview": true,
 }

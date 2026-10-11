@@ -152,7 +152,7 @@ func NewRootCommand() *cobra.Command {
 		f.Shorthand = ""
 	}
 
-	root.AddCommand(newUpdateCommand(), newAuthCommand())
+	root.AddCommand(newUpdateCommand(), newAuthCommand(), newConfigCommand())
 	for _, cmd := range []*cobra.Command{
 		newOverviewCommand(),
 		newProjectsCommand(),

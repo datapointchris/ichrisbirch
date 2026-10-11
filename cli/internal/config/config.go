@@ -94,6 +94,9 @@ func refuseRetiredAPIBase() error {
 	return fmt.Errorf("%s is set, and icb no longer reads it: pass --api to point one command at another API, or unset it to use the config file's api", retiredAPIBase)
 }
 
+// Path is where the deployment file goes, whether or not it exists.
+func Path() string { return goclilogin.ConfigPath(product) }
+
 // DefaultClientID is the client id login derives when neither the file nor
 // --client-id names one: icb-cli-<short hostname>.
 func DefaultClientID() string { return goclilogin.ClientID(product) }

@@ -375,8 +375,9 @@ file, every such command refuses, naming the file and `icb auth login <url>`. Th
 login fills in whatever the file lacks — the issuer from the API's RFC 9728
 metadata, the client id from `--client-id` or the short hostname — prints each
 with where it came from, and writes the file once the login succeeds.
-`icb auth status` prints the three values, where each came from and the file's
-path.
+`icb config show` prints the three values, where each came from and the file's
+path, as does `icb auth status` beside the session. `icb config path` prints the
+path alone, whether or not the file exists.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
