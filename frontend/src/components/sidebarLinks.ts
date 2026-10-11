@@ -8,6 +8,7 @@ export interface NavLink {
 
 export const DEFAULT_SIDEBAR_ORDER = [
   '/',
+  '/today',
   '/dashboard',
   '/articles',
   '/autofun',
@@ -30,6 +31,7 @@ export const DEFAULT_SIDEBAR_ORDER = [
 
 export const allMainLinks: NavLink[] = [
   { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: true },
+  { to: '/today', label: 'Today', icon: 'fa-solid fa-sun', migrated: true },
   { to: '/dashboard', label: 'Dashboard', icon: 'fa-solid fa-grip', migrated: true },
   {
     to: '/articles',

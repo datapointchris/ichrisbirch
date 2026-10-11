@@ -50,7 +50,7 @@ Welcome to the iChrisBirch application documentation.
 
 The frontend is a Vue 3 SPA (TypeScript) served behind `app.docker.localhost` via Traefik path-based routing.
 
-- [Vue Frontend](vue-frontend.md) - Vue 3 architecture, testing, and migration patterns
+- [Vue Frontend](vue-frontend.md) - Vue 3 architecture, testing, migration patterns, and the phone layout with the page a phone opens on
 - [CSS](css.md) - Styling guidelines and SCSS architecture (ITCSS)
 - [CSS BEM](css_bem.md) - BEM methodology for CSS
 - [HTML5 Semantic](html5_semantic.md) - Semantic HTML structure

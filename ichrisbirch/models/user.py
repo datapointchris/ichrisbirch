@@ -172,6 +172,21 @@ DEFAULT_USER_PREFERENCES = {
 }
 
 
+def changed_preferences(stored: dict, updated: dict) -> dict:
+    """The part of `updated` that differs from `stored`, at every depth."""
+    changed = {}
+    for key, value in updated.items():
+        if key not in stored:
+            changed[key] = value
+        elif isinstance(value, dict) and isinstance(stored[key], dict):
+            inner = changed_preferences(stored[key], value)
+            if inner:
+                changed[key] = inner
+        elif value != stored[key]:
+            changed[key] = value
+    return changed
+
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -230,12 +245,17 @@ class User(Base):
 
     @validates('preferences')
     def validate_preferences(self, key, updated_preferences: dict):
-        """Validate preferences before setting them.
+        """Validate what an assignment changes, and leave the keys it keeps as stored.
+
+        A key retired from the defaults stays in storage until the preferences
+        migration script prunes or transfers it. Validating the whole tree would
+        refuse every save that never touched that key.
 
         Must use secondary private method to avoid recursively calling the validates decorator, which will reset the preferences and check
         for sub preferences at top level.
         """
-        return self._validate_preferences(updated_preferences)
+        self._validate_preferences(changed_preferences(self.preferences or {}, updated_preferences))
+        return updated_preferences
 
     @staticmethod
     def dot_preference_to_nested_dict(dot_key: str, value: Any) -> dict:

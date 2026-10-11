@@ -1,7 +1,7 @@
 {
   "name": "iChrisBirch",
   "short_name": "iChrisBirch",
-  "start_url": "/",
+  "start_url": "/today",
   "scope": "/",
   "display": "standalone",
   "background_color": "#002734",

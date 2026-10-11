@@ -1,9 +1,10 @@
+@use '../abstracts/touch';
 @use '../components/buttons';
+@use '../components/check_circle';
 @use '../components/list_item';
 @use '../components/toggle_chips';
 
-// A finger is the pointer on this page, so every control is at least this tall.
-$touch-target: 44px;
+// A finger is the pointer on this page, so every control is at least `touch.$touch-target` tall.
 
 .shopping {
   display: flex;
@@ -35,7 +36,7 @@ $touch-target: 44px;
   &__add-input {
     flex: 1;
     min-width: 0;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     font-size: var(--fs-500);
   }
 
@@ -43,8 +44,8 @@ $touch-target: 44px;
     @include buttons.neu-button;
 
     flex-shrink: 0;
-    width: $touch-target;
-    height: $touch-target;
+    width: touch.$touch-target;
+    height: touch.$touch-target;
     font-size: var(--fs-500);
   }
 
@@ -71,7 +72,7 @@ $touch-target: 44px;
     display: flex;
     justify-content: space-between;
     width: 100%;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     color: var(--clr-text);
     font-size: var(--fs-400);
     text-align: left;
@@ -97,7 +98,7 @@ $touch-target: 44px;
     @include buttons.neu-button;
 
     align-self: flex-start;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     padding-inline: var(--space-s);
     font-size: var(--fs-400);
   }
@@ -107,7 +108,7 @@ $touch-target: 44px;
 
     .textbox {
       flex: 1;
-      min-height: $touch-target;
+      min-height: touch.$touch-target;
     }
   }
 }
@@ -140,7 +141,7 @@ $touch-target: 44px;
     display: flex;
     align-items: center;
     gap: var(--space-2xs);
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     padding-inline: var(--space-2xs);
   }
 
@@ -149,8 +150,8 @@ $touch-target: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: $touch-target;
-    height: $touch-target;
+    width: touch.$touch-target;
+    height: touch.$touch-target;
     color: var(--clr-gray-400);
   }
 
@@ -161,7 +162,7 @@ $touch-target: 44px;
 
   &__name {
     flex: 1;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     color: var(--clr-accent-light);
     font-size: var(--fs-500);
     text-align: left;
@@ -176,7 +177,7 @@ $touch-target: 44px;
   &__name-input {
     flex: 1;
     min-width: 0;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     font-size: var(--fs-500);
   }
 
@@ -186,8 +187,8 @@ $touch-target: 44px;
   }
 
   &__delete {
-    min-width: $touch-target;
-    min-height: $touch-target;
+    min-width: touch.$touch-target;
+    min-height: touch.$touch-target;
     color: var(--clr-gray-500);
 
     &--confirming {
@@ -197,7 +198,7 @@ $touch-target: 44px;
 
   // An empty section stays a drop target.
   &__items {
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     margin: 0;
     padding: 0 0 var(--space-2xs);
     list-style: none;
@@ -221,17 +222,7 @@ $touch-target: 44px;
   }
 
   &__check {
-    flex-shrink: 0;
-    width: $touch-target;
-    height: $touch-target;
-    border-radius: 50%;
-    color: transparent;
-    box-shadow: var(--floating-box-pressed);
-    transition: color 0.15s ease;
-
-    &:hover {
-      color: var(--clr-gray-500);
-    }
+    @include check_circle.check-circle;
   }
 
   &--checking &__check {
@@ -244,7 +235,7 @@ $touch-target: 44px;
     flex-direction: column;
     justify-content: center;
     min-width: 0;
-    min-height: $touch-target;
+    min-height: touch.$touch-target;
     cursor: pointer;
   }
 
@@ -270,8 +261,8 @@ $touch-target: 44px;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    width: $touch-target;
-    height: $touch-target;
+    width: touch.$touch-target;
+    height: touch.$touch-target;
     color: var(--clr-gray-500);
     cursor: grab;
     touch-action: none;
@@ -298,7 +289,7 @@ $touch-target: 44px;
   display: flex;
   gap: var(--space-xs);
   width: 100%;
-  min-height: $touch-target;
+  min-height: touch.$touch-target;
   color: var(--clr-gray-500);
   font-size: var(--fs-400);
   text-align: left;
