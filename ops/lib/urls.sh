@@ -26,8 +26,9 @@ icb_env_domain() {
 }
 
 # The hostname a service answers on in one environment. Production breaks the
-# subdomain pattern: the Vue app is the bare domain, the API shares it under
-# the path icb_service_path gives, and there is no Traefik dashboard.
+# subdomain pattern: the Vue app and the API share the bare domain, and there
+# is no Traefik dashboard. The API's resource routes are under /api/v1 on
+# every host, and /health is at its root.
 # Arguments:
 #   $1 - environment: dev or prod
 #   $2 - service: api, app, dashboard
@@ -45,19 +46,6 @@ icb_service_host() {
   esac
 }
 
-# The path a service is mounted under on its host, empty where it owns the
-# host. Production's API sits behind the same-origin proxy that strips /api.
-# Arguments:
-#   $1 - environment: dev or prod
-#   $2 - service: api, app, dashboard
-# Outputs:
-#   The path with its leading slash, or nothing, on stdout
-icb_service_path() {
-  case "$1:$2" in
-    prod:api) echo '/api' ;;
-  esac
-}
-
 # The URL a browser would use. Traefik terminates TLS in every environment.
 # Arguments:
 #   $1 - environment: dev or prod
@@ -69,7 +57,7 @@ icb_service_path() {
 icb_service_url() {
   local host
   host=$(icb_service_host "$1" "$2") || return 1
-  echo "https://${host}$(icb_service_path "$1" "$2")"
+  echo "https://${host}"
 }
 
 # Every service reachable through Traefik, for a caller that iterates rather

@@ -430,11 +430,11 @@ func overviewServer(t *testing.T, failures map[string]int) *httptest.Server {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/articles/current/" {
+		if r.URL.Path == "/api/v1/articles/current/" {
 			_, _ = w.Write([]byte(`null`))
 			return
 		}
-		if r.URL.Path == "/habits/day/" {
+		if r.URL.Path == "/api/v1/habits/day/" {
 			_, _ = w.Write([]byte(`{"date":"2026-07-24","timezone":"UTC","due":[],"completed":[],"current_total":0}`))
 			return
 		}
@@ -445,7 +445,7 @@ func overviewServer(t *testing.T, failures map[string]int) *httptest.Server {
 }
 
 func TestFetchOverview_PartialFailureIsIsolated(t *testing.T) {
-	srv := overviewServer(t, map[string]int{"/books/": http.StatusInternalServerError})
+	srv := overviewServer(t, map[string]int{"/api/v1/books/": http.StatusInternalServerError})
 	client := api.New(srv.URL, srv.Client())
 
 	data := fetchOverview(context.Background(), client)

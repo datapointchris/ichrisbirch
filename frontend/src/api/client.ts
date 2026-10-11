@@ -4,7 +4,7 @@ import { extractApiError } from './errors'
 
 const logger = createLogger('ApiClient')
 
-const apiUrl = import.meta.env.VITE_API_URL || 'https://api.docker.localhost'
+const apiUrl = import.meta.env.VITE_API_URL || 'https://api.docker.localhost/api/v1'
 
 // Track request metadata (start time, request ID) outside Axios's config object.
 // WeakMap avoids type augmentation issues and cleans up automatically.

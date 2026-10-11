@@ -15,6 +15,7 @@ from fastapi.dependencies.models import Dependant
 from fastapi.routing import APIRoute
 
 import ichrisbirch
+from ichrisbirch.api import API_PREFIX
 
 PACKAGE = Path(ichrisbirch.__file__).parent
 AWAITING_NODES = (ast.Await, ast.AsyncFor, ast.AsyncWith)
@@ -142,7 +143,7 @@ def test_a_held_call_leaves_the_worker_answering(request, monkeypatch, target, m
     async def hold_one_and_ask_for_health() -> httpx2.Response:
         transport = httpx2.ASGITransport(app=app, raise_app_exceptions=False)
         async with httpx2.AsyncClient(transport=transport, base_url='http://test') as client:
-            slow = asyncio.create_task(client.request(method, path, **request_kwargs))
+            slow = asyncio.create_task(client.request(method, f'{API_PREFIX}{path}', **request_kwargs))
             assert await asyncio.to_thread(entered.wait, HOLD_SECONDS), f'{path} never reached {target}'
             health = await client.get('/health')
             release.set()

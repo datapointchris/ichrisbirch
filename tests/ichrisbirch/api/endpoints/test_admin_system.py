@@ -12,6 +12,7 @@ import pytest
 from fastapi import status
 from sqlalchemy import text
 
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api.endpoints import admin
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import create_session
@@ -129,7 +130,7 @@ class TestSystemHealthProbes:
             patch('ichrisbirch.api.endpoints.admin.get_docker_containers', return_value=[]),
             patch('ichrisbirch.api.endpoints.admin.get_redis_stats', slow_redis_probe),
         ):
-            async with httpx2.AsyncClient(transport=transport, base_url='http://test') as client:
+            async with httpx2.AsyncClient(transport=transport, base_url=f'http://test{API_PREFIX}') as client:
                 health = asyncio.create_task(client.get(HEALTH_ENDPOINT))
                 assert await asyncio.to_thread(probe_started.wait, SLOW_PROBE_SECONDS * 2)
                 errors = await client.get(ERRORS_ENDPOINT)

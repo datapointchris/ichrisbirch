@@ -57,7 +57,7 @@ func TestGetCookingTechniqueBySlug_EscapesSlug(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCookingTechniqueBySlug: %v", err)
 	}
-	if gotPath != "/recipes/cooking-techniques/slug/24-hour-bean-soak/" {
+	if gotPath != "/api/v1/recipes/cooking-techniques/slug/24-hour-bean-soak/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if technique.ID != 3 || technique.Tags != nil {

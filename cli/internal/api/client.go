@@ -16,6 +16,10 @@ import (
 	"strings"
 )
 
+// prefix is where the API serves every resource route on its host; a path
+// passed to get or send is below it.
+const prefix = "/api/v1"
+
 // Client talks to the ichrisbirch API at baseURL. The http.Client is expected to
 // inject the Authorization: Bearer header itself (via an oauth2 token-source
 // transport), so the api package never handles tokens directly.
@@ -79,7 +83,7 @@ func (c *Client) send(ctx context.Context, method, path string, body, out any) e
 		reader = bytes.NewReader(encoded)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, reader)
+	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+prefix+path, reader)
 	if err != nil {
 		return err
 	}

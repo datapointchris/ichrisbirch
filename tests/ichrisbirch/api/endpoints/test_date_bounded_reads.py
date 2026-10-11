@@ -23,6 +23,7 @@ from fastapi import status
 from fastapi.routing import APIRoute
 
 from ichrisbirch import models
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api.request_zone import request_zone
 from tests.util import show_status_and_response
 
@@ -488,7 +489,7 @@ def bounded_reads(api) -> dict[str, APIRoute]:
         if not isinstance(route, APIRoute) or 'GET' not in route.methods:
             continue
         if {param.name for param in route.dependant.query_params} & {'start_date', 'end_date'}:
-            found[route.path] = route
+            found[route.path.removeprefix(API_PREFIX)] = route
     return found
 
 

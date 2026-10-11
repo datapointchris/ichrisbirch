@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import structlog
+from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import FastAPI
 from fastapi.exception_handlers import http_exception_handler
@@ -14,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api import endpoints
 from ichrisbirch.api.article_import_worker import QUEUE_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.article_import_worker import ArticleImportWorker
@@ -84,7 +86,14 @@ def create_api(settings: Settings) -> FastAPI:
         worker_redis.close()
         request_redis.close()
 
-    api = FastAPI(title=settings.fastapi.title, description=settings.fastapi.description, lifespan=lifespan)
+    api = FastAPI(
+        title=settings.fastapi.title,
+        description=settings.fastapi.description,
+        lifespan=lifespan,
+        docs_url=f'{API_PREFIX}/docs',
+        redoc_url=f'{API_PREFIX}/redoc',
+        openapi_url=f'{API_PREFIX}/openapi.json',
+    )
     logger.info('api_initializing')
     logger.info('settings_loaded', settings_type=type(settings).__name__)
     logger.debug('api_config', api_url=settings.api_url)
@@ -107,34 +116,36 @@ def create_api(settings: Settings) -> FastAPI:
     # A route listed in `client_scopes.SCOPE_ROUTES` still answers a scoped client 403 unless its router takes these.
     scoped_deps = [Depends(get_current_user_or_scoped_client)]
 
-    api.include_router(endpoints.home.router, prefix='', include_in_schema=False)
-    api.include_router(endpoints.admin.router, prefix='/admin', dependencies=[Depends(get_admin_user)])
-    api.include_router(endpoints.articles.router, prefix='/articles', dependencies=deps)
-    api.include_router(endpoints.autofun.router, prefix='/autofun', dependencies=deps)
-    api.include_router(endpoints.autotasks.router, prefix='/autotasks', dependencies=deps)
-    api.include_router(endpoints.books.router, prefix='/books', dependencies=deps)
-    api.include_router(endpoints.coffee.shops_router, prefix='/coffee/shops', dependencies=deps)
-    api.include_router(endpoints.coffee.beans_router, prefix='/coffee/beans', dependencies=deps)
-    api.include_router(endpoints.box_packing.router, prefix='/box-packing', dependencies=deps)
-    api.include_router(endpoints.countdowns.router, prefix='/countdowns', dependencies=deps)
-    api.include_router(endpoints.durations.router, prefix='/durations', dependencies=deps)
-    api.include_router(endpoints.patterns.router, prefix='/patterns', dependencies=deps)
-    api.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
-    api.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
+    v1 = APIRouter(prefix=API_PREFIX)
+    v1.include_router(endpoints.admin.router, prefix='/admin', dependencies=[Depends(get_admin_user)])
+    v1.include_router(endpoints.articles.router, prefix='/articles', dependencies=deps)
+    v1.include_router(endpoints.autofun.router, prefix='/autofun', dependencies=deps)
+    v1.include_router(endpoints.autotasks.router, prefix='/autotasks', dependencies=deps)
+    v1.include_router(endpoints.books.router, prefix='/books', dependencies=deps)
+    v1.include_router(endpoints.coffee.shops_router, prefix='/coffee/shops', dependencies=deps)
+    v1.include_router(endpoints.coffee.beans_router, prefix='/coffee/beans', dependencies=deps)
+    v1.include_router(endpoints.box_packing.router, prefix='/box-packing', dependencies=deps)
+    v1.include_router(endpoints.countdowns.router, prefix='/countdowns', dependencies=deps)
+    v1.include_router(endpoints.durations.router, prefix='/durations', dependencies=deps)
+    v1.include_router(endpoints.patterns.router, prefix='/patterns', dependencies=deps)
+    v1.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
+    v1.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
     # Ahead of /issues, whose /{id}/ would otherwise read "initiatives" as an issue.
-    api.include_router(endpoints.issue_initiatives.router, prefix='/issues/initiatives', dependencies=deps)
-    api.include_router(endpoints.issue_labels.router, prefix='/issues/labels', dependencies=deps)
-    api.include_router(endpoints.issues.router, prefix='/issues', dependencies=scoped_deps)
-    api.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
-    api.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)
-    api.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=scoped_deps)
-    api.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=scoped_deps)
-    api.include_router(endpoints.recipes.router, prefix='/recipes', dependencies=deps)
-    api.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
-    api.include_router(endpoints.shopping.router, prefix='/shopping', dependencies=deps)
-    api.include_router(endpoints.strains.router, prefix='/strains', dependencies=deps)
-    api.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
-    api.include_router(endpoints.users.router, prefix='/users')
+    v1.include_router(endpoints.issue_initiatives.router, prefix='/issues/initiatives', dependencies=deps)
+    v1.include_router(endpoints.issue_labels.router, prefix='/issues/labels', dependencies=deps)
+    v1.include_router(endpoints.issues.router, prefix='/issues', dependencies=scoped_deps)
+    v1.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
+    v1.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)
+    v1.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=scoped_deps)
+    v1.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=scoped_deps)
+    v1.include_router(endpoints.recipes.router, prefix='/recipes', dependencies=deps)
+    v1.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
+    v1.include_router(endpoints.shopping.router, prefix='/shopping', dependencies=deps)
+    v1.include_router(endpoints.strains.router, prefix='/strains', dependencies=deps)
+    v1.include_router(endpoints.tasks.router, prefix='/tasks', dependencies=deps)
+    v1.include_router(endpoints.users.router, prefix='/users')
+    api.include_router(endpoints.home.router, include_in_schema=False)
+    api.include_router(v1)
     if settings.fastapi.public_url:
         add_protected_resource_route(api, settings.fastapi.public_url, settings.oidc.issuer)
     logger.info('routers_registered')

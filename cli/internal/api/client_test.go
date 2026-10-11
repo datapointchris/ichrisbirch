@@ -45,7 +45,7 @@ func TestListProjects_DecodesAndAuthenticates(t *testing.T) {
 	if gotAuth != "Bearer abc123" {
 		t.Errorf("Authorization header = %q, want %q", gotAuth, "Bearer abc123")
 	}
-	if gotPath != "/projects/" {
+	if gotPath != "/api/v1/projects/" {
 		t.Errorf("request path = %q, want /projects/", gotPath)
 	}
 	if len(projects) != 2 {

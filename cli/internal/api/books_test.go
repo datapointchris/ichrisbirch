@@ -106,7 +106,7 @@ func TestGetBookByISBN_Path(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetBookByISBN: %v", err)
 	}
-	if gotPath != "/books/isbn/9781449373320/" {
+	if gotPath != "/api/v1/books/isbn/9781449373320/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if book.ISBN == nil || *book.ISBN != "9781449373320" {

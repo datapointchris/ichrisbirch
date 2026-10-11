@@ -73,13 +73,6 @@ http:
           Remote-Name: ""
           Remote-Groups: ""
 
-    # Strip /api prefix for same-origin API proxy
-    # Vue frontend calls /api/*, Traefik strips the prefix before reaching FastAPI
-    strip-api-prefix:
-      stripPrefix:
-        prefixes:
-          - "/api"
-
     # IP allowlist for admin endpoints
     admin-whitelist:
       ipAllowList:

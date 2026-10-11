@@ -87,7 +87,7 @@ func TestShoppingItemPaths_EscapeAName(t *testing.T) {
 	if _, err := client.UpdateShoppingItem(context.Background(), "wood glue", ShoppingItemUpdateInput{IsNeeded: &off}, nil); err != nil {
 		t.Fatalf("UpdateShoppingItem: %v", err)
 	}
-	if got.method != http.MethodPatch || got.path != "/shopping/items/wood%20glue/" {
+	if got.method != http.MethodPatch || got.path != "/api/v1/shopping/items/wood%20glue/" {
 		t.Errorf("request = %s %s", got.method, got.path)
 	}
 	if len(got.body) != 1 || got.body["is_needed"] != false {
@@ -101,7 +101,7 @@ func TestCheckOffShoppingItem_PostsAPurchase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckOffShoppingItem: %v", err)
 	}
-	if got.method != http.MethodPost || got.path != "/shopping/items/eggs/purchases/" {
+	if got.method != http.MethodPost || got.path != "/api/v1/shopping/items/eggs/purchases/" {
 		t.Errorf("request = %s %s", got.method, got.path)
 	}
 	if purchase.ItemName != "eggs" {
@@ -126,7 +126,7 @@ func TestMoveShoppingSection_SendsOneNeighbor(t *testing.T) {
 	if _, err := client.MoveShoppingSection(context.Background(), "hardware", ShoppingSectionMove{After: strPtr("costco")}); err != nil {
 		t.Fatalf("MoveShoppingSection: %v", err)
 	}
-	if got.path != "/shopping/sections/hardware/rank/" {
+	if got.path != "/api/v1/shopping/sections/hardware/rank/" {
 		t.Errorf("path = %s", got.path)
 	}
 	if len(got.body) != 1 || got.body["after"] != "costco" {

@@ -13,6 +13,7 @@ import pytest
 from fastapi import status
 
 from ichrisbirch import models
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api.client_scopes import SCOPE_ROUTES
 from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.oidc_auth import OIDCIdentity
@@ -28,16 +29,16 @@ SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 # One request per route any scope lists, keyed by its template. The issue reads are the ones the
 # CLI sends: search widens the status to all, and show names the issue by number.
 SCOPED_URLS = {
-    '/issues/': '/issues/?search=scheduler&status=all',
-    '/issues/ready/': '/issues/ready/',
-    '/issues/{id}/': '/issues/{issue}/',
-    '/project-items/': '/project-items/',
-    '/project-items/blocked/': '/project-items/blocked/',
-    '/project-items/search/': '/project-items/search/?q=scheduler',
-    '/project-items/{id}/': '/project-items/{item}/',
-    '/project-items/{id}/blockers/': '/project-items/{item}/blockers/',
-    '/project-items/{item_id}/tasks/': '/project-items/{item}/tasks/',
-    '/projects/{id:path}/items/': '/projects/{project}/items/',
+    f'{API_PREFIX}/issues/': '/issues/?search=scheduler&status=all',
+    f'{API_PREFIX}/issues/ready/': '/issues/ready/',
+    f'{API_PREFIX}/issues/{{id}}/': '/issues/{issue}/',
+    f'{API_PREFIX}/project-items/': '/project-items/',
+    f'{API_PREFIX}/project-items/blocked/': '/project-items/blocked/',
+    f'{API_PREFIX}/project-items/search/': '/project-items/search/?q=scheduler',
+    f'{API_PREFIX}/project-items/{{id}}/': '/project-items/{item}/',
+    f'{API_PREFIX}/project-items/{{id}}/blockers/': '/project-items/{item}/blockers/',
+    f'{API_PREFIX}/project-items/{{item_id}}/tasks/': '/project-items/{item}/tasks/',
+    f'{API_PREFIX}/projects/{{id:path}}/items/': '/projects/{project}/items/',
 }
 
 
@@ -51,8 +52,8 @@ SCOPED_ROUTES = sorted(scoped_routes())
 
 # How a refusal's list of what each scope reaches begins.
 REACHES = {
-    ISSUES: 'GET /issues/, GET /issues/ready/, GET /issues/{id}/',
-    PROJECT_ITEMS: 'GET /project-items/, ',
+    ISSUES: f'GET {API_PREFIX}/issues/, GET {API_PREFIX}/issues/ready/, GET {API_PREFIX}/issues/{{id}}/',
+    PROJECT_ITEMS: f'GET {API_PREFIX}/project-items/, ',
 }
 
 

@@ -123,7 +123,7 @@ func TestCreateArticleFromURL_SendsURLOmitsUnsetNotes(t *testing.T) {
 	if _, err := client.CreateArticleFromURL(context.Background(), ArticleCreateFromURLInput{URL: "https://x"}); err != nil {
 		t.Fatalf("CreateArticleFromURL: %v", err)
 	}
-	if gotPath != "/articles/create-from-url/" {
+	if gotPath != "/api/v1/articles/create-from-url/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotBody["url"] != "https://x" {
@@ -179,7 +179,7 @@ func TestSearchArticles_EncodesQuery(t *testing.T) {
 	if _, err := client.SearchArticles(context.Background(), "python,databases"); err != nil {
 		t.Fatalf("SearchArticles: %v", err)
 	}
-	if gotPath != "/articles/search/" {
+	if gotPath != "/api/v1/articles/search/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotQuery != "q=python%2Cdatabases" {
@@ -222,7 +222,7 @@ func TestBulkImportArticles_PostsURLs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BulkImportArticles: %v", err)
 	}
-	if gotPath != "/articles/bulk-import/" {
+	if gotPath != "/api/v1/articles/bulk-import/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	urls, _ := gotBody["urls"].([]any)
@@ -249,7 +249,7 @@ func TestBulkImportStatus_DecodesNaiveTimestamps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BulkImportStatus: %v", err)
 	}
-	if gotPath != "/articles/bulk-import/abc%20123/" {
+	if gotPath != "/api/v1/articles/bulk-import/abc%20123/" {
 		t.Errorf("path = %q (batch id must be path-escaped)", gotPath)
 	}
 	if status.Succeeded != 1 || status.FailedCount != 1 {

@@ -18,6 +18,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from ichrisbirch import models
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.api.endpoints import auth
 from ichrisbirch.api.main import create_api
 from ichrisbirch.config import get_settings
@@ -44,6 +45,9 @@ from tests.utils.database import test_settings
 
 logger = logging.getLogger(__name__)
 logger.warning('<-- file imported')
+
+# A test names a resource route as the frontend does, below the prefix: `/tasks/` reaches `/api/v1/tasks/`.
+API_BASE_URL = f'http://testserver{API_PREFIX}'
 
 # Cached API apps to avoid expensive recreation for every test
 cached_api = None
@@ -169,7 +173,7 @@ def insert_test_jobs(test_scheduler):
 @contextmanager
 def create_test_api_client(login=False, admin=False):
     api = create_api(settings=test_settings)
-    client = TestClient(api)
+    client = TestClient(api, base_url=API_BASE_URL)
 
     api.dependency_overrides[get_sqlalchemy_session] = get_test_session
     api.dependency_overrides[get_settings] = get_test_runner_settings
@@ -342,7 +346,7 @@ def create_transactional_api_client(login=False, admin=False):
         if admin:
             api.dependency_overrides[auth.get_admin_user] = lambda: user
 
-    client = TestClient(api)
+    client = TestClient(api, base_url=API_BASE_URL)
 
     yield client, session
 
@@ -451,7 +455,7 @@ def create_multi_client_transactional_context():
     admin_user = get_test_user('testloginadmin@testadmin.com')
 
     # Create unauthenticated client
-    client = TestClient(api)
+    client = TestClient(api, base_url=API_BASE_URL)
 
     # Set up regular user API
     api_logged_in.dependency_overrides[get_sqlalchemy_session] = get_transactional_session
@@ -459,7 +463,7 @@ def create_multi_client_transactional_context():
     api_logged_in.dependency_overrides[auth.get_current_user] = lambda: regular_user
     api_logged_in.dependency_overrides[auth.get_current_user_or_none] = lambda: regular_user
     api_logged_in.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: regular_user
-    client_logged_in = TestClient(api_logged_in)
+    client_logged_in = TestClient(api_logged_in, base_url=API_BASE_URL)
 
     # Set up admin user API
     api_admin.dependency_overrides[get_sqlalchemy_session] = get_transactional_session
@@ -468,7 +472,7 @@ def create_multi_client_transactional_context():
     api_admin.dependency_overrides[auth.get_current_user_or_none] = lambda: admin_user
     api_admin.dependency_overrides[auth.get_current_user_or_scoped_client] = lambda: admin_user
     api_admin.dependency_overrides[auth.get_admin_user] = lambda: admin_user
-    client_admin = TestClient(api_admin)
+    client_admin = TestClient(api_admin, base_url=API_BASE_URL)
 
     yield {
         'session': session,

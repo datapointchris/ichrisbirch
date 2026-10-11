@@ -7,9 +7,9 @@ dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 
 | Caller | Credential | How it reaches the API |
 | --- | --- | --- |
-| A person running `icb` | Authelia access token from the device grant | `Authorization: Bearer` to `ichrisbirch.com/api`, which the `ichrisbirch-bearer` router carries past ForwardAuth |
+| A person running `icb` | Authelia access token from the device grant | `Authorization: Bearer` to `ichrisbirch.com/api/v1`, which the `ichrisbirch-bearer` router carries past ForwardAuth |
 | A service running `icb` | Authelia access token from the client-credentials grant | The same bearer route, with no person present |
-| The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/...` on the same origin |
+| The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/v1/...` on the same origin |
 | This app's own services | `X-Service-Key`, with `X-Internal-Service` or with `X-Application-ID` and `X-User-ID` | Internal network |
 
 `authenticated_user` runs every user strategy and takes the first match. The
@@ -48,11 +48,10 @@ authentication, and serves nothing while `PUBLIC_URL` is unset. The CLI refuses
 the document unless `resource` matches the URL it was given exactly, so
 `PUBLIC_URL` is set per deployment rather than derived from a request.
 
-RFC 9728 puts the document for `https://ichrisbirch.com/api` at
-`/.well-known/oauth-protected-resource/api`, outside `/api`. The prod router
-`api-protected-resource` carries that one path to the API unstripped, and the
-edge needs a router of its own for it, since a request without a token otherwise
-meets ForwardAuth.
+The resource is `https://ichrisbirch.com`, so RFC 9728 puts its document at
+`/.well-known/oauth-protected-resource`, beside `/api`. The prod router
+`api-root` carries that path to the API, and the edge needs a router of its own
+for it, since a request without a token otherwise meets ForwardAuth.
 
 ## Remote-User is read only where ForwardAuth set it
 

@@ -21,6 +21,7 @@ from fastapi import status
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 
+from ichrisbirch.api import API_PREFIX
 from ichrisbirch.services.row_limit import CappedRowLimit
 from ichrisbirch.services.row_limit import RowLimit
 from tests.util import show_status_and_response
@@ -221,7 +222,7 @@ def collection_reads(api) -> dict:
         if not isinstance(route, APIRoute) or 'GET' not in route.methods:
             continue
         if answers_with_rows(route.response_model):
-            found[route.path] = route
+            found[route.path.removeprefix(API_PREFIX)] = route
     return found
 
 

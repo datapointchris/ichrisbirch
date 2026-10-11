@@ -48,7 +48,7 @@ jobs:
             dockerfile: frontend/Dockerfile
             target: ""
             build_args: |
-              VITE_API_URL=/api
+              VITE_API_URL=/api/v1
     steps:
       - uses: actions/checkout@v7
 

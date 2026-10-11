@@ -373,7 +373,7 @@ run_smoke_tests() {
 
   local smoke_output http_code
   smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
-    -X POST http://localhost:8000/admin/smoke-tests/ \
+    -X POST http://localhost:8000/api/v1/admin/smoke-tests/ \
     -H "Remote-User: ${admin_email}" \
     -H "Remote-Email: ${admin_email}" 2>&1)
   local curl_exit=$?

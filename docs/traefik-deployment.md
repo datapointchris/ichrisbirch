@@ -176,7 +176,7 @@ These resolve only inside a checkout's test stack, which publishes no ports. The
 Production uses **Cloudflare Tunnel** for secure external access without exposing ports:
 
 - **App**: <https://ichrisbirch.com/>
-- **API**: <https://ichrisbirch.com/api/>, a bearer request only from outside the browser
+- **API**: <https://ichrisbirch.com/api/v1/>, a bearer request only from outside the browser
 
 Cloudflare handles TLS termination; Traefik receives HTTP internally and provides routing, CORS, security headers, and rate limiting.
 

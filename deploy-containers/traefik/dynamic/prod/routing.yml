@@ -10,26 +10,25 @@
 http:
   routers:
     # Same-origin API proxy for Vue frontend
-    # Requests to ichrisbirch.com/api/* get Remote-User headers from Authelia,
-    # then the /api prefix is stripped before reaching FastAPI. This is the one
-    # router that keeps Remote-* headers. The edge sends a bearer request past
-    # ForwardAuth, and the API ignores Remote-* beside an Authorization header.
+    # Requests to ichrisbirch.com/api/* get Remote-User headers from Authelia
+    # and reach FastAPI with the path unchanged. This is the one router that
+    # keeps Remote-* headers. The edge sends a bearer request past ForwardAuth,
+    # and the API ignores Remote-* beside an Authorization header.
     api-proxy:
       rule: "Host(`ichrisbirch.com`) && PathPrefix(`/api`)"
       service: api
       priority: 200
       middlewares:
-        - strip-api-prefix@file
         - security-headers-prod@file
         - rate-limit-prod@file
       entrypoints:
         - web
 
-    # RFC 9728 metadata for the API at /api, which `icb auth login <url>` reads
-    # before it holds a token. RFC 9728 puts it outside /api, so nothing strips
-    # the path, and the API serves it at this path itself.
-    api-protected-resource:
-      rule: "Host(`ichrisbirch.com`) && Path(`/.well-known/oauth-protected-resource/api`)"
+    # The API's two unauthenticated paths at the host root: the health check,
+    # and the RFC 9728 metadata `icb auth login <url>` reads before it holds a
+    # token.
+    api-root:
+      rule: "Host(`ichrisbirch.com`) && (Path(`/health`) || Path(`/.well-known/oauth-protected-resource`))"
       service: api
       priority: 200
       middlewares:

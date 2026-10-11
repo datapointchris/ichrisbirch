@@ -65,7 +65,7 @@ func TestCompleteHabit_PostsCompletion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CompleteHabit: %v", err)
 	}
-	if gotPath != "/habits/completed/" {
+	if gotPath != "/api/v1/habits/completed/" {
 		t.Errorf("path = %s", gotPath)
 	}
 	if gotBody["name"] != "Stretch" || gotBody["category_id"] != float64(2) {
