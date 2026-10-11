@@ -199,13 +199,29 @@ function isActive(link: NavLink): boolean {
   text-shadow: var(--deep-3d-text-shadow);
 }
 
+// The list scrolls once it is taller than the screen, and a hovered link grows
+// a fifth to the right, past the sidebar's edge. A scroll container clips what
+// overflows it, so the list reaches past the edge by that much and lets the
+// pointer through to the page wherever it holds no link.
 .sidebar__nav {
+  --link-pop-room: 5rem;
+
   padding: var(--space-xs);
+  padding-right: calc(var(--space-xs) + var(--link-pop-room));
+  margin-right: calc(-1 * var(--link-pop-room));
   display: flex;
   flex-direction: column;
   gap: var(--space-3xs);
   flex: 1;
-  overflow: visible;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .sidebar__issue {

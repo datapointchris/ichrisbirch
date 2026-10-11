@@ -99,13 +99,15 @@ One width separates a phone from everything else. `abstracts/_breakpoints.scss` 
 
 Under that width the sidebar is off-canvas. It starts closed, closes on every navigation, and closes when its backdrop is tapped. It opens from the menu button in the phone bar, a sticky strip `App.vue` puts above every page. The button lives in that bar because a floating one sits over whatever scrolls beneath it, such as a list's check-off column.
 
+The sidebar's link list is taller than most screens, so it scrolls on its own between the header and the footer, on a desktop as on a phone. A scroll container clips what overflows it, and a hovered link grows past the sidebar's edge. So the list reaches past that edge by `--link-pop-room` and lets the pointer through wherever it holds no link.
+
 A page's own sticky header sets `top: var(--page-sticky-top)`. On a phone that value clears the phone bar, and elsewhere it clears only the notch.
 
 The page reaches the screen edges, padded by the `env(safe-area-inset-*)` insets, because `index.html` sets `viewport-fit=cover` and a translucent status bar for the home-screen app. `public/manifest.webmanifest` and `public/icons/` make the site installable to a home screen. The manifest link carries `crossorigin="use-credentials"`. Without it the browser fetches the manifest with no cookies, and production answers a request with no session by redirecting to the login page.
 
 The installed app opens on `/today`, the manifest's `start_url`. A Home Screen icon may keep the start URL it was added with, so the router also sends an installed app launched on `/` to `/today`. A phone is used for quick work, so that page holds the quick actions and nothing to manage. Each list shows its head and links to the page holding the rest. An installed app has no reload control, so the page reloads its lists on every return, and a 60-second check follows the clock past midnight as `/habits` does. A mistaken tap is undone where it happened: a completed task or habit moves under Done today, and tapping it there puts it back. The other pages keep their desktop layouts and reach a phone through the shell alone, and the dashboard is desktop-only by design.
 
-A control on a page built for the phone is at least `touch.$touch-target` (`abstracts/_touch.scss`) on each side. Its check-off circle is the `check-circle` mixin, which shows a faint check before the tap so the circle reads as a control. The `phone` Playwright project runs the specs of these pages at phone size, and the `/today` spec fails on a control under that size or a page wider than the screen.
+A control on a page built for the phone is at least `touch.$touch-target` (`abstracts/_touch.scss`) on each side. Its check-off circle is the `check-circle` mixin, which shows a faint check before the tap so the circle reads as a control. The `phone` Playwright project runs the specs of these pages at phone size, and the `/today` spec fails on a control under that size or a page wider than the screen. It also runs `shell.spec.ts`, which fails on a sidebar link that cannot be scrolled into view.
 
 ## Pre-commit Hooks
 
