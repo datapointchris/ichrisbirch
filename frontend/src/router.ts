@@ -1,4 +1,5 @@
 import { START_LOCATION, createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { isPhoneViewport } from '@/composables/usePhoneViewport'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -326,11 +327,13 @@ function isInstalledApp(): boolean {
   return (navigator as Navigator & { standalone?: boolean }).standalone === true
 }
 
-// A Home Screen icon may keep the start URL its manifest had when it was added,
-// so an installed app launched on `/` is sent to the page it is meant to open on.
-// Only the launch is redirected; Home stays reachable from inside the app.
+// A phone opens the app for quick work, so a visit that starts on `/` there lands
+// on Today. An installed app counts as a phone on any screen, since its icon may
+// keep the start URL it was added with. Only the first navigation is redirected,
+// so the menu's Home link still reaches Home.
 router.beforeEach((to, from) => {
-  if (from === START_LOCATION && to.path === '/' && isInstalledApp()) return { path: '/today', replace: true }
+  if (from !== START_LOCATION || to.path !== '/') return
+  if (isPhoneViewport() || isInstalledApp()) return { path: '/today', replace: true }
 })
 
 router.beforeEach(async (to) => {

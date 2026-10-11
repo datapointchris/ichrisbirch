@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test'
 
-// The app shell: the sidebar on both screens. The `phone` project in
-// playwright.config.ts runs this file at phone size.
+// The app shell: the sidebar on both screens, and where a phone opens. The
+// `phone` project in playwright.config.ts runs this file at phone size.
+// home.spec.ts pins a desktop visit to `/` staying on Home.
 
 test.describe('Sidebar', () => {
   test('every link in the sidebar can be scrolled into view', async ({ page, isMobile }) => {
@@ -38,5 +39,17 @@ test.describe('Sidebar', () => {
       y: popped.y + popped.height / 2,
     })
     expect(tipShows, 'the tip of the hovered link is drawn, not clipped').toBe(true)
+  })
+})
+
+test.describe('Phone', () => {
+  test('a phone that opens the site on / lands on Today, and the menu still reaches Home', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'a desktop visit stays on Home')
+    await page.goto('/')
+    await expect(page).toHaveURL(/\/today$/)
+
+    await page.getByTestId('sidebar-open-button').click()
+    await page.getByTestId('sidebar-/').click()
+    await expect(page).toHaveURL(/\/$/)
   })
 })
