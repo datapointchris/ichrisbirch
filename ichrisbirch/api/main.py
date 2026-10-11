@@ -119,7 +119,6 @@ def create_api(settings: Settings) -> FastAPI:
     api.include_router(endpoints.durations.router, prefix='/durations', dependencies=deps)
     api.include_router(endpoints.patterns.router, prefix='/patterns', dependencies=deps)
     api.include_router(endpoints.events.router, prefix='/events', dependencies=deps)
-    api.include_router(endpoints.github_issues.router, prefix='/github/issues', dependencies=deps)
     api.include_router(endpoints.habits.router, prefix='/habits', dependencies=deps)
     # Ahead of /issues, whose /{id}/ would otherwise read "initiatives" as an issue.
     api.include_router(endpoints.issue_initiatives.router, prefix='/issues/initiatives', dependencies=deps)

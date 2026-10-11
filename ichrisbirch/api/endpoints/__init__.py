@@ -9,7 +9,6 @@ from ichrisbirch.api.endpoints import coffee
 from ichrisbirch.api.endpoints import countdowns
 from ichrisbirch.api.endpoints import durations
 from ichrisbirch.api.endpoints import events
-from ichrisbirch.api.endpoints import github_issues
 from ichrisbirch.api.endpoints import habits
 from ichrisbirch.api.endpoints import home
 from ichrisbirch.api.endpoints import issue_initiatives
@@ -39,7 +38,6 @@ __all__ = [
     'countdowns',
     'durations',
     'events',
-    'github_issues',
     'habits',
     'home',
     'issue_initiatives',
