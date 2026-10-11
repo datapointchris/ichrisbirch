@@ -96,10 +96,10 @@ Run these from the repo root — the Taskfile lives there and enters `cli/` itse
 
 ```bash
 task cli:build      # -> ./bin/icb (local testing)
-task cli:install    # -> $GOBIN/icb (falls back to $GOPATH/bin)
+task cli:install    # -> ~/.local/bin/icb, over the released binary
 task cli:test       # go test -race ./...
 task cli:lint       # go vet + gofmt check
-task cli:fmt        # gofmt -w .
+task cli:format     # gofmt -w .
 ```
 
 Install uses `go build -o`, not `go install`: the module path is `ichrisbirch/cli`,

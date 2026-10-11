@@ -41,6 +41,7 @@ tasks:
   # happens rather than assuming this handles it.
   setup-local:
     desc: Copy in what git cannot carry, from the primary checkout
+    internal: true
     vars:
       PRIMARY:
         sh: git rev-parse --path-format=absolute --git-common-dir | sed 's|/\.git$||'
@@ -84,7 +85,7 @@ tasks:
           echo "gofmt needed on:"; echo "$unformatted"; exit 1
         fi
 
-  cli:fmt:
+  cli:format:
     desc: Format the CLI sources
     dir: cli
     cmds:
