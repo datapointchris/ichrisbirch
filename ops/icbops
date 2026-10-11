@@ -1150,6 +1150,30 @@ if [ -z "$1" ]; then
   exit 0
 fi
 
+function routing-usage() {
+  echo "${green}Routing Commands:${reset}"
+  echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
+  echo ""
+  echo "Canonical path list: deploy-containers/traefik/vue-paths.txt"
+}
+
+# A help flag after a verb prints its group's usage, so no verb acts on it.
+for arg in "${@:2}"; do
+  if [[ "$arg" == -h || "$arg" == --help ]]; then
+    case "$1" in
+      dev) dev-usage ;;
+      test) test-usage ;;
+      testing) testing-usage ;;
+      prod) prod-usage ;;
+      stats) stats-usage ;;
+      routing) routing-usage ;;
+      ssl-manager) ssl-manager help ;;
+      *) usage ;;
+    esac
+    exit 0
+  fi
+done
+
 case $1 in
   help | -h | --help)
     usage
@@ -1297,12 +1321,7 @@ case $1 in
           echo "${green}No changes — routing files already up to date.${reset}"
         fi
         ;;
-      *)
-        echo "${green}Routing Commands:${reset}"
-        echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
-        echo ""
-        echo "Canonical path list: deploy-containers/traefik/vue-paths.txt"
-        ;;
+      *) routing-usage ;;
     esac
     ;;
   stats)
