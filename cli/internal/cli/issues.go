@@ -391,6 +391,7 @@ func newIssuesNextCommand() *cobra.Command {
 			if len(shown) > 0 {
 				printIssuesTable(cmd.OutOrStdout(), shown, time.Now())
 			}
+			noteCappedRows(cmd, len(shown), len(ready))
 			return nil
 		},
 	}

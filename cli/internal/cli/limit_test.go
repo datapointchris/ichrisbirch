@@ -1,12 +1,48 @@
 package cli
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+// A capped table and a whole one look the same, so the cut is said out loud.
+func TestNoteCappedRows_SaysHowManyWereCutAndHowToSeeThem(t *testing.T) {
+	var stderr bytes.Buffer
+	cmd := &cobra.Command{}
+	cmd.SetErr(&stderr)
+
+	noteCappedRows(cmd, 10, 18)
+
+	if !strings.Contains(stderr.String(), "10 of 18 shown: -n 18 shows the rest") {
+		t.Errorf("note = %q, want the counts and the flag that shows the rest", stderr.String())
+	}
+}
+
+func TestNoteCappedRows_SilentWhenNothingWasCut(t *testing.T) {
+	for _, c := range []struct {
+		name         string
+		shown, total int
+	}{
+		{"everything fit", 4, 4},
+		{"a zero cap asked for nothing", 0, 18},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			var stderr bytes.Buffer
+			cmd := &cobra.Command{}
+			cmd.SetErr(&stderr)
+
+			noteCappedRows(cmd, c.shown, c.total)
+
+			if stderr.String() != "" {
+				t.Errorf("note = %q, want silence", stderr.String())
+			}
+		})
+	}
+}
 
 // Every command whose verb is `list` reads a collection that grows outside the
 // binary, so every one of them takes --limit/-n. Listing them here is what stops

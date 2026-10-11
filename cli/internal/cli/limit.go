@@ -66,6 +66,16 @@ func addCapFlag(cmd *cobra.Command, target *int, fallback int, what string) {
 	cmd.Flags().VarP(limitValue{target: target}, "limit", "n", what)
 }
 
+// noteCappedRows says on stderr when an addCapFlag cap cut rows from a table, so
+// a short table is never read as the whole of what there is. It stays silent when
+// everything fit, and for a zero cap, which asked for nothing.
+func noteCappedRows(cmd *cobra.Command, shown int, total int) {
+	if shown == 0 || shown >= total {
+		return
+	}
+	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\n%d of %d shown: -n %d shows the rest\n", shown, total, total)
+}
+
 // addServerCappedLimitFlag declares --limit/-n on a read the API caps by itself
 // when no limit is sent. Unset still sends nothing, like addLimitFlag, but the
 // usage names the server's cap, since "every row" would be false.

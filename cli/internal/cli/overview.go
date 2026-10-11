@@ -111,7 +111,11 @@ type articleSection struct {
 	ReadLast30Days int        `json:"read_last_30_days"`
 }
 
+// projectItemSection is the focus project and its open items, the ones
+// `projects items next` prints. Project is null when no active project holds an
+// open item.
 type projectItemSection struct {
+	Project      *api.Project      `json:"project"`
 	Next         []api.ProjectItem `json:"next"`
 	NextTotal    int               `json:"next_total"`
 	Blocked      []api.ProjectItem `json:"blocked"`
@@ -187,9 +191,9 @@ func newOverviewCommand() *cobra.Command {
 		Use:   "overview",
 		Short: "Show everything outstanding right now across the apps",
 		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
-			"articles you are reading and what is next in each, the next and blocked\n" +
-			"project items with the projects they belong to, the issues ready, claimed\n" +
-			"and awaiting a decision, and approaching countdowns and events. Composed\n" +
+			"articles you are reading and what is next in each, the project in focus with\n" +
+			"its next and blocked items, the issues ready, claimed and awaiting a\n" +
+			"decision, and approaching countdowns and events. Composed\n" +
 			"from those endpoints in one command so a dashboard needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    noArgs,
@@ -338,7 +342,7 @@ func systemicOverviewFailure(failures []sectionFailure, total int) error {
 // buildOverview composes the report. It is pure — no clock, no network — so the
 // filtering, ordering, and capping rules are directly testable.
 func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
-	nextItems := overviewProjectItems(data.Items, data.BlockedItems)
+	focus := focusQueue(data.Items, data.BlockedItems, "")
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
@@ -370,10 +374,11 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			ReadLast30Days: articlesReadInWindow,
 		},
 		ProjectItems: projectItemSection{
-			Next:         capItems(nextItems, limit),
-			NextTotal:    len(nextItems),
-			Blocked:      capItems(data.BlockedItems, limit),
-			BlockedTotal: len(data.BlockedItems),
+			Project:      focus.Project,
+			Next:         capItems(focus.Next, limit),
+			NextTotal:    len(focus.Next),
+			Blocked:      capItems(focus.Blocked, limit),
+			BlockedTotal: len(focus.Blocked),
 		},
 		Issues: issueSection{
 			Ready:           capItems(queue.ready, limit),
@@ -431,48 +436,68 @@ func sortIssueQueue(issues []api.Issue) issueQueue {
 	return queue
 }
 
-// actionableItems returns the items that can be taken now — not completed, not
-// archived, not blocked, and in at least one active project — in the order they
-// are taken: the whole queue of the highest-ranked project, then the next
-// project's, each queue in its own position order. This is the order `projects
-// items next` prints.
+// projectFocus is the one project being worked through and its open items.
+// Next can be taken now; Blocked waits on a dependency. Both are in the order
+// the items are taken. Project is nil when no active project holds an open item.
+type projectFocus struct {
+	Project *api.Project
+	Next    []api.ProjectItem
+	Blocked []api.ProjectItem
+}
+
+// focusQueue picks the project to work on and returns its open items. The
+// project is the highest-ranked active one holding an open item, so the queue
+// stays on one project until it is finished, shelved or moved down. Projects are
+// worked one at a time, so no other project's items appear beside it.
 //
-// A kind narrows the queue as well as the items. Only active projects of that
-// kind rank, so an item that is also in a higher-ranked project of another kind
-// is queued where it sits in its own kind's project. An empty kind is every
-// project.
-func actionableItems(all []api.ProjectItem, blocked []api.ProjectItem, kind string) []api.ProjectItem {
+// A project whose open items are all blocked keeps the focus, with nothing to
+// take. Handing the focus to the next project would switch work without anyone
+// deciding to; moving on is done by completing, shelving or repositioning it.
+//
+// An item in several projects belongs to the highest-ranked active one. A kind
+// narrows which projects rank as well as which items count, so an item that is
+// also in a higher-ranked project of another kind is queued in its own kind's
+// project. An empty kind is every project.
+func focusQueue(all []api.ProjectItem, blocked []api.ProjectItem, kind string) projectFocus {
 	isBlocked := make(map[string]bool, len(blocked))
 	for _, item := range blocked {
 		isBlocked[item.ID] = true
 	}
 
-	var next []api.ProjectItem
+	var focus projectFocus
+	var open []api.ProjectItem
 	for _, item := range itemsOfKind(all, kind) {
-		if item.Completed || item.Archived || isBlocked[item.ID] {
+		if item.Completed || item.Archived {
 			continue
 		}
-		if _, active := primaryProject(item, kind); !active {
+		project, active := primaryProject(item, kind)
+		if !active {
 			continue
 		}
-		next = append(next, item)
+		if focus.Project == nil || outranks(project, *focus.Project) {
+			focus.Project = &project
+		}
+		open = append(open, item)
 	}
-	sort.SliceStable(next, func(a, b int) bool { return takenBefore(next[a], next[b], kind) })
-	return next
+	if focus.Project == nil {
+		return focus
+	}
+
+	sort.SliceStable(open, func(a, b int) bool { return takenBefore(open[a], open[b], kind) })
+	for _, item := range open {
+		if project, _ := primaryProject(item, kind); project.ID != focus.Project.ID {
+			continue
+		}
+		if isBlocked[item.ID] {
+			focus.Blocked = append(focus.Blocked, item)
+		} else {
+			focus.Next = append(focus.Next, item)
+		}
+	}
+	return focus
 }
 
-// overviewProjectItems is the overview's view of the same queue, interleaved a
-// project at a time so no single project can fill the overview cap.
-//
-// Taking the queue in order lets the highest-ranked project hold every one of
-// the ten rows, leaving the next project with nothing on the board. Position
-// picks which item represents a project; it does not decide how many slots that
-// project gets.
-func overviewProjectItems(all []api.ProjectItem, blocked []api.ProjectItem) []api.ProjectItem {
-	return interleaveByProject(actionableItems(all, blocked, ""))
-}
-
-// takenBefore orders two items by the rank of the project each is drawn under,
+// takenBefore orders two items by the rank of the project each is queued under,
 // then by where each is queued in that project. Creation time and id settle
 // what remains, which is also the whole order when the API sends no positions.
 func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
@@ -501,44 +526,11 @@ func queuePosition(item api.ProjectItem, projectID string) int {
 	return math.MaxInt
 }
 
-// interleaveByProject takes one item from each project in turn, so a project
-// with twenty queued items and one with a single item are equally represented in
-// the first round. Items arrive in the order they should be drawn within their
-// own project and keep it.
-func interleaveByProject(items []api.ProjectItem) []api.ProjectItem {
-	queues := make(map[string][]api.ProjectItem)
-	var order []api.Project
-	longest := 0
-
-	for _, item := range items {
-		project, _ := primaryProject(item, "")
-		if _, seen := queues[project.ID]; !seen {
-			order = append(order, project)
-		}
-		queues[project.ID] = append(queues[project.ID], item)
-		if queued := len(queues[project.ID]); queued > longest {
-			longest = queued
-		}
-	}
-	sort.SliceStable(order, func(a, b int) bool { return outranks(order[a], order[b]) })
-
-	interleaved := make([]api.ProjectItem, 0, len(items))
-	for round := range longest {
-		for _, project := range order {
-			if queue := queues[project.ID]; round < len(queue) {
-				interleaved = append(interleaved, queue[round])
-			}
-		}
-	}
-	return interleaved
-}
-
-// primaryProject is the project an item is drawn under, and whether it has one.
-// An item can belong to several, so it competes in the round of the
-// highest-priority one rather than once per membership — otherwise
-// multi-project items get a slot per project. Only an active project draws
-// work, so an item with no active project is out of the queue. A kind limits
-// the candidates to projects of that kind. An empty kind considers every
+// primaryProject is the project an item is queued under, and whether it has one.
+// An item can belong to several, so it is queued once, under the
+// highest-ranked one, rather than once per membership. Only an active project
+// queues work, so an item with no active project is out of the queue. A kind
+// limits the candidates to projects of that kind. An empty kind considers every
 // project.
 func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
 	var primary api.Project
@@ -751,23 +743,23 @@ func printArticleSection(out io.Writer, section articleSection) {
 }
 
 func printProjectItemSection(out io.Writer, section projectItemSection) {
-	_, _ = fmt.Fprintf(out, "\nProject items (%d next, %d blocked)\n", section.NextTotal, section.BlockedTotal)
-	if section.NextTotal == 0 && section.BlockedTotal == 0 {
-		_, _ = fmt.Fprintln(out, "  (none)")
+	if section.Project == nil {
+		_, _ = fmt.Fprintln(out, "\nProject items\n  (none)")
 		return
 	}
+	_, _ = fmt.Fprintf(out, "\nProject items: %s (%d next, %d blocked)\n", section.Project.Name, section.NextTotal, section.BlockedTotal)
 	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
 	for i, item := range section.Next {
 		if i >= printListCap {
 			break
 		}
-		_, _ = fmt.Fprintf(tw, "  next:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
+		_, _ = fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(item.Title))
 	}
 	for i, item := range section.Blocked {
 		if i >= printListCap {
 			break
 		}
-		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\t%s\n", truncateTitle(item.Title), projectNames(item))
+		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\n", truncateTitle(item.Title))
 	}
 	_ = tw.Flush()
 }
@@ -823,16 +815,6 @@ func printUpcomingSection(out io.Writer, countdowns countdownSection, events eve
 		_, _ = fmt.Fprintf(tw, "  %s\t%s\t%s\n", entry.date, truncateTitle(entry.name), entry.kind)
 	}
 	_ = tw.Flush()
-}
-
-// projectNames labels an item with the work it belongs to. An item can sit in
-// several projects, so all of them are named rather than an arbitrary first.
-func projectNames(item api.ProjectItem) string {
-	names := make([]string, 0, len(item.Projects))
-	for _, project := range item.Projects {
-		names = append(names, project.Name)
-	}
-	return strings.Join(names, ", ")
 }
 
 type upcomingEntry struct {

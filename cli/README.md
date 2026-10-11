@@ -171,10 +171,16 @@ Client id is per (machine × app): `icb-cli-<shorthostname>`.
 
 Every other command is `icb <resource> <verb>`. `overview` is the composition
 that crosses every app: open tasks, habits still due today, current and next
-reading, next and blocked project items, the issues ready, claimed and awaiting
-a decision, and approaching countdowns and events — fetched concurrently and
-returned as one payload, so a dashboard needs a single call instead of one per
-app.
+reading, the project in focus with its next and blocked items, the issues ready,
+claimed and awaiting a decision, and approaching countdowns and events — fetched
+concurrently and returned as one payload, so a dashboard needs a single call
+instead of one per app.
+
+Projects are worked one at a time. The focus is the highest-ranked active project
+holding an open item, and it is the only project `overview` and `projects items
+next` show. It keeps the focus while every open item in it is blocked, because
+moving on is a decision: complete it, shelve it, or move it down with `icb
+projects edit <project> --position <n>`.
 
 Its `habits` section and `icb habits today` answer the same question through one
 split, so the two agree on which habits are outstanding. They differ in reach:
@@ -191,7 +197,8 @@ error. What it counts differs by command: a list read caps rows and omitting the
 flag returns every one of them, except `shopping history`, whose purchase log
 only grows and so comes back capped at its newest rows. `overview` caps each
 section separately, and `projects items next` and `issues next` cap what they
-print. Each `--help` names its own unit and default.
+print and say on stderr how many rows the cap left out. Each `--help` names its
+own unit and default.
 
 Contract notes for consumers (a terminal dashboard is the first):
 

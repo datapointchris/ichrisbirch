@@ -53,7 +53,7 @@ func TestItemsOfKind_MultiProjectItemKeptOnceWhenAnyProjectMatches(t *testing.T)
 // The regression the kind column exists for: an errand filed as a project item
 // was the oldest open item anywhere, so it was the answer to "what next" for a
 // pursuit that meant making something.
-func TestActionableItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
+func TestFocusQueue_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
 	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", Kind: "chore", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -120)}
 	rollout := api.Project{ID: "rollout", Name: "Forge toolchain rollout", Kind: "build", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -30)}
 
@@ -62,11 +62,11 @@ func TestActionableItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
 		{ID: "exit-code", CreatedAt: fixedNow.AddDate(0, 0, -9), Projects: []api.Project{rollout}},
 	}
 
-	if unfiltered := actionableItems(all, nil, ""); unfiltered[0].ID != "glove-80" {
-		t.Fatalf("precondition: unfiltered next = %s, want the errand first", itemIDs(unfiltered))
+	if unfiltered := focusQueue(all, nil, ""); unfiltered.Next[0].ID != "glove-80" {
+		t.Fatalf("precondition: unfiltered next = %s, want the errand first", itemIDs(unfiltered.Next))
 	}
 
-	next := actionableItems(all, nil, "build")
+	next := focusQueue(all, nil, "build").Next
 
 	if len(next) != 1 || next[0].ID != "exit-code" {
 		t.Errorf("next(build) = %s, want only exit-code", itemIDs(next))
@@ -76,7 +76,7 @@ func TestActionableItems_KindFilterKeepsTheErrandOutOfBuildWork(t *testing.T) {
 // An item in a build project and in a higher-ranked life project is still build
 // work, and it waits its turn in the build queue. Ranking it by the life project
 // put it at the head of `next --kind build` ahead of the build queue's front.
-func TestActionableItems_AKindRanksAnItemOnlyAmongProjectsOfThatKind(t *testing.T) {
+func TestFocusQueue_AKindRanksAnItemOnlyAmongProjectsOfThatKind(t *testing.T) {
 	build := api.Project{ID: "build", Kind: "build", Status: api.ProjectStatusActive, Position: 1}
 	life := api.Project{ID: "life", Kind: "life", Status: api.ProjectStatusActive, Position: 0}
 
@@ -94,7 +94,7 @@ func TestActionableItems_AKindRanksAnItemOnlyAmongProjectsOfThatKind(t *testing.
 		},
 	}
 
-	next := actionableItems(all, nil, "build")
+	next := focusQueue(all, nil, "build").Next
 
 	if got := itemIDs(next); len(got) != 2 || got[0] != "build-front" || got[1] != "build-second-also-life" {
 		t.Errorf("next(build) = %s, want build-front then build-second-also-life", got)
