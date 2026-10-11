@@ -1,4 +1,5 @@
 import email.utils
+import re
 from collections.abc import AsyncGenerator
 from collections.abc import Mapping
 from collections.abc import Sequence
@@ -16,8 +17,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.utils import is_body_allowed_for_status_code
+from starlette.convertors import Convertor
+from starlette.convertors import register_url_convertor
 from starlette.exceptions import HTTPException
 from starlette.responses import Response
+from starlette.routing import Match
 
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
@@ -39,6 +43,26 @@ logger = structlog.get_logger()
 
 
 VALIDATION_SCOPES = ('body', 'query', 'path', 'header', 'cookie')
+
+
+class RetiredPathConvertor(Convertor[str]):
+    """Any path under `/api/` outside the current version, so `/api/v1` keeps its own 404 and 405."""
+
+    regex = rf'(?!{re.escape(API_PREFIX.removeprefix("/api/"))}(?:/|$)).*'
+
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        return value
+
+
+register_url_convertor('retired', RetiredPathConvertor())
+
+
+def retired_path(rest: str):
+    """An installed client still calling the unversioned routes reads a 404 as an answer about a row."""
+    raise HTTPException(status.HTTP_410_GONE, f'this API serves {API_PREFIX}; update the client calling it')
 
 
 def error_response(status_code: int, message: str, headers: Mapping[str, str] | None = None, **fields: Any) -> Response:
@@ -75,7 +99,28 @@ async def http_exception_handler_logger(request, exc):
     if isinstance(exc.detail, dict):
         fields = dict(exc.detail)
         return error_response(exc.status_code, str(fields.pop('message', '')), exc.headers, **fields)
+    # The router's own 404 and 405 carry only the status phrase, so these name the path instead.
+    if exc.status_code == status.HTTP_404_NOT_FOUND and exc.detail == HTTPStatus.NOT_FOUND.phrase:
+        return error_response(exc.status_code, f'no route answers {request.url.path}', exc.headers)
+    if exc.status_code == status.HTTP_405_METHOD_NOT_ALLOWED and exc.detail == HTTPStatus.METHOD_NOT_ALLOWED.phrase:
+        allow = allowed_methods(request)
+        headers = {**(exc.headers or {}), 'Allow': allow}
+        return error_response(exc.status_code, f'{request.url.path} takes {allow}, not {request.method}', headers)
     return error_response(exc.status_code, str(exc.detail), exc.headers)
+
+
+def allowed_methods(request) -> str:
+    """Every method a route on this path takes.
+
+    Each method is a route of its own here, and Starlette's `Allow` names only
+    the first one that matched the path.
+    """
+    methods: set[str] = set()
+    for route in request.app.routes:
+        match, _ = route.matches(request.scope)
+        if match != Match.NONE:
+            methods.update(getattr(route, 'methods', None) or ())
+    return ', '.join(sorted(methods))
 
 
 async def request_validation_exception_handler_logger(request, exc):
@@ -188,6 +233,9 @@ def create_api(settings: Settings) -> FastAPI:
     v1.include_router(endpoints.users.router, prefix='/users')
     api.include_router(endpoints.home.router, include_in_schema=False)
     api.include_router(v1)
+    api.add_api_route(
+        '/api/{rest:retired}', retired_path, methods=['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'], include_in_schema=False
+    )
     if settings.fastapi.public_url:
         add_protected_resource_route(api, settings.fastapi.public_url, settings.oidc.issuer)
     logger.info('routers_registered')
