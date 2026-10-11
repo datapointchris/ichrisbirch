@@ -12,6 +12,10 @@ The CLI inherits the API process's whole environment, which is the decrypted `.e
 
 `docker` is a *runtime* dependency, and `api/endpoints/admin.py` builds a client with `docker.from_env()` to report container status on the admin page. That gives the API process a handle on the host daemon, which is the widest reach in the list: a daemon socket is root-equivalent on the host. It is narrow in use — status reads only — and the endpoint is behind `get_admin_user`.
 
+## testcontainers
+
+`testcontainers` is a *test* dependency, used only by `PrivateServices` in `tests/environment.py`. It reaches the Docker daemon through the same socket the `docker` client uses, so a pytest process holds the root-equivalent handle a developer's own shell already has. Each session starts three containers: the Postgres and Redis images production runs, read from `docker-compose.yml`, and the `testcontainers/ryuk` reaper. Ryuk mounts the daemon socket read-write, so it can remove the session's containers when the session dies. It is unprivileged unless `TESTCONTAINERS_RYUK_PRIVILEGED` says otherwise. Nothing from the app's `.env` reaches any of the three: the database runs with fixed test credentials, and Redis without a password.
+
 ## curl_cffi
 
 `curl_cffi` makes every third-party page request, from `services/outbound_http.py`. It reaches whatever URL a user saved, as any HTTP client would, and carries nothing but the request.

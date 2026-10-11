@@ -2,13 +2,15 @@
 
 ## Overview
 
-The test environment uses the same stdout-only logging architecture as development and production. All logs go to stdout, and Docker handles persistence via its json-file logging driver. This provides consistent behavior across all environments.
+The test stack uses the same stdout-only logging architecture as development and production. All logs go to stdout, and Docker handles persistence via its json-file logging driver. This provides consistent behavior across all environments.
+
+The stack's logs are the e2e suite's. pytest runs the API in-process, so its logs are in its own output, which `./ops/icbops test run` keeps in `.test-reports/pytest-output.log`.
 
 ## Viewing Test Logs
 
 ### Using the CLI
 
-The CLI provides persistent log viewing that automatically reconnects when containers restart:
+`ops/log_viewer.py` follows this checkout's stack, renders structlog lines, and reconnects when containers restart:
 
 ```bash
 # View all test service logs
@@ -16,45 +18,42 @@ The CLI provides persistent log viewing that automatically reconnects when conta
 
 # View specific service logs
 ./ops/icbops testing logs api
-./ops/icbops testing logs app
-./ops/icbops testing logs api
 ./ops/icbops testing logs scheduler
+
+# Filter, or print and exit
+./ops/icbops testing logs api --level WARNING
+./ops/icbops testing logs api --no-follow --tail 100
 ```
-
-The logs command uses a watch loop (`ops/icbops:316-324`) that:
-
-- Follows logs in real-time
-- Automatically reconnects when containers restart
-- Colorizes service names for readability
-- Press Ctrl+C to exit
 
 ### Using Docker Directly
 
+Each checkout's containers are named `icb-test-<checkout>-<service>`; `./ops/icbops testing status` prints the project name.
+
 ```bash
 # Follow logs for a specific container
-docker logs -f icb-test-api
+docker logs -f icb-test-<checkout>-api
 
 # View recent logs
-docker logs --tail 100 icb-test-api
+docker logs --tail 100 icb-test-<checkout>-api
 
 # View logs since a specific time
-docker logs --since 5m icb-test-api
+docker logs --since 5m icb-test-<checkout>-api
 ```
 
 ## Log Format
 
-Test environment logs use the same structlog format as other environments. The format is controlled by the `LOG_FORMAT` environment variable (default: `console`).
+Test environment logs use the same structlog format as other environments. The format is controlled by the `LOG_FORMAT` environment variable, which the test stack defaults to `json`. `testing logs` renders either format the same way.
 
-### Console Format (Default)
+### Console Format
 
 ```text
 2026-01-13T15:30:45Z [info     ] test_user_created     filename=fixtures.py func_name=setup lineno=45 request_id=abc12345 user_id=1
 2026-01-13T15:30:46Z [debug    ] database_query        filename=session.py func_name=execute lineno=89 query=SELECT...
 ```
 
-### JSON Format
+### JSON Format (Default)
 
-Set `LOG_FORMAT=json` in docker-compose.test.yml to enable:
+`LOG_FORMAT=console ./ops/icbops testing restart` switches the stack to console lines. Its default is:
 
 ```json
 {"timestamp": "2026-01-13T15:30:45Z", "level": "info", "event": "test_user_created", "filename": "fixtures.py", "func_name": "setup", "lineno": 45, "request_id": "abc12345", "user_id": 1}
@@ -62,15 +61,10 @@ Set `LOG_FORMAT=json` in docker-compose.test.yml to enable:
 
 ## Request Tracing in Tests
 
-Test logs include request IDs for tracing requests across services. When running integration tests that call the API through HTTP, you can trace the full request flow:
+Every API response carries an `X-Request-ID`, and a Playwright trace shows it on each request. The log viewer filters on it:
 
 ```bash
-# Make a request and note the request_id in logs
-curl -v https://api.test.localhost:8443/tasks/
-# Response includes: X-Request-ID: abc12345
-
-# Search logs for that request
-./ops/icbops testing logs | grep abc12345
+./ops/icbops testing logs api --request-id abc12345
 ```
 
 ## Log Persistence
@@ -81,7 +75,7 @@ Docker persists logs to disk via the json-file driver. Logs survive container re
 
 ```bash
 # Find log file location for a container
-docker inspect icb-test-api --format='{{.LogPath}}'
+docker inspect icb-test-<checkout>-api --format='{{.LogPath}}'
 
 # View raw log file (requires sudo on Linux)
 sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
@@ -98,37 +92,25 @@ sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
 
 ## Debugging Test Failures
 
-### Viewing Logs During Test Run
+### A pytest failure
 
-When using `test run`, containers stay running after tests complete. View logs immediately:
+The failure and its captured logs are in the run's own output:
 
 ```bash
-# Run tests
-./ops/icbops test run tests/ichrisbirch/api/test_tasks.py
-
-# View logs after failure
-./ops/icbops testing logs api
+./ops/icbops test run tests/ichrisbirch/api/endpoints/test_tasks.py
+less .test-reports/pytest-output.log
+jq '.tests[] | select(.outcome == "failed") | .nodeid' .test-reports/pytest-report.json
 ```
 
-### Correlating Test Failures with Logs
+### An e2e failure
 
-1. Run tests with verbose output to get timestamps:
+The stack stays up after `test e2e`, so its logs are there to read:
 
-   ```bash
-   ./ops/icbops test run -v
-   ```
-
-2. View logs around the failure time:
-
-   ```bash
-   docker logs --since 1m icb-test-api
-   ```
-
-3. Search for error events:
-
-   ```bash
-   ./ops/icbops testing logs | grep -i error
-   ```
+```bash
+./ops/icbops test e2e e2e/tasks.spec.ts --trace on
+./ops/icbops testing logs api --no-follow --level WARNING
+npx --prefix frontend playwright show-trace frontend/test-results/<test>/trace.zip
+```
 
 ## Configuration
 
@@ -139,18 +121,21 @@ Test environment logging is configured in `docker-compose.test.yml`:
 ```yaml
 services:
   api:
-    environment:
-      - LOG_FORMAT=${LOG_FORMAT:-console}
+    environment: !override
+      - ENVIRONMENT=testing
+      - FASTAPI_DEBUG=False
+      - FASTAPI_TESTING=True
+      - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
-      - LOG_COLORS=true  # Force colors in containers
+      - LOG_COLORS=${LOG_COLORS:-true}
 ```
 
 ### Log Level for Tests
 
-Tests typically run with `LOG_LEVEL=DEBUG` to capture all diagnostic information. Override for less verbose output:
+The stack runs with `LOG_LEVEL=DEBUG` to capture all diagnostic information. Override for less verbose output; compose reads it when the containers are created:
 
 ```bash
-LOG_LEVEL=INFO ./ops/icbops test run
+LOG_LEVEL=INFO ./ops/icbops testing restart
 ```
 
 ## Comparison with Development
@@ -161,7 +146,7 @@ LOG_LEVEL=INFO ./ops/icbops test run
 | Persistence | Docker json-file | Docker json-file |
 | CLI command | `dev logs` | `testing logs` |
 | Watch loop | Yes | Yes |
-| Log format | console (default) | console (default) |
+| Log format | json (default) | json (default) |
 | Log level | DEBUG (default) | DEBUG (default) |
 
 ## Related Documentation

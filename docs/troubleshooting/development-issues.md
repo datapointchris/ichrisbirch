@@ -377,24 +377,18 @@ netstat -tulpn | grep :8000
 kill -9 $(lsof -t -i:8000)
 ```
 
-**Resolution:**
-
-1. **Change ports in docker-compose:**
+**Resolution:** stop whatever holds the port, or change the dev stack's host side
+in `docker-compose.dev.yml`. Each service there replaces the base file's
+mapping with `ports: !override`:
 
 ```yaml
 services:
   api:
-    ports:
-      - "8001:8000"  # Use different external port
+    ports: !override
+      - "8010:8000"  # host port first
 ```
 
-1. **Use different ports for different projects:**
-
-```bash
-# Project-specific environment variables
-echo "APP_PORT=8001" >> .env
-echo "POSTGRES_PORT=5433" >> .env
-```
+The test stack publishes no ports, so it never takes one from the dev stack.
 
 ## Debugging and Troubleshooting Tools
 

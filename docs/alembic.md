@@ -42,20 +42,22 @@ with engine.connect() as c:
 # 2. Delete all migration files
 rm ichrisbirch/alembic/versions/*.py
 
-# 3. Drop every schema in the test database
+# 3. Drop every schema in this checkout's test-stack database
 #    drop_all_tables issues `DROP SCHEMA ... CASCADE` for every non-system
-#    schema via live introspection and recreates `public`.
-ENVIRONMENT=testing POSTGRES_HOST=localhost POSTGRES_PORT=5434 \
-  python -c "
+#    schema via live introspection and recreates `public`. The stack publishes
+#    no ports, so both steps run inside its api container, which mounts the
+#    checkout at /app.
+./ops/icbops testing start
+api=icb-test-<checkout>-api
+docker exec "$api" python -c "
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.initialization import drop_all_tables
 drop_all_tables(get_settings())
 "
 
-# 4. Generate new baseline
-cd ichrisbirch
-ENVIRONMENT=testing POSTGRES_HOST=localhost POSTGRES_PORT=5434 \
-  alembic revision --autogenerate -m "baseline schema"
+# 4. Generate new baseline, as yourself so the new file is yours
+docker exec --user "$(id -u):$(id -g)" --env HOME=/tmp -w /app/ichrisbirch "$api" \
+  python -m alembic revision --autogenerate -m "baseline schema"
 
 # 5. CRITICAL: Change the revision ID to match production's current head
 # In the generated file, change:

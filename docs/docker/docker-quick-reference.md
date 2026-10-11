@@ -15,6 +15,9 @@ This page covers the common cases. `--help` is the surface of record.
 | Testing     | `https://app.test.localhost:8443` | `https://api.test.localhost:8443` |
 | Production  | `https://ichrisbirch.com`         | `https://ichrisbirch.com/api`     |
 
+The testing addresses resolve only inside a checkout's test stack, where the
+e2e suite runs. The stack publishes no ports to the host.
+
 Every environment goes through Traefik, so these are the addresses to use.
 Hitting a container's port on `localhost` skips the proxy. CORS and the auth
 middleware live in the proxy, so a request that works there can still fail in

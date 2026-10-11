@@ -34,13 +34,14 @@ class TestingArchitectureDiagramRenderer:
 
         with dot.subgraph(name='cluster_test_env') as c:
             c.attr(label='Test Environment', style='filled', color='#4682B4', fillcolor='#E8F7FF')
-            c.node('TE', 'DockerComposeTestEnvironment', shape='box')
-            c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
-            c.node('REDIS', 'Redis in Docker', shape='cylinder')
-            c.node('API', 'FastAPI Server', shape='box')
+            c.node('TE', 'PrivateServices', shape='box')
+            c.node('DB', "The session's PostgreSQL", shape='cylinder')
+            c.node('REDIS', "The session's Redis", shape='cylinder')
+            c.node('API', 'FastAPI app, in-process', shape='box')
             c.edge('TE', 'DB')
             c.edge('TE', 'REDIS')
-            c.edge('TE', 'API')
+            c.edge('API', 'DB')
+            c.edge('API', 'REDIS')
 
         with dot.subgraph(name='cluster_test_clients') as c:
             c.attr(label='Test Clients', style='filled', color='#228B22', fillcolor='#F0FFF0')
@@ -89,13 +90,14 @@ class TestingArchitectureDiagramRenderer:
 
         with dot.subgraph(name='cluster_test_session') as c:
             c.attr(label='Test Session', style='filled', color='#4682B4', fillcolor='#E8F7FF')
-            c.node('TE', 'DockerComposeTestEnvironment', shape='box')
+            c.node('TE', 'PrivateServices', shape='box')
+            c.node('API', 'FastAPI app, in-process', shape='box')
 
         with dot.subgraph(name='cluster_infrastructure') as c:
-            c.attr(label='Infrastructure', style='filled', color='#228B22', fillcolor='#F0FFF0')
-            c.node('DB', 'PostgreSQL in Docker', shape='cylinder')
-            c.node('REDIS', 'Redis in Docker', shape='cylinder')
-            c.node('API', 'FastAPI Server', shape='box')
+            c.attr(label='Containers, one pair per session', style='filled', color='#228B22', fillcolor='#F0FFF0')
+            c.node('DB', 'PostgreSQL on tmpfs', shape='cylinder')
+            c.node('REDIS', 'Redis, no persistence', shape='cylinder')
+            c.node('RYUK', 'Ryuk reaper', shape='box')
 
         with dot.subgraph(name='cluster_test_execution') as c:
             c.attr(label='Test Execution', style='filled', color='#B22222', fillcolor='#FFF0F0')
@@ -103,13 +105,15 @@ class TestingArchitectureDiagramRenderer:
             c.node('TT', 'Test Teardown', shape='box')
             c.node('TR', 'Test Running', shape='box')
 
-        dot.edge('TE', 'DB', label='Creates')
+        dot.edge('TE', 'DB', label='Starts, migrates to head')
         dot.edge('TE', 'REDIS', label='Starts')
-        dot.edge('TE', 'API', label='Starts')
+        dot.edge('RYUK', 'DB', label='Removes if the session dies')
+        dot.edge('RYUK', 'REDIS', label='Removes if the session dies')
 
-        dot.edge('TS', 'TE', label='Uses')
-        dot.edge('TT', 'TE', label='Cleans up')
-        dot.edge('TR', 'API', label='Interacts with')
+        dot.edge('TS', 'TE', label='Enters')
+        dot.edge('TT', 'TE', label='Stops both')
+        dot.edge('TR', 'API', label='TestClient')
+        dot.edge('API', 'DB', label='Queries')
         dot.edge('TR', 'DB', label='Queries')
 
         dot.render(output_path, format='svg', cleanup=True)
@@ -127,10 +131,9 @@ class TestingArchitectureDiagramRenderer:
 
         participants = [
             ('PyTest', 'PyTest'),
-            ('TE', 'DockerComposeTestEnvironment'),
-            ('Docker', 'Docker Compose'),
+            ('TE', 'PrivateServices'),
+            ('Docker', 'Docker (testcontainers)'),
             ('DB', 'PostgreSQL'),
-            ('API', 'FastAPI Server'),
         ]
 
         for id, label in participants:
@@ -147,14 +150,12 @@ class TestingArchitectureDiagramRenderer:
         }
 
         self._add_sequence_edge(dot, 'PyTest', 'TE', 'setup_test_environment fixture', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'Docker', 'docker compose up -d (only when not running)', **edge_style['request'])
-        self._add_sequence_edge(dot, 'Docker', 'TE', 'Containers running', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'DB', 'Socket check on :5434', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'API', 'GET /health', **edge_style['request'])
-        self._add_sequence_edge(dot, 'API', 'TE', '200', **edge_style['response'])
-        self._add_sequence_edge(dot, 'TE', 'DB', 'full_initialization: schemas, migrate to head, users', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'DB', 'TRUNCATE, lookup data, default users', **edge_style['request'])
+        self._add_sequence_edge(dot, 'TE', 'Docker', 'Start Redis, then Postgres, on ports Docker picks', **edge_style['request'])
+        self._add_sequence_edge(dot, 'Docker', 'TE', 'Both ready', **edge_style['response'])
+        self._add_sequence_edge(dot, 'TE', 'TE', 'Point test_settings at the published ports', **edge_style['request'])
+        self._add_sequence_edge(dot, 'TE', 'DB', 'full_initialization: migrate to head, jobstore, users', **edge_style['request'])
         self._add_sequence_edge(dot, 'TE', 'PyTest', 'Environment ready', **edge_style['response'])
+        self._add_sequence_edge(dot, 'PyTest', 'DB', 'truncate_tables: TRUNCATE, re-insert required rows', **edge_style['request'])
 
         dot.render(output_path, format='svg', cleanup=True)
         return dot
@@ -171,10 +172,9 @@ class TestingArchitectureDiagramRenderer:
 
         participants = [
             ('PyTest', 'PyTest'),
-            ('TE', 'DockerComposeTestEnvironment'),
-            ('Docker', 'Docker Compose'),
-            ('DB', 'PostgreSQL'),
-            ('API', 'FastAPI Server'),
+            ('TE', 'PrivateServices'),
+            ('Docker', 'Docker (testcontainers)'),
+            ('Ryuk', 'Ryuk reaper'),
         ]
 
         for id, label in participants:
@@ -190,8 +190,9 @@ class TestingArchitectureDiagramRenderer:
             'response': {'color': 'green', 'dir': 'back', 'arrowhead': 'vee', 'style': 'dashed'},
         }
 
-        self._add_sequence_edge(dot, 'PyTest', 'TE', 'Teardown test environment', **edge_style['request'])
-        self._add_sequence_edge(dot, 'TE', 'PyTest', 'Containers left running for the next session', **edge_style['response'])
+        self._add_sequence_edge(dot, 'PyTest', 'TE', 'Session ends: leave the with block', **edge_style['request'])
+        self._add_sequence_edge(dot, 'TE', 'Docker', 'Stop Postgres, then Redis', **edge_style['request'])
+        self._add_sequence_edge(dot, 'Ryuk', 'Docker', 'A killed session: remove what it started', **edge_style['request'])
 
         dot.render(output_path, format='svg', cleanup=True)
         return dot

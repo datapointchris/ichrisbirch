@@ -1,5 +1,5 @@
-# CI-specific overrides for GitHub Actions
-# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml up -d
+# CI-specific overrides for GitHub Actions. `icbops` adds this file to the
+# test stack's compose set when CI=true.
 
 services:
   # CI drops the docker.sock bind-mount that test.yml's api uses for the
@@ -11,39 +11,3 @@ services:
     volumes: !override
       - .:/app
       - /app/.venv
-
-  # Vue: disable build so --build doesn't overwrite node:24-alpine with the
-  # production Caddy image from frontend/Dockerfile. Also extend healthcheck
-  # start_period since npm install runs from scratch on a fresh volume in CI.
-  vue:
-    build: !reset null
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ || exit 1"]
-      interval: 10s
-      timeout: 10s
-      start_period: 120s
-      retries: 5
-
-  # Override Traefik for CI - simplified without dashboard auth
-  # command is a list so it replaces entirely — must include all required flags
-  traefik:
-    command:
-      - "--ping=true"
-      - "--api.dashboard=false"
-      - "--log.level=WARN"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=icb-test-proxy"
-      - "--providers.docker.constraints=Label(`traefik.environment`,`testing`)"
-      - "--providers.file.directory=/etc/traefik/dynamic"
-      - "--providers.file.watch=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.http.tls.domains[0].main=*.test.localhost"
-
-networks:
-  proxy:
-    external: false
-    driver: bridge

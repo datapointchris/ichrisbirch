@@ -1,19 +1,17 @@
 # Traefik routers for test environment
 #
 # All routing rules live here (file provider), not in Docker Compose labels.
-# Services are discovered via Docker provider (traefik.enable=true label).
+# The services they name are in services.yml.
 #
 # The PathPrefix list in vue-paths is generated — edit vue-paths.txt and run
 # `icbops routing generate` instead of modifying this file directly.
-#
-# Dashboard routing stays in Docker Compose labels (auth defined in middlewares.yml).
 
 http:
   routers:
     # API — direct access
     api:
       rule: "Host(`api.test.localhost`)"
-      service: api@docker
+      service: api@file
       entrypoints:
         - websecure
       tls:
@@ -27,7 +25,7 @@ http:
     # API — admin routes (higher priority, uses admin user sim)
     api-admin:
       rule: "Host(`api.test.localhost`) && PathPrefix(`/admin`)"
-      service: api@docker
+      service: api@file
       priority: 200
       entrypoints:
         - websecure
@@ -42,7 +40,7 @@ http:
     # Vue SPA — full app at vue.test.localhost
     vue:
       rule: "Host(`vue.test.localhost`)"
-      service: vue@docker
+      service: vue@file
       entrypoints:
         - websecure
       tls:
@@ -55,7 +53,7 @@ http:
     # Includes Vite dev server paths needed for JS/CSS/HMR
     vue-paths:
       rule: "Host(`app.test.localhost`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/issues`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || Path(`/`) || PathPrefix(`/@vite`) || PathPrefix(`/@fs`) || PathPrefix(`/@id`) || PathPrefix(`/node_modules`) || PathPrefix(`/src`) || PathPrefix(`/__vite`))"
-      service: vue@docker
+      service: vue@file
       priority: 100
       entrypoints:
         - websecure

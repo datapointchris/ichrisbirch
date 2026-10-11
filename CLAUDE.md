@@ -4,7 +4,7 @@
 
 iChrisBirch is a personal productivity web application: a FastAPI backend, a Vue 3 SPA and an APScheduler service, sharing PostgreSQL and Redis behind Traefik and orchestrated with Docker Compose.
 
-`./ops/icbops --help` is the command surface for dev, testing, database, routing and production. Dev is `https://app.docker.localhost/` with the API at `https://api.docker.localhost/`; tests run against `https://api.test.localhost:8443/`.
+`./ops/icbops --help` is the command surface for dev, testing, database, routing and production. Dev is `https://app.docker.localhost/` with the API at `https://api.docker.localhost/`; pytest runs against its own throwaway Postgres and Redis, and the e2e suite inside the checkout's own test stack.
 
 ## Production Environment
 
@@ -24,7 +24,7 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 
 ### CLIs — `icbops` (ops) and `icb` (data)
 
-- **`ops/icbops`** — the bash ops/deploy tool: `./ops/icbops <dev|testing|prod> <verb>`, plus the tools `test run [path]` (pytest), `routing`, `ssl-manager` and `stats`. `prod deploy-status` shows the live color. `icbops install` symlinks it to `~/.local/bin/icbops`.
+- **`ops/icbops`** — the bash ops/deploy tool: `./ops/icbops <dev|testing|prod> <verb>`, plus the tools `test run [path]` (pytest), `test e2e [spec]` (Playwright), `routing`, `ssl-manager` and `stats`. `prod deploy-status` shows the live color. `icbops install` symlinks it to `~/.local/bin/icbops`.
 - **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
 
 ### Issues and Projects Are Separate Stores
@@ -117,13 +117,15 @@ The Claude Code CLI that `claude-agent-sdk` starts inherits the API's whole decr
 
 ## Testing
 
-**Containerized**: Separate Docker Compose environment with isolated database and Redis, runs alongside dev on alternate ports. `icbops test run` **automatically starts containers** if they're not already running and waits for health checks — you never need to start them manually first. Test containers are **ephemeral** — the test Postgres keeps its data on tmpfs, so every stop or recreate of that container empties the database. Every verb that brings the test containers up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test run`'s cold start) ends by initializing the database, and pytest's session setup migrates it to head before its fixtures truncate it, so a healthy container over an empty database still runs the suite. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
+**pytest starts its own Postgres and Redis.** Every session starts a private pair with testcontainers (`PrivateServices` in `tests/environment.py`), on ports Docker picks, migrates it to head and truncates it; the reaper removes both when the session ends, however it ends. The API runs in-process, so pytest needs no stack, and `icbops test run` and a bare `uv run pytest` behave alike. Any number of checkouts run pytest at once.
 
-**One test stack serves every checkout.** Each worktree's `./ops/icbops` drives the same `icb-test` compose project, which bind-mounts the checkout that started it. So `test run`, `testing start`, `testing restart`, `testing rebuild`, `testing ensure` and `testing db seed|init|reset` refuse a stack another checkout started: from there they would test that checkout's API and Vue code and truncate a database its run may be using. pytest's session setup refuses it too, so a bare `uv run pytest` and the pre-commit hook's full-suite run stop before truncating. The e2e hook starts with `testing ensure`, so a Python or frontend commit waits until its checkout holds the stack. `testing stop` is never refused, and is how a checkout takes the stack over once the other is done with it. Stop the stack before removing the worktree that started it: the containers keep the removed path in their label, so every checkout is refused until someone runs `testing stop`.
+**The e2e suite runs inside the checkout's own test stack.** `icbops test e2e [spec]` starts the stack if it is down and runs Playwright in its vue container, whose image is Playwright's. The stack is a compose project named `icb-test-<checkout directory>`; compose scopes its containers (`icb-test-<checkout>-api`), networks and node_modules volume to it, and it publishes no port, so every worktree runs its own beside the others. The browser runs inside because Chromium in the host's network namespace aborts in-flight requests whenever any container on the machine starts or stops (`ERR_NETWORK_CHANGED`). Traefik listens on 8443 inside the stack with network aliases for `api.test.localhost` and `app.test.localhost`, and `playwright.config.ts` maps `*.test.localhost` to `traefik`, because Chromium answers every `*.localhost` name from loopback. So the host cannot browse the test app, run Playwright headed against it, or reach its Postgres by port: `docker exec -it icb-test-<checkout>-postgres psql -U postgres ichrisbirch` is the way in. `testing start` removes every `icb-test-*` stack whose checkout directory is gone. Two clones sharing a directory name share a project, so every verb but `testing stop` refuses a stack another checkout started. `docs/testing/environment.md` has the rest.
+
+**The stack's database is ephemeral** — its Postgres keeps its data on tmpfs, so every stop or recreate empties it. Every verb that brings the stack up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test e2e`'s cold start) ends by initializing the database. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
 **Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), so Docker re-seeds it from the image layer on every new container. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. A named volume for `.venv` or the uv cache, combined with `uv run`, keeps stale venv state across rebuilds and leaves the API stuck in "health: starting" while uv resyncs at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
-**If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
+**If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-<checkout>-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
 ```bash
 ./ops/icbops testing rebuild --all --volumes   # down --volumes + rebuild all + up + initialize the database
@@ -131,15 +133,16 @@ The Claude Code CLI that `claude-agent-sdk` starts inherits the API's whole decr
 ./ops/icbops dev rebuild --all --volumes
 ```
 
-Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon):
+Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon). `./ops/icbops testing status` prints the project name:
 
 ```bash
 sudo systemctl restart docker
-docker rm -f icb-test-vue 2>/dev/null     # kill the loop before restart policy puts docker back in the same state
-docker volume rm icb-test-vue-node-modules 2>/dev/null
-docker ps -a --filter "name=icb-test" -q | xargs -r docker rm -f
-docker volume ls --filter "name=icb-test" -q | xargs -r docker volume rm
-docker network ls --filter "name=icb-test" -q | xargs -r docker network rm
+project=icb-test-<checkout>
+docker rm -f "$project-vue" 2>/dev/null     # kill the loop before restart policy puts docker back in the same state
+docker volume rm "$project-vue-node-modules" 2>/dev/null
+docker ps -a --filter "label=com.docker.compose.project=$project" -q | xargs -r docker rm -f
+docker volume ls --filter "label=com.docker.compose.project=$project" -q | xargs -r docker volume rm
+docker network ls --filter "label=com.docker.compose.project=$project" -q | xargs -r docker network rm
 ./ops/icbops testing start
 ```
 
@@ -147,9 +150,9 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Bind mount + named volume overlap creates root-owned empty host dirs** (expected, not a bug): The vue services mount `./frontend:/app` (bind) AND `vue_*_node_modules:/app/node_modules` (named volume). Docker needs `./frontend/node_modules/` to exist on the host as a mount point — if it doesn't, the Docker daemon auto-creates it, which means `root:root` ownership. At runtime the named volume shadows it, so container writes go to the volume, NOT the host directory. Host-side `npm install` writes are therefore invisible to the container. Don't try to "fix" the ownership in compose — either accept the empty host dir, or `mkdir frontend/node_modules` as your user BEFORE bringing up containers if you need host-side node_modules for pre-commit typecheck.
 
-**Python fixtures** (`tests/conftest.py`): Session-scoped (Docker orchestration, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
+**Python fixtures** (`tests/conftest.py`): Session-scoped (the private Postgres and Redis, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
-**Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik). E2E tests ALWAYS run against test containers, never dev.
+**Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik, which `icbops test e2e` runs inside the test stack). E2E tests ALWAYS run against test containers, never dev.
 
 **Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`).
 `stubActions: true` stubs every function a setup store returns, pure helpers included, so a helper a view calls while rendering lives at module level and is imported (`priorityLabel` in `stores/issues.ts`).
@@ -162,9 +165,9 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icbops prod build-test`.
 
-**Test output files**: every pytest run, from pre-commit or the CLI, writes `/tmp/ichrisbirch-pytest-output.log` (terminal output) and `/tmp/ichrisbirch-pytest-report.json` (whose `tests` array holds `nodeid`, `outcome` and `call.longrepr` per test). When tests fail, read these instead of re-running.
+**Test output files**: each checkout keeps its own, in `.test-reports/`. `icbops test run`, which the pre-commit hook calls, writes `pytest-output.log` (terminal output) and `pytest-report.json` (whose `tests` array holds `nodeid`, `outcome` and `call.longrepr` per test). `icbops test e2e` writes `playwright-report.json`, with traces and screenshots in `frontend/test-results/`, and Vitest writes `vitest-report.json`. When tests fail, read these instead of re-running.
 
-**Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Symptoms: 500 errors on pages that import the new package, while other pages work fine. A new migration reaches pytest without a restart, because its session setup migrates the test database to head. The API container still needs step 1 of the escalation ladder to load changed models.
+**Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`, named `icb-test-<checkout>-vue-node-modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Symptoms: 500 errors on pages that import the new package, while other pages work fine. A new migration reaches pytest without a restart, because its session setup migrates the test database to head. The API container still needs step 1 of the escalation ladder to load changed models.
 
 ## Deployment
 
@@ -276,7 +279,7 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 A page is a Pinia store (`createLogger`, `ApiError`, `error: ref<ApiError | null>`), a `<script setup>` view that fetches in `onMounted` and reports through `useNotifications()`, a lazy-loaded route in `frontend/src/router.ts`, and an entry in `components/sidebarLinks.ts`.
 A layout that differs on a phone switches at `@include breakpoints.phone` in SCSS and `usePhoneViewport()` in script, which read one width.
 Add its path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`.
-Unit tests mock the API with `vi.mock`; E2E runs through `app.docker.localhost`, never `vue.docker.localhost`, so CORS faults surface.
+Unit tests mock the API with `vi.mock`; E2E runs through `app.test.localhost`, never `vue.test.localhost`, so CORS faults surface.
 
 ### Logging
 

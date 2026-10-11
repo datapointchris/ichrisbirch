@@ -7,8 +7,8 @@
 # Every compose set this repo runs is resolved through compose's own loader,
 # which applies anchors, !reset, !override and the order the files stack in.
 
-# Each set as its runner passes it: icbops for prod, dev, test and infra,
-# validate.yml for ci, and the blue/green deploy for app.
+# Each set as its runner passes it: icbops for prod, dev, test and infra, and
+# for ci when CI=true, and the blue/green deploy for app.
 COMPOSE_SETS=(
   "docker-compose.yml"
   "docker-compose.yml docker-compose.dev.yml"

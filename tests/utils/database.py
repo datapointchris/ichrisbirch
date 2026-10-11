@@ -170,28 +170,20 @@ def transactional_test_context(settings: Settings):
         connection.close()
 
 
+def build_session_settings() -> Settings:
+    """The settings a pytest session runs on. `PrivateServices` points them at its Postgres and Redis."""
+    settings = copy.deepcopy(get_settings())
+    settings.ENVIRONMENT = 'testing'
+    settings.protocol = 'http'
+    return settings
+
+
+test_settings = build_session_settings()
+
+
 def get_test_runner_settings() -> Settings:
-    test_settings = copy.deepcopy(get_settings())
-    test_settings.ENVIRONMENT = 'testing'
-    test_settings.protocol = 'http'
-    test_settings.postgres.host = 'localhost'
-    test_settings.postgres.username = 'postgres'
-    test_settings.postgres.password = 'postgres'
-    test_settings.postgres.port = 5434
-    test_settings.sqlalchemy.database = 'ichrisbirch'
-    test_settings.sqlalchemy.host = 'localhost'
-    test_settings.sqlalchemy.username = 'postgres'
-    test_settings.sqlalchemy.password = 'postgres'
-    test_settings.sqlalchemy.port = 5434
-    test_settings.sqlalchemy.database = 'ichrisbirch'
-    test_settings.fastapi.host = 'localhost'
-    test_settings.fastapi.port = 8001
-    test_settings.redis.host = 'localhost'
-    test_settings.redis.port = 6380
-    return test_settings
-
-
-test_settings = get_test_runner_settings()
+    """A copy of the session's settings, which a test may change without reaching any other test."""
+    return copy.deepcopy(test_settings)
 
 
 def get_test_session() -> Generator[Session]:

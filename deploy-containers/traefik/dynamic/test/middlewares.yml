@@ -4,8 +4,8 @@
 # only, not in security-headers-test. This prevents conflicting CORS settings
 # when both middlewares are applied to the same router.
 #
-# Origins include :8443 because test Traefik maps 8443:443 (non-standard port),
-# so browsers send Origin with the port included.
+# Origins include :8443 because test Traefik listens there, so browsers send
+# Origin with the port included.
 
 http:
   middlewares:
@@ -22,7 +22,6 @@ http:
         accessControlAllowOriginList:
           - "https://api.test.localhost:8443"
           - "https://app.test.localhost:8443"
-          - "https://dashboard.test.localhost:8443"
         accessControlAllowHeaders:
           - "Accept"
           - "Accept-Language"
@@ -79,9 +78,3 @@ http:
         customRequestHeaders:
           Remote-User: "admin@icb.com"
           Remote-Email: "admin@icb.com"
-
-    # Dashboard auth (test environment)
-    dashboard-auth-test:
-      basicAuth:
-        users:
-          - "test:$2y$10$Q7B5K8L2M3N4O5P6Q7R8SeTgUvWxYz0123456789ABCDEFabcdef"

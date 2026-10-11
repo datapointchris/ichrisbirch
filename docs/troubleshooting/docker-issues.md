@@ -90,7 +90,7 @@ docker compose exec api nc -zv postgres 5432
 
 **Problem:** Containers on one Docker network can reach their gateway but NOT the internet (ping `1.1.1.1` times out, `wget https://registry.npmjs.org` hangs). Containers on OTHER Docker networks on the same host work fine. DNS resolves correctly.
 
-**Symptoms specific to this repo:** `icb-test-vue` can't finish `npm install` (times out fetching packages) while `icb-dev-vue` works. Testing containers show "health: starting" indefinitely.
+**Symptoms specific to this repo:** a test stack's `icb-test-<checkout>-vue` can't finish `npm install` (times out fetching packages) while `icb-dev-vue` works. Every checkout's stack creates its own networks, so a new worktree is the usual place to meet this. Testing containers show "health: starting" indefinitely.
 
 **Cause (Arch Linux and similar):** The Linux kernel can have BOTH netfilter backends loaded simultaneously — `nftables` (modern) and `xt_tables` (legacy). Both evaluate packets at each netfilter hook. Docker writes MASQUERADE and FORWARD rules to its currently-configured backend (usually nft on modern systems), but if orphan rules exist in the OTHER backend referencing dead bridge IDs, they can drop traffic for newer Docker networks before nft's rules can NAT them.
 
@@ -339,14 +339,15 @@ sudo systemctl reset-failed docker.service docker.socket
 sudo systemctl start docker
 
 # 2. IMMEDIATELY kill the looping container (before restart policy puts docker back in the same loop)
-docker rm -f icb-test-vue 2>/dev/null
-docker volume rm icb-test-vue-node-modules 2>/dev/null
+project=icb-test-<checkout>
+docker rm -f "$project-vue" 2>/dev/null
+docker volume rm "$project-vue-node-modules" 2>/dev/null
 
 # 3. Clean rebuild
 ./ops/icbops testing rebuild --all --volumes
 ```
 
-**Prevention:** Every dev and test service uses `restart: on-failure:3`, so Docker gives up after three failed starts. A checkout removed from under a running stack fails the same way: its bind mount is gone, so every start finds no `/app`. The cost is that Docker never restarts an `on-failure` container when the daemon starts, so after a reboot the dev stack stays down until `icbops dev start`.
+**Prevention:** Every dev and test service uses `restart: on-failure:3`, so Docker gives up after three failed starts. A checkout removed from under a running test stack fails the same way: its bind mount is gone, so every start finds no `/app`. The next `testing start` in any checkout removes that stack's containers, volumes and networks. The cost is that Docker never restarts an `on-failure` container when the daemon starts, so after a reboot the dev stack stays down until `icbops dev start`.
 
 ## Service Orchestration Issues
 

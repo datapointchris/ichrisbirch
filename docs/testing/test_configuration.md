@@ -5,59 +5,51 @@ one `.env` per environment, and the test suite does not use one.
 
 ## `test_settings` is the whole configuration
 
-`get_test_runner_settings()` in `tests/utils/database.py` deep-copies the
-process settings and overrides everything that points at a service:
+`build_session_settings()` in `tests/utils/database.py` deep-copies the process
+settings and marks them as the test environment:
 
 ```python
-def get_test_runner_settings() -> Settings:
-    test_settings = copy.deepcopy(get_settings())
-    test_settings.ENVIRONMENT = 'testing'
-    test_settings.protocol = 'http'
-    test_settings.postgres.host = 'localhost'
-    test_settings.postgres.port = 5434
-    ...
-    return test_settings
+def build_session_settings() -> Settings:
+    settings = copy.deepcopy(get_settings())
+    settings.ENVIRONMENT = 'testing'
+    settings.protocol = 'http'
+    return settings
 
 
-test_settings = get_test_runner_settings()
+test_settings = build_session_settings()
 ```
 
 That module-level `test_settings` is what every fixture imports. `conftest.py`
-passes it to `create_api`, to `DockerComposeTestEnvironment`, to
-`truncate_all_tables` and to `create_session`. One object decides what the
-whole suite talks to.
+passes it to `create_api`, to `PrivateServices`, to `truncate_all_tables` and to
+`create_session`. One object decides what the whole suite talks to.
 
 The overrides mutate a `Settings` instance in place. Without the deep copy they
 would reach back into the cached object `get_settings()` hands every other
-caller in the process.
+caller in the process. `get_test_runner_settings()` returns a further copy for a
+test that changes a setting, so the change reaches no other test.
 
-## Everything points at published ports on localhost
+## The session's services decide the hosts and ports
 
-| Setting             | Value       |
-| ------------------- | ----------- |
-| `postgres.host`     | `localhost` |
-| `postgres.port`     | 5434        |
-| `sqlalchemy.port`   | 5434        |
-| `fastapi.host`      | `localhost` |
-| `fastapi.port`      | 8001        |
-| `redis.port`        | 6380        |
-| `protocol`          | `http`      |
+`PrivateServices` in `tests/environment.py` starts this session's Postgres and
+Redis, then writes where Docker published them into `test_settings`:
 
-pytest runs on the host, not in a container, so Docker DNS names like
-`postgres` do not resolve for it. It reaches each service through the port that
-`docker-compose.test.yml` publishes.
+| Setting                            | Value                             |
+| ---------------------------------- | --------------------------------- |
+| `postgres.host`, `sqlalchemy.host` | the container host Docker reports |
+| `postgres.port`, `sqlalchemy.port` | the port Docker picked for 5432   |
+| `postgres.username`, `.password`   | `postgres` / `postgres`           |
+| `redis.host`, `redis.port`         | the same, for 6379                |
+| `redis.password`                   | empty                             |
 
-These numbers mirror that file and have to agree with it.
-[Docker Compose Architecture](../docker/docker-compose.md#testing) carries the
-published ports.
+No port is fixed, so no two sessions collide and nothing has to agree with a
+compose file. Nothing builds an engine or a Redis client at import time, so
+writing the settings in the session fixture reaches every later connection.
 
-`protocol` is `http` because the suite talks to the API directly on 8001 rather
-than through Traefik. Playwright's end-to-end tests are the exception: they go
-through Traefik on 8443, over HTTPS, which is what makes a CORS or middleware
-fault visible.
-
-Postgres credentials are `postgres`/`postgres`. The test database is disposable
-and its container publishes only to localhost.
+`protocol` is `http` because the suite calls the API in-process through
+FastAPI's `TestClient` rather than through Traefik. Playwright's end-to-end
+tests are the exception: they go through the test stack's Traefik, over HTTPS,
+which is what makes a CORS or middleware fault visible.
+[Test Environment](environment.md) covers both.
 
 ## Running tests
 
@@ -66,8 +58,8 @@ and its container publishes only to localhost.
 ./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
 ```
 
-`test run` exports `ENVIRONMENT=testing` and starts the containers if they are
-down.
+`test run` exports `ENVIRONMENT=testing` and writes its reports to
+`.test-reports/`.
 
 Running pytest by hand, leave `ENVIRONMENT` unset. `detect_environment` returns
 `testing` when pytest is in `sys.modules`, but an explicit `ENVIRONMENT` is
@@ -81,12 +73,8 @@ which carries whatever the shell said.
 
 Anything reading `test_settings` does not depend on a `.env` that may or may not
 be current, or on which environment was last brought up. The values sit next to
-the fixtures that use them.
-
-Changing a test port is therefore a two-file change.
-`docker-compose.test.yml` publishes it and `get_test_runner_settings` connects
-to it. A mismatch shows up as a connection refused at session setup rather than
-as a failing assertion.
+the fixtures that use them, and the services they point at exist only for the
+session.
 
 ## Related
 

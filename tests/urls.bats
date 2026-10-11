@@ -17,12 +17,6 @@ setup() {
   [ "$(icb_service_url dev dashboard)" = 'https://dashboard.docker.localhost' ]
 }
 
-@test "test URLs carry Traefik's port, which is not 443 there" {
-  [ "$(icb_service_url test api)" = 'https://api.test.localhost:8443' ]
-  [ "$(icb_service_url test app)" = 'https://app.test.localhost:8443' ]
-  [ "$(icb_service_url test dashboard)" = 'https://dashboard.test.localhost:8443' ]
-}
-
 @test "the Vue app is the bare domain in production and a subdomain elsewhere" {
   [ "$(icb_service_url prod app)" = 'https://ichrisbirch.com' ]
   [ "$(icb_service_url dev app)" = 'https://app.docker.localhost' ]
@@ -50,11 +44,6 @@ setup() {
 @test "DOMAIN overrides the production domain" {
   DOMAIN=example.com run icb_service_url prod api
   [ "$output" = 'https://example.com/api' ]
-}
-
-@test "icb_env_domain carries no port, because check_dns runs host" {
-  [ "$(icb_env_domain test)" = 'test.localhost' ]
-  [ "$(icb_env_suffix test)" = 'test.localhost:8443' ]
 }
 
 @test "icb_service_host returns the header value health-check sends in prod" {

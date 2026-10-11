@@ -31,21 +31,21 @@ def get_branch() -> str:
 def collect_pytest(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.pytest_collector import run
 
-    json_path = collect_config.get('pytest_json_path', '/tmp/ichrisbirch-pytest-report.json')  # nosec B108
+    json_path = collect_config.get('pytest_json_path', '.test-reports/pytest-report.json')
     return run(branch, project, json_path)
 
 
 def collect_vitest(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.vitest_collector import run
 
-    json_path = collect_config.get('vitest_json_path', '/tmp/ichrisbirch-vitest-report.json')  # nosec B108
+    json_path = collect_config.get('vitest_json_path', '.test-reports/vitest-report.json')
     return run(branch, project, json_path)
 
 
 def collect_playwright(branch: str, project: str, collect_config: dict) -> object | None:
     from stats.collectors.playwright_collector import run
 
-    json_path = collect_config.get('playwright_json_path', '/tmp/ichrisbirch-playwright-report.json')  # nosec B108
+    json_path = collect_config.get('playwright_json_path', '.test-reports/playwright-report.json')
     return run(branch, project, json_path)
 
 

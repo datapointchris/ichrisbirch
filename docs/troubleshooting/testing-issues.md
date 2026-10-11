@@ -1,8 +1,10 @@
 # Testing Environment Troubleshooting
 
-The test stack is containerized and ephemeral. Most failures that look like
-test bugs are stale container state. A stop-and-start clears most of them, and
-a `rebuild --volumes` clears the rest. Both cost less than reading logs.
+pytest starts its own Postgres and Redis for every session and discards them
+after, so it carries no state between runs. The e2e suite runs inside the
+checkout's test stack, which does. Most e2e failures that look like test bugs
+are stale container state. A stop-and-start clears most of them, and a
+`rebuild --volumes` clears the rest. Both cost less than reading logs.
 
 ## A change is not taking effect
 
@@ -19,30 +21,33 @@ Work these in order. Do not substitute manual `docker` subcommands.
 Containers that have not been through steps 1 and 2 are not evidence of
 anything. A fresh container from step 2 still failing is a real bug.
 
-A new migration is the exception and needs neither step. pytest's session setup
-migrates the test database to head before its fixtures run.
+pytest needs neither step. It runs the API in-process from the checkout's code,
+and migrates a database created for the session.
 
 ## Read the output files instead of re-running
 
-Every pytest run, from the CLI or from pre-commit, writes its output to `/tmp`:
+Every run from the CLI or from pre-commit writes its output to `.test-reports/`
+in the checkout:
 
-| File                                  | Contents                            |
-| ------------------------------------- | ----------------------------------- |
-| `/tmp/ichrisbirch-pytest-output.log`  | Terminal output                     |
-| `/tmp/ichrisbirch-pytest-report.json` | A `tests` array, one entry per test |
+| File                                      | Contents                            |
+| ----------------------------------------- | ----------------------------------- |
+| `.test-reports/pytest-output.log`         | pytest's terminal output            |
+| `.test-reports/pytest-report.json`        | A `tests` array, one entry per test |
+| `.test-reports/playwright-report.json`    | The e2e suite's JSON report         |
 
-Each JSON entry carries `nodeid`, `outcome` and `call.longrepr`. Reading these
-beats re-running a long suite to capture different output.
+Each pytest entry carries `nodeid`, `outcome` and `call.longrepr`. Reading these
+beats re-running a long suite to capture different output. Playwright's traces
+and screenshots land in `frontend/test-results/`.
 
-## The test database
+## The test stack's database
 
 It lives on tmpfs, so every stop or recreate of the Postgres container empties
-it. That is the design, not a fault.
+it. That is the design, not a fault. pytest never connects to it.
 
 Every `icbops` verb that brings the stack up initializes the database
 afterwards — `testing start`, `testing restart`, `testing rebuild` with any
-flags, and `test run`'s cold start. pytest then migrates it to head, and its
-fixtures truncate between tests.
+flags, and `test e2e`'s cold start. Initializing migrates to head, so a new
+migration reaches the e2e suite after step 1 of the ladder.
 
 A bare `docker compose up` does none of that. It leaves an empty database
 behind healthy containers, which surfaces as `relation "..." does not exist` on
@@ -85,9 +90,10 @@ other page works.
 
 ## `ENOTEMPTY` in a restart loop
 
-Partial install state in `icb-test-vue-node-modules` — an `npm install`
-interrupted mid-run — produces `ENOTEMPTY: directory not empty` in a loop. Left
-running long enough, that loop has taken down `dockerd` itself.
+Partial install state in the checkout's `icb-test-<checkout>-vue-node-modules`
+volume — an `npm install` interrupted mid-run — produces `ENOTEMPTY: directory
+not empty` in a loop. Left running long enough, that loop has taken down
+`dockerd` itself.
 
 ```bash
 ./ops/icbops testing rebuild --all --volumes
@@ -97,33 +103,36 @@ If the daemon has already crashed, [Docker
 troubleshooting](docker-issues.md#container-crash-loop-that-crashes-dockerd)
 has the manual recovery.
 
-## Port conflicts with the dev stack
+## `port already allocated` from the test stack
 
-The two stacks are meant to run together, on different ports.
-[Docker Compose Architecture](../docker/docker-compose.md#testing) has the
-table.
-
-`port already allocated` on a stack that looks correct means a `ports` list
-appended instead of replacing. Compose appends `ports` and `volumes` across
-files unless the override carries `!override`. `icbops testing docker` prints
-the resolved result, which is where a doubled mapping shows up.
+The test stack publishes no ports. Every service in `docker-compose.test.yml`
+replaces the base file's `ports` with `ports: !override []`. Compose appends
+`ports` and `volumes` across files unless the override carries `!override`, so
+a test service missing it publishes the dev port and collides with the dev
+stack. `icbops testing docker` prints the resolved result, which is where an
+inherited mapping shows up.
 
 ## E2E tests
 
-They run through Traefik, against `https://app.test.localhost:8443` by default.
-Setting `E2E_ENV=dev` points them at `https://app.docker.localhost` instead,
-which is what `npm run test:e2e:dev` does. `frontend/playwright.config.ts` and
-`frontend/e2e/global.setup.ts` are the two files that read it, and they have to
-agree.
+`./ops/icbops test e2e` runs them inside the vue container, through the stack's
+Traefik, against `https://app.test.localhost:8443`.
+[Test Environment](../testing/environment.md#playwright-runs-inside-the-checkouts-test-stack)
+explains how Chromium there reaches Traefik.
+
+`npm run test:e2e` on the host fails at once with `The test stack publishes no
+ports`. `ICB_TEST_STACK` is set only inside the vue container. Setting
+`E2E_ENV=dev` points a host run at `https://app.docker.localhost` instead,
+which is what `npm run test:e2e:dev` and `npm run test:e2e:ui` do.
+`frontend/playwright.config.ts` and `frontend/e2e/global.setup.ts` are the two
+files that read it, and they have to agree.
+
+`Executable doesn't exist at /ms-playwright/...` after a Playwright upgrade
+means the vue image tag no longer matches `@playwright/test` in the lockfile.
+`tests/playwright-image-version.bats` fails on that before e2e does.
 
 Hitting the Vue container's port directly bypasses the proxy. CORS and the auth
 middleware live in the proxy, so a test that passes there can still fail in a
 browser.
-
-Both host names have to resolve for Playwright to reach anything.
-[Traefik deployment](../traefik-deployment.md) lists the `*.test.localhost`
-entries, and [Quick Start](../quick-start.md) lists the `*.docker.localhost`
-ones.
 
 E2E is smoke-level by design. Each page keeps a CORS check, a page load, sidebar
 navigation and one CRUD roundtrip. Interaction-heavy cases live in the component
@@ -159,19 +168,18 @@ usually means those files were never combined.
 
 ## A test passes locally and fails in CI
 
-The fixtures detect CI through the `CI` environment variable and skip container
-management, because `.github/workflows/validate.yml` has already started the
-stack with `--wait`. So a CI-only failure is rarely about the containers
-themselves.
+pytest runs the same way in CI as on a workstation. Each session starts its own
+Postgres and Redis on the runner's Docker, so a CI-only pytest failure is rarely
+about the containers.
 
-[Docker Compose Architecture](../docker/docker-compose.md#ci) lists what
-`docker-compose.ci.yml` changes. Two of those can reach a test. The API has no
-Docker socket, so anything touching container status behaves differently. Vue's
-health check waits longer, because `npm install` runs from scratch.
+The e2e job runs `./ops/icbops testing start` and `./ops/icbops test e2e`, the
+commands a workstation runs. Under `CI=true`, `icbops` adds
+`docker-compose.ci.yml`, which removes the API's Docker socket mount. Anything
+in the stack touching container status behaves differently there. The
+Playwright config also retries a failed test and refuses `.only` under CI.
 
-Read `icbops testing docker` before blaming a line in the CI file. Most
-of what it declares is already set by `docker-compose.test.yml`, so a field
-that looks like CI's doing is not.
+Read `CI=true ./ops/icbops testing docker` before blaming a line in the CI
+file. It prints the compose set the job resolves.
 
 ## Related
 

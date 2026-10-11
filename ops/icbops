@@ -13,17 +13,24 @@ DEV_APP_URL="$(icb_service_url dev app)"
 DEV_DASHBOARD_URL="$(icb_service_url dev dashboard)"
 DEV_API_PORT="http://localhost:8000"
 
-TEST_API_URL="$(icb_service_url test api)"
-TEST_APP_URL="$(icb_service_url test app)"
-TEST_DASHBOARD_URL="$(icb_service_url test dashboard)"
-TEST_API_PORT="http://localhost:8001"
+# Each checkout keeps its own test reports, because several run tests at once
+TEST_REPORTS_DIR="$ICHRISBIRCH_HOME/.test-reports"
 
 PROD_API_URL="$(icb_service_url prod api)"
 PROD_APP_URL="$(icb_service_url prod app)"
 
+# Each checkout runs its own test stack, named after the checkout's directory.
+# Compose project names take lowercase letters, digits, `-` and `_`. Exported
+# for ops/health-check.sh and ops/log_viewer.py.
+ICB_TEST_PROJECT="icb-test-$(basename "$ICHRISBIRCH_HOME" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '-')"
+export ICB_TEST_PROJECT
+
 # Docker compose commands
 COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f docker-compose.dev.yml"
-COMPOSE_TEST="docker compose --project-name icb-test -f docker-compose.yml -f docker-compose.test.yml"
+COMPOSE_TEST="docker compose --project-name $ICB_TEST_PROJECT -f docker-compose.yml -f docker-compose.test.yml"
+if [[ "${CI:-}" == true ]]; then
+  COMPOSE_TEST+=" -f docker-compose.ci.yml"
+fi
 COMPOSE_PROD="docker compose --project-name icb-prod -f docker-compose.yml"
 
 # Blue/green deployment compose commands
@@ -181,7 +188,7 @@ function install() {
 function wait-for-healthy() {
   local container="$1"
   local max_wait="${2:-60}"
-  local interval="${3:-5}"
+  local interval="${3:-1}"
   local waited=0
 
   while [[ $waited -lt $max_wait ]]; do
@@ -422,19 +429,19 @@ function dev-smoke() {
 
 # Test environment
 
-# Every checkout of this repo drives the one icb-test compose project, and
-# compose labels each container with the checkout that started it. From any
-# other checkout, a test run exercises the starting checkout's API and Vue code and
-# truncates the database a run there may be using, and reports it as its own.
+# The project is named after the checkout's directory, so two clones sharing a
+# directory name would share one stack. Compose labels each container with the
+# checkout that started it, and from the other clone the stack would serve the
+# first one's API and Vue code.
 function require-test-stack-here() {
   local owner
-  owner=$(docker ps -a --filter label=com.docker.compose.project=icb-test \
+  owner=$(docker ps -a --filter "label=com.docker.compose.project=${ICB_TEST_PROJECT}" \
     --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | sort -u | head -n 1)
   if [[ -z "$owner" || "$owner" == "$ICHRISBIRCH_HOME" ]]; then
     return 0
   fi
-  echo "${red}The test stack was started from ${owner}, not from ${ICHRISBIRCH_HOME}.${reset}" >&2
-  echo "Its API and Vue dev server serve that checkout's code, and its database may hold a run from there." >&2
+  echo "${red}The test stack ${ICB_TEST_PROJECT} was started from ${owner}, not from ${ICHRISBIRCH_HOME}.${reset}" >&2
+  echo "Both checkouts have the directory name that names the stack, and it serves that checkout's code." >&2
   echo "" >&2
   echo "Once nothing there is using it, take the stack over:" >&2
   echo "  ${blue}${ICHRISBIRCH_HOME}/ops/icbops testing stop${reset}" >&2
@@ -442,102 +449,110 @@ function require-test-stack-here() {
   return 1
 }
 
+# A stack whose checkout is gone serves nothing and holds its memory, so
+# starting any checkout's stack removes it. Compose labels every container,
+# volume and network with its project, and the containers with their checkout.
+function testing-remove-orphans() {
+  local project checkout
+  while read -r project checkout; do
+    if [[ -d "$checkout" ]]; then
+      continue
+    fi
+    echo "Removing ${yellow}${project}${reset}: its checkout ${checkout} is gone"
+    docker ps -aq --filter "label=com.docker.compose.project=${project}" | xargs -r docker rm -f -v >/dev/null
+    docker volume ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker volume rm >/dev/null
+    docker network ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker network rm >/dev/null
+  done < <(docker ps -a --filter label=com.docker.compose.project \
+    --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
+    | grep '^icb-test-' | sort -u)
+}
+
 function test-run() {
-  # A help flag answers here. Passed to pytest like every other argument, it
-  # would wait behind the health check below, which takes unhealthy containers
-  # down with their volumes and starts them again.
   case "${1:-}" in
     -h | --help | help)
       test-usage
       return 0
       ;;
   esac
-  require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
   # shellcheck disable=1091
   source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
+  mkdir -p "$TEST_REPORTS_DIR"
 
-  # Container health is the only readiness checked here. A healthy API can sit
-  # over an empty database, so pytest's session setup brings the schema to head
-  # before its fixtures truncate it.
-  local api_health
-  api_health=$(docker inspect --format='{{.State.Health.Status}}' icb-test-api 2>/dev/null)
-  if [[ "$api_health" == "healthy" ]]; then
-    echo "${green}Test containers healthy, reusing them${reset}"
-  else
-    if [[ -n "$api_health" ]]; then
-      echo "${yellow}icb-test-api is ${api_health}, recreating test containers...${reset}"
-      $COMPOSE_TEST down --volumes
-    fi
-    testing-start || return 1
-  fi
-
-  # Do NOT truncate here — pytest truncates at session start, and a
-  # double-truncate causes user count mismatches and FK violations.
-
-  # Run pytest
   echo ""
   echo "${green}Running tests...${reset}"
   echo ""
-  local test_exit_code=0
-  local -a json_report_flags=(--json-report --json-report-file=/tmp/ichrisbirch-pytest-report.json --json-report-indent=2)
-  if [ $# -eq 0 ]; then
-    uv run pytest "${json_report_flags[@]}" 2>&1 | tee /tmp/ichrisbirch-pytest-output.log
-    test_exit_code=${PIPESTATUS[0]}
-  else
-    uv run pytest "${json_report_flags[@]}" "$@" 2>&1 | tee /tmp/ichrisbirch-pytest-output.log
-    test_exit_code=${PIPESTATUS[0]}
+  local -a json_report_flags=(--json-report --json-report-file="$TEST_REPORTS_DIR/pytest-report.json" --json-report-indent=2)
+  uv run pytest "${json_report_flags[@]}" "$@" 2>&1 | tee "$TEST_REPORTS_DIR/pytest-output.log"
+  return "${PIPESTATUS[0]}"
+}
+
+# The browser runs in the stack's vue container, as this user, so traces and
+# screenshots in frontend/test-results/ belong to whoever ran the suite.
+function test-e2e() {
+  case "${1:-}" in
+    -h | --help | help)
+      test-usage
+      return 0
+      ;;
+  esac
+  cd "$ICHRISBIRCH_HOME" || exit
+  testing-ensure || return 1
+  mkdir -p "$TEST_REPORTS_DIR"
+
+  local -a exec_args=(--user "$(id -u):$(id -g)" --env HOME=/tmp)
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    exec_args+=(-T)
   fi
-
-  # Always leave containers running for fast iteration
+  # The Playwright config retries and forbids `.only` under CI, and exec passes no host variable on its own
+  if [[ -n "${CI:-}" ]]; then
+    exec_args+=(--env "CI=$CI")
+  fi
   echo ""
-  echo "${cyan}Containers left running for fast iteration.${reset}"
-  echo "Stop them with: ${blue}icbops testing stop${reset}"
-
-  return "$test_exit_code"
+  echo "${green}Running e2e tests in ${ICB_TEST_PROJECT}...${reset}"
+  echo ""
+  $COMPOSE_TEST exec "${exec_args[@]}" vue npx playwright test "$@"
 }
 
 function test-usage() {
   echo "${green}Test commands:${reset}"
-  echo "  ${blue}test run [path] [args]${reset}  Run pytest (reuses containers for fast iteration)"
+  echo "  ${blue}test run [path] [args]${reset}  Run pytest against its own throwaway Postgres and Redis"
+  echo "  ${blue}test e2e [spec] [args]${reset}  Run Playwright inside this checkout's test stack, starting it if needed"
   echo ""
-  echo "Arguments after the path go to pytest. For pytest's own help: ${blue}uv run pytest --help${reset}"
-  echo ""
-  echo "Containers are left running after tests for fast re-runs."
-  echo "Stop them with: ${blue}icbops testing stop${reset}"
+  echo "Arguments after the path go to pytest or Playwright."
+  echo "The output and JSON reports land in ${cyan}.test-reports/${reset} in this checkout,"
+  echo "and Playwright's traces and screenshots in ${cyan}frontend/test-results/${reset}."
 }
 
 function testing-start() {
   require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Starting ${blue}TESTING${reset} environment"
-  $COMPOSE_TEST up -d
+  testing-remove-orphans
+  echo "Starting ${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset}"
+  mkdir -p "$TEST_REPORTS_DIR"
+  $COMPOSE_TEST up -d --wait || return 1
   env-initialize testing || return 1
 
   echo ""
-  echo "Testing environment started:"
-  echo "  ${green}API${reset}:       ${cyan}${TEST_API_URL}${reset}"
-  echo "  ${green}APP${reset}:       ${cyan}${TEST_APP_URL}${reset}"
-  echo "  ${green}DASHBOARD${reset}: ${cyan}${TEST_DASHBOARD_URL}${reset} (user: test, pass: testpass)"
-  echo ""
-  echo "Direct ports (bypass Traefik):"
-  echo "  ${green}API${reset}:  ${cyan}${TEST_API_PORT}${reset}"
-  echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5434${reset}"
-  echo "  ${green}Redis${reset}: ${cyan}localhost:6380${reset}"
+  echo "Testing environment ${cyan}${ICB_TEST_PROJECT}${reset} started. It publishes no ports."
+  echo "  ${green}e2e${reset}:   ${blue}icbops test e2e${reset}"
+  echo "  ${green}psql${reset}:  ${blue}docker exec -it ${ICB_TEST_PROJECT}-postgres psql -U postgres ichrisbirch${reset}"
+  echo "  ${green}shell${reset}: ${blue}docker exec -it ${ICB_TEST_PROJECT}-api bash${reset}"
 }
 
 function testing-stop() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Stopping ${blue}TESTING${reset} environment"
+  echo "Stopping ${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset}"
   $COMPOSE_TEST down --volumes
 }
 
 function testing-restart() {
   require-test-stack-here || return 1
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "Restarting ${blue}TESTING${reset} environment"
-  $COMPOSE_TEST up -d
+  echo "Restarting ${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset}"
+  mkdir -p "$TEST_REPORTS_DIR"
+  $COMPOSE_TEST up -d --wait || return 1
   env-initialize testing
 }
 
@@ -558,6 +573,7 @@ function testing-rebuild() {
     esac
   done
   require-test-stack-here || return 1
+  mkdir -p "$TEST_REPORTS_DIR"
 
   if [[ "$wipe_volumes" == true ]]; then
     echo "Wiping volumes for ${blue}TESTING${reset} environment (${yellow}--volumes${reset})"
@@ -571,18 +587,18 @@ function testing-rebuild() {
     echo "Building all images..."
     $COMPOSE_TEST build
     echo "Starting all services..."
-    $COMPOSE_TEST up -d
+    $COMPOSE_TEST up -d --wait || return 1
   elif [[ "$wipe_volumes" == true ]]; then
     echo "Building app image..."
     $COMPOSE_TEST build api
     echo "Starting all services (volumes were wiped)..."
-    $COMPOSE_TEST up -d
+    $COMPOSE_TEST up -d --wait || return 1
   else
     echo "Rebuilding ${blue}TESTING${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
     echo "Building app image..."
     $COMPOSE_TEST build api
     echo "Recreating app services..."
-    $COMPOSE_TEST up -d --force-recreate api scheduler vue
+    $COMPOSE_TEST up -d --wait --force-recreate api scheduler vue || return 1
   fi
 
   env-initialize testing || return 1
@@ -598,11 +614,9 @@ function testing-logs() {
 
 function testing-status() {
   cd "$ICHRISBIRCH_HOME" || exit
-  echo "${blue}TESTING${reset} environment status:"
+  echo "${blue}TESTING${reset} environment ${cyan}${ICB_TEST_PROJECT}${reset} status:"
   echo ""
-  $COMPOSE_TEST ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
-  echo ""
-  echo "${blue}URLs${reset}: $TEST_API_URL | $TEST_APP_URL"
+  $COMPOSE_TEST ps --format "table {{.Service}}\t{{.State}}\t{{.Status}}" | colored-status
 }
 
 function testing-health() {
@@ -611,16 +625,24 @@ function testing-health() {
   "$HEALTH_CHECK_SCRIPT" test
 }
 
+# The stack publishes no ports, so readiness is each health check's own verdict.
 function testing-is-ready() {
-  curl -sSf -k "$TEST_API_URL/health" >/dev/null 2>&1
+  local service health
+  for service in traefik postgres redis api vue; do
+    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' \
+      "${ICB_TEST_PROJECT}-${service}" 2>/dev/null) || return 1
+    if [[ "$health" != healthy ]]; then
+      return 1
+    fi
+  done
 }
 
 function testing-ensure() {
   require-test-stack-here || return 1
   if testing-is-ready; then
-    echo "${green}Test containers are running${reset}"
+    echo "${green}Test stack ${ICB_TEST_PROJECT} is running${reset}"
   else
-    echo "${yellow}Test containers not ready, starting...${reset}"
+    echo "${yellow}Test stack ${ICB_TEST_PROJECT} not ready, starting...${reset}"
     testing-start
   fi
 }
@@ -635,7 +657,7 @@ function testing-usage() {
   echo "  ${blue}testing rebuild --volumes${reset} Wipe named volumes and rebuild (combines with --all)"
   echo "  ${blue}testing status${reset}         Show container status"
   echo "  ${blue}testing health${reset}         Full diagnostic health check"
-  echo "  ${blue}testing is-ready${reset}       Quick check if API is responding (exit 0/1)"
+  echo "  ${blue}testing is-ready${reset}       Quick check if every service is healthy (exit 0/1)"
   echo "  ${blue}testing ensure${reset}         Start containers if not already running"
   echo "  ${blue}testing logs [service]${reset} View logs"
   echo "  ${blue}testing docker [service]${reset} Show merged Docker Compose config"
@@ -1037,6 +1059,7 @@ function usage() {
   echo "  ${blue}testing logs [service]${reset} - View logs"
   echo "  ${blue}testing status|health${reset} - Check environment"
   echo "  ${blue}test run [path] [args]${reset} - Run pytest (fast iteration)"
+  echo "  ${blue}test e2e [spec] [args]${reset} - Run Playwright inside this checkout's test stack"
   echo "  ${green}DB:${reset}"
   echo "    ${blue}testing db seed [--scale N] [--dry-run]${reset} - Seed with test data"
   echo "    ${blue}testing db reset${reset} - Drop + recreate everything (nuclear)"
@@ -1063,8 +1086,8 @@ function usage() {
   echo
   echo "${green}URLs:${reset}"
   echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
-  echo "  ${blue}Test${reset}: $TEST_API_URL | $TEST_APP_URL"
   echo "  ${blue}Prod${reset}: $PROD_API_URL | $PROD_APP_URL"
+  echo "  The test stack publishes no ports; its e2e suite runs inside it."
   echo
   echo "${green}The grammar:${reset} ${blue}icbops <environment> <verb>${reset}, where the environment is"
   echo "  dev, testing or prod. Run any environment with no verb to see its own."
@@ -1073,8 +1096,9 @@ function usage() {
   echo "${green}Examples:${reset}"
   echo "  ${blue}icbops dev start${reset}              # bring the dev stack up"
   echo "  ${blue}icbops dev logs api${reset}           # follow one service's logs"
-  echo "  ${blue}icbops test run${reset}               # run the suite, starting containers if needed"
+  echo "  ${blue}icbops test run${reset}               # run the suite against throwaway Postgres and Redis"
   echo "  ${blue}icbops test run tests/x.py -v${reset} # run one file"
+  echo "  ${blue}icbops test e2e e2e/tasks.spec.ts${reset} # run one e2e spec, starting the test stack if needed"
   echo "  ${blue}icbops testing rebuild --volumes${reset}  # when a code change is not taking effect"
   echo "  ${blue}icbops prod deploy-status${reset}     # which color is live"
 }
@@ -1097,6 +1121,10 @@ case $1 in
       run)
         shift 2
         test-run "$@"
+        ;;
+      e2e)
+        shift 2
+        test-e2e "$@"
         ;;
       *)
         echo "${red}Unknown test command: $2${reset}" >&2

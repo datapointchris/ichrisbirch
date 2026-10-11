@@ -37,13 +37,15 @@ Swagger docs at `https://api.docker.localhost/`.
 ## Tests
 
 ```bash
-./ops/icbops test run        # Python suite; starts test containers if needed
+./ops/icbops test run        # Python suite, against its own Postgres and Redis
+./ops/icbops test e2e        # Playwright, inside this checkout's test stack
 cd frontend && npm test      # TypeScript build check plus unit tests
-cd frontend && npm run test:e2e   # Playwright, through Traefik
 ```
 
-The Python tests run against their own containers and database, isolated from
-the dev stack and reachable at `https://api.test.localhost:8443/`.
+Each pytest session starts and discards its own Postgres and Redis. The e2e
+suite runs inside a compose project named after the checkout, which publishes
+no ports. So two checkouts run either suite at once without touching each
+other or the dev stack.
 
 ## Documentation
 
