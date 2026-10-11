@@ -5,15 +5,17 @@
         try_files {path} /index.html
         file_server
 
-        # Prevent caching of index.html (SPA entry point)
-        @html path /index.html
-        header @html Cache-Control "no-cache, no-store, must-revalidate"
-        header @html Pragma "no-cache"
-        header @html Expires "0"
-
         # Cache static assets with content hashes (1 year)
         @static path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2
         header @static Cache-Control "public, max-age=31536000, immutable"
+
+        # Every other path answers with index.html, the SPA entry point, which
+        # must never be cached. `header` runs before `try_files` rewrites the
+        # path, so this matches the path as requested, never /index.html.
+        @entry not path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2
+        header @entry Cache-Control "no-cache, no-store, must-revalidate"
+        header @entry Pragma "no-cache"
+        header @entry Expires "0"
     }
 
     encode gzip

@@ -57,6 +57,12 @@ Two loggers writing the same requests is two formats to parse.
 `frontend/Caddyfile` and serves the result on port 80. Caddy handles the SPA
 fallback, so a deep link renders rather than 404ing.
 
+Every path that answers with `index.html` is sent with `Cache-Control:
+no-store`. A browser holding an old copy would keep loading the old bundle after
+a deploy. The hashed files under `/assets/` are cached for a year.
+`tests/vue-cache-headers.bats` runs the Caddyfile in the same Caddy image and
+checks both.
+
 `VITE_API_URL` is a build argument, not a runtime variable. Vite substitutes it
 into the bundle at build time, so changing it means rebuilding the image.
 Production passes `/api`, which is the same-origin path Traefik proxies.
@@ -67,7 +73,7 @@ answers on port 5173 with hot module replacement.
 
 Caddy serves the frontend you deploy and Vite serves the one you develop
 against. So a fault in the SPA fallback, or anywhere else in
-`frontend/Caddyfile`, cannot show up in dev.
+`frontend/Caddyfile`, cannot show up in dev or in the e2e suite.
 
 ## Dev and test build locally; production pulls
 
