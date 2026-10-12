@@ -32,6 +32,8 @@ SCOPED_URLS = {
     f'{API_PREFIX}/issues': '/issues?search=scheduler&status=all',
     f'{API_PREFIX}/issues/ready': '/issues/ready',
     f'{API_PREFIX}/issues/{{id}}': '/issues/{issue}',
+    f'{API_PREFIX}/issues/initiatives': '/issues/initiatives',
+    f'{API_PREFIX}/issues/initiatives/{{id:path}}': '/issues/initiatives/{initiative}',
     f'{API_PREFIX}/project-items': '/project-items',
     f'{API_PREFIX}/project-items/blocked': '/project-items/blocked',
     f'{API_PREFIX}/project-items/search': '/project-items/search?q=scheduler',
@@ -52,7 +54,10 @@ SCOPED_ROUTES = sorted(scoped_routes())
 
 # How a refusal's list of what each scope reaches begins.
 REACHES = {
-    ISSUES: f'GET {API_PREFIX}/issues, GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}',
+    ISSUES: (
+        f'GET {API_PREFIX}/issues, GET {API_PREFIX}/issues/initiatives, GET {API_PREFIX}/issues/initiatives/{{id:path}}, '
+        f'GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}'
+    ),
     PROJECT_ITEMS: f'GET {API_PREFIX}/project-items, ',
 }
 
@@ -63,16 +68,17 @@ def scoped(scope: str) -> ScopedClient:
 
 @pytest.fixture
 def as_caller(txn_api):
-    """Seed one item in one project, and one issue.
+    """Seed one item in one project, one issue, and one initiative.
 
     `caller(identity)` sets who the token says is calling and returns the client, and `url(template)`
-    fills a template with the seeded rows.
+    fills a template with the seeded rows. The initiative is named, as the CLI names one.
     """
     client, session = txn_api
     project = models.Project(name='scheduler project')
     item = models.ProjectItem(title='scheduler item')
     issue = models.Issue(title='scheduler issue', rank=1.0)
-    session.add_all([project, item, issue])
+    initiative = models.Initiative(name='scheduler-initiative')
+    session.add_all([project, item, issue, initiative])
     session.flush()
     session.add(models.ProjectItemMembership(item_id=item.id, project_id=project.id))
     session.add(models.ProjectItemTask(item_id=item.id, title='scheduler task'))
@@ -83,7 +89,7 @@ def as_caller(txn_api):
         return client
 
     def url(template):
-        return template.format(item=item.id, project=project.id, issue=issue.number)
+        return template.format(item=item.id, project=project.id, issue=issue.number, initiative=initiative.name)
 
     return SimpleNamespace(caller=caller, url=url, project=project)
 
@@ -112,6 +118,9 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
         (ISSUES, 'GET', '/issues/{issue}/comments'),
         (ISSUES, 'GET', '/issues/vocabulary'),
         (ISSUES, 'GET', '/issues/labels'),
+        (ISSUES, 'POST', '/issues/initiatives'),
+        (ISSUES, 'PATCH', '/issues/initiatives/{initiative}'),
+        (ISSUES, 'DELETE', '/issues/initiatives/{initiative}'),
         (ISSUES, 'GET', '/project-items'),
     ],
     ids=[
@@ -130,6 +139,9 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
         'issues-unlisted-read-on-a-scoped-router',
         'issues-vocabulary',
         'issues-labels-router',
+        'issues-initiatives-create',
+        'issues-initiatives-update',
+        'issues-initiatives-delete',
         'issues-another-scopes-route',
     ],
 )
@@ -142,7 +154,12 @@ def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url
 
 @pytest.mark.parametrize(
     ('scope', 'method', 'url'),
-    [(PROJECT_ITEMS, 'GET', '/tasks'), (PROJECT_ITEMS, 'PATCH', '/project-items/{item}'), (ISSUES, 'PATCH', '/issues/{issue}')],
+    [
+        (PROJECT_ITEMS, 'GET', '/tasks'),
+        (PROJECT_ITEMS, 'PATCH', '/project-items/{item}'),
+        (ISSUES, 'PATCH', '/issues/{issue}'),
+        (ISSUES, 'PATCH', '/issues/initiatives/{initiative}'),
+    ],
 )
 def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope, method, url):
     """The header strategy resolves that account, so without the refusal the request runs as it."""

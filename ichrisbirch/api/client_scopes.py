@@ -12,10 +12,14 @@ from starlette.routing import BaseRoute
 from ichrisbirch.api import API_PREFIX
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
-    # The reads `icb issues list`, `search`, `next` and `show` make. `--blocked` filters `/issues`.
+    # The reads `icb issues list`, `search`, `next`, `show`, and `initiatives list` and `show`
+    # make. `--blocked` filters `/issues`. An issue in a series often has no description of its
+    # own, so a reader judging it needs its initiative's.
     'icb.issues.read': frozenset(
         {
             ('GET', f'{API_PREFIX}/issues'),
+            ('GET', f'{API_PREFIX}/issues/initiatives'),
+            ('GET', f'{API_PREFIX}/issues/initiatives/{{id:path}}'),
             ('GET', f'{API_PREFIX}/issues/ready'),
             ('GET', f'{API_PREFIX}/issues/{{id}}'),
         }

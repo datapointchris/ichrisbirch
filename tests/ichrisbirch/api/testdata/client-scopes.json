@@ -1,6 +1,8 @@
 {
   "icb.issues.read": [
     "GET /api/v1/issues",
+    "GET /api/v1/issues/initiatives",
+    "GET /api/v1/issues/initiatives/{id:path}",
     "GET /api/v1/issues/ready",
     "GET /api/v1/issues/{id}"
   ],

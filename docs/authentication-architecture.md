@@ -115,5 +115,7 @@ A refused scoped client's 403 message names the routes its scopes reach. The sam
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
 The CLI's suite runs each read a scheduled job makes as a service:
 `icb projects items search`, and `icb issues list`, `list --blocked`, `search`,
-`next` and `show`. It requires every request they send to match a route listed
-there for a scope the CLI requests.
+`next`, `show`, `initiatives list` and `initiatives show`. It requires every
+request they send to match a route listed there for a scope the CLI requests. A
+`{name:path}` template matches any segments, as FastAPI's path converter does,
+because a job names an initiative by its name.

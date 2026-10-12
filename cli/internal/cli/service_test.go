@@ -187,18 +187,27 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	// A {name} in these templates is a UUID, or for an issue its number. Matched
 	// as any segment, /project-items/{id} would also take /project-items/search
 	// and /issues/{id} would take /issues/vocabulary, both of which FastAPI
-	// routes to another handler.
+	// routes to another handler. A {name:path} is FastAPI's path converter, which
+	// takes any segments, and an initiative is named by its name.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)
 	scopes := config.Service(goclilogin.Deployment{}).Scopes
 	var listed []*regexp.Regexp
 	for _, scope := range scopes {
-		for _, pattern := range reaches[scope] {
-			literals := wildcard.Split(pattern, -1)
-			for i, literal := range literals {
-				literals[i] = regexp.QuoteMeta(literal)
+		for _, template := range reaches[scope] {
+			var pattern strings.Builder
+			last := 0
+			for _, at := range wildcard.FindAllStringIndex(template, -1) {
+				pattern.WriteString(regexp.QuoteMeta(template[last:at[0]]))
+				if strings.HasSuffix(template[at[0]:at[1]], ":path}") {
+					pattern.WriteString(".+")
+				} else {
+					pattern.WriteString(reference)
+				}
+				last = at[1]
 			}
-			listed = append(listed, regexp.MustCompile("^"+strings.Join(literals, reference)+"$"))
+			pattern.WriteString(regexp.QuoteMeta(template[last:]))
+			listed = append(listed, regexp.MustCompile("^"+pattern.String()+"$"))
 		}
 	}
 
@@ -206,21 +215,33 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	for _, read := range []struct {
 		args []string
 		body string
+		// byPath answers a read that makes a second request of another shape.
+		byPath map[string]string
 	}{
-		{[]string{"projects", "items", "search", "sync"}, `[]`},
-		{[]string{"issues", "search", "sync", "--json"}, `[]`},
-		{[]string{"issues", "list", "--json"}, `[]`},
-		{[]string{"issues", "list", "--blocked", "--json"}, `[]`},
-		{[]string{"issues", "next", "--json"}, `[]`},
-		{[]string{"issues", "show", "412", "--json"}, `{}`},
-		{[]string{"issues", "show", "019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b", "--json"}, `{}`},
+		{[]string{"projects", "items", "search", "sync"}, `[]`, nil},
+		{[]string{"issues", "search", "sync", "--json"}, `[]`, nil},
+		{[]string{"issues", "list", "--json"}, `[]`, nil},
+		{[]string{"issues", "list", "--blocked", "--json"}, `[]`, nil},
+		{[]string{"issues", "next", "--json"}, `[]`, nil},
+		{[]string{"issues", "show", "412", "--json"}, `{}`, nil},
+		{[]string{"issues", "show", "019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b", "--json"}, `{}`, nil},
+		{[]string{"issues", "initiatives", "list", "--json"}, `[]`, nil},
+		{
+			[]string{"issues", "initiatives", "show", "Practical help guides", "--json"},
+			`[]`,
+			map[string]string{"/api/v1/issues/initiatives/Practical help guides": `{}`},
+		},
 	} {
 		t.Run(strings.Join(read.args, " "), func(t *testing.T) {
 			var sent []string
 			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sent = append(sent, r.Method+" "+r.URL.Path)
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(read.body))
+				body, ok := read.byPath[r.URL.Path]
+				if !ok {
+					body = read.body
+				}
+				_, _ = w.Write([]byte(body))
 			}))
 			t.Cleanup(api.Close)
 			asService(t, idp.URL, api.URL, serviceSecret)
