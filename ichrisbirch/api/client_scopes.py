@@ -24,6 +24,14 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
             ('GET', f'{API_PREFIX}/issues/{{id}}'),
         }
     ),
+    # What `icb issues add-comment` and `complete` send, for a job closing an issue whose fix
+    # merged. The update handler lets a scoped client close an open issue and set nothing else.
+    'icb.issues.close': frozenset(
+        {
+            ('POST', f'{API_PREFIX}/issues/{{id}}/comments'),
+            ('PATCH', f'{API_PREFIX}/issues/{{id}}'),
+        }
+    ),
     # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
         {

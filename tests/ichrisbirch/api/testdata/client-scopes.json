@@ -1,4 +1,8 @@
 {
+  "icb.issues.close": [
+    "PATCH /api/v1/issues/{id}",
+    "POST /api/v1/issues/{id}/comments"
+  ],
   "icb.issues.read": [
     "GET /api/v1/issues",
     "GET /api/v1/issues/initiatives",

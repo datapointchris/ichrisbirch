@@ -23,6 +23,8 @@ from tests.util import show_status_and_response
 
 PROJECT_ITEMS = 'icb.project-items.read'
 ISSUES = 'icb.issues.read'
+CLOSE = 'icb.issues.close'
+CLOSER = 'worker/close-job@service-box'
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
 SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 
@@ -43,6 +45,17 @@ SCOPED_URLS = {
     f'{API_PREFIX}/projects/{{id:path}}/items': '/projects/{project}/items',
 }
 
+# Each write a scope lists, as the CLI sends it: the comment saying what landed, then the update
+# that completes the issue and names the job closing it.
+SCOPED_WRITES = {
+    ('POST', f'{API_PREFIX}/issues/{{id}}/comments'): (
+        '/issues/{issue}/comments',
+        {'body': 'Landed: a merged fix'},
+        status.HTTP_201_CREATED,
+    ),
+    ('PATCH', f'{API_PREFIX}/issues/{{id}}'): ('/issues/{issue}', {'status': 'completed', 'closed_by': CLOSER}, status.HTTP_200_OK),
+}
+
 
 def scoped_routes() -> Iterator[tuple[str, str, str]]:
     for scope, routes in SCOPE_ROUTES.items():
@@ -59,6 +72,7 @@ REACHES = {
         f'GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}'
     ),
     PROJECT_ITEMS: f'GET {API_PREFIX}/project-items, ',
+    CLOSE: f'PATCH {API_PREFIX}/issues/{{id}}, POST {API_PREFIX}/issues/{{id}}/comments',
 }
 
 
@@ -95,9 +109,13 @@ def as_caller(txn_api):
 
 
 @pytest.mark.parametrize(('scope', 'method', 'template'), SCOPED_ROUTES)
-def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, method, template):
-    response = as_caller.caller(scoped(scope)).request(method, as_caller.url(SCOPED_URLS[template]))
-    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, method, template):
+    if method == 'GET':
+        url, body, expected = SCOPED_URLS[template], None, status.HTTP_200_OK
+    else:
+        url, body, expected = SCOPED_WRITES[(method, template)]
+    response = as_caller.caller(scoped(scope)).request(method, as_caller.url(url), json=body)
+    assert response.status_code == expected, show_status_and_response(response)
 
 
 @pytest.mark.parametrize(
@@ -122,6 +140,11 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
         (ISSUES, 'PATCH', '/issues/initiatives/{initiative}'),
         (ISSUES, 'DELETE', '/issues/initiatives/{initiative}'),
         (ISSUES, 'GET', '/project-items'),
+        (CLOSE, 'GET', '/issues/{issue}'),
+        (CLOSE, 'POST', '/issues'),
+        (CLOSE, 'DELETE', '/issues/{issue}'),
+        (CLOSE, 'POST', '/issues/{issue}/claim'),
+        (CLOSE, 'PATCH', '/issues/initiatives/{initiative}'),
     ],
     ids=[
         'project-items-write-on-a-scoped-router',
@@ -143,6 +166,11 @@ def test_a_scoped_client_reads_every_route_its_scope_lists(as_caller, scope, met
         'issues-initiatives-update',
         'issues-initiatives-delete',
         'issues-another-scopes-route',
+        'close-read',
+        'close-create',
+        'close-delete',
+        'close-claim',
+        'close-initiative-update',
     ],
 )
 def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
@@ -159,6 +187,7 @@ def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url
         (PROJECT_ITEMS, 'PATCH', '/project-items/{item}'),
         (ISSUES, 'PATCH', '/issues/{issue}'),
         (ISSUES, 'PATCH', '/issues/initiatives/{initiative}'),
+        (CLOSE, 'PATCH', '/issues/{issue}'),
     ],
 )
 def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope, method, url):
@@ -166,6 +195,35 @@ def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope
     client = as_caller.caller(scoped(scope))
     response = client.request(method, as_caller.url(url), headers=FORGED_HEADERS, json={'title': 'renamed'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
+
+
+@pytest.mark.parametrize(
+    ('body', 'refused'),
+    [
+        ({'status': 'completed', 'title': 'renamed'}, 'this update also sets title'),
+        ({'priority': 0}, 'this update also sets priority'),
+        ({'status': 'in_progress'}, 'this update sets no closing status'),
+        ({'closed_by': CLOSER}, 'this update sets no closing status'),
+    ],
+    ids=['an-edit-beside-a-close', 'an-edit-alone', 'a-status-that-keeps-it-open', 'a-closer-alone'],
+)
+def test_the_close_scope_closes_an_issue_and_edits_nothing(as_caller, body, refused):
+    response = as_caller.caller(scoped(CLOSE)).patch(as_caller.url('/issues/{issue}'), json=body)
+    assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
+    assert Refusal.SCOPED_CLIENT_ONLY_CLOSES in response.json()['message']
+    assert refused in response.json()['message']
+
+
+def test_the_close_scope_signs_with_its_client_id_and_closes_an_issue_once(as_caller):
+    client = as_caller.caller(scoped(CLOSE))
+    url = as_caller.url('/issues/{issue}')
+    closed = client.patch(url, json={'status': 'completed'})
+    assert closed.status_code == status.HTTP_200_OK, show_status_and_response(closed)
+    assert closed.json()['closed_by'] == 'icb-svc-worker'
+
+    moved = client.patch(url, json={'status': 'canceled'})
+    assert moved.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(moved)
+    assert 'is already completed' in moved.json()['message']
 
 
 def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):

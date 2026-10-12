@@ -28,6 +28,7 @@ class Refusal(enum.StrEnum):
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_INTERNAL_CREDENTIALS = 'Invalid internal service credentials'
     OUTSIDE_CLIENT_SCOPES = "Route is outside this client's scopes"
+    SCOPED_CLIENT_ONLY_CLOSES = 'A service client may only close an open issue'
     SIGNUPS_CLOSED = 'New signups for VIP users only.'
 
 

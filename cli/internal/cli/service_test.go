@@ -40,7 +40,7 @@ func serviceIDP(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"error":"invalid_client"}`))
 			return
 		}
-		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read" {
+		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read icb.issues.close" {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"invalid_scope"}`))
 			return
@@ -171,10 +171,10 @@ func TestService_ARouteOutsideTheScopeReportsTheAPIsMessage(t *testing.T) {
 }
 
 // serviceIDP grants the scopes this file spells, which is the CLI's own copy.
-// So a scope the API renamed, or a route one of these reads calls that the API
+// So a scope the API renamed, or a route one of these calls sends that the API
 // stopped listing, passes every other test here and answers 403 to every
 // scheduled run.
-func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.T) {
+func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.T) {
 	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
 	if err != nil {
 		t.Fatalf("read the API's scope table — run tests/ichrisbirch/api/test_client_scopes.py to write it: %v", err)
@@ -212,10 +212,11 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 	}
 
 	idp := serviceIDP(t)
-	for _, read := range []struct {
+	openIssue := `{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"open"}`
+	for _, call := range []struct {
 		args []string
 		body string
-		// byPath answers a read that makes a second request of another shape.
+		// byPath answers a call that makes a second request of another shape.
 		byPath map[string]string
 	}{
 		{[]string{"projects", "items", "search", "sync"}, `[]`, nil},
@@ -231,21 +232,23 @@ func TestService_EachScheduledReadCallsARouteTheRequestedScopesReach(t *testing.
 			`[]`,
 			map[string]string{"/api/v1/issues/initiatives/Practical help guides": `{}`},
 		},
+		{[]string{"issues", "add-comment", "412", "--body", "Landed: a merged fix"}, `{}`, nil},
+		{[]string{"issues", "complete", "412"}, openIssue, nil},
 	} {
-		t.Run(strings.Join(read.args, " "), func(t *testing.T) {
+		t.Run(strings.Join(call.args, " "), func(t *testing.T) {
 			var sent []string
 			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sent = append(sent, r.Method+" "+r.URL.Path)
 				w.Header().Set("Content-Type", "application/json")
-				body, ok := read.byPath[r.URL.Path]
+				body, ok := call.byPath[r.URL.Path]
 				if !ok {
-					body = read.body
+					body = call.body
 				}
 				_, _ = w.Write([]byte(body))
 			}))
 			t.Cleanup(api.Close)
 			asService(t, idp.URL, api.URL, serviceSecret)
-			if _, err := runService(t, read.args...); err != nil {
+			if _, err := runService(t, call.args...); err != nil {
 				t.Fatalf("run as a service: %v", err)
 			}
 			if len(sent) == 0 {

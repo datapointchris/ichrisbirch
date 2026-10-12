@@ -107,15 +107,26 @@ A handler that resolves the user through its own dependency refuses a scoped
 client too. `RequestZone` takes `get_current_user_or_scoped_client` for that
 reason, and a scoped client that names no `timezone` gets UTC.
 
+**`icb.issues.close` writes, and the handler narrows it to a close.** It lists
+the comment route and the issue update, which is what a scheduled job sends to
+complete an issue once its fix merged. A route permits by method and template,
+never by body, so the update handler refuses a scoped client's update carrying
+anything but `status` and `closed_by`, or a status that leaves the issue open,
+or an issue already closed. A close naming no closer is stamped with the
+client's id. *Rejected:* `icb.issues.write`, which reads as every write route,
+and a dedicated close route, which would be a second way to close beside the
+update.
+
 `permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
-requests every listed route as a scoped client and requires 200, so a renamed
-path parameter fails it with 403.
+requests every listed route as a scoped client and requires its success status,
+so a renamed path parameter fails it with 403.
 
 A refused scoped client's 403 message names the routes its scopes reach. The same
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
-The CLI's suite runs each read a scheduled job makes as a service:
+The CLI's suite runs each call a scheduled job makes as a service:
 `icb projects items search`, and `icb issues list`, `list --blocked`, `search`,
-`next`, `show`, `initiatives list` and `initiatives show`. It requires every
+`next`, `show`, `initiatives list`, `initiatives show`, `add-comment` and
+`complete`. It requires every
 request they send to match a route listed there for a scope the CLI requests. A
 `{name:path}` template matches any segments, as FastAPI's path converter does,
 because a job names an initiative by its name.

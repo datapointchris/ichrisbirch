@@ -20,9 +20,12 @@ from sqlalchemy.sql import Select
 
 from ichrisbirch import models
 from ichrisbirch import schemas
-from ichrisbirch.api.endpoints.auth import CurrentUser
+from ichrisbirch.api.endpoints.auth import CurrentCaller
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.exceptions import ForbiddenException
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.exceptions import Refusal
+from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.request_zone import RequestZone
 from ichrisbirch.models.issue import CLOSED_ISSUE_STATUSES
 from ichrisbirch.models.issue import INITIATIVE_STATUSES
@@ -511,11 +514,30 @@ def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
     return fresh_issue_detail(session, issue, zone)
 
 
+# What a scoped client's update may carry. icb.issues.close reaches this route to complete an issue
+# whose fix merged, and an edit is no part of that.
+SCOPED_CLOSE_FIELDS = frozenset({'status', 'closed_by'})
+
+
+def refuse_all_but_a_close(issue: models.Issue, update_data: dict) -> None:
+    if extra := sorted(set(update_data) - SCOPED_CLOSE_FIELDS):
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_ONLY_CLOSES}; this update also sets {", ".join(extra)}', logger)
+    if update_data.get('status') not in CLOSED_ISSUE_STATUSES:
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_ONLY_CLOSES}; this update sets no closing status', logger)
+    if issue.is_closed:
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_ONLY_CLOSES}; #{issue.number} is already {issue.status}', logger)
+
+
 @router.patch('/{id}', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
-def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone, user: CurrentUser):
+def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone, caller: CurrentCaller):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
     now = dt.datetime.now(dt.UTC)
+    if isinstance(caller, ScopedClient):
+        refuse_all_but_a_close(issue, update_data)
+        signed_in = caller.client_id
+    else:
+        signed_in = caller.email
 
     if (issue_type := update_data.get('type')) is not None:
         validate_lookup(session, models.IssueType, issue_type, 'issue type')
@@ -547,7 +569,7 @@ def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession
     if 'labels' in update_data:
         set_labels(session, issue, update_data.pop('labels'))
 
-    apply_status_transition(session, issue, update_data, now, signed_in=user.email)
+    apply_status_transition(session, issue, update_data, now, signed_in=signed_in)
 
     for attr, value in update_data.items():
         setattr(issue, attr, value)

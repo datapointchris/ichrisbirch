@@ -134,10 +134,13 @@ names its confidential client, `icb-svc-<machine>`, as `client_id`, and
 `ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
 is told which one to write. icb then requests a token
 through the client-credentials grant on each run, asking for
-`icb.project-items.read` and `icb.issues.read`, and stores nothing. `auth login`
-and `auth logout` refuse in that mode. The API never resolves that token to a
-user. It answers 403 on every route outside the reads the `icb projects items`
-commands make and the reads `icb issues list`, `search`, `next` and `show` make.
+`icb.project-items.read`, `icb.issues.read` and `icb.issues.close`, and stores
+nothing. `auth login` and `auth logout` refuse in that mode. The API never
+resolves that token to a user. It answers 403 on every route outside the reads
+the `icb projects items` commands make, the reads `icb issues list`, `search`,
+`next`, `show` and `initiatives list` and `show` make, and the comment and update
+`icb issues add-comment` and `complete` send. An update may only close an open
+issue, so a service cannot edit one.
 
 Authelia refuses the whole token request when it names a scope the client does
 not hold. So a scope is granted to the client in Authelia before a release of

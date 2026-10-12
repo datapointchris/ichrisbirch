@@ -299,5 +299,6 @@ def get_admin_or_internal_service_access(
 # Type aliases for cleaner endpoint signatures
 DbSession = Annotated[Session, Depends(get_sqlalchemy_session)]
 CurrentUser = Annotated[models.User, Depends(get_current_user)]
+CurrentCaller = Annotated[models.User | ScopedClient, Depends(get_current_user_or_scoped_client)]
 AdminUser = Annotated[models.User, Depends(get_admin_user)]
 AdminOrInternalServiceAccess = Annotated[bool, Depends(get_admin_or_internal_service_access)]
