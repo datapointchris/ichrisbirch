@@ -33,7 +33,6 @@ from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.endpoints.auth import get_current_user_or_scoped_client
 from ichrisbirch.api.middleware import ResponseLoggerMiddleware
-from ichrisbirch.api.protected_resource import WELL_KNOWN
 from ichrisbirch.api.protected_resource import add_protected_resource_route
 from ichrisbirch.api.redis_client import REQUEST_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.redis_client import get_redis_client
@@ -47,9 +46,9 @@ VALIDATION_SCOPES = ('body', 'query', 'path', 'header', 'cookie')
 
 
 class RetiredPathConvertor(Convertor[str]):
-    """Any root path outside `/api/v1`, `/health` and the RFC 9728 metadata, which keep their own 404 and 405."""
+    """Any path under `/api/` outside the current version, so `/api/v1` keeps its own 404 and 405."""
 
-    regex = rf'(?!(?:{re.escape(API_PREFIX[1:])}(?:/|$)|health/?$|{re.escape(WELL_KNOWN[1:])}/?$)).+'
+    regex = rf'(?!{re.escape(API_PREFIX.removeprefix("/api/"))}(?:/|$)).*'
 
     def convert(self, value: str) -> str:
         return value
@@ -234,10 +233,11 @@ def create_api(settings: Settings) -> FastAPI:
     v1.include_router(endpoints.users.router, prefix='/users')
     api.include_router(endpoints.home.router, include_in_schema=False)
     api.include_router(v1)
+    api.add_api_route(
+        '/api/{rest:retired}', retired_path, methods=['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'], include_in_schema=False
+    )
     if settings.fastapi.public_url:
         add_protected_resource_route(api, settings.fastapi.public_url, settings.oidc.issuer)
-    # An unversioned client arrives as `/api/tasks`, or as `/tasks` through a proxy that strips `/api`.
-    api.add_api_route('/{rest:retired}', retired_path, methods=['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'], include_in_schema=False)
     logger.info('routers_registered')
 
     api.add_exception_handler(HTTPException, http_exception_handler_logger)
