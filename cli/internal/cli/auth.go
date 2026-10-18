@@ -330,9 +330,11 @@ func loginStatus(ctx context.Context, d goclilogin.Deployment, report *statusRep
 		}
 		// Ask for a token the way a resource command does, which is the
 		// only thing that separates a soft expiry from a revoked grant.
-		// A live access token answers locally; an expired one performs
-		// the refresh the next call would have performed anyway, so the
-		// answer costs nothing that was not already due.
+		// VerifySession reads the issuer's discovery document first, so an
+		// unreachable issuer reports unverified even while the stored
+		// access token is live. A live token then answers with no further
+		// call, and an expired one performs the refresh the next call would
+		// have performed anyway.
 		report.Session, token = goclilogin.VerifySession(ctx, login, store)
 		if token != nil && !token.Expiry.IsZero() {
 			report.ExpiresAt = token.Expiry.Format(time.RFC3339)
