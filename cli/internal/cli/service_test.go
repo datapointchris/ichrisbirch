@@ -40,7 +40,7 @@ func serviceIDP(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"error":"invalid_client"}`))
 			return
 		}
-		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read icb.issues.close" {
+		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read icb.issues.claim icb.issues.close" {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"invalid_scope"}`))
 			return
@@ -213,6 +213,8 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 
 	idp := serviceIDP(t)
 	openIssue := `{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"open"}`
+	heldIssue := `{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"in_progress","claimed_by":"` +
+		serviceClientID + `","claim_expires_ts":"2026-10-20T00:00:00Z"}`
 	for _, call := range []struct {
 		args []string
 		body string
@@ -232,6 +234,8 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 			`[]`,
 			map[string]string{"/api/v1/issues/initiatives/Practical help guides": `{}`},
 		},
+		{[]string{"issues", "claim", "412", "--minutes", "2880"}, heldIssue, nil},
+		{[]string{"issues", "release", "412"}, openIssue, nil},
 		{[]string{"issues", "add-comment", "412", "--body", "Landed: a merged fix"}, `{}`, nil},
 		{[]string{"issues", "complete", "412"}, openIssue, nil},
 	} {
@@ -239,6 +243,15 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 			var sent []string
 			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sent = append(sent, r.Method+" "+r.URL.Path)
+				// The API refuses a scoped client any claimant but its own id.
+				if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/claim") {
+					var claim struct {
+						Claimant string `json:"claimant"`
+					}
+					if err := json.NewDecoder(r.Body).Decode(&claim); err != nil || claim.Claimant != serviceClientID {
+						t.Errorf("a service claimed as %q (%v), want its client id %s", claim.Claimant, err, serviceClientID)
+					}
+				}
 				w.Header().Set("Content-Type", "application/json")
 				body, ok := call.byPath[r.URL.Path]
 				if !ok {

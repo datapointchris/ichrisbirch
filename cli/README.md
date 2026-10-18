@@ -134,13 +134,15 @@ names its confidential client, `icb-svc-<machine>`, as `client_id`, and
 `ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
 is told which one to write. icb then requests a token
 through the client-credentials grant on each run, asking for
-`icb.project-items.read`, `icb.issues.read` and `icb.issues.close`, and stores
-nothing. `auth login` and `auth logout` refuse in that mode. The API never
-resolves that token to a user. It answers 403 on every route outside the reads
-the `icb projects items` commands make, the reads `icb issues list`, `search`,
-`next`, `show` and `initiatives list` and `show` make, and the comment and update
-`icb issues add-comment` and `complete` send. An update may only close an open
-issue, so a service cannot edit one.
+`icb.project-items.read`, `icb.issues.read`, `icb.issues.claim` and
+`icb.issues.close`, and stores nothing. `auth login` and `auth logout` refuse in
+that mode. The API never resolves that token to a user. It answers 403 on every
+route outside the reads the `icb projects items` commands make, the reads
+`icb issues list`, `search`, `next`, `show` and `initiatives list` and `show`
+make, the claim and release `icb issues claim <issue>` and `release` send, and
+the comment and update `icb issues add-comment` and `complete` send. A claim is
+signed with the client's id, and a release frees only a claim that id holds. An
+update may only close an open issue, so a service cannot edit one.
 
 Authelia refuses the whole token request when it names a scope the client does
 not hold. So a scope is granted to the client in Authelia before a release of

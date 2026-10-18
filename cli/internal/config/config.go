@@ -38,6 +38,7 @@ const keyringService = "icb-cli"
 const (
 	projectItemsScope = "icb.project-items.read"
 	issuesScope       = "icb.issues.read"
+	issuesClaimScope  = "icb.issues.claim"
 	issuesCloseScope  = "icb.issues.close"
 )
 
@@ -163,5 +164,5 @@ func IsService() bool { return ClientSecret() != "" }
 // grant. Nothing it obtains is stored, so it names no keyring or state
 // directory.
 func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope, issuesCloseScope}}
+	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope, issuesClaimScope, issuesCloseScope}}
 }
