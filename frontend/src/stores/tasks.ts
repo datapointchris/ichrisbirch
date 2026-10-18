@@ -170,6 +170,10 @@ export const useTasksStore = defineStore('tasks', () => {
     if (index !== -1) {
       tasks.value[index] = task
     }
+    const completedIndex = completedTasks.value.findIndex((t) => t.id === task.id)
+    if (completedIndex !== -1) {
+      completedTasks.value[completedIndex] = task as CompletedTask
+    }
   }
 
   async function snooze(id: number) {

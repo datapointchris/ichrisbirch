@@ -52,6 +52,7 @@
               v-for="task in completedToday"
               :key="task.id"
               :task="task"
+              @edit="onEdit"
               @delete="onDelete"
             />
           </template>
@@ -196,6 +197,7 @@
                 v-for="task in filteredCompletedTasks"
                 :key="task.id"
                 :task="task"
+                @edit="onEdit"
                 @delete="onDelete"
               />
             </template>
@@ -253,6 +255,7 @@
             v-for="task in store.completedTasks"
             :key="task.id"
             :task="task"
+            @edit="onEdit"
             @delete="onDelete"
           />
         </template>
@@ -507,7 +510,11 @@ async function onCreate(data: TaskCreate) {
 }
 
 function onEdit(id: number) {
-  editTarget.value = store.tasks.find((t) => t.id === id) ?? null
+  editTarget.value =
+    store.tasks.find((t) => t.id === id) ??
+    store.completedTasks.find((t) => t.id === id) ??
+    completedToday.value.find((t) => t.id === id) ??
+    null
 }
 
 function onModalClose() {
@@ -518,6 +525,8 @@ function onModalClose() {
 async function onUpdate(id: number, changes: TaskUpdate) {
   try {
     const updated = await store.update(id, changes)
+    const today = completedToday.value.findIndex((t) => t.id === id)
+    if (today !== -1) completedToday.value[today] = updated as CompletedTask
     show(`${updated.name} updated`, 'success')
   } catch {
     show('Failed to update task', 'error')
