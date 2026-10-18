@@ -52,9 +52,11 @@
     </span>
     <span>
       <ActionButton
+        data-testid="task-edit-button"
         icon="fa-solid fa-pen-to-square"
         variant="warning"
         title="Edit task"
+        @click="$emit('edit', task.id)"
       />
     </span>
     <span>
@@ -80,6 +82,7 @@ defineEmits<{
   snooze: [id: number]
   drop: [id: number]
   pin: [id: number, pinned: boolean]
+  edit: [id: number]
   delete: [id: number]
 }>()
 </script>

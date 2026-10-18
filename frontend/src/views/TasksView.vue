@@ -32,6 +32,7 @@
               :key="task.id"
               :task="task"
               @complete="onComplete"
+              @edit="onEdit"
               @delete="onDelete"
             />
           </template>
@@ -96,6 +97,7 @@
               @snooze="onSnooze"
               @drop="onDrop"
               @pin="onPin"
+              @edit="onEdit"
               @delete="onDelete"
             />
           </template>
@@ -244,6 +246,7 @@
             @snooze="onSnooze"
             @drop="onDrop"
             @pin="onPin"
+            @edit="onEdit"
             @delete="onDelete"
           />
           <TaskCompactCompleted
@@ -282,9 +285,11 @@
     </template>
 
     <AddEditTaskModal
-      :visible="showAddTask"
-      @close="showAddTask = false"
+      :visible="showAddTask || editTarget !== null"
+      :task="editTarget"
+      @close="onModalClose"
       @create="onCreate"
+      @update="onUpdate"
     />
 
     <DropTaskModal
@@ -322,7 +327,7 @@ import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
 import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
 import { averageCompletionTime, placementBetween } from '@/components/tasks/taskUtils'
 import { DATE_FILTERS, dateFilterLabel, dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
-import type { TaskCreate } from '@/api/client'
+import type { TaskCreate, TaskUpdate } from '@/api/client'
 
 const route = useRoute()
 const store = useTasksStore()
@@ -333,6 +338,7 @@ const selectedFilter = ref<DateFilterKey>('this_week')
 const selectedCategory = ref<string>('')
 const completedToday = ref<CompletedTask[]>([])
 const showAddTask = ref(false)
+const editTarget = ref<Task | null>(null)
 const dropTarget = ref<Task | null>(null)
 
 type ClosedView = 'completed' | 'dropped'
@@ -497,6 +503,24 @@ async function onCreate(data: TaskCreate) {
     show(`${data.name} created`, 'success')
   } catch {
     show('Failed to create task', 'error')
+  }
+}
+
+function onEdit(id: number) {
+  editTarget.value = store.tasks.find((t) => t.id === id) ?? null
+}
+
+function onModalClose() {
+  showAddTask.value = false
+  editTarget.value = null
+}
+
+async function onUpdate(id: number, changes: TaskUpdate) {
+  try {
+    const updated = await store.update(id, changes)
+    show(`${updated.name} updated`, 'success')
+  } catch {
+    show('Failed to update task', 'error')
   }
 }
 

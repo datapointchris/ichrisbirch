@@ -242,9 +242,30 @@ describe('TasksView', () => {
 
   // --- Modal wiring ---
 
-  it('passes showAddTask to modal component', () => {
-    const wrapper = createWrapper()
+  it('Edit on a compact row opens the modal on that task, and its update reaches the store', async () => {
+    vi.mocked(await import('vue-router')).useRoute = vi.fn().mockReturnValue({
+      name: 'tasks',
+      fullPath: '/tasks',
+      query: {},
+    }) as ReturnType<typeof vi.fn>
+
+    const wrapper = createWrapper({ tasks: testTasks })
+    const store = useTasksStore()
+    vi.mocked(store.update).mockResolvedValue({ ...testTasks[0]!, name: 'Renamed' })
     const modal = wrapper.findComponent({ name: 'AddEditTaskModal' })
     expect(modal.props('visible')).toBe(false)
+
+    wrapper.findComponent({ name: 'TaskInfoBar' }).vm.$emit('update:viewType', 'compact')
+    await wrapper.vm.$nextTick()
+    wrapper.findComponent({ name: 'TaskCompactPriority' }).vm.$emit('edit', 1)
+    await wrapper.vm.$nextTick()
+
+    expect(modal.props('visible')).toBe(true)
+    expect(modal.props('task')).toEqual(testTasks[0])
+
+    modal.vm.$emit('update', 1, { name: 'Renamed' })
+    await wrapper.vm.$nextTick()
+
+    expect(store.update).toHaveBeenCalledWith(1, { name: 'Renamed' })
   })
 })

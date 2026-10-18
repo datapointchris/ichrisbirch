@@ -13,9 +13,11 @@
     </span>
     <span>
       <ActionButton
+        data-testid="task-edit-button"
         icon="fa-solid fa-pen-to-square"
         variant="warning"
         title="Edit task"
+        @click="$emit('edit', task.id)"
       />
     </span>
     <span>
@@ -34,5 +36,5 @@ import type { Task } from '@/api/client'
 import ActionButton from '@/components/ActionButton.vue'
 
 defineProps<{ task: Task }>()
-defineEmits<{ complete: [id: number]; delete: [id: number] }>()
+defineEmits<{ complete: [id: number]; edit: [id: number]; delete: [id: number] }>()
 </script>

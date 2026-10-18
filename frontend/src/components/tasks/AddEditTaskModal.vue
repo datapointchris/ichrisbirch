@@ -9,7 +9,7 @@
         class="add-edit-modal__form"
         @submit.prevent="handleSubmit(handleSuccess)"
       >
-        <h2>Add New Task</h2>
+        <h2>{{ task ? 'Edit Task' : 'Add New Task' }}</h2>
 
         <div class="add-edit-modal__form-item">
           <label for="add-task-name">Name</label>
@@ -92,7 +92,7 @@
             data-testid="task-submit-button"
             class="button"
           >
-            <span class="button__text">Add Task</span>
+            <span class="button__text">{{ task ? 'Update' : 'Add' }} Task</span>
           </button>
           <button
             type="button"
@@ -109,18 +109,20 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import type { TaskCategory, TaskCreate } from '@/api/client'
+import { reactive, ref, watch } from 'vue'
+import type { Task, TaskCategory, TaskCreate, TaskUpdate } from '@/api/client'
 import { TASK_CATEGORIES } from '@/stores/tasks'
 import AddEditModal from '@/components/AddEditModal.vue'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
+  task?: Task | null
 }>()
 
 const emit = defineEmits<{
   close: []
   create: [data: TaskCreate]
+  update: [id: number, data: TaskUpdate]
 }>()
 
 const categories = TASK_CATEGORIES
@@ -134,6 +136,19 @@ const form = reactive({
   notes: '',
 })
 
+watch(
+  () => props.visible,
+  (val) => {
+    if (val && props.task) {
+      form.name = props.task.name
+      form.category = props.task.category
+      form.windowDays = props.task.window_days
+      form.pinned = props.task.pinned
+      form.notes = props.task.notes ?? ''
+    }
+  }
+)
+
 function handleModalClose() {
   form.name = ''
   form.notes = ''
@@ -146,13 +161,18 @@ function handleModalClose() {
 function handleSubmit(handleSuccess: () => void) {
   if (!form.name.trim() || !form.category) return
   const windowDays = Number(form.windowDays)
-  emit('create', {
+  const fields = {
     name: form.name.trim(),
     category: form.category as TaskCategory,
     window_days: form.windowDays !== '' && windowDays >= 1 ? windowDays : undefined,
     pinned: form.pinned,
-    notes: form.notes.trim() || undefined,
-  })
+  }
+  if (props.task) {
+    // An emptied notes box sends null, which is what clears the column.
+    emit('update', props.task.id, { ...fields, notes: form.notes.trim() || null })
+  } else {
+    emit('create', { ...fields, notes: form.notes.trim() || undefined })
+  }
   handleSuccess()
 }
 </script>
