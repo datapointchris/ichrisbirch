@@ -240,7 +240,7 @@ func newShoppingCheckCommand() *cobra.Command {
 		Long: "Each name becomes a purchase in the log, which `icb shopping history` reads.\n" +
 			"Names are checked in order, and the first that fails stops the rest.",
 		Example: "  icb shopping check eggs milk",
-		Args:    usageArgs(cobra.MinimumNArgs(1)),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -283,7 +283,7 @@ func newShoppingEditCommand() *cobra.Command {
 		Example: "  icb shopping edit eggs --note \"2 dozen\"\n" +
 			"  icb shopping edit \"wood glue\" --section hardware\n" +
 			"  icb shopping edit tp --name \"toilet paper\"",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ShoppingItemUpdateInput{}
@@ -335,7 +335,7 @@ func newShoppingRemoveCommand() *cobra.Command {
 		Long: "The item stays in the catalog with its section and place, and no purchase is\n" +
 			"recorded. Names are taken in order, and the first that fails stops the rest.",
 		Example: "  icb shopping remove eggs",
-		Args:    usageArgs(cobra.MinimumNArgs(1)),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -363,7 +363,7 @@ func newShoppingDeleteCommand() *cobra.Command {
 		Long: "The item leaves the list and the catalog, so adding the name again starts it\n" +
 			"in Unsorted. Its purchases stay in the log under the name they recorded.",
 		Example: "  icb shopping delete \"hot plate for glue\" --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -504,7 +504,7 @@ func newShoppingSectionsCreateCommand() *cobra.Command {
 		Use:     "create <name>",
 		Short:   "Add a section at the end of the list",
 		Example: "  icb shopping sections create Costco",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[0]) == "" {
 				return usageError{fmt.Errorf("a section needs a name")}
@@ -534,7 +534,7 @@ func newShoppingSectionsRenameCommand() *cobra.Command {
 		Use:     "rename <section> <new-name>",
 		Short:   "Rename a section",
 		Example: "  icb shopping sections rename grocery \"Trader Joe's\"",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[1]) == "" {
 				return usageError{fmt.Errorf("a section needs a name")}
@@ -564,7 +564,7 @@ func newShoppingSectionsMoveCommand() *cobra.Command {
 		Use:     "move <section> (--before <section> | --after <section>)",
 		Short:   "Move a section before or after another",
 		Example: "  icb shopping sections move hardware --after costco",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if f.Changed("before") == f.Changed("after") {
@@ -599,7 +599,7 @@ func newShoppingSectionsDeleteCommand() *cobra.Command {
 		Use:     "delete <section>",
 		Short:   "Delete a section; its items move to Unsorted",
 		Example: "  icb shopping sections delete hardware --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

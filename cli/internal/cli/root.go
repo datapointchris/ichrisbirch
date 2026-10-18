@@ -106,33 +106,26 @@ func asNamespace(cmd *cobra.Command) *cobra.Command {
 	return goclikit.AsNamespace(cmd)
 }
 
-// usageArgs wraps a positional-args validator so a violation (wrong count, etc.)
-// surfaces as a usageError → exit 2, matching how flag errors are classified.
-// Cobra's built-in validators return plain errors that would otherwise exit 1.
-func usageArgs(validate cobra.PositionalArgs) cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		if err := validate(cmd, args); err != nil {
-			return usageError{err}
-		}
-		return nil
-	}
-}
-
 // noArgs refuses a positional on a leaf that takes none. Cobra's NoArgs calls
 // the word an unknown command, which names a subcommand a leaf never had.
+//
+// The refusal is marked with goclikit.UsageError, which is what makes
+// goclikit.Execute pass it through with this wording rather than appending its
+// own usage line and help pointer.
 func noArgs(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return nil
 	}
 	refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\nRun '%s --help' for its flags.",
 		cmd.CommandPath(), args[0], cmd.CommandPath())
-	return usageError{errors.New(refusal)}
+	return goclikit.UsageError(errors.New(refusal))
 }
 
 // argumentBelongsTo refuses a positional on a leaf that takes that value
 // through flag, and spells the command line that passes it there. It is for a
 // leaf whose siblings take the same value positionally, which is what makes
-// the positional the natural guess.
+// the positional the natural guess. Its refusal is marked as noArgs marks its
+// own.
 func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 	return func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
@@ -140,7 +133,7 @@ func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 		}
 		refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\n%s: %s %s %s",
 			cmd.CommandPath(), args[0], purpose, cmd.CommandPath(), flag, shellQuote(args[0]))
-		return usageError{errors.New(refusal)}
+		return goclikit.UsageError(errors.New(refusal))
 	}
 }
 
@@ -240,8 +233,9 @@ func Execute() int {
 	// An exitCode carries its own code and an empty message, so it is not printed
 	// as an "error:" line — it reports a valid non-success state (e.g. "not logged
 	// in") rather than a failure.
-	// `update` writes its own ✓/✗ line, so printing here would report the same
-	// failure twice.
+	// An ErrReported failure is already on screen: `update` writes its own ✓/✗
+	// line, and a command given none of its arguments prints its help. Printing
+	// here would report it twice.
 	var ec exitCode
 	if err != nil && !errors.As(err, &ec) && !errors.Is(err, goclikit.ErrReported) {
 		fmt.Fprintln(os.Stderr, "error:", err)

@@ -284,7 +284,7 @@ func newIssuesEditCommand() *cobra.Command {
 			"  icb issues edit 412 --acceptance \"$(cat acceptance.md)\"\n" +
 			"  icb issues edit 412 --label area-api --label needs-design\n" +
 			"  icb issues edit 412 --initiative \"\" --deferred-until 2026-11-01",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			in, clear, err := v.update(cmd)
 			if err != nil {
@@ -405,7 +405,7 @@ func newIssuesDeleteCommand() *cobra.Command {
 			"work and the issues canceled as its duplicates stay, with the link to it\n" +
 			"removed. Prompts unless --yes.",
 		Example: "  icb issues delete 412 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -472,7 +472,7 @@ func newIssuesAcceptCommand() *cobra.Command {
 		Short:   "Move an issue out of triage and into the queue",
 		Long:    "Triage holds what a hook or a script filed until a person says it is real.",
 		Example: "  icb issues accept 412",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			open := api.IssueStatusOpen
 			return runIssueTransition(cmd, args[0], []string{api.IssueStatusTriage}, api.IssueUpdateInput{Status: &open}, asJSON, "Accepted")
@@ -508,7 +508,7 @@ func newIssuesCompleteCommand() *cobra.Command {
 			"the thread holds it. --closed-by defaults to who is running icb: the Claude\n" +
 			"Code session, the worker $" + actorWorkerEnv + " names, or user@host.",
 		Example: "  icb issues complete 412",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			completed := api.IssueStatusCompleted
 			in := api.IssueUpdateInput{Status: &completed, ClosedBy: closer(cmd, &closedBy)}
@@ -535,7 +535,7 @@ func newIssuesCancelCommand() *cobra.Command {
 			"is running icb, as it does for complete.",
 		Example: "  icb issues cancel 412 --reason \"the router rewrite removed the path\"\n" +
 			"  icb issues cancel 413 --duplicate-of 412",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			in := api.IssueUpdateInput{
 				StatusReason: valuedStrFlag(cmd.Flags(), "reason", &reason),
@@ -564,7 +564,7 @@ func newIssuesReopenCommand() *cobra.Command {
 		Short:   "Return a completed or canceled issue to the queue",
 		Long:    "Clears when and by whom it closed, the cancel reason, and the duplicate link.",
 		Example: "  icb issues reopen 412",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			open := api.IssueStatusOpen
 			closed := []string{api.IssueStatusCompleted, api.IssueStatusCanceled}
@@ -610,7 +610,7 @@ func newIssuesClaimCommand() *cobra.Command {
 		Example: "  icb issues claim\n" +
 			"  icb issues claim --repo ichrisbirch --json\n" +
 			"  icb issues claim 412 --minutes 60",
-		Args: usageArgs(cobra.MaximumNArgs(1)),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if minutes < 1 || minutes > 10080 {
@@ -682,7 +682,7 @@ func newIssuesReleaseCommand() *cobra.Command {
 		Short:   "Let go of a claim, returning the issue to the queue",
 		Long:    "Releases whoever holds it, so a claim left by a session that died is freed now\nrather than when it runs out.",
 		Example: "  icb issues release 412",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -719,7 +719,7 @@ func newIssuesReorderCommand() *cobra.Command {
 			"One of another priority is refused. `edit --priority` moves an issue across\n" +
 			"priorities.",
 		Example: "  icb issues reorder 412 --before 398\n  icb issues reorder 412 --after 420",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if (before == "") == (after == "") {
 				return usageError{errors.New("pass exactly one of --before and --after")}
@@ -770,7 +770,7 @@ func newIssuesAddDependencyCommand() *cobra.Command {
 			"leave an issue waiting on itself, through dependencies or a parent, is\n" +
 			"refused, and the refusal prints the path.",
 		Example: "  icb issues add-dependency 412 --depends-on 411",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
 				return usageError{errors.New("--depends-on is required")}
@@ -812,7 +812,7 @@ func newIssuesRemoveDependencyCommand() *cobra.Command {
 		Use:     "remove-dependency <issue> --depends-on <other-issue>",
 		Short:   "Remove the edge between an issue and one it waits on",
 		Example: "  icb issues remove-dependency 412 --depends-on 411",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
 				return usageError{errors.New("--depends-on is required")}
@@ -859,7 +859,7 @@ func newIssuesAddCommentCommand() *cobra.Command {
 			"Claude Code session, the worker $" + actorWorkerEnv + " names, or user@host.",
 		Example: "  icb issues add-comment 412 --body \"Root cause: the router order\"\n" +
 			"  icb issues add-comment 412 --body \"$(cat handoff.md)\"",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(body) == "" {
 				return usageError{errors.New("--body is required and cannot be blank")}
@@ -897,7 +897,7 @@ func newIssuesRemoveCommentCommand() *cobra.Command {
 		Short:   "Delete one comment from an issue",
 		Long:    "The comment is its #n in `icb issues comments`, or its id.",
 		Example: "  icb issues remove-comment 412 3",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

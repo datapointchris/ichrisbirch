@@ -76,7 +76,7 @@ func newCookingTechniquesSearchCommand() *cobra.Command {
 		Short:   "Search techniques by name, summary, body, or tags",
 		Long:    "Comma- or whitespace-separated terms are matched independently (OR).",
 		Example: "  icb cooking-techniques search emulsion\n  icb cooking-techniques search \"beans,soak\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTechniqueList(cmd, asJSON, func(c *api.Client) ([]api.CookingTechnique, error) {
 				return c.SearchCookingTechniques(cmd.Context(), args[0])
@@ -93,7 +93,7 @@ func newCookingTechniquesShowCommand() *cobra.Command {
 		Use:     "show <technique-id>",
 		Short:   "Show a single technique by id",
 		Example: "  icb cooking-techniques show 3",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
 			if err != nil {
@@ -114,7 +114,7 @@ func newCookingTechniquesSlugCommand() *cobra.Command {
 		Use:     "slug <slug>",
 		Short:   "Show a single technique by slug",
 		Example: "  icb cooking-techniques slug 24-hour-bean-soak",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTechniqueDetail(cmd, asJSON, func(c *api.Client) (api.CookingTechnique, error) {
 				return c.GetCookingTechniqueBySlug(cmd.Context(), args[0])
@@ -236,7 +236,7 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 			"(repeatable) — use it for the rating, which an empty string cannot clear.\n" +
 			"It takes the underscored field name, not the flag spelling.",
 		Example: "  icb cooking-techniques edit 3 --rating 4 --tag legumes\n  icb cooking-techniques edit 3 --clear rating",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
 			if err != nil {
@@ -288,7 +288,7 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 		Use:     "delete <technique-id>",
 		Short:   "Delete a technique",
 		Example: "  icb cooking-techniques delete 3 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
 			if err != nil {

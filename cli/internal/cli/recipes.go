@@ -92,7 +92,7 @@ func newRecipesShowCommand() *cobra.Command {
 		Short:   "Show a single recipe with ingredients",
 		Long:    "Pass --servings to scale each ingredient (scaled_quantity in the output).",
 		Example: "  icb recipes show 2\n  icb recipes show 2 --servings 12",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
 			if err != nil {
@@ -125,7 +125,7 @@ func newRecipesSearchCommand() *cobra.Command {
 		Short:   "Search recipes by name, instructions, or tags",
 		Long:    "Comma- or whitespace-separated terms are matched independently (OR).",
 		Example: "  icb recipes search oatmeal\n  icb recipes search \"chicken,lemon\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
 				return c.SearchRecipes(cmd.Context(), args[0])
@@ -148,7 +148,7 @@ func newRecipesSearchIngredientsCommand() *cobra.Command {
 			"--match any (default) ranks by coverage; --match all requires every ingredient.",
 		Example: "  icb recipes search-ingredients \"chicken,lemon,garlic\"\n" +
 			"  icb recipes search-ingredients \"oats,milk\" --match all",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if match != "any" && match != "all" {
 				return usageError{fmt.Errorf("--match must be 'any' or 'all'")}
@@ -283,7 +283,7 @@ func newRecipesEditCommand() *cobra.Command {
 			"whole ingredient list. --clear <field> sets a field to null (repeatable) —\n" +
 			"use it for numeric fields an empty string cannot clear.",
 		Example: "  icb recipes edit 2 --rating 5\n  icb recipes edit 2 --clear cuisine --clear rating",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
 			if err != nil {
@@ -351,7 +351,7 @@ func newRecipesDeleteCommand() *cobra.Command {
 		Use:     "delete <recipe-id>",
 		Short:   "Delete a recipe",
 		Example: "  icb recipes delete 2 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
 			if err != nil {
@@ -393,7 +393,7 @@ func newRecipesMadeCommand() *cobra.Command {
 		Use:     "made <recipe-id>",
 		Short:   "Mark a recipe made (bump times-made, stamp now)",
 		Example: "  icb recipes made 2",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
 			if err != nil {
@@ -507,7 +507,7 @@ func newRecipesAIImportCommand() *cobra.Command {
 			"saving. Feed the candidate to `icb recipes ai-save-import`. --hint forces a\n" +
 			"kind: auto (default), recipe, technique, or both.",
 		Example: "  icb recipes ai-import https://youtu.be/xyz --hint both --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if hint != "auto" && hint != "recipe" && hint != "technique" && hint != "both" {
 				return usageError{fmt.Errorf("--hint must be auto, recipe, technique, or both")}

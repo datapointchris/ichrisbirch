@@ -126,7 +126,7 @@ func newStrainsSearchCommand() *cobra.Command {
 		Long: "Comma-separated terms preserve phrases (\"purple punch,grape\"); otherwise\n" +
 			"whitespace splits into keywords matched against any field.",
 		Example: "  icb strains search kush\n  icb strains search \"purple punch,grape\" --limit 5",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter := api.StrainFilter{Query: args[0]}
 			return runStrainList(cmd, asJSON, filter, func(c *api.Client) ([]api.Strain, error) {
@@ -175,7 +175,7 @@ func newStrainsShowCommand() *cobra.Command {
 		Use:     "show <strain-id>",
 		Short:   "Show a single strain",
 		Example: "  icb strains show 12",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
 			if err != nil {
@@ -413,7 +413,7 @@ func newStrainsEditCommand() *cobra.Command {
 			"  icb strains edit 12 --effect relaxed --effect sleepy\n" +
 			"  icb strains edit 12 --breeder \"\" --effect \"\"\n" +
 			"  icb strains edit 12 --clear rating --clear thc_percent",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
 			if err != nil {
@@ -482,7 +482,7 @@ func newStrainsDeleteCommand() *cobra.Command {
 		Use:     "delete <strain-id>",
 		Short:   "Delete a strain",
 		Example: "  icb strains delete 12 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
 			if err != nil {

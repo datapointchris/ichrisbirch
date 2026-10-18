@@ -129,7 +129,7 @@ func newTasksSearchCommand() *cobra.Command {
 		Use:     "search <query>",
 		Short:   "Search tasks by name or notes",
 		Example: "  icb tasks search invoice",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
 				return c.SearchTasks(cmd.Context(), args[0])
@@ -146,7 +146,7 @@ func newTasksShowCommand() *cobra.Command {
 		Use:     "show <task-id>",
 		Short:   "Show a single task",
 		Example: "  icb tasks show 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
 			if err != nil {
@@ -292,7 +292,7 @@ func newTasksEditCommand() *cobra.Command {
 			"from the next snooze; `snooze` restarts the window now. Use `complete` to\n" +
 			"finish a task and `drop` to let one go.",
 		Example: "  icb tasks edit 42 --window-days 7 --notes \"due friday\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
 			if err != nil {
@@ -351,7 +351,7 @@ func newTasksCompleteCommand() *cobra.Command {
 		Use:     "complete <task-id>",
 		Short:   "Mark a task completed",
 		Example: "  icb tasks complete 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
 			if err != nil {
@@ -385,7 +385,7 @@ func taskActionCommand(use, short, long, example, done string, act func(*cobra.C
 		Short:   short,
 		Long:    long,
 		Example: example,
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
 			if err != nil {
@@ -535,7 +535,7 @@ func newTaskCategoriesEditCommand() *cobra.Command {
 		Long: "Applies to tasks created afterwards. Open tasks keep the window they were\n" +
 			"made with.",
 		Example: "  icb tasks categories edit Home --window-days 45",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name, err := taskCategory(args[0])
 			if err != nil {
@@ -573,7 +573,7 @@ func newTasksDeleteCommand() *cobra.Command {
 		Use:     "delete <task-id>",
 		Short:   "Delete a task",
 		Example: "  icb tasks delete 42 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
 			if err != nil {

@@ -57,7 +57,7 @@ func newItemsTreeCommand() *cobra.Command {
 			"  icb projects items tree 179 --invert\n" +
 			"  icb projects items tree --repo dotfiles\n" +
 			"  icb projects items tree --status all --json",
-		Args: usageArgs(cobra.MaximumNArgs(1)),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err

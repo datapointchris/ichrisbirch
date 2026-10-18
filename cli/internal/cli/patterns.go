@@ -63,7 +63,7 @@ func newPatternsShowCommand() *cobra.Command {
 		Use:     "show <pattern-id>",
 		Short:   "Show a single pattern",
 		Example: "  icb patterns show 12",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])
 			if err != nil {
@@ -100,7 +100,7 @@ func newPatternsCreateCommand() *cobra.Command {
 		// mid-flow: anything longer than the thought itself does not get typed.
 		Long:    "The timestamp is the server's unless --at is given, so capturing is one argument.",
 		Example: "  icb patterns create \"coffee at 3pm, wired until midnight\"\n  icb patterns create \"ate late\" --at 2026-08-06T21:30:00Z",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			in := api.PatternCreateInput{Message: args[0]}
 			if cmd.Flags().Changed("at") {
@@ -140,7 +140,7 @@ func newPatternsEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing pattern",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb patterns edit 12 --message \"coffee at 3pm, not 4\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])
 			if err != nil {
@@ -187,7 +187,7 @@ func newPatternsDeleteCommand() *cobra.Command {
 		Use:     "delete <pattern-id>",
 		Short:   "Delete a pattern",
 		Example: "  icb patterns delete 12 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])
 			if err != nil {

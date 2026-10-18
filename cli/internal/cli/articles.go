@@ -58,7 +58,7 @@ func newArticlesImportCommand() *cobra.Command {
 			"batch id — poll it with `icb articles import-status <batch-id>`.",
 		Example: "  icb articles import https://a.com/post https://b.com/post\n" +
 			"  icb articles import https://a.com/post --json",
-		Args: usageArgs(cobra.MinimumNArgs(1)),
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -86,7 +86,7 @@ func newArticlesImportStatusCommand() *cobra.Command {
 		Use:     "import-status <batch-id>",
 		Short:   "Check the progress of a bulk import batch",
 		Example: "  icb articles import-status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -190,7 +190,7 @@ func newArticlesSearchCommand() *cobra.Command {
 		Short:   "Search articles by tag",
 		Long:    "Comma-separated terms are matched independently (\"python,databases\" finds\narticles tagged with either).",
 		Example: "  icb articles search databases\n  icb articles search \"python,systems\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.SearchArticles(cmd.Context(), args[0])
@@ -207,7 +207,7 @@ func newArticlesShowCommand() *cobra.Command {
 		Use:     "show <article-id>",
 		Short:   "Show a single article",
 		Example: "  icb articles show 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
 			if err != nil {
@@ -323,7 +323,7 @@ func newArticlesEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing article",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb articles edit 42 --favorite --review-days 30\n  icb articles edit 42 --tag python --tag databases",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
 			if err != nil {
@@ -409,7 +409,7 @@ func newArticlesReadCommand() *cobra.Command {
 		Short:   "Mark an article read (archive it, bump read count, stamp now)",
 		Long:    "Fetch the article for its current read count, then archive it, increment the\nread count, and set the last-read date to now.",
 		Example: "  icb articles read 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
 			if err != nil {
@@ -452,7 +452,7 @@ func newArticlesDeleteCommand() *cobra.Command {
 		Use:     "delete <article-id>",
 		Short:   "Delete an article",
 		Example: "  icb articles delete 42 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
 			if err != nil {

@@ -69,7 +69,7 @@ func newLabelsShowCommand() *cobra.Command {
 		Use:     "show <label>",
 		Short:   "Show one label",
 		Example: "  icb issues labels show area-api",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -150,7 +150,7 @@ func newLabelsEditCommand() *cobra.Command {
 			"An empty value clears a field. Moving a label into a group is refused while an\n" +
 			"issue carries it beside another label of that group.",
 		Example: "  icb issues labels edit area-db --group area\n  icb issues labels edit area-db --group \"\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.IssueLabelUpdateInput{
@@ -194,7 +194,7 @@ func newLabelsDeleteCommand() *cobra.Command {
 		Use:     "delete <label>",
 		Short:   "Remove a label from the vocabulary and from every issue",
 		Example: "  icb issues labels delete area-db --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

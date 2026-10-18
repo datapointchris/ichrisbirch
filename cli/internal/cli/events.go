@@ -92,7 +92,7 @@ func newEventsShowCommand() *cobra.Command {
 		Use:     "show <event-id>",
 		Short:   "Show a single event",
 		Example: "  icb events show 7",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
 			if err != nil {
@@ -192,7 +192,7 @@ func newEventsEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing event",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb events edit 7 --cost 50 --attending",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
 			if err != nil {
@@ -256,7 +256,7 @@ func newEventsAttendCommand() *cobra.Command {
 		Use:     "attend <event-id>",
 		Short:   "Mark yourself as attending an event",
 		Example: "  icb events attend 7",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
 			if err != nil {
@@ -287,7 +287,7 @@ func newEventsDeleteCommand() *cobra.Command {
 		Use:     "delete <event-id>",
 		Short:   "Delete an event",
 		Example: "  icb events delete 7 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
 			if err != nil {

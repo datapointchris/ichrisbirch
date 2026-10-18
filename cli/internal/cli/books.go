@@ -92,7 +92,7 @@ func newBooksSearchCommand() *cobra.Command {
 		Short:   "Search books by title, author, or tags",
 		Long:    "Comma-separated terms preserve phrases (\"shadow work,Jung\"); otherwise\nwhitespace splits into keywords matched against any field.",
 		Example: "  icb books search Kleppmann\n  icb books search \"shadow work,Jung\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
 				return c.SearchBooks(cmd.Context(), args[0])
@@ -109,7 +109,7 @@ func newBooksShowCommand() *cobra.Command {
 		Use:     "show <book-id>",
 		Short:   "Show a single book",
 		Example: "  icb books show 140",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])
 			if err != nil {
@@ -140,7 +140,7 @@ func newBooksISBNCommand() *cobra.Command {
 		Use:     "isbn <isbn>",
 		Short:   "Look up a book by ISBN",
 		Example: "  icb books isbn 9781449373320",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -227,7 +227,7 @@ func newBooksEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing book",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb books edit 140 --progress reading --read-start 2026-07-01",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])
 			if err != nil {
@@ -287,7 +287,7 @@ func newBooksDeleteCommand() *cobra.Command {
 		Use:     "delete <book-id>",
 		Short:   "Delete a book",
 		Example: "  icb books delete 140 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])
 			if err != nil {

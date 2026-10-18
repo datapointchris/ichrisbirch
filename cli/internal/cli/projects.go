@@ -237,7 +237,7 @@ func newProjectsCompleteCommand() *cobra.Command {
 			"are left exactly as they are: an item still open when the project finished was\n" +
 			"still open, and that is worth knowing.",
 		Example: "  icb projects complete clisteno",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			completed := api.ProjectStatusCompleted
 			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &completed}, asJSON, "Completed")
@@ -259,7 +259,7 @@ func newProjectsDropCommand() *cobra.Command {
 			"that is the point: \"deferred\" invites the same idea back next month, whereas\n" +
 			"dropped-and-here-is-why closes the question.",
 		Example: "  icb projects drop \"Rewrite in Rust\" --reason \"Go covers it and I know Go\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if reason == "" {
 				return usageError{errors.New("--reason is required — say why it is dropped rather than deferred")}
@@ -286,7 +286,7 @@ func newProjectsShelveCommand() *cobra.Command {
 			"it, and bringing this one back is then refused until one of the two is\n" +
 			"renamed. `icb projects reopen` returns it to the active list.",
 		Example: "  icb projects shelve \"Home Building Projects\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			someday := api.ProjectStatusSomeday
 			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &someday}, asJSON, "Shelved")
@@ -305,7 +305,7 @@ func newProjectsReopenCommand() *cobra.Command {
 			"active project has taken the name in the meantime — only one project holds a\n" +
 			"name at a time, and it is the live one.",
 		Example: "  icb projects reopen \"Kitchen remodel\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			active := "active"
 			return runProjectUpdate(cmd, args[0], api.ProjectUpdateInput{Status: &active}, asJSON, "Reopened")
@@ -340,7 +340,7 @@ func newProjectsShowCommand() *cobra.Command {
 		Use:     "show <project>",
 		Short:   "Show a project and its open items",
 		Example: "  icb projects show \"Kitchen remodel\"\n  icb projects show \"Kitchen remodel\" --status all --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err
@@ -470,7 +470,7 @@ func newProjectsEditCommand() *cobra.Command {
 		Long:  "Update only the fields whose flags you pass; everything else is left unchanged.",
 		Example: "  icb projects edit \"Kitchen remodel\" --name \"Bathroom remodel\" --position 2\n" +
 			"  icb projects edit \"Kitchen remodel\" --kind chore",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ProjectUpdateInput{}
@@ -526,7 +526,7 @@ func newProjectsDeleteCommand() *cobra.Command {
 			"go with it. If incomplete items would be left with no project, the delete is\n" +
 			"refused — move them first. Prompts for confirmation unless --yes.",
 		Example: "  icb projects delete \"Kitchen remodel\"\n  icb projects delete \"Kitchen remodel\" --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
 			client, err := newAPIClient(cmd.Context())

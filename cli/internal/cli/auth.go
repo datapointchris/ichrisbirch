@@ -56,7 +56,7 @@ func newAuthLoginCommand() *cobra.Command {
 			"in the file is never rewritten.",
 		Example: "  icb auth login\n" +
 			"  icb auth login https://ichrisbirch.com",
-		Args: usageArgs(cobra.MaximumNArgs(1)),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config.IsService() {
 				return fmt.Errorf("%s is set, so icb authenticates as a service client with no login; unset it to log in as a person", config.ClientSecretEnv)

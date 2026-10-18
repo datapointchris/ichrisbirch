@@ -63,7 +63,7 @@ func newCountdownsShowCommand() *cobra.Command {
 		Use:     "show <countdown-id>",
 		Short:   "Show a single countdown",
 		Example: "  icb countdowns show 3",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])
 			if err != nil {
@@ -148,7 +148,7 @@ func newCountdownsEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing countdown",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb countdowns edit 3 --due 2027-04-01",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])
 			if err != nil {
@@ -199,7 +199,7 @@ func newCountdownsDeleteCommand() *cobra.Command {
 		Use:     "delete <countdown-id>",
 		Short:   "Delete a countdown",
 		Example: "  icb countdowns delete 3 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])
 			if err != nil {

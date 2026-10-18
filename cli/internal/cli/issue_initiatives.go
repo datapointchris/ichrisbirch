@@ -88,7 +88,7 @@ func newInitiativesShowCommand() *cobra.Command {
 		Use:     "show <initiative>",
 		Short:   "Show an initiative and its unclosed issues in queue order",
 		Example: "  icb issues initiatives show \"Ship the tracker\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -189,7 +189,7 @@ func newInitiativesEditCommand() *cobra.Command {
 		Long: "Update only the fields whose flags you pass. --description \"\" clears it.\n" +
 			"Status moves through complete, drop and reopen.",
 		Example: "  icb issues initiatives edit \"Ship the tracker\" --priority urgent",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if readFlagIntent(f, "name") == flagClears {
@@ -250,7 +250,7 @@ func newInitiativesCompleteCommand() *cobra.Command {
 		Short:   "Mark an initiative's outcome reached, which hides it",
 		Long:    "Its issues keep their status, so one still open stays in the queue.",
 		Example: "  icb issues initiatives complete \"Ship the tracker\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			completed := "completed"
 			return runInitiativeUpdate(cmd, args[0], api.InitiativeUpdateInput{Status: &completed}, nil, asJSON, "Completed")
@@ -270,7 +270,7 @@ func newInitiativesDropCommand() *cobra.Command {
 		Short:   "Close an initiative whose outcome you no longer want",
 		Long:    "--reason is required. A drop with its reason closes the question, and a bare\ndrop invites it back.",
 		Example: "  icb issues initiatives drop \"Rewrite the router\" --reason \"Traefik covers it\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(reason) == "" {
 				return usageError{errors.New("--reason is required — say why it is dropped")}
@@ -291,7 +291,7 @@ func newInitiativesReopenCommand() *cobra.Command {
 		Short:   "Return a finished initiative to the active list",
 		Long:    "Refused if an active initiative has taken the name in the meantime.",
 		Example: "  icb issues initiatives reopen \"Ship the tracker\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			active := "active"
 			return runInitiativeUpdate(cmd, args[0], api.InitiativeUpdateInput{Status: &active}, nil, asJSON, "Reopened")
@@ -307,7 +307,7 @@ func newInitiativesDeleteCommand() *cobra.Command {
 		Use:     "delete <initiative>",
 		Short:   "Delete an initiative, leaving its issues in none",
 		Example: "  icb issues initiatives delete \"Ship the tracker\" --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

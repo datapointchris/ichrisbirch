@@ -193,7 +193,7 @@ func newHabitsShowCommand() *cobra.Command {
 		Use:     "show <habit-id>",
 		Short:   "Show a single habit",
 		Example: "  icb habits show 5",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
 			if err != nil {
@@ -275,7 +275,7 @@ func newHabitsEditCommand() *cobra.Command {
 		Short:   "Change fields on an existing habit",
 		Long:    "Update only the fields whose flags you pass.",
 		Example: "  icb habits edit 5 --is-current=false",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
 			if err != nil {
@@ -323,7 +323,7 @@ func newHabitsDeleteCommand() *cobra.Command {
 		Use:     "delete <habit-id>",
 		Short:   "Delete a habit",
 		Example: "  icb habits delete 5 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
 			if err != nil {
@@ -373,7 +373,7 @@ func newHabitsCompleteCommand() *cobra.Command {
 			"--date fills in a day you forgot. A future day is rejected.",
 		Example: "  # done just now\n  icb habits complete 5\n\n" +
 			"  # a day you forgot to record\n  icb habits complete 5 --date 2026-08-21",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
 			if err != nil {

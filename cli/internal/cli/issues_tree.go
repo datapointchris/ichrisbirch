@@ -40,7 +40,7 @@ func newIssuesTreeCommand() *cobra.Command {
 			"  icb issues tree 412\n" +
 			"  icb issues tree 412 --invert\n" +
 			"  icb issues tree --repo ichrisbirch --json",
-		Args: usageArgs(cobra.MaximumNArgs(1)),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.IssueStatuses, issueStatus) {
 				return usageError{fmt.Errorf("unknown status %q — one of: %s", issueStatus, strings.Join(api.IssueStatuses, ", "))}

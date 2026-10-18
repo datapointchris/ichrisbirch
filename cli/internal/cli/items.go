@@ -296,7 +296,7 @@ func newItemsSearchCommand() *cobra.Command {
 		Use:     "search <query>",
 		Short:   "Search items by title or notes",
 		Example: "  icb projects items search kitchen\n  icb projects items search backup --repo dotfiles",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter := repoFlagValue(cmd, repo)
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
@@ -315,7 +315,7 @@ func newItemsBlockersCommand() *cobra.Command {
 		Use:     "blockers <item>",
 		Short:   "List the incomplete dependencies blocking an item",
 		Example: "  icb projects items blockers 118",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
 				return c.GetBlockers(cmd.Context(), args[0])
@@ -357,7 +357,7 @@ func newItemsShowCommand() *cobra.Command {
 			"\n" +
 			"`icb projects items tree <item>` draws the whole graph the item sits in.",
 		Example: "  icb projects items show 118\n  icb projects items show 118 --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -728,7 +728,7 @@ func newItemsEditCommand() *cobra.Command {
 		Example: "  icb projects items edit 118 --notes \"$(cat notes.md)\"\n" +
 			"  icb projects items edit 118 --title \"New title\"\n" +
 			"  icb projects items edit 118 --repo dotfiles --json",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ProjectItemUpdateInput{}
@@ -765,7 +765,7 @@ func newItemsCompletionCommand(verb, short string, completed bool) *cobra.Comman
 		Use:     verb + " <item>",
 		Short:   short,
 		Example: "  icb projects items " + verb + " 118",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flag := completed
 			return runItemUpdate(cmd, args[0], api.ProjectItemUpdateInput{Completed: &flag}, asJSON, "Updated")
@@ -783,7 +783,7 @@ func newItemsArchiveCommand(verb, short string, archived bool) *cobra.Command {
 		Use:     verb + " <item>",
 		Short:   short,
 		Example: "  icb projects items " + verb + " 118",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flag := archived
 			return runItemUpdate(cmd, args[0], api.ProjectItemUpdateInput{Archived: &flag}, asJSON, "Updated")
@@ -818,7 +818,7 @@ func newItemsDeleteCommand() *cobra.Command {
 		Short:   "Delete a project item",
 		Long:    "Permanently delete an item and its tasks. Prompts for confirmation unless --yes.",
 		Example: "  icb projects items delete 118 --yes",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
 			client, err := newAPIClient(cmd.Context())
@@ -861,7 +861,7 @@ func newItemsReorderCommand() *cobra.Command {
 		Use:     "reorder <item> --project <project> --position <n>",
 		Short:   "Move an item to a new position within a project",
 		Example: "  icb projects items reorder 118 --project \"Kitchen remodel\" --position 2",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
 				return usageError{fmt.Errorf("--project is required")}
@@ -901,7 +901,7 @@ func newItemsAddProjectCommand() *cobra.Command {
 		Use:     "add-project <item> --project <project>",
 		Short:   "Add an item to another project",
 		Example: "  icb projects items add-project 118 --project \"Kitchen remodel\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
 				return usageError{fmt.Errorf("--project is required")}
@@ -936,7 +936,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 		Short:   "Remove an item from a project",
 		Long:    "Remove an item from a project. An item always belongs to at least one\nproject, so removing it from its last one is refused — delete the item instead.",
 		Example: "  icb projects items remove-project 118 --project \"Kitchen remodel\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
 				return usageError{fmt.Errorf("--project is required")}
@@ -980,7 +980,7 @@ func newItemsAddDependencyCommand() *cobra.Command {
 		Short:   "Record that an item depends on another item",
 		Long:    "An item cannot depend on itself, and a dependency that would close a cycle\nis refused.",
 		Example: "  icb projects items add-dependency 118 --depends-on 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
 				return usageError{fmt.Errorf("--depends-on is required")}
@@ -1014,7 +1014,7 @@ func newItemsRemoveDependencyCommand() *cobra.Command {
 		Use:     "remove-dependency <item> --depends-on <other-item>",
 		Short:   "Remove a dependency edge between two items",
 		Example: "  icb projects items remove-dependency 118 --depends-on 42",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
 				return usageError{fmt.Errorf("--depends-on is required")}
@@ -1054,7 +1054,7 @@ func newItemsTasksCommand() *cobra.Command {
 		Use:     "tasks <item>",
 		Short:   "List an item's tasks",
 		Example: "  icb projects items tasks 118",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -1085,7 +1085,7 @@ func newItemsAddTaskCommand() *cobra.Command {
 		Use:     "add-task <item> --title <title>",
 		Short:   "Add a task to an item",
 		Example: "  icb projects items add-task 118 --title \"write tests\"",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if title == "" {
 				return usageError{fmt.Errorf("--title is required")}
@@ -1121,7 +1121,7 @@ func newItemsCompleteTaskCommand() *cobra.Command {
 		Use:     "complete-task <item> <task-id>",
 		Short:   "Mark an item's task completed",
 		Example: "  icb projects items complete-task 118 018g...",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			completed := true
 			return runTaskUpdate(cmd, args[0], args[1], api.ProjectItemTaskUpdateInput{Completed: &completed}, asJSON)
@@ -1142,7 +1142,7 @@ func newItemsEditTaskCommand() *cobra.Command {
 		Use:     "edit-task <item> <task-id> [flags]",
 		Short:   "Change a task's title, completion, or position",
 		Example: "  icb projects items edit-task 118 018g... --title \"new\" --completed",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			in := api.ProjectItemTaskUpdateInput{}
@@ -1192,7 +1192,7 @@ func newItemsRemoveTaskCommand() *cobra.Command {
 		Use:     "remove-task <item> <task-id>",
 		Short:   "Delete a task from an item",
 		Example: "  icb projects items remove-task 118 018g... --yes",
-		Args:    usageArgs(cobra.ExactArgs(2)),
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !yes {
 				ok, err := confirm(cmd,

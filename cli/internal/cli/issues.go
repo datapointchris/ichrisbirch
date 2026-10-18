@@ -286,7 +286,7 @@ func newIssuesSearchCommand() *cobra.Command {
 			"remember may be the one that was finished or canceled.",
 		Example: "  icb issues search \"rank renumber\"\n" +
 			"  icb issues search routing --repo ichrisbirch --status open",
-		Args: usageArgs(cobra.ExactArgs(1)),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter, err := filters.filter(cmd)
 			if err != nil {
@@ -452,7 +452,7 @@ func newIssuesShowCommand() *cobra.Command {
 		Use:     "show <issue>",
 		Short:   "Show an issue with its edges, children and comments",
 		Example: "  icb issues show 412\n  icb issues show 412 --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -483,7 +483,7 @@ func newIssuesCommentsCommand() *cobra.Command {
 		Short:   "List an issue's comments, oldest first",
 		Long:    "Each row's #n is its place in the thread, which `remove-comment` takes.",
 		Example: "  icb issues comments 412\n  icb issues comments 412 --json",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

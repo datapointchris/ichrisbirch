@@ -64,7 +64,7 @@ func newAutotasksShowCommand() *cobra.Command {
 		Use:     "show <autotask-id>",
 		Short:   "Show a single recurring task template",
 		Example: "  icb autotasks show 2",
-		Args:    usageArgs(cobra.ExactArgs(1)),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("autotask id", args[0])
 			if err != nil {
