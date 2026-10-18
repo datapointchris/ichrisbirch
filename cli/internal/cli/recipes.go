@@ -22,7 +22,7 @@ func newRecipesCommand() *cobra.Command {
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
 	})
-	withNotFoundHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
+	goclikit.WithRecoveryHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newRecipesListCommand(),

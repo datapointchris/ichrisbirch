@@ -25,7 +25,7 @@ func newIssueInitiativesCommand() *cobra.Command {
 			"issue with no priority of its own takes its active initiative's. A finished\n" +
 			"initiative takes no new issues and leaves the ones it holds as they are.",
 	})
-	withNotFoundHints(cmd, initiativeHints...)
+	goclikit.WithRecoveryHints(cmd, initiativeHints...)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newInitiativesListCommand(),

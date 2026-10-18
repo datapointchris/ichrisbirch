@@ -23,7 +23,7 @@ func newArticlesCommand() *cobra.Command {
 	})
 	// Search matches tags only, so it cannot stand alone as the way to find an
 	// article whose tags you do not know.
-	withNotFoundHints(cmd,
+	goclikit.WithRecoveryHints(cmd,
 		"List every article: icb articles list",
 		"Search articles by tag: icb articles search <tag>",
 	)
@@ -36,7 +36,7 @@ func newArticlesCommand() *cobra.Command {
 		// A batch id is Redis-backed and expires 24 hours after its import, so
 		// a 404 here is usually age rather than a wrong id — and nothing in the
 		// tool lists batches, which is all the group's hints could offer.
-		withNotFoundHints(newArticlesImportStatusCommand(),
+		goclikit.WithRecoveryHints(newArticlesImportStatusCommand(),
 			"A batch is kept for 24 hours — see what the import saved: icb articles list",
 		),
 	)...)

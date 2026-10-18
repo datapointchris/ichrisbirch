@@ -38,7 +38,7 @@ func newProjectsCommand() *cobra.Command {
 			"<project> and --project take a project's full name or its id, whatever its\n" +
 			"status. A name that misses is answered with the names near it.",
 	})
-	withNotFoundHints(cmd, projectHints...)
+	goclikit.WithRecoveryHints(cmd, projectHints...)
 	splitReadingFromChanging(cmd)
 	cmd.AddGroup(&cobra.Group{ID: groupProjectItems, Title: "Item commands:"})
 	cmd.AddCommand(inGroup(groupReading,

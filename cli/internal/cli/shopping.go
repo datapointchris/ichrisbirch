@@ -32,7 +32,7 @@ func newShoppingCommand() *cobra.Command {
 			"\n" +
 			"An item or a section is named by its name, in any case, or by its id.",
 	})
-	withNotFoundHints(cmd,
+	goclikit.WithRecoveryHints(cmd,
 		"List what is on the list: icb shopping list",
 		"List the whole catalog: icb shopping list --status all",
 		"List every section: icb shopping sections list")

@@ -69,7 +69,7 @@ func newIssuesCommand() *cobra.Command {
 			"Decisions wait on a person, so the queue leaves them out.\n" +
 			"`icb issues list --type decision` lists them.",
 	})
-	withNotFoundHints(cmd, issueHints...)
+	goclikit.WithRecoveryHints(cmd, issueHints...)
 	cmd.AddGroup(
 		&cobra.Group{ID: issueGroupRead, Title: "Reading:"},
 		&cobra.Group{ID: issueGroupWork, Title: "Taking work:"},
@@ -87,33 +87,33 @@ func newIssuesCommand() *cobra.Command {
 	add(issueGroupRead,
 		newIssuesListCommand(),
 		newIssuesSearchCommand(),
-		withNotFoundHints(newIssuesShowCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesCommentsCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesTreeCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesShowCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesCommentsCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesTreeCommand(), issueNumberHints...),
 		newIssuesVocabularyCommand(),
 	)
 	add(issueGroupWork,
 		newIssuesNextCommand(),
-		withNotFoundHints(newIssuesClaimCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesReleaseCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesClaimCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesReleaseCommand(), issueNumberHints...),
 	)
 	add(issueGroupFile,
-		withNotFoundHints(newIssuesCreateCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
-		withNotFoundHints(newIssuesEditCommand(), append(slices.Clone(issueNumberHints), initiativeHints...)...),
-		withNotFoundHints(newIssuesAddCommentCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesRemoveCommentCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesDeleteCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesCreateCommand(), append(slices.Clone(issueHints), initiativeHints...)...),
+		goclikit.WithRecoveryHints(newIssuesEditCommand(), append(slices.Clone(issueNumberHints), initiativeHints...)...),
+		goclikit.WithRecoveryHints(newIssuesAddCommentCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesRemoveCommentCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesDeleteCommand(), issueNumberHints...),
 	)
 	add(issueGroupLifecycle,
-		withNotFoundHints(newIssuesAcceptCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesCompleteCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesCancelCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesReopenCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesAcceptCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesCompleteCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesCancelCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesReopenCommand(), issueNumberHints...),
 	)
 	add(issueGroupOrder,
-		withNotFoundHints(newIssuesReorderCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesAddDependencyCommand(), issueNumberHints...),
-		withNotFoundHints(newIssuesRemoveDependencyCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesReorderCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesAddDependencyCommand(), issueNumberHints...),
+		goclikit.WithRecoveryHints(newIssuesRemoveDependencyCommand(), issueNumberHints...),
 	)
 	add(issueGroupGrouping,
 		newIssueInitiativesCommand(),

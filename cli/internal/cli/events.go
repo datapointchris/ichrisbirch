@@ -19,7 +19,7 @@ func newEventsCommand() *cobra.Command {
 		Short: "List, inspect, and manage your events",
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
 	})
-	withNotFoundHints(cmd, "List every event: icb events list")
+	goclikit.WithRecoveryHints(cmd, "List every event: icb events list")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newEventsListCommand(), newEventsShowCommand())...)
 	cmd.AddCommand(inGroup(groupChanging,

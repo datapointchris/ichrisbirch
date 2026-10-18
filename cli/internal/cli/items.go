@@ -49,36 +49,36 @@ func newItemsCommand() *cobra.Command {
 			"and membership in one or more projects. Unstructured chores go in\n" +
 			"`icb tasks` instead.",
 	})
-	withNotFoundHints(cmd, itemHints...)
+	goclikit.WithRecoveryHints(cmd, itemHints...)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
-		withNotFoundHints(newItemsListCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsListCommand(), itemAndProjectHints...),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
-		withNotFoundHints(newItemsShowCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsBlockersCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
-		withNotFoundHints(newItemsTasksCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsShowCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsBlockersCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsTasksCommand(), itemNumberHints...),
 	)...)
 	cmd.AddCommand(inGroup(groupChanging,
-		withNotFoundHints(newItemsCreateCommand(), itemAndProjectHints...),
-		withNotFoundHints(newItemsEditCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemNumberHints...),
-		withNotFoundHints(newItemsCompletionCommand("reopen", "Reopen a completed item", false), itemNumberHints...),
-		withNotFoundHints(newItemsArchiveCommand("archive", "Archive an item", true), itemNumberHints...),
-		withNotFoundHints(newItemsArchiveCommand("unarchive", "Restore an archived item", false), itemNumberHints...),
-		withNotFoundHints(newItemsDeleteCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsCreateCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsEditCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsCompletionCommand("reopen", "Reopen a completed item", false), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsArchiveCommand("archive", "Archive an item", true), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsArchiveCommand("unarchive", "Restore an archived item", false), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsDeleteCommand(), itemNumberHints...),
 		// A verb taking a second kind of id names the way to find that one too:
 		// --project on the membership verbs, a task id on the task verbs.
-		withNotFoundHints(newItemsReorderCommand(), itemNumberAndProjectHints...),
-		withNotFoundHints(newItemsAddProjectCommand(), itemNumberAndProjectHints...),
-		withNotFoundHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
-		withNotFoundHints(newItemsAddDependencyCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsAddTaskCommand(), itemNumberHints...),
-		withNotFoundHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
-		withNotFoundHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
-		withNotFoundHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsReorderCommand(), itemNumberAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsAddProjectCommand(), itemNumberAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsAddDependencyCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsAddTaskCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
 	)...)
 	return cmd
 }

@@ -18,7 +18,7 @@ func newCountdownsCommand() *cobra.Command {
 		Short: "List, inspect, and manage your countdowns",
 		Long:  "Named future dates and how long is left on each — birthdays, deadlines,\nanniversaries, anything you are counting down to.",
 	})
-	withNotFoundHints(cmd, "List every countdown: icb countdowns list")
+	goclikit.WithRecoveryHints(cmd, "List every countdown: icb countdowns list")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newCountdownsListCommand(), newCountdownsShowCommand())...)
 	cmd.AddCommand(inGroup(groupChanging, newCountdownsCreateCommand(), newCountdownsEditCommand(), newCountdownsDeleteCommand())...)

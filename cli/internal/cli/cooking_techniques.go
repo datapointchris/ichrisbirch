@@ -19,7 +19,7 @@ func newCookingTechniquesCommand() *cobra.Command {
 		Long: "The how-and-why writeups behind the recipes — searing, emulsifying, laminating\n" +
 			"— kept separately from any one recipe that uses them.",
 	})
-	withNotFoundHints(cmd,
+	goclikit.WithRecoveryHints(cmd,
 		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,

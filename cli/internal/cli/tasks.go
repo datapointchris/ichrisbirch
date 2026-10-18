@@ -30,7 +30,7 @@ func newTasksCommand() *cobra.Command {
 			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
 			"completed or dropped one.",
 	})
-	withNotFoundHints(cmd,
+	goclikit.WithRecoveryHints(cmd,
 		"Search tasks by name or notes: icb tasks search <query>",
 		"Completed and dropped tasks are hidden: icb tasks list --status all",
 	)

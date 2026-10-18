@@ -46,7 +46,7 @@ func newStrainsCommand() *cobra.Command {
 			"what each one is like. `list --status want_to_try` is the queue;\n" +
 			"`list --effect sleepy` narrows to a recorded effect.",
 	})
-	withNotFoundHints(cmd,
+	goclikit.WithRecoveryHints(cmd,
 		"Search strains by name, breeder, or lineage: icb strains search <query>",
 		"See every value a strain field accepts: icb strains vocabulary",
 	)

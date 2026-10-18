@@ -3,26 +3,8 @@ package cli
 import (
 	"errors"
 
-	"github.com/spf13/cobra"
-
-	"github.com/datapointchris/goclikit"
-
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
-
-// withNotFoundHints records on cmd the commands a 404 under it should name, and
-// returns cmd so it can be attached inline in an AddCommand list.
-//
-// Each hint is a sentence, a colon, and the command to run, matching the
-// "Completed tasks are hidden: icb tasks list --status all" line the list
-// commands already print when they hide rows.
-//
-// Cobra does not inherit annotations and the lookup takes the nearest ancestor
-// carrying them, so a subcommand acting on a second kind of id names every way
-// in: `complete-task` takes an item and a task, and lists both.
-func withNotFoundHints(cmd *cobra.Command, hints ...string) *cobra.Command {
-	return goclikit.WithRecoveryHints(cmd, hints...)
-}
 
 // notFound reports whether err is the API saying a resource is not there, and
 // the line naming which one.

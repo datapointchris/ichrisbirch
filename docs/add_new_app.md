@@ -143,7 +143,7 @@ files; everything else is shared plumbing.
 `newWidgetsCommand()` with `list`, `show`, `search`, `create`, `edit`, `delete`.
 The verbs are `show` and `edit`, not `get` and `update`.
 
-- `withNotFoundHints(cmd, ...)` — a tree walk fails without it.
+- `goclikit.WithRecoveryHints(cmd, ...)` — a tree walk fails without it.
 - `addLimitFlag(cmd, &limit)` rather than registering `--limit` by hand.
 - `--json` on every read, short-circuiting to `encodeJSON`.
 - `create` and `edit` share one flag struct and one `addWidgetFlags` function.

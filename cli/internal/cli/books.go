@@ -31,7 +31,7 @@ func newBooksCommand() *cobra.Command {
 		Long: "Your book catalog: what you own, where each book is in the reading cycle,\n" +
 			"and what is queued next. `list --progress reading` is the reading-now view.",
 	})
-	withNotFoundHints(cmd, "Search books by title, author, or tags: icb books search <query>")
+	goclikit.WithRecoveryHints(cmd, "Search books by title, author, or tags: icb books search <query>")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newBooksListCommand(),

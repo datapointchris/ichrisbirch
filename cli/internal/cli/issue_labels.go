@@ -23,7 +23,7 @@ func newIssueLabelsCommand() *cobra.Command {
 			"each group, so area-api and area-cli, both in the area group, never meet on\n" +
 			"one issue.",
 	})
-	withNotFoundHints(cmd, labelHints...)
+	goclikit.WithRecoveryHints(cmd, labelHints...)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newLabelsListCommand(),
