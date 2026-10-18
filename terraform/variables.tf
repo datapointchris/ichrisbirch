@@ -1,5 +1,15 @@
 # ---------- AWS ---------- #
 
+variable "account_id" {
+  description = "The account this applies into, where the provider assumes terraform-role. docs/terraform.md sets it from the credentials in use."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.account_id))
+    error_message = "account_id must be exactly 12 digits."
+  }
+}
+
 variable "region" {
   description = "The AWS region to deploy resources"
   type        = string

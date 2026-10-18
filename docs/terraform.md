@@ -11,11 +11,16 @@ sources.
 ## Initializing
 
 The state lives in the account's state bucket under `ichrisbirch/terraform.tfstate`. The bucket
-name carries the account id, so it is passed at init:
+name carries the account id, and so does the role the provider assumes. Neither is committed. Both
+come from the credentials in use:
 
 ```bash
-terraform init -backend-config="bucket=chrisbirch-tfstate-$(aws sts get-caller-identity --query Account --output text)"
+export TF_VAR_account_id="$(aws sts get-caller-identity --query Account --output text)"
+terraform init -backend-config="bucket=chrisbirch-tfstate-$TF_VAR_account_id"
 ```
+
+`TF_VAR_account_id` sets the `account_id` variable for every later `plan` and `apply` in that
+shell. A gitignored `terraform.tfvars` holding `account_id` works as well.
 
 Locking uses S3 lock files, which needs Terraform 1.10 or later.
 
