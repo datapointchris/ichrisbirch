@@ -5,9 +5,12 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/datapointchris/goselfupdate/autoupdate"
 )
 
 // TestNoDefaultStdoutWrites guards the machine contract: other CLIs parse
@@ -69,6 +72,9 @@ func TestNoDefaultStdoutWrites(t *testing.T) {
 // TestUsageError_LeavesStdoutClean is the failure this whole rule exists for: a
 // caller pipes `icb ... --json` somewhere, gets the invocation wrong, and must
 // receive nothing at all on stdout rather than a usage message to parse.
+//
+// Driven through run, the path the shipped binary takes, because goclikit.Execute
+// is what marks a positional refused by cobra.NoArgs as a usage mistake.
 func TestUsageError_LeavesStdoutClean(t *testing.T) {
 	for _, args := range [][]string{
 		{"nope"},
@@ -77,13 +83,16 @@ func TestUsageError_LeavesStdoutClean(t *testing.T) {
 		{"auth", "token", "extra-arg"},
 	} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			original := os.Args
+			os.Args = append([]string{"icb"}, args...)
+			t.Cleanup(func() { os.Args = original })
+
 			var out, errOut strings.Builder
 			root := NewRootCommand()
 			root.SetOut(&out)
 			root.SetErr(&errOut)
-			root.SetArgs(args)
 
-			if code := exitCodeFor(root.Execute()); code != 2 {
+			if code := exitCodeFor(run(root, autoupdate.Config{Suppress: true})); code != 2 {
 				t.Errorf("exit code = %d, want 2 for a usage mistake", code)
 			}
 			if out.String() != "" {

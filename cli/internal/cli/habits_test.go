@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/datapointchris/goclikit"
+
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
@@ -84,12 +86,10 @@ func TestHabitCompleteDate_AMalformedDateIsAFormatRefusal(t *testing.T) {
 }
 
 func TestHabitCompleteDate_ARefusalIsAUsageError(t *testing.T) {
-	// Exit code 2 rather than 1 depends on this, and Unwrap is what lets both
-	// the sentinel check above and this one see the same error.
-	var usage usageError
+	// Exit code 2 rather than 1 depends on this.
 	_, err := habitCompleteDate("2026-08-24", evening(t))
-	if !errors.As(err, &usage) {
-		t.Fatalf("want a usageError, got %T", err)
+	if !errors.Is(err, goclikit.ErrUsage) {
+		t.Fatalf("want a usage error, got %T", err)
 	}
 }
 

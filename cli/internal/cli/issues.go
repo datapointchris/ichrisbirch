@@ -10,6 +10,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -41,7 +42,7 @@ const (
 )
 
 func newIssuesCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use: "issues",
 		// Top-level words that mean an issue: `items`, or a verb typed with no noun.
 		SuggestFor: []string{"items", "show", "search"},
@@ -156,7 +157,7 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 	f := cmd.Flags()
 	if f.Changed("status") && !slices.Contains(api.IssueStatuses, v.status) {
-		return api.IssueFilter{}, usageError{fmt.Errorf("unknown status %q — one of: %s", v.status, strings.Join(api.IssueStatuses, ", "))}
+		return api.IssueFilter{}, goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", v.status, strings.Join(api.IssueStatuses, ", ")))
 	}
 	if err := validateIssueType(f, "type", v.issueType); err != nil {
 		return api.IssueFilter{}, err
@@ -174,7 +175,7 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 	if f.Changed("priority") {
 		priority, err := parsePriority(v.priority)
 		if err != nil {
-			return api.IssueFilter{}, usageError{fmt.Errorf("--priority: %w", err)}
+			return api.IssueFilter{}, goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 		}
 		filter.Priority = &priority
 	}
@@ -188,7 +189,7 @@ func validateIssueType(f *pflag.FlagSet, name, value string) error {
 	if !f.Changed(name) || slices.Contains(api.IssueTypes, value) {
 		return nil
 	}
-	return usageError{fmt.Errorf("unknown type %q — one of: %s", value, strings.Join(api.IssueTypes, ", "))}
+	return goclikit.UsageError(fmt.Errorf("unknown type %q — one of: %s", value, strings.Join(api.IssueTypes, ", ")))
 }
 
 // parsePriority reads a priority by name or by value, so `--priority high` and
@@ -253,7 +254,7 @@ func newIssuesListCommand() *cobra.Command {
 			"  icb issues list --label area-cli --priority high\n" +
 			"  icb issues list --status completed --start 2026-10-01 --json\n" +
 			"  icb issues list --status completed --closed-by claude-code/",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := filters.filter(cmd)
 			if err != nil {
@@ -377,7 +378,7 @@ func newIssuesNextCommand() *cobra.Command {
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues next --label area-cli --json\n" +
 			"  icb issues next --type decision",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := queue.filter(cmd)
 			if err != nil {
@@ -515,7 +516,7 @@ func newIssuesVocabularyCommand() *cobra.Command {
 		Use:     "vocabulary",
 		Short:   "List the values --status, --type, --priority and --label accept",
 		Example: "  icb issues vocabulary\n  icb issues vocabulary --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

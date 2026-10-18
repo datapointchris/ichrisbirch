@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -27,7 +28,7 @@ var projectHints = []string{
 }
 
 func newProjectsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "projects",
 		Short: "List, inspect, and manage your projects",
 		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
@@ -78,7 +79,7 @@ func newProjectsListCommand() *cobra.Command {
 		Example: "  icb projects list\n  icb projects list --repo dotfiles\n" +
 			"  icb projects list --limit 5\n" +
 			"  icb projects list --status completed\n  icb projects list --status all --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -154,7 +155,7 @@ func newProjectsNextCommand() *cobra.Command {
 			"  icb projects next --kind chore\n" +
 			"  icb projects next --repo ichrisbirch\n" +
 			"  icb projects next --limit 1 --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -262,7 +263,7 @@ func newProjectsDropCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if reason == "" {
-				return usageError{errors.New("--reason is required — say why it is dropped rather than deferred")}
+				return goclikit.UsageError(errors.New("--reason is required — say why it is dropped rather than deferred"))
 			}
 			dropped := "dropped"
 			in := api.ProjectUpdateInput{Status: &dropped, StatusReason: &reason}
@@ -393,10 +394,10 @@ func refuseRepoNamedProject(name string) error {
 	if !registry.Knows(name) {
 		return nil
 	}
-	return usageError{fmt.Errorf(
+	return goclikit.UsageError(fmt.Errorf(
 		"%q names a repo, which never ends — name the bounded work instead (\"%s sync improvements\", \"Extract x from %s\") and tag the items with --repo %s",
 		name, name, name, name,
-	)}
+	))
 }
 
 func newProjectsCreateCommand() *cobra.Command {
@@ -414,10 +415,10 @@ func newProjectsCreateCommand() *cobra.Command {
 			"  icb projects create --name \"Sell Unused Shite\" --kind chore\n" +
 			"  icb projects create --name \"Reading backlog\" --description \"Books to finish this year\"\n" +
 			"  icb projects create --name \"Learn to sail\" --description \"$(cat plan.md)\" --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
-				return usageError{errors.New("--name is required")}
+				return goclikit.UsageError(errors.New("--name is required"))
 			}
 			if err := refuseRepoNamedProject(name); err != nil {
 				return err
@@ -491,7 +492,7 @@ func newProjectsEditCommand() *cobra.Command {
 				in.Position = &position
 			}
 			if in == (api.ProjectUpdateInput{}) {
-				return usageError{errors.New("nothing to change — pass at least one of --name/--description/--kind/--position")}
+				return goclikit.UsageError(errors.New("nothing to change — pass at least one of --name/--description/--kind/--position"))
 			}
 
 			client, err := newAPIClient(cmd.Context())

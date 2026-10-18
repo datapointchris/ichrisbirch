@@ -9,6 +9,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -16,7 +17,7 @@ import (
 )
 
 func newTasksCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "tasks",
 		Short: "List, inspect, and manage your tasks",
 		Long: "The flat maintenance list — chores and one-offs that belong to no project.\n" +
@@ -88,17 +89,17 @@ func newTasksListCommand() *cobra.Command {
 			"  icb tasks list --status completed\n" +
 			"  icb tasks list --status completed --start 2026-08-17 --end 2026-08-23\n" +
 			"  icb tasks list --status all --limit 10 --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.TaskStatuses, taskStatus) {
-				return usageError{fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", "))}
+				return goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", taskStatus, strings.Join(api.TaskStatuses, ", ")))
 			}
 			if cmd.Flags().Changed("category") {
 				// The same validator `create` and `edit` use, so a category one door
 				// accepts is accepted by all three and the spelling is corrected once.
 				canonical, err := taskCategory(category)
 				if err != nil {
-					return usageError{err}
+					return goclikit.UsageError(err)
 				}
 				category = canonical
 			}
@@ -218,17 +219,17 @@ func newTasksCreateCommand() *cobra.Command {
 			"entered is lost. Ctrl-C abandons the task.",
 		Example: "  icb tasks create\n" +
 			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fields := taskCreateFields()
 			answers := flagAnswers(cmd, "name", "category", "window-days", "notes")
 			if err := validateAnswers(answers, fields); err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 			if missing := missingFlags(answers, "name", "category"); len(missing) > 0 {
 				if !interactive(cmd) {
-					return usageError{fmt.Errorf("%s required — pass them, or run from a terminal to be asked",
-						strings.Join(missing, " and "))}
+					return goclikit.UsageError(fmt.Errorf("%s required — pass them, or run from a terminal to be asked",
+						strings.Join(missing, " and ")))
 				}
 				asked, err := runForm(cmd, prompt.Form{
 					Intro:  "Creating a task. Ctrl-C to abandon it.",
@@ -309,18 +310,18 @@ func newTasksEditCommand() *cobra.Command {
 			if f.Changed("category") {
 				canonical, err := taskCategory(category)
 				if err != nil {
-					return usageError{fmt.Errorf("--category: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--category: %w", err))
 				}
 				in.Category = &canonical
 			}
 			if f.Changed("window-days") {
 				if _, err := windowDays(strconv.Itoa(window)); err != nil {
-					return usageError{fmt.Errorf("--window-days: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--window-days: %w", err))
 				}
 				in.WindowDays = &window
 			}
 			if in == (api.TaskUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one of --name/--notes/--category/--window-days")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one of --name/--notes/--category/--window-days"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -483,7 +484,7 @@ func newTasksReopenCommand() *cobra.Command {
 }
 
 func newTaskCategoriesCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "categories",
 		Short: "List and tune the categories --category accepts, with each one's window",
 	})
@@ -499,7 +500,7 @@ func newTaskCategoriesListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List the task categories and the window a new task in each gets",
 		Example: "  icb tasks categories list",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -539,13 +540,13 @@ func newTaskCategoriesEditCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name, err := taskCategory(args[0])
 			if err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 			if !cmd.Flags().Changed("window-days") {
-				return usageError{errors.New("--window-days is required")}
+				return goclikit.UsageError(errors.New("--window-days is required"))
 			}
 			if _, err := windowDays(strconv.Itoa(window)); err != nil {
-				return usageError{fmt.Errorf("--window-days: %w", err)}
+				return goclikit.UsageError(fmt.Errorf("--window-days: %w", err))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -632,7 +633,7 @@ func runTaskList(cmd *cobra.Command, asJSON bool, fetch func(*api.Client) ([]api
 func parseIntArg(name, s string) (int, error) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, usageError{fmt.Errorf("invalid %s %q: must be an integer", name, s)}
+		return 0, goclikit.UsageError(fmt.Errorf("invalid %s %q: must be an integer", name, s))
 	}
 	return n, nil
 }

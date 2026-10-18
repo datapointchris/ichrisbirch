@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -24,7 +25,7 @@ type bookFlagVars struct {
 }
 
 func newBooksCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "books",
 		Short: "List, inspect, search, and manage your books",
 		Long: "Your book catalog: what you own, where each book is in the reading cycle,\n" +
@@ -69,7 +70,7 @@ func newBooksListCommand() *cobra.Command {
 			"                                      owned but not started — what to pick up next\n" +
 			"  icb books list --limit 10           the ten to read next\n" +
 			"  icb books list --start 2026-01-01   what you have finished this year",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
 				return c.ListBooks(cmd.Context(), filter, api.OnOrAfter(start), api.OnOrBefore(end), limitFlag(cmd))
@@ -170,14 +171,14 @@ func newBooksCreateCommand() *cobra.Command {
 		Use:     "create --title <title> --author <author> --tag <tag> [flags]",
 		Short:   "Create a new book",
 		Example: "  icb books create --title \"DDIA\" --author Kleppmann --tag databases --tag systems",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if !f.Changed("title") || !f.Changed("author") {
-				return usageError{fmt.Errorf("--title and --author are required")}
+				return goclikit.UsageError(fmt.Errorf("--title and --author are required"))
 			}
 			if len(v.tags) == 0 {
-				return usageError{fmt.Errorf("at least one --tag is required")}
+				return goclikit.UsageError(fmt.Errorf("at least one --tag is required"))
 			}
 			in := api.BookCreateInput{Title: v.title, Author: v.author, Tags: v.tags}
 			in.ISBN = strFlag(f, "isbn", &v.isbn)
@@ -258,7 +259,7 @@ func newBooksEditCommand() *cobra.Command {
 			in.ReadFinishDate = strFlag(f, "read-finish", &v.readFinish)
 
 			if isEmptyBookUpdate(in) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one field flag"))
 			}
 
 			client, err := newAPIClient(cmd.Context())

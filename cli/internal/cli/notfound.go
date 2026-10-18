@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -18,19 +17,11 @@ import (
 // "Completed tasks are hidden: icb tasks list --status all" line the list
 // commands already print when they hide rows.
 //
-// Local rather than goclikit's own helper so the twenty command files calling
-// it import nothing. The annotation is the contract, and its key is exported;
-// this file is the only one that has to know whose key it is.
-//
 // Cobra does not inherit annotations and the lookup takes the nearest ancestor
 // carrying them, so a subcommand acting on a second kind of id names every way
 // in: `complete-task` takes an item and a task, and lists both.
 func withNotFoundHints(cmd *cobra.Command, hints ...string) *cobra.Command {
-	if cmd.Annotations == nil {
-		cmd.Annotations = map[string]string{}
-	}
-	cmd.Annotations[goclikit.RecoveryHintsAnnotation] = strings.Join(hints, "\n")
-	return cmd
+	return goclikit.WithRecoveryHints(cmd, hints...)
 }
 
 // notFound reports whether err is the API saying a resource is not there, and

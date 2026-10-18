@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goclilogin"
 	"golang.org/x/oauth2"
 
@@ -105,7 +106,7 @@ func (r refusal) Unwrap() error { return r.APIError }
 func handleArgumentAPIError(err error) error {
 	var apiErr *api.APIError
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity && apiErr.Message != "" {
-		return usageError{errors.New(apiErr.Message)}
+		return goclikit.UsageError(errors.New(apiErr.Message))
 	}
 	return handleAPIError(err)
 }

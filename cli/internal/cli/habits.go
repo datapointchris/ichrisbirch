@@ -11,6 +11,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -26,7 +27,7 @@ var (
 )
 
 func newHabitsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "habits",
 		Short: "List, inspect, complete, and manage your habits",
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
@@ -66,7 +67,7 @@ func newHabitsTodayCommand() *cobra.Command {
 			"header names the zone it was read in. A machine whose zone cannot be read falls\n" +
 			"back to the timezone on your profile, which the header then names.",
 		Example: "  icb habits today\n  icb habits today --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -164,7 +165,7 @@ func newHabitsListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List habits",
 		Example: "  icb habits list\n  icb habits list --current",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -229,13 +230,13 @@ func newHabitsCreateCommand() *cobra.Command {
 		Use:     "create --name <name> --category <category-id> [flags]",
 		Short:   "Create a new habit",
 		Example: "  icb habits create --name \"Stretch\" --category 2",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
-				return usageError{fmt.Errorf("--name is required")}
+				return goclikit.UsageError(fmt.Errorf("--name is required"))
 			}
 			if !cmd.Flags().Changed("category") {
-				return usageError{fmt.Errorf("--category (category id) is required")}
+				return goclikit.UsageError(fmt.Errorf("--category (category id) is required"))
 			}
 			in := api.HabitCreateInput{Name: name, CategoryID: category}
 			if cmd.Flags().Changed("is-current") {
@@ -293,7 +294,7 @@ func newHabitsEditCommand() *cobra.Command {
 				in.IsCurrent = &isCurrent
 			}
 			if in == (api.HabitUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one of --name/--category/--is-current")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one of --name/--category/--is-current"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -430,12 +431,12 @@ func habitCompleteDate(date string, now time.Time) (string, error) {
 	}
 	day, err := time.Parse(dayLayout, date)
 	if err != nil {
-		return "", usageError{fmt.Errorf("%w: %q — expected YYYY-MM-DD", errDateFormat, date)}
+		return "", goclikit.UsageError(fmt.Errorf("%w: %q — expected YYYY-MM-DD", errDateFormat, date))
 	}
 	// YYYY-MM-DD compares as a string in calendar order.
 	normalized := day.Format(dayLayout)
 	if normalized > today {
-		return "", usageError{fmt.Errorf("%w: %s — a habit cannot be completed ahead of time", errDateInFuture, date)}
+		return "", goclikit.UsageError(fmt.Errorf("%w: %s — a habit cannot be completed ahead of time", errDateInFuture, date))
 	}
 	return normalized, nil
 }
@@ -449,7 +450,7 @@ func newHabitsCategoriesCommand() *cobra.Command {
 		Use:     "categories",
 		Short:   "List habit categories",
 		Example: "  icb habits categories\n  icb habits categories --current",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -484,7 +485,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 		Short:   "List habit completions",
 		Long:    "List completions. With no flags, all are returned; --first/--last give the\nsingle earliest/most-recent; --start/--end bound a date range.",
 		Example: "  icb habits completed --last",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

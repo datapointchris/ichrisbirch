@@ -8,13 +8,14 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func newArticlesCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "articles",
 		Short: "List, inspect, search, and manage your saved articles",
 		Long: "Your saved-article reading list: what is unread, what is archived, and the\n" +
@@ -164,7 +165,7 @@ func newArticlesListCommand() *cobra.Command {
 			"  icb articles list --unread --limit 5\n" +
 			"  icb articles list --archived=false\n" +
 			"  icb articles list --start 2026-08-01 --end 2026-08-31",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
@@ -238,7 +239,7 @@ func newArticlesCurrentCommand() *cobra.Command {
 		Use:     "current",
 		Short:   "Show the current article (the one being read)",
 		Example: "  icb articles current",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -275,10 +276,10 @@ func newArticlesCreateCommand() *cobra.Command {
 		Long:  "Fetch the URL and AI-summarize it into a new article (title, summary, tags\nare generated server-side).",
 		Example: "  icb articles create --url https://example.com/post\n" +
 			"  icb articles create --url https://example.com/post --notes \"for the DB deep-dive\"",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if articleURL == "" {
-				return usageError{fmt.Errorf("--url is required")}
+				return goclikit.UsageError(fmt.Errorf("--url is required"))
 			}
 			in := api.ArticleCreateFromURLInput{URL: articleURL}
 			in.Notes = strFlag(cmd.Flags(), "notes", &notes)
@@ -351,7 +352,7 @@ func newArticlesEditCommand() *cobra.Command {
 			in.ReviewDays = intFlag(f, "review-days", &reviewDays)
 
 			if isEmptyArticleUpdate(in) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one field flag"))
 			}
 
 			client, err := newAPIClient(cmd.Context())
@@ -399,7 +400,7 @@ func lastReadInstant(value string, loc *time.Location) (string, error) {
 	if day, err := time.ParseInLocation(dayLayout, value, loc); err == nil {
 		return time.Date(day.Year(), day.Month(), day.Day(), 12, 0, 0, 0, loc).Format(time.RFC3339), nil
 	}
-	return "", usageError{fmt.Errorf("%w: %q — expected 2026-07-24, 2026-07-24T09:00:00 or RFC3339", errLastReadFormat, value)}
+	return "", goclikit.UsageError(fmt.Errorf("%w: %q — expected 2026-07-24, 2026-07-24T09:00:00 or RFC3339", errLastReadFormat, value))
 }
 
 func newArticlesReadCommand() *cobra.Command {

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -38,7 +39,7 @@ type strainFlagVars struct {
 var strainFormKeys = []string{"name", "type", "status", "rating", "effect", "flavor", "terpene", "notes"}
 
 func newStrainsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "strains",
 		Short: "List, inspect, search, and manage a catalog of strains",
 		Long: "A catalog of cannabis strains: which have been tried, which are queued, and\n" +
@@ -86,18 +87,18 @@ func newStrainsListCommand() *cobra.Command {
 			"  icb strains list --effect sleepy       narrowed to a recorded effect\n" +
 			"  icb strains list --type sativa --rating-min 8\n" +
 			"                                         the highest-rated sativas",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			// A filter has no field to empty, so an empty value here is refused
 			// rather than read as the clear it means on `edit`. It narrows
 			// nothing, and it is almost always an unset shell variable.
 			for _, name := range []string{"type", "status", "effect", "flavor", "terpene"} {
 				if readFlagIntent(cmd.Flags(), name) == flagClears {
-					return usageError{fmt.Errorf("--%s given an empty value — a filter needs something to match", name)}
+					return goclikit.UsageError(fmt.Errorf("--%s given an empty value — a filter needs something to match", name))
 				}
 			}
 			if cmd.Flags().Changed("rating-min") && (filter.RatingMin < 1 || filter.RatingMin > 10) {
-				return usageError{fmt.Errorf("--rating-min: %w, got %d", errRatingRange, filter.RatingMin)}
+				return goclikit.UsageError(fmt.Errorf("--rating-min: %w, got %d", errRatingRange, filter.RatingMin))
 			}
 			return runStrainList(cmd, asJSON, filter, func(c *api.Client) ([]api.Strain, error) {
 				return c.ListStrains(cmd.Context(), filter, limitFlag(cmd))
@@ -148,7 +149,7 @@ func newStrainsVocabularyCommand() *cobra.Command {
 			"how many strains carry each. A count of zero is a value nothing uses yet,\n" +
 			"not a gap.",
 		Example: "  icb strains vocabulary\n  icb strains vocabulary --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -298,7 +299,7 @@ func newStrainsCreateCommand() *cobra.Command {
 			"  icb strains create --name \"Blue Dream\"\n" +
 			"  icb strains create --name \"Zkittlez\" --type indica_dominant --status tried \\\n" +
 			"      --rating 9 --effect happy --effect relaxed --flavor tropical",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			// Every refusal that needs no server state is decided here, before
@@ -306,15 +307,15 @@ func newStrainsCreateCommand() *cobra.Command {
 			// into exit 1 whenever the API is unreachable, and a caller that
 			// retries on 1 and fixes its arguments on 2 retries a typo forever.
 			if readFlagIntent(f, "name") == flagClears {
-				return usageError{fmt.Errorf("--name cannot be empty — every strain carries one")}
+				return goclikit.UsageError(fmt.Errorf("--name cannot be empty — every strain carries one"))
 			}
 			if f.Changed("rating") {
 				if _, err := strainRating(strconv.Itoa(v.rating)); err != nil {
-					return usageError{fmt.Errorf("--rating: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--rating: %w", err))
 				}
 			}
 			if !f.Changed("name") && !interactive(cmd) {
-				return usageError{fmt.Errorf("--name required — pass it, or run from a terminal to be asked")}
+				return goclikit.UsageError(fmt.Errorf("--name required — pass it, or run from a terminal to be asked"))
 			}
 
 			client, err := newAPIClient(cmd.Context())
@@ -327,7 +328,7 @@ func newStrainsCreateCommand() *cobra.Command {
 			}
 			answers := flagAnswers(cmd, strainFormKeys...)
 			if err := validateAnswers(answers, fields); err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 			if !answers.Has("name") {
 				asked, err := runForm(cmd, prompt.Form{
@@ -426,12 +427,12 @@ func newStrainsEditCommand() *cobra.Command {
 			// only signal that says retry with different arguments.
 			if f.Changed("rating") {
 				if _, err := strainRating(strconv.Itoa(v.rating)); err != nil {
-					return usageError{fmt.Errorf("--rating: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--rating: %w", err))
 				}
 			}
 			clear, err := strainClears(f, v.clear)
 			if err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 
 			in := api.StrainUpdateInput{}
@@ -453,7 +454,7 @@ func newStrainsEditCommand() *cobra.Command {
 			in.Tags = listFlag(f, "tag", v.tags)
 
 			if isEmptyStrainUpdate(in) && len(clear) == 0 {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag or --clear")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one field flag or --clear"))
 			}
 
 			client, err := newAPIClient(cmd.Context())

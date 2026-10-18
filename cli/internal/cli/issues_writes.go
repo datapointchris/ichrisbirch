@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -121,7 +122,7 @@ func priorityAnswer(answer string) (string, error) {
 // parseDay refuses anything but a YYYY-MM-DD day, before the API sees it.
 func parseDay(flag, value string) error {
 	if _, err := time.Parse(dayLayout, value); err != nil {
-		return usageError{fmt.Errorf("--%s %q: a day is YYYY-MM-DD", flag, value)}
+		return goclikit.UsageError(fmt.Errorf("--%s %q: a day is YYYY-MM-DD", flag, value))
 	}
 	return nil
 }
@@ -153,11 +154,11 @@ func newIssuesCreateCommand() *cobra.Command {
 			"  icb issues create --title \"Routing drops /issues\" --type bug --repo ichrisbirch --priority high\n" +
 			"  icb issues create --title \"Pick a rank scheme\" --type decision --label needs-design\n" +
 			"  icb issues create --title \"Flaky test\" --status triage --discovered-from 412 --description \"$(cat log.md)\"",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if f.Changed("status") && !slices.Contains(createStatuses, issueStatus) {
-				return usageError{fmt.Errorf("--status %q: a new issue starts %s", issueStatus, strings.Join(createStatuses, " or "))}
+				return goclikit.UsageError(fmt.Errorf("--status %q: a new issue starts %s", issueStatus, strings.Join(createStatuses, " or ")))
 			}
 			if f.Changed("deferred-until") {
 				if err := parseDay("deferred-until", deferredUntil); err != nil {
@@ -167,7 +168,7 @@ func newIssuesCreateCommand() *cobra.Command {
 			answers := flagAnswers(cmd, "title", "type", "priority", "repo", "initiative", "label", "description", "acceptance")
 			missing := missingFlags(answers, "title")
 			if len(missing) > 0 && !interactive(cmd) {
-				return usageError{fmt.Errorf("%s required — pass it, or run from a terminal to be asked", strings.Join(missing, " and "))}
+				return goclikit.UsageError(fmt.Errorf("%s required — pass it, or run from a terminal to be asked", strings.Join(missing, " and ")))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -178,7 +179,7 @@ func newIssuesCreateCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if err := validateAnswers(answers, fields); err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 			if len(missing) > 0 {
 				asked, err := runForm(cmd, prompt.Form{
@@ -207,7 +208,7 @@ func newIssuesCreateCommand() *cobra.Command {
 			if answers.Has("priority") {
 				priority, err := parsePriority(answers.Get("priority"))
 				if err != nil {
-					return usageError{fmt.Errorf("--priority: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 				}
 				in.Priority = &priority
 			}
@@ -319,11 +320,11 @@ func (v *issueEditFlags) update(cmd *cobra.Command) (api.IssueUpdateInput, []str
 	f := cmd.Flags()
 	for _, name := range issueRequiredFlags {
 		if readFlagIntent(f, name) == flagClears {
-			return api.IssueUpdateInput{}, nil, usageError{fmt.Errorf("--%s cannot be emptied — every issue carries one", name)}
+			return api.IssueUpdateInput{}, nil, goclikit.UsageError(fmt.Errorf("--%s cannot be emptied — every issue carries one", name))
 		}
 	}
 	if readFlagIntent(f, "label") == flagMixesEmptyWithValues {
-		return api.IssueUpdateInput{}, nil, usageError{errors.New("--label given both a value and an empty one — an empty value removes every label, so pass one or the other")}
+		return api.IssueUpdateInput{}, nil, goclikit.UsageError(errors.New("--label given both a value and an empty one — an empty value removes every label, so pass one or the other"))
 	}
 	if err := validateIssueType(f, "type", v.issueType); err != nil {
 		return api.IssueUpdateInput{}, nil, err
@@ -353,7 +354,7 @@ func (v *issueEditFlags) update(cmd *cobra.Command) (api.IssueUpdateInput, []str
 	if f.Changed("priority") {
 		priority, err := parsePriority(v.priority)
 		if err != nil {
-			return api.IssueUpdateInput{}, nil, usageError{fmt.Errorf("--priority: %w", err)}
+			return api.IssueUpdateInput{}, nil, goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 		}
 		in.Priority = &priority
 	}
@@ -373,7 +374,7 @@ func (v *issueEditFlags) update(cmd *cobra.Command) (api.IssueUpdateInput, []str
 	}
 	sort.Strings(clear)
 	if in == (api.IssueUpdateInput{}) && len(clear) == 0 {
-		return api.IssueUpdateInput{}, nil, usageError{errors.New("nothing to change — pass at least one field flag")}
+		return api.IssueUpdateInput{}, nil, goclikit.UsageError(errors.New("nothing to change — pass at least one field flag"))
 	}
 	return in, clear, nil
 }
@@ -543,7 +544,7 @@ func newIssuesCancelCommand() *cobra.Command {
 				ClosedBy:     closer(cmd, &closedBy),
 			}
 			if in.StatusReason == nil && in.DuplicateOf == nil {
-				return usageError{errors.New("--reason or --duplicate-of is required — say why it will not be done")}
+				return goclikit.UsageError(errors.New("--reason or --duplicate-of is required — say why it will not be done"))
 			}
 			canceled := api.IssueStatusCanceled
 			in.Status = &canceled
@@ -614,16 +615,16 @@ func newIssuesClaimCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if minutes < 1 || minutes > 10080 {
-				return usageError{fmt.Errorf("--minutes %d: a claim lasts 1 to 10080 minutes", minutes)}
+				return goclikit.UsageError(fmt.Errorf("--minutes %d: a claim lasts 1 to 10080 minutes", minutes))
 			}
 			if strings.TrimSpace(claimant) == "" {
-				return usageError{errors.New("--claimant cannot be empty — a claim names who holds it")}
+				return goclikit.UsageError(errors.New("--claimant cannot be empty — a claim names who holds it"))
 			}
 			in := api.IssueClaimInput{Claimant: claimant, Minutes: minutes}
 			if len(args) == 1 {
 				for _, name := range readyQueueFlagNames {
 					if f.Changed(name) {
-						return usageError{fmt.Errorf("--%s narrows the queue an unnamed claim takes from — a named issue is not taken from it", name)}
+						return goclikit.UsageError(fmt.Errorf("--%s narrows the queue an unnamed claim takes from — a named issue is not taken from it", name))
 					}
 				}
 			}
@@ -722,7 +723,7 @@ func newIssuesReorderCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if (before == "") == (after == "") {
-				return usageError{errors.New("pass exactly one of --before and --after")}
+				return goclikit.UsageError(errors.New("pass exactly one of --before and --after"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -773,7 +774,7 @@ func newIssuesAddDependencyCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
-				return usageError{errors.New("--depends-on is required")}
+				return goclikit.UsageError(errors.New("--depends-on is required"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -815,7 +816,7 @@ func newIssuesRemoveDependencyCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
-				return usageError{errors.New("--depends-on is required")}
+				return goclikit.UsageError(errors.New("--depends-on is required"))
 			}
 			if !yes {
 				ok, err := confirm(cmd, fmt.Sprintf("Remove the dependency %s → %s?", args[0], dependsOn))
@@ -862,7 +863,7 @@ func newIssuesAddCommentCommand() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(body) == "" {
-				return usageError{errors.New("--body is required and cannot be blank")}
+				return goclikit.UsageError(errors.New("--body is required and cannot be blank"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -945,7 +946,7 @@ func resolveIssueComment(ctx context.Context, client *api.Client, issue, ref str
 	}
 	place, err := strconv.Atoi(strings.TrimPrefix(ref, "#"))
 	if err != nil {
-		return api.IssueComment{}, usageError{fmt.Errorf("comment %q: pass its #n from `icb issues comments %s`, or its id", ref, issue)}
+		return api.IssueComment{}, goclikit.UsageError(fmt.Errorf("comment %q: pass its #n from `icb issues comments %s`, or its id", ref, issue))
 	}
 	if place < 1 || place > len(comments) {
 		return api.IssueComment{}, fmt.Errorf("%s has %d %s, so there is no #%d", issue, len(comments), plural(len(comments), "comment", "comments"), place)

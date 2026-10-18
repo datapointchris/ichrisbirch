@@ -6,6 +6,7 @@ import (
 	"io"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -14,7 +15,7 @@ import (
 var labelHints = []string{"List the labels: icb issues labels list"}
 
 func newIssueLabelsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "labels",
 		Short: "Manage the labels --label accepts",
 		Long: "An issue carries only labels made here, so a typo is refused rather than\n" +
@@ -42,7 +43,7 @@ func newLabelsListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List every label, grouped, with its count of unclosed issues",
 		Example: "  icb issues labels list\n  icb issues labels list --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -104,10 +105,10 @@ func newLabelsCreateCommand() *cobra.Command {
 			"the other labels in that group.",
 		Example: "  icb issues labels create --slug area-db --group area\n" +
 			"  icb issues labels create --slug needs-design --description \"Waiting on a design call\"",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if slug == "" {
-				return usageError{errors.New("--slug is required")}
+				return goclikit.UsageError(errors.New("--slug is required"))
 			}
 			f := cmd.Flags()
 			in := api.IssueLabelCreateInput{
@@ -165,7 +166,7 @@ func newLabelsEditCommand() *cobra.Command {
 				clear = append(clear, "description")
 			}
 			if in == (api.IssueLabelUpdateInput{}) && len(clear) == 0 {
-				return usageError{errors.New("nothing to change — pass --group and/or --description")}
+				return goclikit.UsageError(errors.New("nothing to change — pass --group and/or --description"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

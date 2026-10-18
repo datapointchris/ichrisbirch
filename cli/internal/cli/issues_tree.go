@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -43,10 +44,10 @@ func newIssuesTreeCommand() *cobra.Command {
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.IssueStatuses, issueStatus) {
-				return usageError{fmt.Errorf("unknown status %q — one of: %s", issueStatus, strings.Join(api.IssueStatuses, ", "))}
+				return goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", issueStatus, strings.Join(api.IssueStatuses, ", ")))
 			}
 			if depth < 0 {
-				return usageError{fmt.Errorf("--depth cannot be negative")}
+				return goclikit.UsageError(fmt.Errorf("--depth cannot be negative"))
 			}
 			maxDepth := graph.Unlimited
 			if cmd.Flags().Changed("depth") {

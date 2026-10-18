@@ -79,16 +79,6 @@ func inGroup(id string, cmds ...*cobra.Command) []*cobra.Command {
 	return cmds
 }
 
-// usageError marks an invocation mistake (bad flag/args) so Execute can return
-// exit code 2, distinct from a runtime failure (1). Per CLI conventions.
-type usageError struct{ err error }
-
-func (u usageError) Error() string { return u.err.Error() }
-
-// Unwrap exposes the wrapped cause, so a caller can branch on a sentinel with
-// errors.Is instead of matching the rendered message.
-func (u usageError) Unwrap() error { return u.err }
-
 // exitCode lets a command choose the process exit code without Execute printing
 // an "error:" line — used by `auth status` to report "not logged in" (exit 1) as
 // a valid state, not a failure.
@@ -96,36 +86,14 @@ type exitCode int
 
 func (e exitCode) Error() string { return "" }
 
-// asNamespace marks a group with no action of its own, the root included. A
-// bare one shows help and exits 0. A word naming none of its subcommands exits
-// 2 naming the ones near it, with or without a flag after the word.
-//
-// Here rather than in each command file for the reason withNotFoundHints is:
-// this package's files import goclikit in one place.
-func asNamespace(cmd *cobra.Command) *cobra.Command {
-	return goclikit.AsNamespace(cmd)
-}
-
-// noArgs refuses a positional on a leaf that takes none. Cobra's NoArgs calls
-// the word an unknown command, which names a subcommand a leaf never had.
+// argumentBelongsTo refuses a positional on a leaf that takes that value
+// through flag, and spells the command line that passes it there. It is for a
+// leaf whose siblings take the same value positionally, which is what makes
+// the positional the natural guess.
 //
 // The refusal is marked with goclikit.UsageError, which is what makes
 // goclikit.Execute pass it through with this wording rather than appending its
 // own usage line and help pointer.
-func noArgs(cmd *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		return nil
-	}
-	refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\nRun '%s --help' for its flags.",
-		cmd.CommandPath(), args[0], cmd.CommandPath())
-	return goclikit.UsageError(errors.New(refusal))
-}
-
-// argumentBelongsTo refuses a positional on a leaf that takes that value
-// through flag, and spells the command line that passes it there. It is for a
-// leaf whose siblings take the same value positionally, which is what makes
-// the positional the natural guess. Its refusal is marked as noArgs marks its
-// own.
 func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 	return func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
@@ -138,7 +106,7 @@ func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
 }
 
 func NewRootCommand() *cobra.Command {
-	root := asNamespace(&cobra.Command{
+	root := goclikit.AsNamespace(&cobra.Command{
 		Use:   "icb",
 		Short: "The ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
@@ -171,12 +139,12 @@ func NewRootCommand() *cobra.Command {
 		// exempt from that validator.
 		Args: cobra.ArbitraryArgs,
 	})
-	// Flag mistakes become usageError → exit 2. Inherited by subcommands.
+	// Flag mistakes are marked goclikit.ErrUsage, so they exit 2. Inherited by subcommands.
 	// goclikit.Execute composes with this rather than replacing it, and keeping
 	// it here is what makes the tree self-classifying for anything driving
 	// NewRootCommand directly.
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
-		return usageError{err}
+		return goclikit.UsageError(err)
 	})
 	useHelp(root)
 
@@ -265,12 +233,8 @@ func exitCodeFor(err error) int {
 	if errors.As(err, &ec) {
 		return int(ec)
 	}
-	var usageErr usageError
-	if errors.As(err, &usageErr) {
-		return 2
-	}
-	// The library's classification, for a usage mistake cobra rejects before
-	// any RunE runs and the tree therefore never marks itself.
+	// A usage mistake is marked either by goclikit, for a line cobra rejects
+	// before any RunE runs, or by the command that refused it.
 	if errors.Is(err, goclikit.ErrUsage) {
 		return 2
 	}

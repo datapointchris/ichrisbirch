@@ -6,13 +6,14 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func newPatternsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "patterns",
 		Short: "Capture and review the observations you want to correlate",
 		Long:  "Fragments noticed in passing — what you ate, how you slept, when the\nheadache started. Not tasks and not journal entries: the point is having\nenough of them, over enough time, to see what goes with what.",
@@ -34,7 +35,7 @@ func newPatternsListCommand() *cobra.Command {
 		Use:     "list [flags]",
 		Short:   "List patterns, newest first",
 		Example: "  icb patterns list\n  icb patterns list --search heartburn\n  icb patterns list --limit 20 --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -105,7 +106,7 @@ func newPatternsCreateCommand() *cobra.Command {
 			in := api.PatternCreateInput{Message: args[0]}
 			if cmd.Flags().Changed("at") {
 				if err := validateTimestamp(recordedAt); err != nil {
-					return usageError{err}
+					return goclikit.UsageError(err)
 				}
 				in.RecordedAt = &recordedAt
 			}
@@ -153,12 +154,12 @@ func newPatternsEditCommand() *cobra.Command {
 			}
 			if f.Changed("at") {
 				if err := validateTimestamp(recordedAt); err != nil {
-					return usageError{err}
+					return goclikit.UsageError(err)
 				}
 				in.RecordedAt = &recordedAt
 			}
 			if in == (api.PatternUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one of --message/--at")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one of --message/--at"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

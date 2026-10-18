@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -63,7 +64,7 @@ func newItemsTreeCommand() *cobra.Command {
 				return err
 			}
 			if depth < 0 {
-				return usageError{fmt.Errorf("--depth cannot be negative")}
+				return goclikit.UsageError(fmt.Errorf("--depth cannot be negative"))
 			}
 			maxDepth := graph.Unlimited
 			if cmd.Flags().Changed("depth") {

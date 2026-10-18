@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -22,7 +23,7 @@ const shoppingPurchasesShown = 100
 const unsortedLabel = "Unsorted"
 
 func newShoppingCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "shopping",
 		Short: "Your shopping list: items by section, checked off as you buy them",
 		Long: "One list, split into sections such as stores or aisles. An item is a catalog\n" +
@@ -65,12 +66,12 @@ func newShoppingListCommand() *cobra.Command {
 		Example: "  icb shopping list\n" +
 			"  icb shopping list --section costco\n" +
 			"  icb shopping list --status all --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") {
 				canonical, err := prompt.OneOf(api.ShoppingItemStatuses)(status)
 				if err != nil {
-					return usageError{fmt.Errorf("--status: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--status: %w", err))
 				}
 				status = canonical
 			}
@@ -140,7 +141,7 @@ func newShoppingAddCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if len(args) == 0 && !interactive(cmd) {
-				return usageError{fmt.Errorf("name an item, as in `icb shopping add eggs`, or run from a terminal to be asked")}
+				return goclikit.UsageError(fmt.Errorf("name an item, as in `icb shopping add eggs`, or run from a terminal to be asked"))
 			}
 			in := api.ShoppingItemAddInput{}
 			var clear []string
@@ -290,7 +291,7 @@ func newShoppingEditCommand() *cobra.Command {
 			var clear []string
 			switch readFlagIntent(f, "name") {
 			case flagClears:
-				return usageError{fmt.Errorf("--name cannot be empty — every item carries one")}
+				return goclikit.UsageError(fmt.Errorf("--name cannot be empty — every item carries one"))
 			case flagCarriesValues:
 				in.Name = &name
 			}
@@ -304,7 +305,7 @@ func newShoppingEditCommand() *cobra.Command {
 				in.Section = &section
 			}
 			if in == (api.ShoppingItemUpdateInput{}) && len(clear) == 0 {
-				return usageError{fmt.Errorf("nothing to change — pass at least one of --name/--note/--section")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one of --name/--note/--section"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -410,14 +411,14 @@ func newShoppingHistoryCommand() *cobra.Command {
 		Example: "  icb shopping history\n" +
 			"  icb shopping history --start 2026-10-01 --end 2026-10-31\n" +
 			"  icb shopping history --limit 500 --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			for _, bound := range [][2]string{{"start", start}, {"end", end}} {
 				if bound[1] == "" {
 					continue
 				}
 				if err := validateDate(bound[1]); err != nil {
-					return usageError{fmt.Errorf("--%s: %w", bound[0], err)}
+					return goclikit.UsageError(fmt.Errorf("--%s: %w", bound[0], err))
 				}
 			}
 			client, err := newAPIClient(cmd.Context())
@@ -444,7 +445,7 @@ func newShoppingHistoryCommand() *cobra.Command {
 }
 
 func newShoppingSectionsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "sections",
 		Short: "List, create, rename, reorder, and delete sections",
 		Long: "A section is a part of the list such as a store or an aisle. Deleting one\n" +
@@ -470,7 +471,7 @@ func newShoppingSectionsListCommand() *cobra.Command {
 		Use:     "list",
 		Short:   "List sections in list order",
 		Example: "  icb shopping sections list",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -507,7 +508,7 @@ func newShoppingSectionsCreateCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[0]) == "" {
-				return usageError{fmt.Errorf("a section needs a name")}
+				return goclikit.UsageError(fmt.Errorf("a section needs a name"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -537,7 +538,7 @@ func newShoppingSectionsRenameCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[1]) == "" {
-				return usageError{fmt.Errorf("a section needs a name")}
+				return goclikit.UsageError(fmt.Errorf("a section needs a name"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -568,7 +569,7 @@ func newShoppingSectionsMoveCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if f.Changed("before") == f.Changed("after") {
-				return usageError{fmt.Errorf("pass exactly one of --before or --after")}
+				return goclikit.UsageError(fmt.Errorf("pass exactly one of --before or --after"))
 			}
 			move := api.ShoppingSectionMove{}
 			if f.Changed("before") {

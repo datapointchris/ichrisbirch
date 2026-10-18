@@ -7,13 +7,14 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func newEventsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "events",
 		Short: "List, inspect, and manage your events",
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
@@ -48,11 +49,11 @@ func newEventsListCommand() *cobra.Command {
 			"the latest ones that happened.",
 		Example: "  icb events list\n  icb events list --limit 5\n" +
 			"  icb events list --when past --limit 3\n  icb events list --when all --json",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			scope := api.EventScope(when)
 			if !slices.Contains(api.EventScopes, scope) {
-				return usageError{fmt.Errorf("--when must be one of: %s", joinEventScopes())}
+				return goclikit.UsageError(fmt.Errorf("--when must be one of: %s", joinEventScopes()))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -132,16 +133,16 @@ func newEventsCreateCommand() *cobra.Command {
 		Use:     "create --name <name> --date <when> --venue <venue> --cost <n> [flags]",
 		Short:   "Create a new event",
 		Example: "  icb events create --name \"Show\" --date \"2026-09-01 20:00\" --venue \"The Hall\" --cost 45 --attending",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
-				return usageError{fmt.Errorf("--name is required")}
+				return goclikit.UsageError(fmt.Errorf("--name is required"))
 			}
 			if date == "" {
-				return usageError{fmt.Errorf("--date is required")}
+				return goclikit.UsageError(fmt.Errorf("--date is required"))
 			}
 			if venue == "" {
-				return usageError{fmt.Errorf("--venue is required")}
+				return goclikit.UsageError(fmt.Errorf("--venue is required"))
 			}
 			in := api.EventCreateInput{Name: name, Date: date, Venue: venue, Cost: cost, Attending: attending}
 			if cmd.Flags().Changed("url") {
@@ -222,7 +223,7 @@ func newEventsEditCommand() *cobra.Command {
 				in.Notes = &notes
 			}
 			if (in == api.EventUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one field flag"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {

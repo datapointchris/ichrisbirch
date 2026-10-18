@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -41,7 +42,7 @@ var (
 )
 
 func newItemsCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "items",
 		Short: "Work with project items — the structured to-do units in projects",
 		Long: "The ordered work units inside a project, each with sub-tasks, dependencies,\n" +
@@ -142,7 +143,7 @@ func newItemsListCommand() *cobra.Command {
 				return nil
 			}
 			if cmd.Flags().Changed("repo") {
-				return usageError{fmt.Errorf("--repo and --project are different questions — pass one")}
+				return goclikit.UsageError(fmt.Errorf("--repo and --project are different questions — pass one"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -180,7 +181,7 @@ func validateItemStatus(cmd *cobra.Command, itemStatus string) error {
 	if slices.Contains(api.ItemStatuses, itemStatus) {
 		return nil
 	}
-	return usageError{fmt.Errorf("unknown status %q — one of: %s", itemStatus, strings.Join(api.ItemStatuses, ", "))}
+	return goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", itemStatus, strings.Join(api.ItemStatuses, ", ")))
 }
 
 // hintHiddenItems says the default hid something, and names the flag that shows
@@ -230,7 +231,7 @@ func validateRepoFlag(cmd *cobra.Command, repo string) error {
 		return err
 	}
 	if err := registry.Validate(repo); err != nil {
-		return usageError{err}
+		return goclikit.UsageError(err)
 	}
 	return nil
 }
@@ -274,7 +275,7 @@ func newItemsBlockedCommand() *cobra.Command {
 		Use:     "blocked",
 		Short:   "List items with at least one incomplete dependency",
 		Example: "  icb projects items blocked\n  icb projects items blocked --repo homelab",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter := repoFlagValue(cmd, repo)
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
@@ -641,15 +642,15 @@ func newItemsCreateCommand() *cobra.Command {
 		Example: "  icb projects items create\n" +
 			"  icb projects items create --project \"Kitchen remodel\" --title \"Get three quotes\"\n" +
 			"  icb projects items create --project \"Kitchen remodel\" --title \"Pick tile\" --notes \"$(cat tile.md)\"",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			answers := flagAnswers(cmd, "title", "project", "repo", "notes")
 			missing := missingFlags(answers, "title", "project")
 			// Ahead of the client, so a caller that cannot be asked is told
 			// which flag it left out rather than that the API is unreachable.
 			if len(missing) > 0 && !interactive(cmd) {
-				return usageError{fmt.Errorf("%s required — pass them, or run from a terminal to be asked",
-					strings.Join(missing, " and "))}
+				return goclikit.UsageError(fmt.Errorf("%s required — pass them, or run from a terminal to be asked",
+					strings.Join(missing, " and ")))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -661,7 +662,7 @@ func newItemsCreateCommand() *cobra.Command {
 				return handleAPIError(err)
 			}
 			if err := validateAnswers(answers, fields); err != nil {
-				return usageError{err}
+				return goclikit.UsageError(err)
 			}
 			if len(missing) > 0 {
 				asked, err := runForm(cmd, prompt.Form{
@@ -745,7 +746,7 @@ func newItemsEditCommand() *cobra.Command {
 				in.Repo = &repo
 			}
 			if in == (api.ProjectItemUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass --title, --notes, and/or --repo")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass --title, --notes, and/or --repo"))
 			}
 			return runItemUpdate(cmd, args[0], in, asJSON, "Updated")
 		},
@@ -864,10 +865,10 @@ func newItemsReorderCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
-				return usageError{fmt.Errorf("--project is required")}
+				return goclikit.UsageError(fmt.Errorf("--project is required"))
 			}
 			if !cmd.Flags().Changed("position") {
-				return usageError{fmt.Errorf("--position is required")}
+				return goclikit.UsageError(fmt.Errorf("--position is required"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -904,7 +905,7 @@ func newItemsAddProjectCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
-				return usageError{fmt.Errorf("--project is required")}
+				return goclikit.UsageError(fmt.Errorf("--project is required"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -939,7 +940,7 @@ func newItemsRemoveProjectCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if project == "" {
-				return usageError{fmt.Errorf("--project is required")}
+				return goclikit.UsageError(fmt.Errorf("--project is required"))
 			}
 			if !yes {
 				ok, err := confirm(cmd,
@@ -983,7 +984,7 @@ func newItemsAddDependencyCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
-				return usageError{fmt.Errorf("--depends-on is required")}
+				return goclikit.UsageError(fmt.Errorf("--depends-on is required"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -1017,7 +1018,7 @@ func newItemsRemoveDependencyCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dependsOn == "" {
-				return usageError{fmt.Errorf("--depends-on is required")}
+				return goclikit.UsageError(fmt.Errorf("--depends-on is required"))
 			}
 			if !yes {
 				ok, err := confirm(cmd,
@@ -1088,7 +1089,7 @@ func newItemsAddTaskCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if title == "" {
-				return usageError{fmt.Errorf("--title is required")}
+				return goclikit.UsageError(fmt.Errorf("--title is required"))
 			}
 			in := api.ProjectItemTaskCreateInput{Title: title}
 			if cmd.Flags().Changed("position") {
@@ -1156,7 +1157,7 @@ func newItemsEditTaskCommand() *cobra.Command {
 				in.Position = &position
 			}
 			if in == (api.ProjectItemTaskUpdateInput{}) {
-				return usageError{fmt.Errorf("nothing to change — pass --title, --completed, and/or --position")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass --title, --completed, and/or --position"))
 			}
 			return runTaskUpdate(cmd, args[0], args[1], in, asJSON)
 		},

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/datapointchris/goclikit"
+
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
@@ -50,9 +52,8 @@ func TestLastReadInstant_AnythingElseIsAUsageError(t *testing.T) {
 	if !errors.Is(err, errLastReadFormat) {
 		t.Fatalf("want errLastReadFormat, got %v", err)
 	}
-	var usage usageError
-	if !errors.As(err, &usage) {
-		t.Errorf("want a usageError, so the exit is 2 rather than 1, got %T", err)
+	if !errors.Is(err, goclikit.ErrUsage) {
+		t.Errorf("want a usage error, so the exit is 2 rather than 1, got %T", err)
 	}
 }
 

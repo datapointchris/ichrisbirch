@@ -8,13 +8,14 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func newRecipesCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "recipes",
 		Short: "List, inspect, search, cook, and AI-import recipes",
 		Long: "Your recipe catalog: what you can cook, what you have cooked, and what you\n" +
@@ -62,7 +63,7 @@ func newRecipesListCommand() *cobra.Command {
 		Example: "  icb recipes list\n" +
 			"  icb recipes list --limit 10\n" +
 			"  icb recipes list --cuisine italian --rating-min 4 --max-total-time 45",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
@@ -151,7 +152,7 @@ func newRecipesSearchIngredientsCommand() *cobra.Command {
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if match != "any" && match != "all" {
-				return usageError{fmt.Errorf("--match must be 'any' or 'all'")}
+				return goclikit.UsageError(fmt.Errorf("--match must be 'any' or 'all'"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -200,11 +201,11 @@ func newRecipesCreateCommand() *cobra.Command {
 			"is a JSON array of {quantity,unit,item,prep_note,is_optional,ingredient_group}.",
 		Example: "  icb recipes create --name \"Chimichurri\" --instructions \"Blend all.\" \\\n" +
 			"    --ingredients-json '[{\"quantity\":1,\"unit\":\"cup\",\"item\":\"parsley\"}]' --cuisine argentine",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
 			if name == "" || instructions == "" {
-				return usageError{fmt.Errorf("--name and --instructions are required")}
+				return goclikit.UsageError(fmt.Errorf("--name and --instructions are required"))
 			}
 			ingredients, err := parseIngredientsJSON(ingredientsJSON)
 			if err != nil {
@@ -317,7 +318,7 @@ func newRecipesEditCommand() *cobra.Command {
 			}
 
 			if isEmptyRecipeUpdate(in) && len(clear) == 0 {
-				return usageError{fmt.Errorf("nothing to change — pass at least one field flag or --clear")}
+				return goclikit.UsageError(fmt.Errorf("nothing to change — pass at least one field flag or --clear"))
 			}
 
 			client, err := newAPIClient(cmd.Context())
@@ -432,10 +433,10 @@ func newRecipesAISuggestCommand() *cobra.Command {
 			"candidate object to `icb recipes ai-save --candidate-json <json>` to persist.\n" +
 			"Slow (30-60s). Use --json to capture candidates for piping to ai-save.",
 		Example: "  icb recipes ai-suggest --have chicken --have lemon --want \"quick weeknight dinner\"",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if len(have) == 0 {
-				return usageError{fmt.Errorf("--have is required (repeatable)")}
+				return goclikit.UsageError(fmt.Errorf("--have is required (repeatable)"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -469,7 +470,7 @@ func newRecipesAISaveCommand() *cobra.Command {
 		Short:   "Persist an AI recipe candidate",
 		Long:    "Save a candidate object (one element from `ai-suggest`) to the recipe catalog.",
 		Example: "  icb recipes ai-save --candidate-json \"$(cat candidate.json)\"",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
 			if err != nil {
@@ -510,7 +511,7 @@ func newRecipesAIImportCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if hint != "auto" && hint != "recipe" && hint != "technique" && hint != "both" {
-				return usageError{fmt.Errorf("--hint must be auto, recipe, technique, or both")}
+				return goclikit.UsageError(fmt.Errorf("--hint must be auto, recipe, technique, or both"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -543,7 +544,7 @@ func newRecipesAISaveImportCommand() *cobra.Command {
 		Long: "Save the candidate returned by `ai-import` (recipe and/or technique). For\n" +
 			"kind=both, the technique_mention is appended to the recipe's notes.",
 		Example: "  icb recipes ai-save-import --candidate-json \"$(cat candidate.json)\"",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
 			if err != nil {
@@ -599,7 +600,7 @@ func parseIngredientsJSON(raw string) ([]api.RecipeIngredientInput, error) {
 	}
 	var ingredients []api.RecipeIngredientInput
 	if err := json.Unmarshal([]byte(raw), &ingredients); err != nil {
-		return nil, usageError{fmt.Errorf("--ingredients-json is not a valid JSON array of ingredients: %w", err)}
+		return nil, goclikit.UsageError(fmt.Errorf("--ingredients-json is not a valid JSON array of ingredients: %w", err))
 	}
 	return ingredients, nil
 }
@@ -608,10 +609,10 @@ func parseIngredientsJSON(raw string) ([]api.RecipeIngredientInput, error) {
 // returning it as raw bytes for verbatim POSTing.
 func validJSONFlag(name, raw string) (json.RawMessage, error) {
 	if strings.TrimSpace(raw) == "" {
-		return nil, usageError{fmt.Errorf("%s is required", name)}
+		return nil, goclikit.UsageError(fmt.Errorf("%s is required", name))
 	}
 	if !json.Valid([]byte(raw)) {
-		return nil, usageError{fmt.Errorf("%s is not valid JSON", name)}
+		return nil, goclikit.UsageError(fmt.Errorf("%s is not valid JSON", name))
 	}
 	return json.RawMessage(raw), nil
 }

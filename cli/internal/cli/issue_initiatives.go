@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -17,7 +18,7 @@ import (
 var initiativeHints = []string{"Finished initiatives are hidden: icb issues initiatives list --status all"}
 
 func newIssueInitiativesCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "initiatives",
 		Short: "Group the issues that ship one outcome",
 		Long: "An initiative is an outcome that finishes. Most issues belong to none. An\n" +
@@ -53,10 +54,10 @@ func newInitiativesListCommand() *cobra.Command {
 		Long: "Active initiatives by priority, then position. Completed and dropped ones are\n" +
 			"hidden until --status asks for them, and come after, latest first.",
 		Example: "  icb issues initiatives list\n  icb issues initiatives list --status all --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.InitiativeStatuses, initiativeStatus) {
-				return usageError{fmt.Errorf("unknown status %q — one of: %s", initiativeStatus, strings.Join(api.InitiativeStatuses, ", "))}
+				return goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", initiativeStatus, strings.Join(api.InitiativeStatuses, ", ")))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -135,17 +136,17 @@ func newInitiativesCreateCommand() *cobra.Command {
 		Use:     "create --name <name> [flags]",
 		Short:   "Start an initiative",
 		Example: "  icb issues initiatives create --name \"Ship the tracker\" --priority high",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if strings.TrimSpace(name) == "" {
-				return usageError{errors.New("--name is required")}
+				return goclikit.UsageError(errors.New("--name is required"))
 			}
 			f := cmd.Flags()
 			in := api.InitiativeCreateInput{Name: name, Description: valuedStrFlag(f, "description", &description)}
 			if f.Changed("priority") {
 				value, err := parsePriority(priority)
 				if err != nil {
-					return usageError{fmt.Errorf("--priority: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 				}
 				in.Priority = &value
 			}
@@ -193,7 +194,7 @@ func newInitiativesEditCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if readFlagIntent(f, "name") == flagClears {
-				return usageError{errors.New("--name cannot be emptied — every initiative carries one")}
+				return goclikit.UsageError(errors.New("--name cannot be emptied — every initiative carries one"))
 			}
 			in := api.InitiativeUpdateInput{
 				Name:        valuedStrFlag(f, "name", &name),
@@ -202,7 +203,7 @@ func newInitiativesEditCommand() *cobra.Command {
 			if f.Changed("priority") {
 				value, err := parsePriority(priority)
 				if err != nil {
-					return usageError{fmt.Errorf("--priority: %w", err)}
+					return goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 				}
 				in.Priority = &value
 			}
@@ -214,7 +215,7 @@ func newInitiativesEditCommand() *cobra.Command {
 				clear = append(clear, "description")
 			}
 			if in == (api.InitiativeUpdateInput{}) && len(clear) == 0 {
-				return usageError{errors.New("nothing to change — pass at least one of --name/--description/--priority/--position")}
+				return goclikit.UsageError(errors.New("nothing to change — pass at least one of --name/--description/--priority/--position"))
 			}
 			return runInitiativeUpdate(cmd, args[0], in, clear, asJSON, "Updated")
 		},
@@ -273,7 +274,7 @@ func newInitiativesDropCommand() *cobra.Command {
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(reason) == "" {
-				return usageError{errors.New("--reason is required — say why it is dropped")}
+				return goclikit.UsageError(errors.New("--reason is required — say why it is dropped"))
 			}
 			dropped := "dropped"
 			return runInitiativeUpdate(cmd, args[0], api.InitiativeUpdateInput{Status: &dropped, StatusReason: &reason}, nil, asJSON, "Dropped")

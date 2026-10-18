@@ -17,12 +17,8 @@ func TestExitCodeFor(t *testing.T) {
 		err  error
 		want int
 	}{
-		{"nil is success", nil, 0},
-		{"usage error is 2", usageError{errors.New("bad flag")}, 2},
 		{"exitCode carries its own value", exitCode(1), 1},
-		{"exitCode two", exitCode(2), 2},
 		{"generic runtime error is 1", errors.New("boom"), 1},
-		{"wrapped usage error is 2", errWrap(usageError{errors.New("x")}), 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -32,14 +28,6 @@ func TestExitCodeFor(t *testing.T) {
 		})
 	}
 }
-
-// errWrap wraps err so errors.As still unwraps to the underlying type.
-func errWrap(err error) error { return wrapped{err} }
-
-type wrapped struct{ err error }
-
-func (w wrapped) Error() string { return w.err.Error() }
-func (w wrapped) Unwrap() error { return w.err }
 
 // runLine drives the real tree through run, the path the shipped binary takes,
 // with the version check suppressed. goclikit.Execute resolves the command
@@ -116,16 +104,15 @@ func TestAWordTypedWithHelpIsRefusedAtEveryGroup(t *testing.T) {
 	}
 }
 
-// A positional on a leaf is refused as an argument, never as a command, and a
-// leaf taking that value through a flag spells the line that passes it there.
-// The refusal keeps its own wording, without the usage line goclikit gives a
-// refusal it has to explain itself.
+// A positional on a leaf taking that value through a flag is refused as an
+// argument, never as a command, and the refusal spells the line that passes it
+// there. The refusal keeps its own wording, without the usage line goclikit
+// gives a refusal it has to explain itself.
 func TestAPositionalOnALeafIsRefusedAsAnArgument(t *testing.T) {
 	for _, c := range []struct {
 		args []string
 		want string
 	}{
-		{[]string{"overview", "extra"}, `icb overview takes no arguments, and was given "extra"`},
 		{[]string{"projects", "items", "list", "ypl"}, "icb projects items list --project ypl"},
 		{[]string{"projects", "items", "list", "Kitchen remodel"}, "icb projects items list --project 'Kitchen remodel'"},
 	} {

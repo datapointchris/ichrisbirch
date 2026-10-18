@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goclilogin"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -22,7 +23,7 @@ import (
 const loginTimeout = 15 * time.Minute
 
 func newAuthCommand() *cobra.Command {
-	cmd := asNamespace(&cobra.Command{
+	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "auth",
 		Short: "Log in and out of the ichrisbirch API",
 		Long: "Authenticate this machine against the identity provider using the OAuth 2.0\n" +
@@ -64,7 +65,7 @@ func newAuthLoginCommand() *cobra.Command {
 			url := apiOverride
 			if len(args) == 1 {
 				if apiOverride != "" && apiOverride != args[0] {
-					return usageError{fmt.Errorf("--api %s and the url %s name different APIs; give one", apiOverride, args[0])}
+					return goclikit.UsageError(fmt.Errorf("--api %s and the url %s name different APIs; give one", apiOverride, args[0]))
 				}
 				url = args[0]
 			}
@@ -132,7 +133,7 @@ func newAuthLogoutCommand() *cobra.Command {
 		Use:     "logout",
 		Short:   "Remove the stored token from this machine's keychain",
 		Example: "  icb auth logout",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config.IsService() {
 				return fmt.Errorf("%s is set, so icb authenticates as a service client and stores no token to remove; unset it to log out as a person", config.ClientSecretEnv)
@@ -174,7 +175,7 @@ func newAuthTokenCommand() *cobra.Command {
 			"service token instead.",
 		Example: "  icb auth token\n" +
 			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/v1/tasks",
-		Args: noArgs,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, err := config.Load(cmd.Context(), apiOverride)
 			if err != nil {
@@ -252,7 +253,7 @@ func newAuthStatusCommand() *cobra.Command {
 			"Exits 1 when the file lacks a value, no token is stored, or the provider\n" +
 			"rejected the session.",
 		Example: "  icb auth status\n  icb auth status --json",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, loadErr := config.Load(cmd.Context(), apiOverride)
 			if loadErr != nil && !errors.Is(loadErr, goclilogin.ErrNotConfigured) {

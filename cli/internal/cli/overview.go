@@ -196,7 +196,7 @@ func newOverviewCommand() *cobra.Command {
 			"decision, and approaching countdowns and events. Composed\n" +
 			"from those endpoints in one command so a dashboard needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
-		Args:    noArgs,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
