@@ -11,6 +11,8 @@ Authelia 4.39 leaves `sub` off a client-credentials token, but RFC 9068 requires
 that adds it would make a service token look like a person's.
 
 Key retrieval, caching and rotation are PyJWT's `PyJWKClient`. Nothing here parses a JWT by hand.
+It caches the key set for its lifespan and never a key by itself, because a per-kid cache holds a
+retired key for the life of the process.
 """
 
 import functools
@@ -120,7 +122,7 @@ class OIDCTokenVerifier:
     @classmethod
     def from_discovery(cls, issuer: str, cli_client_id_prefix: str, service_client_id_prefix: str) -> 'OIDCTokenVerifier':
         jwks_uri = discover_jwks_uri(issuer)
-        client = jwt.PyJWKClient(jwks_uri, cache_keys=True, headers={'User-Agent': USER_AGENT})
+        client = jwt.PyJWKClient(jwks_uri, headers={'User-Agent': USER_AGENT})
         return cls(issuer, cli_client_id_prefix, service_client_id_prefix, client)
 
     def verify(self, token: str) -> OIDCIdentity | ScopedClient:
