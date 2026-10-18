@@ -1,4 +1,8 @@
 {
+  "icb.issues.claim": [
+    "DELETE /api/v1/issues/{id}/claim",
+    "POST /api/v1/issues/{id}/claim"
+  ],
   "icb.issues.close": [
     "PATCH /api/v1/issues/{id}",
     "POST /api/v1/issues/{id}/comments"

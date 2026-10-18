@@ -23,8 +23,10 @@ from tests.util import show_status_and_response
 
 PROJECT_ITEMS = 'icb.project-items.read'
 ISSUES = 'icb.issues.read'
+CLAIM = 'icb.issues.claim'
 CLOSE = 'icb.issues.close'
 CLOSER = 'worker/close-job@service-box'
+SERVICE = 'icb-svc-worker'
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
 SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 
@@ -45,9 +47,12 @@ SCOPED_URLS = {
     f'{API_PREFIX}/projects/{{id:path}}/items': '/projects/{project}/items',
 }
 
-# Each write a scope lists, as the CLI sends it: the comment saying what landed, then the update
-# that completes the issue and names the job closing it.
+# Each write a scope lists, as the CLI sends it: the claim holding the issue for the fix agent and
+# its release, the comment saying what landed, then the update that completes the issue and names
+# the job closing it.
 SCOPED_WRITES = {
+    ('POST', f'{API_PREFIX}/issues/{{id}}/claim'): ('/issues/{issue}/claim', {'claimant': SERVICE, 'minutes': 60}, status.HTTP_200_OK),
+    ('DELETE', f'{API_PREFIX}/issues/{{id}}/claim'): ('/issues/{issue}/claim', None, status.HTTP_200_OK),
     ('POST', f'{API_PREFIX}/issues/{{id}}/comments'): (
         '/issues/{issue}/comments',
         {'body': 'Landed: a merged fix'},
@@ -72,12 +77,13 @@ REACHES = {
         f'GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}'
     ),
     PROJECT_ITEMS: f'GET {API_PREFIX}/project-items, ',
+    CLAIM: f'DELETE {API_PREFIX}/issues/{{id}}/claim, POST {API_PREFIX}/issues/{{id}}/claim',
     CLOSE: f'PATCH {API_PREFIX}/issues/{{id}}, POST {API_PREFIX}/issues/{{id}}/comments',
 }
 
 
 def scoped(scope: str) -> ScopedClient:
-    return ScopedClient(client_id='icb-svc-worker', scopes=frozenset({scope}))
+    return ScopedClient(client_id=SERVICE, scopes=frozenset({scope}))
 
 
 @pytest.fixture
@@ -145,6 +151,8 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         (CLOSE, 'DELETE', '/issues/{issue}'),
         (CLOSE, 'POST', '/issues/{issue}/claim'),
         (CLOSE, 'PATCH', '/issues/initiatives/{initiative}'),
+        (CLAIM, 'POST', '/issues/ready/claim'),
+        (CLAIM, 'PATCH', '/issues/{issue}'),
     ],
     ids=[
         'project-items-write-on-a-scoped-router',
@@ -171,6 +179,8 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         'close-delete',
         'close-claim',
         'close-initiative-update',
+        'claim-the-queues-head',
+        'claim-update',
     ],
 )
 def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
@@ -224,6 +234,32 @@ def test_the_close_scope_signs_with_its_client_id_and_closes_an_issue_once(as_ca
     moved = client.patch(url, json={'status': 'canceled'})
     assert moved.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(moved)
     assert 'is already completed' in moved.json()['message']
+
+
+def test_the_claim_scope_holds_an_issue_under_its_own_id_and_frees_only_that(as_caller):
+    """Release frees whoever holds the issue, so without the narrowing a job could free a session's work."""
+    url = as_caller.url('/issues/{issue}/claim')
+    person = OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-laptop')
+    assert as_caller.caller(person).post(url, json={'claimant': 'claude-code/peer'}).status_code == status.HTTP_200_OK
+
+    service = as_caller.caller(scoped(CLAIM))
+    freed = service.delete(url)
+    assert freed.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(freed)
+    assert Refusal.SCOPED_CLIENT_RELEASES_ITS_OWN in freed.json()['message']
+    assert 'claimed by claude-code/peer' in freed.json()['message']
+
+    as_caller.caller(person).delete(url)
+    service = as_caller.caller(scoped(CLAIM))
+    signed = service.post(url, json={'claimant': 'claude-code/peer'})
+    assert signed.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(signed)
+    assert Refusal.SCOPED_CLIENT_CLAIMS_AS_ITSELF in signed.json()['message']
+
+    held = service.post(url, json={'claimant': SERVICE})
+    assert held.status_code == status.HTTP_200_OK, show_status_and_response(held)
+    assert held.json()['claimed_by'] == SERVICE
+    released = service.delete(url)
+    assert released.status_code == status.HTTP_200_OK, show_status_and_response(released)
+    assert released.json()['status'] == 'open'
 
 
 def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):

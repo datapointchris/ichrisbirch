@@ -117,6 +117,16 @@ client's id. *Rejected:* `icb.issues.write`, which reads as every write route,
 and a dedicated close route, which would be a second way to close beside the
 update.
 
+**`icb.issues.claim` holds an issue, and the handlers narrow it to the client's
+own claim.** It lists the claim and release of a named issue, which a scheduled
+job sends to keep an issue out of the ready queue while its fix agent carries it.
+Release frees whoever holds an issue, so a scoped client's claim must name its
+own client id, and its release is refused on an issue another claimant holds or
+a person set in progress. The queue's own claim, which takes the head of the
+queue, is not listed, because the job names the issue it files. *Rejected:*
+stamping the client id over whatever claimant the body names, which would print
+one claimant to the caller and store another.
+
 `permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
 requests every listed route as a scoped client and requires its success status,
 so a renamed path parameter fails it with 403.
@@ -125,8 +135,8 @@ A refused scoped client's 403 message names the routes its scopes reach. The sam
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
 The CLI's suite runs each call a scheduled job makes as a service:
 `icb projects items search`, and `icb issues list`, `list --blocked`, `search`,
-`next`, `show`, `initiatives list`, `initiatives show`, `add-comment` and
-`complete`. It requires every
+`next`, `show`, `initiatives list`, `initiatives show`, `claim`, `release`,
+`add-comment` and `complete`. It requires every
 request they send to match a route listed there for a scope the CLI requests. A
 `{name:path}` template matches any segments, as FastAPI's path converter does,
 because a job names an initiative by its name.

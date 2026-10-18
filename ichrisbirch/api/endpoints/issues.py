@@ -617,13 +617,16 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
 
 
 @router.post('/{id}/claim', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
-def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone):
+def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbSession, zone: RequestZone, caller: CurrentCaller):
     """Take this issue, or extend the claim already held under the same name.
 
     A named issue is taken only when it is ready, a decision included, so an
     agent never holds work it could not finish. Only extending a claim skips
-    the readiness check.
+    the readiness check. A scoped client claims under its own client id, which
+    is what lets its release be limited to its own claims.
     """
+    if isinstance(caller, ScopedClient) and request.claimant != caller.client_id:
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_CLAIMS_AS_ITSELF}, {caller.client_id}, not {request.claimant}', logger)
     extending = issue.status == 'in_progress' and issue.claimed_by == request.claimant
     today, now = calendar_now(zone)
     if not extending:
@@ -649,12 +652,16 @@ def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbS
 
 
 @router.delete('/{id}/claim', response_model=schemas.Issue, status_code=status.HTTP_200_OK)
-def release(issue: IssueFromPath, session: DbSession, zone: RequestZone):
+def release(issue: IssueFromPath, session: DbSession, zone: RequestZone, caller: CurrentCaller):
     """Give the issue back to the ready queue. Releasing an issue not in progress changes nothing.
 
     A claim sits only on an in-progress issue, so this one test covers both a
-    claim and work a person moved to in progress by hand.
+    claim and work a person moved to in progress by hand. A scoped client lets
+    go only of a claim its own client id holds.
     """
+    if isinstance(caller, ScopedClient) and issue.status == 'in_progress' and issue.claimed_by != caller.client_id:
+        held = f'claimed by {issue.claimed_by}' if issue.claimed_by else 'in progress by hand'
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_RELEASES_ITS_OWN}; #{issue.number} is {held}', logger)
     if issue.status == 'in_progress':
         clear_claim(issue)
         issue.status = 'open'
