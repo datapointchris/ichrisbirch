@@ -269,11 +269,11 @@ func setZone(query url.Values, zone DayZone) {
 
 // ListIssues returns issues in queue order: unclosed first by effective
 // priority and rank, then closed ones latest first. An empty Status takes the
-// API's default, every issue not yet completed or canceled. The date bounds
-// narrow on when an issue closed.
-func (c *Client) ListIssues(ctx context.Context, filter IssueFilter, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]Issue, error) {
+// API's default, every issue not yet completed or canceled. The window
+// narrows on when an issue closed.
+func (c *Client) ListIssues(ctx context.Context, filter IssueFilter, window Window, zone DayZone, limit *int) ([]Issue, error) {
 	query := filter.query()
-	applyDateBounds(query, start, end, zone)
+	applyWindow(query, window)
 	setZone(query, zone)
 	applyLimit(query, limit)
 	var issues []Issue

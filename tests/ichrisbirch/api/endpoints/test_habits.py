@@ -425,38 +425,6 @@ class TestCompletedHabits:
             assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
             assert response.json() == [], f'{selector} answered a zero limit with rows'
 
-    @pytest.mark.parametrize(
-        'start_date, end_date, expected_count',
-        [
-            (dt.datetime(2024, 1, 1), dt.datetime(2024, 1, 2), 2),
-            (dt.date(2024, 1, 1), dt.date(2024, 1, 2), 2),
-            ('2024-01-01', '2024-01-02', 2),
-        ],
-    )
-    def test_read_many_completed_habits_between_dates(self, txn_api_logged_in, start_date, end_date, expected_count):
-        client, session = txn_api_logged_in
-        insert_test_data_transactional(session, 'habitcategories')
-        params = {'start_date': start_date, 'end_date': end_date}
-        response = client.get(self.ENDPOINT, params=params)
-        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert len(response.json()) == expected_count
-
-    @pytest.mark.parametrize(
-        'params, expected_count',
-        [
-            ({'start_date': '2024-01-02'}, 2),
-            ({'end_date': '2024-01-02'}, 2),
-            ({}, 3),
-        ],
-    )
-    def test_read_many_completed_habits_one_bound_is_open_ended(self, txn_api_logged_in, params, expected_count):
-        """One bound narrows on its own; a half-specified range never widens to everything."""
-        client, session = txn_api_logged_in
-        insert_test_data_transactional(session, 'habitcategories')
-        response = client.get(self.ENDPOINT, params=params)
-        assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
-        assert len(response.json()) == expected_count
-
 
 class TestHabitsQueryParameters:
     """Test query parameter filtering on habits endpoints.
@@ -525,19 +493,6 @@ class TestHabitsQueryParameters:
         response = client.get(self.CATEGORIES_ENDPOINT, params={'limit': 2, 'current': True})
         assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
         assert len(response.json()) == 2, 'limit should be applied AFTER filtering'
-
-    def test_completed_invalid_date_format(self, habit_test_data):
-        """Test that invalid date formats return 422 Unprocessable Entity."""
-        client = habit_test_data
-        response = client.get(
-            self.COMPLETED_ENDPOINT,
-            params={
-                'start_date': 'not-a-date',
-                'end_date': '2024-01-02',
-            },
-        )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-        assert 'not-a-date' in response.json()['message'], 'the error must name the value that was rejected'
 
     def test_habits_not_found_returns_404(self, habit_test_data):
         """Test that non-existent habit returns 404."""

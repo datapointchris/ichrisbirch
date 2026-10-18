@@ -105,13 +105,12 @@ func (f BookFilter) query() url.Values {
 }
 
 // ListBooks returns books ordered by priority (GET /books), narrowed by filter
-// and by start and end, an inclusive range over the day a book was finished. A
-// finish date is a calendar day, so no zone goes with the bounds. A nil limit
+// and by a window over the day a book was finished, read in zone. A nil limit
 // fetches all; a non-nil limit caps the count, so it takes the highest-priority
 // books of whatever the filters left.
-func (c *Client) ListBooks(ctx context.Context, filter BookFilter, start OnOrAfter, end OnOrBefore, limit *int) ([]Book, error) {
+func (c *Client) ListBooks(ctx context.Context, filter BookFilter, window Window, zone DayZone, limit *int) ([]Book, error) {
 	params := filter.query()
-	applyDateBounds(params, start, end, "")
+	applyDayWindow(params, window, zone)
 	applyLimit(params, limit)
 	path := withQuery("/books", params)
 	var books []Book

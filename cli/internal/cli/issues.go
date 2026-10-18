@@ -226,8 +226,6 @@ func newIssuesListCommand() *cobra.Command {
 	var (
 		asJSON  bool
 		filters issueFilterFlags
-		start   string
-		end     string
 		limit   int
 	)
 	cmd := &cobra.Command{
@@ -241,8 +239,8 @@ func newIssuesListCommand() *cobra.Command {
 			"inherited from what the issue blocks, its parent, or its initiative. --priority\n" +
 			"filters on an issue's own.\n" +
 			"\n" +
-			"--start/--end bound when an issue closed, inclusive, read in this machine's\n" +
-			"zone. Pair them with --status completed to read a week's finished work.\n" +
+			"--since/--until bound when an issue closed. Pair them with --status\n" +
+			"completed to read a week's finished work.\n" +
 			"\n" +
 			"--closed-by matches the start of who closed an issue, so claude-code/ is\n" +
 			"every attended Claude Code session. docs/issues.md lists the kinds.",
@@ -252,7 +250,8 @@ func newIssuesListCommand() *cobra.Command {
 			"  icb issues list --status triage\n" +
 			"  icb issues list --blocked\n" +
 			"  icb issues list --label area-cli --priority high\n" +
-			"  icb issues list --status completed --start 2026-10-01 --json\n" +
+			"  icb issues list --status completed --since 2026-10-01 --json\n" +
+			"  icb issues list --status completed --since 7d\n" +
 			"  icb issues list --status completed --closed-by claude-code/",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -260,15 +259,18 @@ func newIssuesListCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			hidClosed := !cmd.Flags().Changed("status")
 			return runIssuesCollection(cmd, asJSON, hidClosed, func(c *api.Client) ([]api.Issue, error) {
-				return c.ListIssues(cmd.Context(), filter, api.OnOrAfter(start), api.OnOrBefore(end), issueZone(), limitFlag(cmd))
+				return c.ListIssues(cmd.Context(), filter, window, issueZone(), limitFlag(cmd))
 			})
 		},
 	}
 	filters.register(cmd, "unclosed")
-	cmd.Flags().StringVar(&start, "start", "", "Only issues closed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only issues closed on or before this ISO 8601 date")
+	addWindowFlags(cmd, "issues closed")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output issues as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd
@@ -298,7 +300,7 @@ func newIssuesSearchCommand() *cobra.Command {
 			}
 			filter.Search = args[0]
 			return runIssuesCollection(cmd, asJSON, false, func(c *api.Client) ([]api.Issue, error) {
-				return c.ListIssues(cmd.Context(), filter, "", "", issueZone(), limitFlag(cmd))
+				return c.ListIssues(cmd.Context(), filter, api.Window{}, issueZone(), limitFlag(cmd))
 			})
 		},
 	}

@@ -122,12 +122,12 @@ func (c *Client) BulkImportStatus(ctx context.Context, batchID string) (ArticleB
 
 // ListArticles returns articles ordered by title (GET /articles). Each of
 // favorites/archived/unread, when non-nil, adds a tri-state filter query param
-// (favorites=true returns only favorites due for re-read). start and end narrow
-// to articles last read within an inclusive range, interpreted in zone. A nil
-// limit fetches all; a non-nil limit caps the count.
-func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]Article, error) {
+// (favorites=true returns only favorites due for re-read). window narrows to
+// articles last read inside it. A nil limit fetches all; a non-nil limit caps
+// the count.
+func (c *Client) ListArticles(ctx context.Context, favorites, archived, unread *bool, window Window, limit *int) ([]Article, error) {
 	var articles []Article
-	if err := c.get(ctx, "/articles"+articleListQuery(favorites, archived, unread, start, end, zone, limit), &articles); err != nil {
+	if err := c.get(ctx, "/articles"+articleListQuery(favorites, archived, unread, window, limit), &articles); err != nil {
 		return nil, err
 	}
 	return articles, nil
@@ -190,7 +190,7 @@ func (c *Client) DeleteArticle(ctx context.Context, id int) error {
 
 // articleListQuery renders the tri-state list filters, omitting any that is nil
 // so an unset filter sends no param at all.
-func articleListQuery(favorites, archived, unread *bool, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) string {
+func articleListQuery(favorites, archived, unread *bool, window Window, limit *int) string {
 	params := url.Values{}
 	if favorites != nil {
 		params.Set("favorites", strconv.FormatBool(*favorites))
@@ -201,7 +201,7 @@ func articleListQuery(favorites, archived, unread *bool, start OnOrAfter, end On
 	if unread != nil {
 		params.Set("unread", strconv.FormatBool(*unread))
 	}
-	applyDateBounds(params, start, end, zone)
+	applyWindow(params, window)
 	applyLimit(params, limit)
 	if encoded := params.Encode(); encoded != "" {
 		return "?" + encoded

@@ -3,6 +3,7 @@ package api
 import (
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // applyLimit writes a row cap into params, or writes nothing when there is no
@@ -20,33 +21,35 @@ func applyLimit(params url.Values, limit *int) {
 	params.Set("limit", strconv.Itoa(*limit))
 }
 
-// OnOrAfter is the inclusive lower bound of a list read's date range, an ISO
-// 8601 date or datetime. Empty narrows nothing.
-//
-// The two bounds and the zone are separate types because they sit side by
-// side in each signature that takes them. As plain strings, a start and end
-// passed in each other's place compile, and the API returns an empty list.
-type OnOrAfter string
+// Window is the span of instants a list read narrows to. Since is the first
+// instant inside it and Until the first instant past it. A zero end is open.
+type Window struct {
+	Since time.Time
+	Until time.Time
+}
 
-// OnOrBefore is the inclusive upper bound, read the same way as OnOrAfter.
-type OnOrBefore string
+func (w Window) open() bool { return w.Since.IsZero() && w.Until.IsZero() }
 
-// DayZone is the IANA zone a bound with no offset is read in, for a column
-// that stores instants. A task finished at 21:00 in New York is on the next
-// day in UTC. Empty leaves the server to read it in the user's preference.
+// DayZone is the IANA zone the API reads a calendar day in. Empty leaves the
+// server to read it in the user's preference.
 type DayZone string
 
-// applyDateBounds writes a date range into params. Either bound narrows on its
-// own, and an empty one is not sent. The zone goes only with a bound, since it
-// means nothing on its own.
-func applyDateBounds(params url.Values, start OnOrAfter, end OnOrBefore, zone DayZone) {
-	if start != "" {
-		params.Set("start_date", string(start))
+// applyWindow writes a window into params as RFC 3339 instants. Either end
+// narrows on its own, and an open one is not sent.
+func applyWindow(params url.Values, w Window) {
+	if !w.Since.IsZero() {
+		params.Set("since", w.Since.Format(time.RFC3339Nano))
 	}
-	if end != "" {
-		params.Set("end_date", string(end))
+	if !w.Until.IsZero() {
+		params.Set("until", w.Until.Format(time.RFC3339Nano))
 	}
-	if zone != "" && (start != "" || end != "") {
+}
+
+// applyDayWindow writes a window over a column holding calendar days. Which
+// day an instant falls on needs a zone, so the zone goes with any bound.
+func applyDayWindow(params url.Values, w Window, zone DayZone) {
+	applyWindow(params, w)
+	if zone != "" && !w.open() {
 		params.Set("timezone", string(zone))
 	}
 }

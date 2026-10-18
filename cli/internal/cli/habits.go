@@ -474,8 +474,6 @@ func newHabitsCategoriesCommand() *cobra.Command {
 
 func newHabitsCompletedCommand() *cobra.Command {
 	var (
-		start  string
-		end    string
 		first  bool
 		last   bool
 		asJSON bool
@@ -483,10 +481,14 @@ func newHabitsCompletedCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "completed",
 		Short:   "List habit completions",
-		Long:    "List completions. With no flags, all are returned; --first/--last give the\nsingle earliest/most-recent; --start/--end bound a date range.",
-		Example: "  icb habits completed --last",
+		Long:    "List completions. With no flags, all are returned; --first/--last give the\nsingle earliest/most-recent; --since/--until bound the day of a completion.",
+		Example: "  icb habits completed --last\n  icb habits completed --since 1w",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
@@ -497,7 +499,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 			} else if last {
 				pick = api.LastCompletion
 			}
-			completed, err := client.ListCompletedHabits(cmd.Context(), api.OnOrAfter(start), api.OnOrBefore(end), pick)
+			completed, err := client.ListCompletedHabits(cmd.Context(), window, api.DayZone(LocalZoneName()), pick)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -508,8 +510,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&start, "start", "", "Range start (ISO 8601)")
-	cmd.Flags().StringVar(&end, "end", "", "Range end (ISO 8601)")
+	addWindowFlags(cmd, "completions")
 	cmd.Flags().BoolVar(&first, "first", false, "Only the earliest completion")
 	cmd.Flags().BoolVar(&last, "last", false, "Only the most recent completion")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output completions as JSON to stdout")

@@ -13,10 +13,11 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.services import habit_day
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -72,8 +73,8 @@ def create_completed(habit: schemas.HabitCompletedCreate, session: DbSession):
 @router.get('/completed', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
 def read_many_completed(
     session: DbSession,
-    start_date: str | None = None,
-    end_date: str | None = None,
+    window: TimeWindowQuery,
+    zone: RequestZone,
     first: bool | None = None,
     last: bool | None = None,
     limit: RowLimit = None,
@@ -95,7 +96,7 @@ def read_many_completed(
         limit = 1 if limit is None else min(1, limit)
 
     else:
-        query = apply_date_bounds(query, models.HabitCompleted.complete_date, start_date, end_date, timezone=None)
+        query = apply_time_window(query, models.HabitCompleted.complete_date, window, zone=zone)
         query = query.order_by(*newest_first)
 
     return list(session.scalars(apply_row_limit(query, limit)).all())

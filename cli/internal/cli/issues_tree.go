@@ -59,7 +59,7 @@ func newIssuesTreeCommand() *cobra.Command {
 			}
 			// Every issue, whatever the flags: a closed issue mid-chain is what
 			// joins the halves either side of it.
-			issues, err := client.ListIssues(cmd.Context(), api.IssueFilter{Status: api.IssueStatusAll}, "", "", issueZone(), nil)
+			issues, err := client.ListIssues(cmd.Context(), api.IssueFilter{Status: api.IssueStatusAll}, api.Window{}, issueZone(), nil)
 			if err != nil {
 				return handleAPIError(err)
 			}

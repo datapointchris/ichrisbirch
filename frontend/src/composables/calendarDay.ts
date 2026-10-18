@@ -11,6 +11,7 @@
  * a wall clock at a venue — so its day is the one written in it.
  */
 import { displayZone } from './displayZone'
+import { wallClockInstant } from './useWallClock'
 
 export type DayKey = string
 
@@ -65,6 +66,11 @@ export function isCalendarDay(key: string): boolean {
 
 export function addDays(key: DayKey, days: number): DayKey {
   return keyOfUtcMidnight(utcMidnight(key) + days * MS_PER_DAY)
+}
+
+/** The first instant of `key` in `zone`, as an RFC 3339 instant in UTC. */
+export function dayStart(key: DayKey, zone: string = displayZone()): string {
+  return new Date(wallClockInstant({ date: key, timezone: zone })).toISOString()
 }
 
 /**

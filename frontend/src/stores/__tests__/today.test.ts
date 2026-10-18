@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { COMING_UP_SHOWN, comingUp, daysUntil, useTodayStore } from '../today'
 import { useTasksStore } from '../tasks'
 import { ApiError } from '@/api/errors'
+import { dayWindow } from '@/composables/dateFilters'
 import type { Countdown, Event, Habit, HabitCategory, HabitCompleted, HabitsDay, Task } from '@/api/client'
 
 vi.mock('@/api/client', () => ({
@@ -124,7 +125,7 @@ describe('useTodayStore', () => {
     const failed = await store.load()
 
     expect(failed).toEqual([])
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: { start_date: '2026-10-10', end_date: '2026-10-10' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: dayWindow('2026-10-10') })
     expect(mockApi.get).toHaveBeenCalledWith('/habits/day', { params: { date: '2026-10-10' } })
     expect(store.doneTasks.map((t) => t.name)).toEqual(['water plants'])
     expect(useTasksStore().completedTasks).toEqual([])
@@ -162,7 +163,7 @@ describe('useTodayStore', () => {
     await store.syncDay()
     expect(store.today).toBe('2026-10-11')
     expect(dayLoadsFor('2026-10-11')).toHaveLength(1)
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: { start_date: '2026-10-11', end_date: '2026-10-11' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', { params: dayWindow('2026-10-11') })
   })
 
   it('still moves to the new day when a habit was undone just after midnight', async () => {

@@ -109,17 +109,6 @@ describe('useTasksStore', () => {
     expect(store.completedTasks).toEqual(testCompletedTasks)
   })
 
-  it('passes date range params to fetchCompleted', async () => {
-    mockApi.get.mockResolvedValue({ data: [] })
-    const store = useTasksStore()
-
-    await store.fetchCompleted('2026-01-01', '2026-03-01')
-
-    expect(mockApi.get).toHaveBeenCalledWith('/tasks/completed', {
-      params: { start_date: '2026-01-01', end_date: '2026-03-01' },
-    })
-  })
-
   it('sets error state on fetchCompleted failure', async () => {
     const apiError = new ApiError({ message: 'API 500', detail: 'Database error', status: 500 })
     mockApi.get.mockRejectedValue(apiError)
@@ -278,15 +267,15 @@ describe('useTasksStore', () => {
 
   // --- dropped ---
 
-  it('fetches dropped tasks within a date range', async () => {
+  it('fetches dropped tasks within a window', async () => {
     const dropped = { ...testTasks[1]!, drop_date: '2026-03-19T00:00:00Z' }
     mockApi.get.mockResolvedValue({ data: [dropped] })
     const store = useTasksStore()
 
-    await store.fetchDropped('2026-03-01', '2026-03-31')
+    await store.fetchDropped({ since: '2026-03-01T05:00:00.000Z', until: '2026-04-01T04:00:00.000Z' })
 
     expect(mockApi.get).toHaveBeenCalledWith('/tasks', {
-      params: { status: 'dropped', start_date: '2026-03-01', end_date: '2026-03-31' },
+      params: { status: 'dropped', since: '2026-03-01T05:00:00.000Z', until: '2026-04-01T04:00:00.000Z' },
     })
     expect(store.droppedTasks).toEqual([dropped])
   })

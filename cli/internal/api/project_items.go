@@ -130,15 +130,14 @@ type DependencyInput struct {
 // ListItems returns project items in one status (GET /project-items).
 //
 // An empty status takes the API's default, which is open. Pass a status to ask
-// for another, or ItemStatusAll for every one. start and end narrow to items
-// finished within an inclusive range, read in zone. A nil limit fetches all; a
-// non-nil limit caps the count.
-func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ProjectItem, error) {
+// for another, or ItemStatusAll for every one. window narrows to items
+// finished inside it. A nil limit fetches all; a non-nil limit caps the count.
+func (c *Client) ListItems(ctx context.Context, repo *string, itemStatus string, window Window, limit *int) ([]ProjectItem, error) {
 	query := repoQuery(repo)
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
-	applyDateBounds(query, start, end, zone)
+	applyWindow(query, window)
 	applyLimit(query, limit)
 	var items []ProjectItem
 	if err := c.get(ctx, withQuery("/project-items", query), &items); err != nil {

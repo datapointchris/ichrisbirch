@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { ApiError } from '@/api/errors'
 import type { Countdown, Event, Habit, HabitCompleted, ShoppingItem, Task, TaskCategory } from '@/api/client'
 import { dayKeyOf, daysBetween, todayKey, type DayKey } from '@/composables/calendarDay'
+import { dayWindow } from '@/composables/dateFilters'
 import { wallClockInstant } from '@/composables/useWallClock'
 import { createLogger } from '@/utils/logger'
 import { useCountdownsStore } from '@/stores/countdowns'
@@ -114,7 +115,7 @@ export const useTodayStore = defineStore('today', () => {
     await tasks.fetchTodo()
     // The tasks store keeps one completed list for every page reading it, so
     // this page takes a copy and leaves the shared one empty, as /tasks does.
-    await tasks.fetchCompleted(day, day)
+    await tasks.fetchCompleted(dayWindow(day))
     doneTasks.value = [...tasks.completedTasks]
     tasks.completedTasks = []
   }

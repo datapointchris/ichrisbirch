@@ -99,7 +99,7 @@ func newInitiativesShowCommand() *cobra.Command {
 			if err != nil {
 				return handleArgumentAPIError(err)
 			}
-			issues, err := client.ListIssues(cmd.Context(), api.IssueFilter{Initiative: initiative.ID}, "", "", issueZone(), nil)
+			issues, err := client.ListIssues(cmd.Context(), api.IssueFilter{Initiative: initiative.ID}, api.Window{}, issueZone(), nil)
 			if err != nil {
 				return handleArgumentAPIError(err)
 			}

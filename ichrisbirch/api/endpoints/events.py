@@ -15,7 +15,6 @@ from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.request_zone import RequestZone
-from ichrisbirch.services.date_bounds import day_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 
@@ -46,7 +45,7 @@ def read_many(
     # Tokyo after an 08:00 in New York, thirteen hours the wrong way.
     resolved = models.Event.date.op('AT TIME ZONE')(models.Event.timezone)
     request_zone = ZoneInfo(zone)
-    today_opens, _ = day_bounds(dt.datetime.now(request_zone).date(), request_zone)
+    today_opens = dt.datetime.combine(dt.datetime.now(request_zone).date(), dt.time.min, tzinfo=request_zone)
     query = select(models.Event)
     if when == 'upcoming':
         query = query.where(resolved >= today_opens).order_by(resolved.asc())

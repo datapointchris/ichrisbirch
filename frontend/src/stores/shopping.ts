@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
-import { addDays, dayKeyOf, todayKey, type DayKey } from '@/composables/calendarDay'
+import { addDays, dayKeyOf, dayStart, todayKey, type DayKey } from '@/composables/calendarDay'
 import { formatDate } from '@/composables/formatDate'
 import type {
   ShoppingItem,
@@ -147,7 +147,7 @@ export const useShoppingStore = defineStore('shopping', () => {
         api.get<ShoppingSection[]>('/shopping/sections'),
         api.get<ShoppingItem[]>('/shopping/items', { params: { status: 'all' } }),
         api.get<ShoppingPurchase[]>('/shopping/purchases', {
-          params: { start_date: addDays(todayKey(), 1 - RECENT_PURCHASE_DAYS) },
+          params: { since: dayStart(addDays(todayKey(), 1 - RECENT_PURCHASE_DAYS)) },
         }),
       ])
       sections.value = sectionRows.data

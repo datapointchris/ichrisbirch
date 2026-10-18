@@ -62,8 +62,6 @@ func newTasksListCommand() *cobra.Command {
 		asJSON     bool
 		taskStatus string
 		category   string
-		start      string
-		end        string
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -75,11 +73,10 @@ func newTasksListCommand() *cobra.Command {
 			"dropped tasks come back most-recently-closed first — a place in the queue\n" +
 			"stops meaning anything once a task leaves it.\n" +
 			"\n" +
-			"--start/--end bound when a task was closed, inclusive on both ends, and\n" +
-			"either works without the other: the drop date for --status dropped, the\n" +
-			"completion date otherwise. A bound with no offset is taken in this machine's\n" +
-			"zone. An open task has no closing date, so it falls outside every range —\n" +
-			"pair them with --status completed to read a week's finished work.\n" +
+			"--since/--until bound when a task was closed, and either works without the\n" +
+			"other: the drop date for --status dropped, the completion date otherwise.\n" +
+			"An open task has no closing date, so it falls outside every window — pair\n" +
+			"them with --status completed to read a week's finished work.\n" +
 			"\n" +
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +
@@ -87,7 +84,8 @@ func newTasksListCommand() *cobra.Command {
 		Example: "  icb tasks list\n" +
 			"  icb tasks list --category Personal\n" +
 			"  icb tasks list --status completed\n" +
-			"  icb tasks list --status completed --start 2026-08-17 --end 2026-08-23\n" +
+			"  icb tasks list --status completed --since 2026-08-17 --until 2026-08-23\n" +
+			"  icb tasks list --status completed --since 12h\n" +
 			"  icb tasks list --status all --limit 10 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -103,9 +101,12 @@ func newTasksListCommand() *cobra.Command {
 				}
 				category = canonical
 			}
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			if err := runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
-				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category,
-					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()))
+				return c.ListTasks(cmd.Context(), limitFlag(cmd), taskStatus, category, window)
 			}); err != nil {
 				return err
 			}
@@ -118,8 +119,7 @@ func newTasksListCommand() *cobra.Command {
 	addLimitFlag(cmd, &limit)
 	cmd.Flags().StringVar(&taskStatus, "status", "", "One of: "+strings.Join(api.TaskStatuses, ", ")+" (default open)")
 	cmd.Flags().StringVar(&category, "category", "", "Only tasks in this category: "+strings.Join(api.TaskCategories, ", "))
-	cmd.Flags().StringVar(&start, "start", "", "Only tasks closed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only tasks closed on or before this ISO 8601 date")
+	addWindowFlags(cmd, "tasks closed")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output tasks as JSON to stdout")
 	return cmd
 }

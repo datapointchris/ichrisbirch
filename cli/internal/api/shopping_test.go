@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 // shoppingRequest is what one call put on the wire.
@@ -109,13 +110,14 @@ func TestCheckOffShoppingItem_PostsAPurchase(t *testing.T) {
 	}
 }
 
-func TestListShoppingPurchases_SendsBoundsZoneAndLimit(t *testing.T) {
+func TestListShoppingPurchases_SendsTheWindowAsInstantsAndTheLimit(t *testing.T) {
 	client, got := shoppingServer(t, `[]`)
-	_, err := client.ListShoppingPurchases(context.Background(), "2026-10-01", "2026-10-31", "America/New_York", intPtr(5))
+	since := time.Date(2026, 10, 1, 13, 30, 0, 0, time.FixedZone("EDT", -4*60*60))
+	_, err := client.ListShoppingPurchases(context.Background(), Window{Since: since}, intPtr(5))
 	if err != nil {
 		t.Fatalf("ListShoppingPurchases: %v", err)
 	}
-	want := "end_date=2026-10-31&limit=5&start_date=2026-10-01&timezone=America%2FNew_York"
+	want := "limit=5&since=2026-10-01T13%3A30%3A00-04%3A00"
 	if got.query != want {
 		t.Errorf("query = %q, want %q", got.query, want)
 	}

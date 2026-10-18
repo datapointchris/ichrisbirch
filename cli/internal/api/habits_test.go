@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestListHabits_CurrentAndLimitQuery(t *testing.T) {
@@ -79,22 +80,26 @@ func TestCompleteHabit_PostsCompletion(t *testing.T) {
 	}
 }
 
-func TestListCompletedHabits_SendsThePickAndTheDays(t *testing.T) {
+func TestListCompletedHabits_SendsThePickAndTheWindow(t *testing.T) {
+	edt := time.FixedZone("EDT", -4*60*60)
+	september := Window{Since: time.Date(2026, 9, 1, 0, 0, 0, 0, edt), Until: time.Date(2026, 9, 21, 0, 0, 0, 0, edt)}
 	for _, tc := range []struct {
-		name  string
-		start OnOrAfter
-		end   OnOrBefore
-		pick  CompletionPick
-		want  string
+		name   string
+		window Window
+		pick   CompletionPick
+		want   string
 	}{
-		{"every completion sends nothing", "", "", AllCompletions, ""},
-		{"a range of days goes with no zone", "2026-09-01", "2026-09-20", AllCompletions, "end_date=2026-09-20&start_date=2026-09-01"},
-		{"first asks for the earliest", "", "", FirstCompletion, "first=true"},
-		{"last asks for the most recent", "", "", LastCompletion, "last=true"},
+		{"every completion sends no zone", Window{}, AllCompletions, ""},
+		{
+			"a window goes as instants with the zone its days are read in", september, AllCompletions,
+			"since=2026-09-01T00%3A00%3A00-04%3A00&timezone=America%2FNew_York&until=2026-09-21T00%3A00%3A00-04%3A00",
+		},
+		{"first asks for the earliest", Window{}, FirstCompletion, "first=true"},
+		{"last asks for the most recent", Window{}, LastCompletion, "last=true"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			client, query := recordQuery(t, `[]`)
-			if _, err := client.ListCompletedHabits(context.Background(), tc.start, tc.end, tc.pick); err != nil {
+			if _, err := client.ListCompletedHabits(context.Background(), tc.window, "America/New_York", tc.pick); err != nil {
 				t.Fatalf("ListCompletedHabits: %v", err)
 			}
 			if *query != tc.want {

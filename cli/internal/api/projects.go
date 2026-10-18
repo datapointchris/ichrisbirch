@@ -190,15 +190,15 @@ var ProjectKinds = []string{ProjectKindBuild, ProjectKindChore, ProjectKindLife}
 // narrowed to one derived status. Its status and bounds mean what they mean to
 // ListItems, because scoping to a project picks which rows come back and not
 // what a filter means. An empty itemStatus leaves the server's default. A
-// missing id is a 404. start and end narrow to items finished within an
-// inclusive range, read in zone. A nil limit fetches all; a non-nil limit caps
-// the count, so it takes the first items in project order.
-func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ProjectItemInProject, error) {
+// missing id is a 404. window narrows to items finished inside it. A nil limit
+// fetches all; a non-nil limit caps the count, so it takes the first items in
+// project order.
+func (c *Client) ListProjectItems(ctx context.Context, id, itemStatus string, window Window, limit *int) ([]ProjectItemInProject, error) {
 	query := url.Values{}
 	if itemStatus != "" {
 		query.Set("status", itemStatus)
 	}
-	applyDateBounds(query, start, end, zone)
+	applyWindow(query, window)
 	applyLimit(query, limit)
 	path := withQuery(projectPath(id)+"/items", query)
 	var items []ProjectItemInProject

@@ -213,11 +213,11 @@ func (c *Client) CheckOffShoppingItem(ctx context.Context, ref string) (Shopping
 }
 
 // ListShoppingPurchases returns the purchase log, newest first (GET
-// /shopping/purchases). A nil limit takes the server's default, the newest
-// hundred, because the log only grows.
-func (c *Client) ListShoppingPurchases(ctx context.Context, start OnOrAfter, end OnOrBefore, zone DayZone, limit *int) ([]ShoppingPurchase, error) {
+// /shopping/purchases) inside window. A nil limit takes the server's default,
+// the newest hundred, because the log only grows.
+func (c *Client) ListShoppingPurchases(ctx context.Context, window Window, limit *int) ([]ShoppingPurchase, error) {
 	params := url.Values{}
-	applyDateBounds(params, start, end, zone)
+	applyWindow(params, window)
 	applyLimit(params, limit)
 	var purchases []ShoppingPurchase
 	if err := c.get(ctx, withQuery("/shopping/purchases", params), &purchases); err != nil {

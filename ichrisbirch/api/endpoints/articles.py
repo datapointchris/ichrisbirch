@@ -23,16 +23,16 @@ from ichrisbirch.api.article_import_worker import get_batch_status
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.services.article_creation import ArticleAlreadyExists
 from ichrisbirch.services.article_creation import summarize_and_create_article
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.outbound_http import PageFetchError
 from ichrisbirch.services.outbound_http import PageStatusError
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 from ichrisbirch.services.url_extraction import ArticlePage
 from ichrisbirch.services.url_extraction import CaptionsBlocked
 from ichrisbirch.services.url_extraction import PageUnreadable
@@ -71,22 +71,20 @@ def read_page_for_request(url: str) -> ArticlePage:
 @router.get('', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
-    zone: RequestZone,
+    window: TimeWindowQuery,
     favorites: bool | None = None,
     archived: bool | None = None,
     unread: bool | None = None,
-    start_date: str | None = None,
-    end_date: str | None = None,
     limit: RowLimit = None,
 ):
-    """List articles by title, narrowed by the tri-state filters and a read-date range.
+    """List articles by title, narrowed by the tri-state filters and a window on the last read.
 
     `favorites=true` answers the favorites due for a re-read: never read, or last
     read longer ago than `review_days`. A favorite with no `review_days` drops off
     once read, because a null interval never comes due.
 
-    The bounds narrow on `last_read_date`, so a never-read article is outside
-    every range — the same answer `unread=false` gives, reached by the same
+    The window narrows on `last_read_date`, so a never-read article is outside
+    every window — the same answer `unread=false` gives, reached by the same
     column.
 
     `limit` caps last, so it takes the first titles of whatever the filters left
@@ -110,7 +108,7 @@ def read_many(
         query = query.where(models.Article.last_read_date.is_(None))
     if unread is False:
         query = query.where(models.Article.last_read_date.is_not(None))
-    query = apply_date_bounds(query, models.Article.last_read_date, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, models.Article.last_read_date, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

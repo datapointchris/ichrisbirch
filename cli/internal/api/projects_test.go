@@ -168,7 +168,7 @@ func TestAProjectNameHoldingASlashTravelsAsOneSegment(t *testing.T) {
 	_, _ = client.GetProject(ctx, name)
 	_, _ = client.UpdateProject(ctx, name, ProjectUpdateInput{})
 	_ = client.DeleteProject(ctx, name)
-	_, _ = client.ListProjectItems(ctx, name, "", "", "", "", nil)
+	_, _ = client.ListProjectItems(ctx, name, "", Window{}, nil)
 	_ = client.RemoveItemFromProject(ctx, "5", name)
 
 	escaped := "Linux-first%20%2F%20De-Big-Tech"
@@ -246,7 +246,7 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	client := New(srv.URL, staticTokenClient("t"))
 
-	items, err := client.ListProjectItems(context.Background(), "018f-a", "all", "", "", "", nil)
+	items, err := client.ListProjectItems(context.Background(), "018f-a", "all", Window{}, nil)
 	if err != nil {
 		t.Fatalf("ListProjectItems: %v", err)
 	}
@@ -262,16 +262,9 @@ func TestListProjectItems_StatusQueryParam(t *testing.T) {
 
 	// An empty status sends nothing, leaving the server's default rather than
 	// spelling it client-side where it would drift from the API.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", "", "", "", "", nil)
+	_, _ = client.ListProjectItems(context.Background(), "018f-a", "", Window{}, nil)
 	if gotQuery != "" {
 		t.Errorf("query = %q, want empty when no status is given", gotQuery)
-	}
-
-	// A scope picks the rows, never what a filter means, so the bounds reach the
-	// project-scoped path under the same names the flat list uses.
-	_, _ = client.ListProjectItems(context.Background(), "018f-a", "completed", "2026-08-17", "", "", nil)
-	if gotQuery != "start_date=2026-08-17&status=completed" {
-		t.Errorf("query = %q, want the bound beside the status", gotQuery)
 	}
 }
 

@@ -18,15 +18,15 @@ from sqlalchemy.orm import Session
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
-from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.models.project import TERMINAL_PROJECT_STATUSES
 from ichrisbirch.models.project import ProjectItemMembership
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_status import apply_status_filter
 from ichrisbirch.services.project_item_status import validate_item_status
 from ichrisbirch.services.project_refs import resolve_project
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -215,14 +215,12 @@ def create(project: schemas.ProjectCreate, session: DbSession):
 def list_items(
     project: ProjectFromPath,
     session: DbSession,
-    zone: RequestZone,
+    window: TimeWindowQuery,
     item_status: str = Query(
         'open',
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
-    start_date: str | None = None,
-    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List one project's open items, in project order.
@@ -230,13 +228,11 @@ def list_items(
     Scoping to a project selects which rows come back, not which states, so the
     default matches the flat `/project-items` list rather than widening because
     the caller named a project. Completed items pile up inside one project for the
-    same reason they pile up across all of them. Measured 2026-08-14, before this
-    existed: one 29-row project list carried 6 finished items. See `cli-design.md`
-    § "A scope selects which rows, not which states".
+    same reason they pile up across all of them.
 
-    The date bounds narrow on `completed_at`, the same column and the same
-    semantics as the flat list, for the same reason the status vocabulary is
-    shared: a scope picks the rows, never what a filter means.
+    The window narrows on `completed_at`, the same column and the same semantics
+    as the flat list, for the same reason the status vocabulary is shared: a
+    scope picks the rows, never what a filter means.
     """
     validate_item_status(item_status)
     query = (
@@ -245,7 +241,7 @@ def list_items(
         .where(ProjectItemMembership.project_id == project.id)
     )
     query = apply_status_filter(query, item_status)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, models.ProjectItem.completed_at, window, zone=None)
 
     # position has no unique constraint, so a collision would otherwise order by
     # whatever the database returned

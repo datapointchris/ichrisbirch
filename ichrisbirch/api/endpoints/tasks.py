@@ -12,9 +12,8 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.models.task import TASK_CATEGORIES
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
 from ichrisbirch.services.task_queue import in_queue_order
@@ -23,6 +22,7 @@ from ichrisbirch.services.task_queue import is_open
 from ichrisbirch.services.task_queue import match_fields_to_state
 from ichrisbirch.services.task_queue import new_task
 from ichrisbirch.services.task_queue import restart_window
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -37,7 +37,7 @@ ALL_STATUSES = 'all'
 @router.get('', response_model=list[schemas.Task], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
-    zone: RequestZone,
+    window: TimeWindowQuery,
     limit: RowLimit = None,
     task_status: str = Query(
         'open',
@@ -48,32 +48,28 @@ def read_many(
         None,
         description='One task category. Omitted, every category is listed.',
     ),
-    start_date: str | None = None,
-    end_date: str | None = None,
 ):
     """List tasks of one status, open by default. Open tasks come pinned first, then by `rank_at`.
 
-    The default narrows because closed tasks accumulate without bound, per
-    `cli-design.md` § "A default narrows only where the hidden class grows
-    without bound". Completed and dropped tasks are ordered by when they closed,
-    most recent first — their place in the queue stopped meaning anything the
-    moment they left it, which is the same reason a closed project orders by
-    `closed_at`.
+    The default narrows because closed tasks accumulate without bound.
+    Completed and dropped tasks are ordered by when they closed, most recent
+    first — their place in the queue stopped meaning anything the moment they
+    left it, which is the same reason a closed project orders by `closed_at`.
 
     `/todo` and `/completed` answer narrower versions of this and remain for
     the web app. This is the one the CLI asks, so it has to be able to express
     every status rather than one per path.
 
-    The date bounds narrow on `drop_date` for dropped tasks and on
-    `complete_date` otherwise, so an open task is outside every range. They
-    live here rather than only on `/completed` for the same reason `status`
-    does: this is the read the CLI makes, and it has to be able to express the
-    whole question rather than sending the caller to another path that answers
-    a different response model and ignores `limit`.
+    The window narrows on `drop_date` for dropped tasks and on `complete_date`
+    otherwise, so an open task is outside every window. It lives here rather
+    than only on `/completed` for the same reason `status` does: this is the
+    read the CLI makes, and it has to be able to express the whole question
+    rather than sending the caller to another path that answers a different
+    response model and ignores `limit`.
 
-    `category` narrows here rather than in the caller, per `cli-design.md`
-    § "Filtering is server-side" — a client filtering after the fact has to pull
-    every row to find a handful, and `limit` would then cap the wrong set.
+    `category` narrows here rather than in the caller. A client filtering after
+    the fact has to pull every row to find a handful, and `limit` would then cap
+    the wrong set.
     """
     if task_status not in (*TASK_STATUSES, ALL_STATUSES):
         raise HTTPException(
@@ -101,7 +97,7 @@ def read_many(
         case 'all':
             query = in_queue_order(query)
 
-    query = apply_date_bounds(query, bound_column, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, bound_column, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 
@@ -133,9 +129,7 @@ def update_category(name: str, update: schemas.TaskCategoryUpdate, session: DbSe
 @router.get('/completed', response_model=list[schemas.TaskCompleted], status_code=status.HTTP_200_OK)
 def completed(
     session: DbSession,
-    zone: RequestZone,
-    start_date: str | None = None,
-    end_date: str | None = None,
+    window: TimeWindowQuery,
     first: bool | None = None,
     last: bool | None = None,
 ):
@@ -148,7 +142,7 @@ def completed(
         query = query.order_by(models.Task.complete_date.desc()).limit(1)
 
     else:
-        query = apply_date_bounds(query, models.Task.complete_date, start_date, end_date, timezone=zone)
+        query = apply_time_window(query, models.Task.complete_date, window, zone=None)
         query = query.order_by(models.Task.complete_date.desc())
 
     return list(session.scalars(query).all())

@@ -231,7 +231,7 @@ func newOverviewCommand() *cobra.Command {
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			tasks, err := c.ListTasks(ctx, nil, api.TaskStatusOpen, "", "", "", "")
+			tasks, err := c.ListTasks(ctx, nil, api.TaskStatusOpen, "", api.Window{})
 			d.Tasks = tasks
 			return err
 		}},
@@ -241,7 +241,7 @@ func overviewFetches() []overviewFetch {
 			return err
 		}},
 		{sectionBooks, "books", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, "", "", nil)
+			books, err := c.ListBooks(ctx, api.BookFilter{Ownership: "owned"}, api.Window{}, "", nil)
 			d.OwnedBooks = books
 			return err
 		}},
@@ -252,7 +252,7 @@ func overviewFetches() []overviewFetch {
 		}},
 		{sectionArticles, "unread articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			unread := true
-			articles, err := c.ListArticles(ctx, nil, nil, &unread, "", "", "", nil)
+			articles, err := c.ListArticles(ctx, nil, nil, &unread, api.Window{}, nil)
 			d.UnreadArticles = articles
 			return err
 		}},
@@ -260,12 +260,12 @@ func overviewFetches() []overviewFetch {
 		// call, so there is no separate read filter to ask for and no third state.
 		{sectionArticles, "read articles", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			archived := true
-			articles, err := c.ListArticles(ctx, nil, &archived, nil, "", "", "", nil)
+			articles, err := c.ListArticles(ctx, nil, &archived, nil, api.Window{}, nil)
 			d.ReadArticles = articles
 			return err
 		}},
 		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, "", "", "", nil)
+			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, api.Window{}, nil)
 			d.Items = items
 			return err
 		}},
@@ -277,7 +277,7 @@ func overviewFetches() []overviewFetch {
 		// One read of every unclosed issue fills the whole section, already in
 		// the ready queue's order.
 		{sectionIssues, "issues", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			issues, err := c.ListIssues(ctx, api.IssueFilter{}, "", "", api.DayZone(LocalZoneName()), nil)
+			issues, err := c.ListIssues(ctx, api.IssueFilter{}, api.Window{}, api.DayZone(LocalZoneName()), nil)
 			d.Issues = issues
 			return err
 		}},

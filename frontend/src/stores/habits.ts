@@ -5,7 +5,7 @@ import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
 import { formatDate } from '@/composables/formatDate'
 import { addDays, isCalendarDay, todayKey } from '@/composables/calendarDay'
-import { dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
+import { dateFilterWindow, type DateFilterKey, type TimeWindow } from '@/composables/dateFilters'
 import type {
   Habit,
   HabitCreate,
@@ -283,9 +283,9 @@ export const useHabitsStore = defineStore('habits', () => {
   // --- Completed ---
 
   /** The returning counterpart to fetchCompleted, for the same reason as loadHabits. */
-  async function loadCompleted(params?: Record<string, string>) {
+  async function loadCompleted(window: TimeWindow = {}) {
     try {
-      const response = await api.get<HabitCompleted[]>('/habits/completed', { params })
+      const response = await api.get<HabitCompleted[]>('/habits/completed', { params: { ...window } })
       logger.info('completed_fetched', { count: response.data.length })
       return response.data
     } catch (e) {
@@ -296,9 +296,9 @@ export const useHabitsStore = defineStore('habits', () => {
     }
   }
 
-  async function fetchCompleted(params?: Record<string, string>) {
+  async function fetchCompleted(window: TimeWindow = {}) {
     error.value = null
-    completedHabits.value = await loadCompleted(params)
+    completedHabits.value = await loadCompleted(window)
   }
 
   /** One day's board, already split and ordered by the server. */
@@ -455,11 +455,7 @@ export const useHabitsStore = defineStore('habits', () => {
   async function fetchCompletedFiltered(filter?: DateFilterKey) {
     const f = filter ?? selectedFilter.value
     selectedFilter.value = f
-    const range = dateFilterRange(f)
-    const stringParams: Record<string, string> = {}
-    if (range.start) stringParams.start_date = range.start
-    if (range.end) stringParams.end_date = range.end
-    await fetchCompleted(Object.keys(stringParams).length > 0 ? stringParams : undefined)
+    await fetchCompleted(dateFilterWindow(f))
   }
 
   return {

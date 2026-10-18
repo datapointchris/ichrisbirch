@@ -24,10 +24,9 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.schemas.shopping import SHOPPING_ITEM_STATUSES
 from ichrisbirch.schemas.shopping import ShoppingSectionRef
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.fractional_rank import move_ranked
 from ichrisbirch.services.fractional_rank import rank_at_end
 from ichrisbirch.services.row_limit import CappedRowLimit
@@ -37,6 +36,7 @@ from ichrisbirch.services.shopping_refs import item_by_name
 from ichrisbirch.services.shopping_refs import resolve_item
 from ichrisbirch.services.shopping_refs import resolve_section
 from ichrisbirch.services.shopping_refs import section_by_name
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -375,15 +375,13 @@ def check_off(item: ItemFromPath, session: DbSession):
 @router.get('/purchases', response_model=list[schemas.ShoppingPurchase], status_code=status.HTTP_200_OK)
 def read_purchases(
     session: DbSession,
-    zone: RequestZone,
+    window: TimeWindowQuery,
     limit: CappedRowLimit = PURCHASES_SHOWN,
-    start_date: str | None = None,
-    end_date: str | None = None,
 ):
-    """The purchase log, most recent first. A bare day is read in the caller's zone."""
+    """The purchase log, most recent first."""
     purchases = models.ShoppingPurchase
     query = select(purchases).order_by(purchases.purchased_ts.desc(), purchases.id.desc())
-    query = apply_date_bounds(query, purchases.purchased_ts, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, purchases.purchased_ts, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

@@ -13,10 +13,12 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
-from ichrisbirch.services.date_bounds import apply_date_bounds
+from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.services.outbound_http import get_page
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -25,17 +27,17 @@ router = APIRouter()
 @router.get('', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
+    window: TimeWindowQuery,
+    zone: RequestZone,
     ownership: str | None = Query(None),
     progress: str | None = Query(None),
-    start_date: str | None = None,
-    end_date: str | None = None,
     limit: RowLimit = None,
 ):
-    """List the catalog in reading-priority order, narrowed by the filters and a finish-date range.
+    """List the catalog in reading-priority order, narrowed by the filters and a window on the finish.
 
-    The bounds narrow on `read_finish_date`, so anything unread, in progress, or
-    abandoned is outside every range — a book with no finish date was not
-    finished in any week.
+    The window narrows on `read_finish_date`, so anything unread, in progress, or
+    abandoned is outside every window — a book with no finish date was not
+    finished in any week. That column is a calendar day, read in the request's zone.
 
     `limit` caps last, so it takes the highest-priority books of whatever the
     filters left rather than filtering a capped slice.
@@ -45,7 +47,7 @@ def read_many(
         query = query.filter(models.Book.ownership == ownership)
     if progress:
         query = query.filter(models.Book.progress == progress)
-    query = apply_date_bounds(query, models.Book.read_finish_date, start_date, end_date, timezone=None)
+    query = apply_time_window(query, models.Book.read_finish_date, window, zone=zone)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

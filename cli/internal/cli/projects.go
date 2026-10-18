@@ -165,7 +165,7 @@ func newProjectsNextCommand() *cobra.Command {
 			// Every open item, uncapped: the blocked set is computed from the
 			// whole graph, and --limit here caps what is printed rather than
 			// what is read.
-			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, "", "", "", nil)
+			all, err := client.ListItems(cmd.Context(), filter, api.ItemStatusOpen, api.Window{}, nil)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -354,7 +354,7 @@ func newProjectsShowCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, "", "", "", nil)
+			items, err := client.ListProjectItems(cmd.Context(), args[0], itemStatus, api.Window{}, nil)
 			if err != nil {
 				return handleAPIError(err)
 			}

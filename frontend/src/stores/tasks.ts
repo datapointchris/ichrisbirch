@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/errors'
 import { createLogger } from '@/utils/logger'
+import type { TimeWindow } from '@/composables/dateFilters'
 import type { Task, TaskCreate, TaskCategory, TaskUpdate } from '@/api/client'
 
 const logger = createLogger('TasksStore')
@@ -70,14 +71,11 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function fetchCompleted(startDate?: string, endDate?: string) {
+  async function fetchCompleted(window: TimeWindow = {}) {
     loading.value = true
     error.value = null
     try {
-      const params: Record<string, string> = {}
-      if (startDate) params.start_date = startDate
-      if (endDate) params.end_date = endDate
-      const response = await api.get<CompletedTask[]>('/tasks/completed', { params })
+      const response = await api.get<CompletedTask[]>('/tasks/completed', { params: { ...window } })
       completedTasks.value = response.data
       logger.info('completed_tasks_fetched', { count: response.data.length })
     } catch (e) {
@@ -90,14 +88,11 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
-  async function fetchDropped(startDate?: string, endDate?: string) {
+  async function fetchDropped(window: TimeWindow = {}) {
     loading.value = true
     error.value = null
     try {
-      const params: Record<string, string> = { status: 'dropped' }
-      if (startDate) params.start_date = startDate
-      if (endDate) params.end_date = endDate
-      const response = await api.get<DroppedTask[]>('/tasks', { params })
+      const response = await api.get<DroppedTask[]>('/tasks', { params: { status: 'dropped', ...window } })
       droppedTasks.value = response.data
       logger.info('dropped_tasks_fetched', { count: response.data.length })
     } catch (e) {

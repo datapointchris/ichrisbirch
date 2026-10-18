@@ -163,22 +163,20 @@ func (c *Client) CompleteHabit(ctx context.Context, in HabitCompletedCreateInput
 type CompletionPick int
 
 const (
-	// AllCompletions returns every completion within the bounds.
+	// AllCompletions returns every completion inside the window.
 	AllCompletions CompletionPick = iota
-	// FirstCompletion returns only the earliest completion, ignoring the bounds.
+	// FirstCompletion returns only the earliest completion, ignoring the window.
 	FirstCompletion
-	// LastCompletion returns only the most recent completion, ignoring the bounds.
+	// LastCompletion returns only the most recent completion, ignoring the window.
 	LastCompletion
 )
 
-// ListCompletedHabits returns habit completions (GET /habits/completed). start
-// and end bound an inclusive range of days. FirstCompletion and LastCompletion
-// ignore the range and return one completion from the whole history.
-//
-// A completion is a calendar day, so no zone goes with the bounds.
-func (c *Client) ListCompletedHabits(ctx context.Context, start OnOrAfter, end OnOrBefore, pick CompletionPick) ([]HabitCompleted, error) {
+// ListCompletedHabits returns habit completions (GET /habits/completed) whose
+// day falls in window, read in zone. FirstCompletion and LastCompletion ignore
+// the window and return one completion from the whole history.
+func (c *Client) ListCompletedHabits(ctx context.Context, window Window, zone DayZone, pick CompletionPick) ([]HabitCompleted, error) {
 	params := url.Values{}
-	applyDateBounds(params, start, end, "")
+	applyDayWindow(params, window, zone)
 	switch pick {
 	case FirstCompletion:
 		params.Set("first", "true")

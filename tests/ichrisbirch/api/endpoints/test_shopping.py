@@ -319,18 +319,6 @@ class TestPurchaseLog:
         check_off(client, 'bananas')
         assert [row['item_name'] for row in ok(client.get(PURCHASES))] == ['bananas', 'eggs']
 
-    def test_a_day_is_read_in_the_callers_zone(self, seeded):
-        """23:30 in Los Angeles is the next day in UTC, and the bound follows the caller's calendar."""
-        client, session = seeded
-        session.add(
-            models.ShoppingPurchase(item_name='late snack', purchased_ts=dt.datetime(2026, 3, 11, 6, 30, tzinfo=dt.UTC)),
-        )
-        session.flush()
-        params = {'start_date': '2026-03-10', 'end_date': '2026-03-10'}
-        in_la = ok(client.get(PURCHASES, params={**params, 'timezone': 'America/Los_Angeles'}))
-        in_utc = ok(client.get(PURCHASES, params={**params, 'timezone': 'UTC'}))
-        assert ([row['item_name'] for row in in_la], in_utc) == (['late snack'], [])
-
     def test_an_absent_limit_takes_the_newest_of_the_log(self, seeded):
         client, session = seeded
         start = dt.datetime(2026, 1, 1, tzinfo=dt.UTC)

@@ -110,7 +110,7 @@ type TaskCategory struct {
 // Open tasks come back in queue order. Completed and dropped tasks come back
 // most recently closed first, since a place in the queue stops meaning anything
 // once a task leaves it.
-func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category string, start OnOrAfter, end OnOrBefore, zone DayZone) ([]Task, error) {
+func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category string, window Window) ([]Task, error) {
 	query := url.Values{}
 	if limit != nil {
 		query.Set("limit", strconv.Itoa(*limit))
@@ -121,7 +121,7 @@ func (c *Client) ListTasks(ctx context.Context, limit *int, taskStatus, category
 	if category != "" {
 		query.Set("category", category)
 	}
-	applyDateBounds(query, start, end, zone)
+	applyWindow(query, window)
 	var tasks []Task
 	if err := c.get(ctx, withQuery("/tasks", query), &tasks); err != nil {
 		return nil, err

@@ -27,13 +27,13 @@ from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.exceptions import Refusal
 from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.models.issue import CLOSED_ISSUE_STATUSES
 from ichrisbirch.models.issue import INITIATIVE_STATUSES
 from ichrisbirch.models.issue import ISSUE_PRIORITIES
 from ichrisbirch.models.issue import ISSUE_STATUSES
 from ichrisbirch.models.issue import ISSUE_TYPES
 from ichrisbirch.models.issue import TERMINAL_INITIATIVE_STATUSES
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.issue_rank import move_issue
 from ichrisbirch.services.issue_rank import rank_at_end
 from ichrisbirch.services.issue_readiness import IssueReadiness
@@ -49,6 +49,7 @@ from ichrisbirch.services.issue_views import issue_views
 from ichrisbirch.services.issue_views import label_views
 from ichrisbirch.services.issue_views import list_order
 from ichrisbirch.services.row_limit import RowLimit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -284,6 +285,7 @@ def single_view(session: Session, issue: models.Issue, zone: str) -> schemas.Iss
 def read_many(
     session: DbSession,
     zone: RequestZone,
+    window: TimeWindowQuery,
     issue_status: str | None = Query(
         None,
         alias='status',
@@ -299,14 +301,12 @@ def read_many(
     closed_by: str | None = Query(None, description="Issues whose closer starts with this, such as 'claude-code/'"),
     search: str | None = Query(None, description='Text to find in the title or description'),
     blocked: bool | None = Query(None, description='True for issues waiting on an unclosed dependency, false for the rest'),
-    start_date: str | None = None,
-    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List issues, open work first by effective priority then rank, closed work after it.
 
     Completed and canceled issues accumulate without bound, so the default leaves
-    them out. The date bounds narrow on `closed_ts`, the one date that records an
+    them out. The window narrows on `closed_ts`, the one date that records an
     issue finishing rather than being edited. Blocked is derived on every read,
     so it narrows after the query and before the limit.
 
@@ -337,7 +337,7 @@ def read_many(
         query = query.where(or_(models.Issue.title.ilike(pattern), models.Issue.description.ilike(pattern)))
     query = apply_repo_filter(query, repo)
     query = apply_label_filter(query, label, session)
-    query = apply_date_bounds(query, models.Issue.closed_ts, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, models.Issue.closed_ts, window, zone=None)
 
     today, now = calendar_now(zone)
     readiness = measure_readiness(session, today, now)

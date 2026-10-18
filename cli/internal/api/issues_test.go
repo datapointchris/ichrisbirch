@@ -41,7 +41,7 @@ func TestIssueDecodes_ADeferralDayAndItsEdges(t *testing.T) {
 func TestListIssues_SendsAZeroPriorityAndAnEmptyRepo(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
 	filter := IssueFilter{Repo: strptr(""), Priority: intptr(0)}
-	if _, err := client.ListIssues(context.Background(), filter, "", "", "", nil); err != nil {
+	if _, err := client.ListIssues(context.Background(), filter, Window{}, "", nil); err != nil {
 		t.Fatalf("ListIssues: %v", err)
 	}
 	if *query != "priority=0&repo=" {
@@ -50,10 +50,10 @@ func TestListIssues_SendsAZeroPriorityAndAnEmptyRepo(t *testing.T) {
 }
 
 // Readiness turns on whether a deferral day has arrived, so the zone travels
-// with every issue read, not only with a date bound.
-func TestListIssues_SendsTheZoneWithoutABound(t *testing.T) {
+// with every issue read, not only with a window.
+func TestListIssues_SendsTheZoneWithoutAWindow(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListIssues(context.Background(), IssueFilter{}, "", "", "America/Chicago", nil); err != nil {
+	if _, err := client.ListIssues(context.Background(), IssueFilter{}, Window{}, "America/Chicago", nil); err != nil {
 		t.Fatalf("ListIssues: %v", err)
 	}
 	if *query != "timezone=America%2FChicago" {

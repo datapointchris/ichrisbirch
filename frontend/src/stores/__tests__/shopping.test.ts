@@ -11,6 +11,7 @@ import {
   useShoppingStore,
 } from '../shopping'
 import { ApiError } from '@/api/errors'
+import { dayStart } from '@/composables/calendarDay'
 import type { ShoppingItem, ShoppingPurchase, ShoppingSection } from '@/api/client'
 
 vi.mock('@/api/client', () => ({
@@ -181,7 +182,7 @@ describe('useShoppingStore', () => {
     await store.fetchAll()
 
     expect(mockApi.get).toHaveBeenCalledWith('/shopping/items', { params: { status: 'all' } })
-    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases', { params: { start_date: '2026-10-04' } })
+    expect(mockApi.get).toHaveBeenCalledWith('/shopping/purchases', { params: { since: dayStart('2026-10-04') } })
     expect(store.needed.map((row) => row.name)).toEqual(['eggs', 'bananas', 'yogurt', 'tape'])
     expect(store.recentPurchases).toHaveLength(1)
   })

@@ -166,8 +166,8 @@ class TestList:
         assert titles(ok(client.get(ISSUES, params={'blocked': 'true', 'limit': 1}))) == ['Waits on the bug']
         assert 'Waits on the bug' not in titles(ok(client.get(ISSUES, params={'blocked': 'false'})))
 
-    def test_date_bounds_narrow_on_the_close(self, client):
-        params = {'status': 'all', 'start_date': '2026-08-31', 'end_date': '2026-09-02', 'timezone': 'UTC'}
+    def test_a_window_narrows_on_the_close(self, client):
+        params = {'status': 'all', 'since': '2026-08-31T00:00:00Z', 'until': '2026-09-03T00:00:00Z'}
         assert titles(ok(client.get(ISSUES, params=params))) == ['Completed feature']
 
     def test_closed_by_reads_what_one_kind_of_closer_finished(self, client):

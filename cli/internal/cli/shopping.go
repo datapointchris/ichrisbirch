@@ -398,35 +398,28 @@ func newShoppingDeleteCommand() *cobra.Command {
 
 func newShoppingHistoryCommand() *cobra.Command {
 	var (
-		start  string
-		end    string
 		asJSON bool
 		limit  int
 	)
 	cmd := &cobra.Command{
 		Use:   "history",
 		Short: "List what was bought, newest first",
-		Long: "--start/--end bound the day of the purchase, inclusive on both ends, and\n" +
-			"either works without the other. A day is read on this machine's calendar.",
+		Long:  "--since/--until bound when a purchase was made, and either works without the other.",
 		Example: "  icb shopping history\n" +
-			"  icb shopping history --start 2026-10-01 --end 2026-10-31\n" +
+			"  icb shopping history --since 2026-10-01 --until 2026-10-31\n" +
+			"  icb shopping history --since 2w\n" +
 			"  icb shopping history --limit 500 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			for _, bound := range [][2]string{{"start", start}, {"end", end}} {
-				if bound[1] == "" {
-					continue
-				}
-				if err := validateDate(bound[1]); err != nil {
-					return goclikit.UsageError(fmt.Errorf("--%s: %w", bound[0], err))
-				}
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			purchases, err := client.ListShoppingPurchases(cmd.Context(),
-				api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
+			purchases, err := client.ListShoppingPurchases(cmd.Context(), window, limitFlag(cmd))
 			if err != nil {
 				return handleArgumentAPIError(err)
 			}
@@ -437,8 +430,7 @@ func newShoppingHistoryCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&start, "start", "", "Only purchases on or after this day (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&end, "end", "", "Only purchases on or before this day (YYYY-MM-DD)")
+	addWindowFlags(cmd, "purchases")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output purchases as JSON to stdout")
 	addServerCappedLimitFlag(cmd, &limit, shoppingPurchasesShown)
 	return cmd

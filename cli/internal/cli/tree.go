@@ -80,7 +80,7 @@ func newItemsTreeCommand() *cobra.Command {
 			// sitting mid-chain is what joins the two halves either side of it,
 			// so fetching a subset severs edges and splits one tree into
 			// several without saying it did.
-			items, err := client.ListItems(cmd.Context(), nil, api.ItemStatusAll, "", "", "", nil)
+			items, err := client.ListItems(cmd.Context(), nil, api.ItemStatusAll, api.Window{}, nil)
 			if err != nil {
 				return handleAPIError(err)
 			}

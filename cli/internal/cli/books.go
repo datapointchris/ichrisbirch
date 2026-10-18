@@ -46,8 +46,6 @@ func newBooksCommand() *cobra.Command {
 func newBooksListCommand() *cobra.Command {
 	var (
 		filter api.BookFilter
-		start  string
-		end    string
 		asJSON bool
 		limit  int
 	)
@@ -58,9 +56,9 @@ func newBooksListCommand() *cobra.Command {
 			"together: --progress asks where a book is in the reading cycle,\n" +
 			"--ownership asks whether it is on the shelf.\n" +
 			"\n" +
-			"--start/--end bound when a book was finished, inclusive on both ends, and\n" +
-			"either works without the other. Anything unread, in progress, or abandoned\n" +
-			"has no finish date, so it falls outside every range.\n" +
+			"--since/--until bound the day a book was finished, and either works\n" +
+			"without the other. Anything unread, in progress, or abandoned has no\n" +
+			"finish date, so it falls outside every window.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the highest-priority books\n" +
 			"of the narrowed set rather than filtering a capped slice.",
@@ -69,18 +67,21 @@ func newBooksListCommand() *cobra.Command {
 			"  icb books list --progress unread --ownership owned\n" +
 			"                                      owned but not started — what to pick up next\n" +
 			"  icb books list --limit 10           the ten to read next\n" +
-			"  icb books list --start 2026-01-01   what you have finished this year",
+			"  icb books list --since 2026-01-01   what you have finished this year",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
-				return c.ListBooks(cmd.Context(), filter, api.OnOrAfter(start), api.OnOrBefore(end), limitFlag(cmd))
+				return c.ListBooks(cmd.Context(), filter, window, api.DayZone(LocalZoneName()), limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().StringVar(&filter.Ownership, "ownership", "", "Filter by ownership: owned, to_purchase, sold, donated, rejected")
 	cmd.Flags().StringVar(&filter.Progress, "progress", "", "Filter by reading progress: unread, reading, read, abandoned")
-	cmd.Flags().StringVar(&start, "start", "", "Only books finished on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only books finished on or before this ISO 8601 date")
+	addWindowFlags(cmd, "books finished")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output books as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd

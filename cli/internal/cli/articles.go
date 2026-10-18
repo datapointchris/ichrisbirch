@@ -139,8 +139,6 @@ func newArticlesListCommand() *cobra.Command {
 		archived  bool
 		unread    bool
 		asJSON    bool
-		start     string
-		end       string
 		limit     int
 	)
 	cmd := &cobra.Command{
@@ -153,10 +151,9 @@ func newArticlesListCommand() *cobra.Command {
 			"A favorite is due once it was last read longer ago than its --review-days.\n" +
 			"One never read is due, and one with no --review-days drops off once read.\n" +
 			"\n" +
-			"--start/--end bound when an article was last read, inclusive on both ends,\n" +
-			"and either works without the other. A bound with no offset is taken in this\n" +
-			"machine's zone. A never-read article has no such date, so it falls outside\n" +
-			"every range.\n" +
+			"--since/--until bound when an article was last read, and either works\n" +
+			"without the other. A never-read article has no such date, so it falls\n" +
+			"outside every window.\n" +
 			"\n" +
 			"--limit caps what the filters left, so it takes the first titles of the\n" +
 			"narrowed set rather than filtering a capped slice.",
@@ -164,21 +161,24 @@ func newArticlesListCommand() *cobra.Command {
 			"  icb articles list --unread\n" +
 			"  icb articles list --unread --limit 5\n" +
 			"  icb articles list --archived=false\n" +
-			"  icb articles list --start 2026-08-01 --end 2026-08-31",
+			"  icb articles list --since 2026-08-01 --until 2026-08-31",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
 				return c.ListArticles(cmd.Context(),
 					boolFlagPtr(cmd, "favorites"), boolFlagPtr(cmd, "archived"), boolFlagPtr(cmd, "unread"),
-					api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
+					window, limitFlag(cmd))
 			})
 		},
 	}
 	cmd.Flags().BoolVar(&favorites, "favorites", false, "Filter by favorite status (favorites due for re-read)")
 	cmd.Flags().BoolVar(&archived, "archived", false, "Filter by archived status")
 	cmd.Flags().BoolVar(&unread, "unread", false, "Filter by never-read status")
-	cmd.Flags().StringVar(&start, "start", "", "Only articles last read on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only articles last read on or before this ISO 8601 date")
+	addWindowFlags(cmd, "articles last read")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output articles as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd

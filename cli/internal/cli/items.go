@@ -91,16 +91,14 @@ func newItemsListCommand() *cobra.Command {
 		project    string
 		repo       string
 		itemStatus string
-		start      string
-		end        string
 		limit      int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List open items, or one project's items in order",
 		Long: "Open means not completed and not archived, and it is the default because\n" +
-			"completed items accumulate without bound — at the time this was added they\n" +
-			"had reached parity with open ones, so the whole list read half history.\n" +
+			"completed items accumulate without bound. Left in, they would grow the\n" +
+			"default list into mostly history.\n" +
 			"\n" +
 			"--status takes one of: " + strings.Join(api.ItemStatuses, ", ") + ". They partition every\n" +
 			"item, because archived beats completed: an item completed and then archived\n" +
@@ -109,17 +107,16 @@ func newItemsListCommand() *cobra.Command {
 			"--project selects which rows come back, not which states, so it narrows to\n" +
 			"open the same way the unscoped list does and takes the same --status.\n" +
 			"\n" +
-			"--start/--end bound when an item was finished, inclusive on both ends, and\n" +
-			"either works without the other. A bound with no offset is taken in this\n" +
-			"machine's zone. An item that was never completed has no such date, so it\n" +
-			"falls outside every range — pair them with --status completed to read a\n" +
-			"week's finished work.\n" +
+			"--since/--until bound when an item was finished, and either works without\n" +
+			"the other. An item that was never completed has no such date, so it falls\n" +
+			"outside every window — pair them with --status completed to read a week's\n" +
+			"finished work.\n" +
 			"\n" +
 			"--limit caps what the filters left, and applies to either shape of the\n" +
 			"list: newest-first unscoped, project order under --project.",
 		Example: "  icb projects items list\n" +
 			"  icb projects items list --status completed\n" +
-			"  icb projects items list --status completed --start 2026-08-17\n" +
+			"  icb projects items list --status completed --since 2026-08-17\n" +
 			"  icb projects items list --status all --json\n" +
 			"  icb projects items list --repo dotfiles --limit 10\n" +
 			"  icb projects items list --repo dotfiles --json\n" +
@@ -131,11 +128,14 @@ func newItemsListCommand() *cobra.Command {
 			if err := validateItemStatus(cmd, itemStatus); err != nil {
 				return err
 			}
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			if project == "" {
 				filter := repoFlagValue(cmd, repo)
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
-					return c.ListItems(cmd.Context(), filter, itemStatus,
-						api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
+					return c.ListItems(cmd.Context(), filter, itemStatus, window, limitFlag(cmd))
 				}); err != nil {
 					return err
 				}
@@ -149,8 +149,7 @@ func newItemsListCommand() *cobra.Command {
 			if err != nil {
 				return handleAPIError(err)
 			}
-			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus,
-				api.OnOrAfter(start), api.OnOrBefore(end), api.DayZone(LocalZoneName()), limitFlag(cmd))
+			items, err := client.ListProjectItems(cmd.Context(), project, itemStatus, window, limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -166,8 +165,7 @@ func newItemsListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&project, "project", "", "Limit to one project's items, in project order (full name or id)")
 	cmd.Flags().StringVar(&repo, "repo", "", "Limit to items tagged with this repo (empty string for untagged work)")
 	cmd.Flags().StringVar(&itemStatus, "status", "", "One of: "+strings.Join(api.ItemStatuses, ", ")+" (default open)")
-	cmd.Flags().StringVar(&start, "start", "", "Only items completed on or after this ISO 8601 date")
-	cmd.Flags().StringVar(&end, "end", "", "Only items completed on or before this ISO 8601 date")
+	addWindowFlags(cmd, "items completed")
 	addLimitFlag(cmd, &limit)
 	return cmd
 }

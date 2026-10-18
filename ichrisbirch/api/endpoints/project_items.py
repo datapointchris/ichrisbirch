@@ -18,10 +18,9 @@ from sqlalchemy.sql import Select
 from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
-from ichrisbirch.api.request_zone import RequestZone
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.models.project import ProjectItemDependency
 from ichrisbirch.models.project import ProjectItemMembership
-from ichrisbirch.services.date_bounds import apply_date_bounds
 from ichrisbirch.services.project_item_completion import stamp_completion
 from ichrisbirch.services.project_item_positions import move_membership_to_position
 from ichrisbirch.services.project_item_status import apply_status_filter
@@ -30,6 +29,7 @@ from ichrisbirch.services.project_refs import resolve_item
 from ichrisbirch.services.project_refs import resolve_project
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -154,34 +154,29 @@ def next_position_in_project(session: Session, project_id: UUID) -> int:
 @router.get('', response_model=list[schemas.ProjectItem], status_code=status.HTTP_200_OK)
 def read_many(
     session: DbSession,
-    zone: RequestZone,
+    window: TimeWindowQuery,
     repo: str | None = None,
     item_status: str = Query(
         'open',
         alias='status',
         description="An item status, or 'all'. Completed and archived items are hidden by default.",
     ),
-    start_date: str | None = None,
-    end_date: str | None = None,
     limit: RowLimit = None,
 ):
     """List open project items — not completed, not archived.
 
-    The default narrows because completed items accumulate without bound, which
-    is the test `cli-design.md` § "A default narrows only where the hidden class
-    grows without bound" applies. Measured 2026-08-12, before this existed: 213
-    completed against 213 open, so the default read of the store was half
-    history and nothing was going to stop that growing.
+    The default narrows because completed items accumulate without bound. Left
+    in, they would grow the default read into mostly history.
 
-    The date bounds narrow on `completed_at`, which is the only date on an item
-    that records an event rather than a revision. An item with none — never
-    finished, or finished before the column existed — is outside every range.
+    The window narrows on `completed_at`, which is the only date on an item that
+    records an event rather than a revision. An item with none — never finished,
+    or finished before the column existed — is outside every window.
     """
     validate_item_status(item_status)
     query = select(models.ProjectItem).options(*PROJECT_ITEM_LOAD_OPTIONS).order_by(models.ProjectItem.created_at.desc())
     query = apply_status_filter(query, item_status)
     query = apply_repo_filter(query, repo)
-    query = apply_date_bounds(query, models.ProjectItem.completed_at, start_date, end_date, timezone=zone)
+    query = apply_time_window(query, models.ProjectItem.completed_at, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

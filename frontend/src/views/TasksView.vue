@@ -329,7 +329,7 @@ import NeuSelect from '@/components/NeuSelect.vue'
 import NeuToggleGroup from '@/components/NeuToggleGroup.vue'
 import type { NeuToggleGroupOption } from '@/components/NeuToggleGroup.vue'
 import { averageCompletionTime, placementBetween } from '@/components/tasks/taskUtils'
-import { DATE_FILTERS, dateFilterLabel, dateFilterRange, type DateFilterKey } from '@/composables/dateFilters'
+import { DATE_FILTERS, dateFilterLabel, dateFilterWindow, type DateFilterKey } from '@/composables/dateFilters'
 import type { TaskCreate, TaskUpdate } from '@/api/client'
 
 const route = useRoute()
@@ -411,8 +411,7 @@ async function loadData() {
   try {
     if (activePage.value === 'priority') {
       await store.fetchTodo()
-      const today = dateFilterRange('today')
-      await store.fetchCompleted(today.start, today.end)
+      await store.fetchCompleted(dateFilterWindow('today'))
       completedToday.value = [...store.completedTasks]
       store.completedTasks = []
     } else if (activePage.value === 'todo') {
@@ -553,8 +552,8 @@ async function onDragEnd(evt: { oldIndex: number; newIndex: number }) {
 }
 
 function fetchClosed() {
-  const range = dateFilterRange(selectedFilter.value)
-  return closedView.value === 'dropped' ? store.fetchDropped(range.start, range.end) : store.fetchCompleted(range.start, range.end)
+  const window = dateFilterWindow(selectedFilter.value)
+  return closedView.value === 'dropped' ? store.fetchDropped(window) : store.fetchCompleted(window)
 }
 
 async function onFilterChange(filter: DateFilterKey) {

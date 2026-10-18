@@ -24,7 +24,7 @@ func TestShopping_AUsageRefusalDoesNotWaitOnTheNetwork(t *testing.T) {
 		{"delete with no name", []string{"shopping", "delete"}},
 		{"edit with nothing to change", []string{"shopping", "edit", "eggs"}},
 		{"edit emptying the name", []string{"shopping", "edit", "eggs", "--name", ""}},
-		{"history with a malformed day", []string{"shopping", "history", "--start", "10/01"}},
+		{"history with a month span", []string{"shopping", "history", "--since", "6mo"}},
 		{"history with a negative limit", []string{"shopping", "history", "--limit", "-1"}},
 		{"a section move with no neighbor", []string{"shopping", "sections", "move", "costco"}},
 		{"a section move with both neighbors", []string{"shopping", "sections", "move", "costco", "--before", "a", "--after", "b"}},

@@ -40,10 +40,12 @@ export function wallClockInstant(value: WallClock): number {
   try {
     // Read the naive components back out of the zone to learn its offset at that
     // date, then correct by the difference. Intl is the only thing in the browser
-    // that knows a zone's historical and future offsets.
+    // that knows a zone's historical and future offsets. The offset is read again
+    // at the corrected instant, because a zone far from UTC can change offset
+    // between the reading taken as UTC and the instant it names.
     const asUtc = Date.UTC(parsed.year, parsed.month - 1, parsed.day, parsed.hour, parsed.minute, parsed.second)
-    const offset = zoneOffsetMs(asUtc, zone)
-    return asUtc - offset
+    const guess = asUtc - zoneOffsetMs(asUtc, zone)
+    return asUtc - zoneOffsetMs(guess, zone)
   } catch {
     return Number.NaN
   }
