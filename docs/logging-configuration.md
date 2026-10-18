@@ -293,7 +293,7 @@ logger.error('countdown_create_failed', { detail: error.detail, status: error.st
 In production the JSON reporter calls `console.info(JSON.stringify(...))`, so
 the entry lands in the user's browser DevTools and nowhere else. There is no
 shipping pipeline. Vue is a static SPA in production, so its logs never reach
-a container that Promtail can scrape.
+a container that Grafana Alloy can scrape.
 
 ### Vue Request Tracing
 

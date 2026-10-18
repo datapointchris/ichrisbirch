@@ -288,7 +288,7 @@ Unit tests mock the API with `vi.mock`; E2E runs through `app.test.localhost`, n
 ### Logging
 
 Python logs through structlog into the stdlib root logger, which writes to stderr alone.
-Docker's logging driver keeps that output, and Promtail ships it to Loki.
+Docker's logging driver keeps that output, and Grafana Alloy ships it to Loki.
 `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL` and `LOG_COLORS` configure the logger.
 Requests are traced by `X-Request-ID`.
 Vue logs through consola via `createLogger('ModuleName')`, in structlog's key=value shape, and as JSON for Loki in production.

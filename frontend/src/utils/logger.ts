@@ -8,7 +8,7 @@
  *
  * Dev: human-readable structured lines in the browser console.
  * Production: JSON in the browser DevTools — no shipping pipeline. Vue is a
- * static SPA in production, so its logs cannot be scraped by Promtail.
+ * static SPA in production, so its logs cannot be scraped by Grafana Alloy.
  *
  * Usage:
  *   const logger = createLogger('CountdownsStore')
