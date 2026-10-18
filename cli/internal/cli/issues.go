@@ -57,8 +57,15 @@ func newIssuesCommand() *cobra.Command {
 			"and an issue with no priority of its own takes its parent's or its\n" +
 			"initiative's.\n" +
 			"\n" +
-			"`claim` takes the head of that queue, or a named issue, until the claim runs\n" +
-			"out. Decisions wait on a person, so the queue leaves them out.\n" +
+			"Working an issue starts with a claim and ends with a close. Before the\n" +
+			"first edit, `claim <issue>` takes it, or `claim` alone takes the head of\n" +
+			"`next`. A change that carries several issues claims each one. A claimed\n" +
+			"issue is in progress and `next` leaves it out, so no other session takes\n" +
+			"it. `complete` lets go of the claim, `release` hands the issue back\n" +
+			"unfinished, and claiming it again extends the claim. `list --status\n" +
+			"in_progress` shows every claim held.\n" +
+			"\n" +
+			"Decisions wait on a person, so the queue leaves them out.\n" +
 			"`icb issues list --type decision` lists them.",
 	})
 	withNotFoundHints(cmd, issueHints...)
@@ -361,7 +368,8 @@ func newIssuesNextCommand() *cobra.Command {
 		Long: "Open, unblocked, not deferred past today, with no open children, and not held\n" +
 			"by a live claim. The first row is what `icb issues claim` with no issue would\n" +
 			"take, under the same flags. Decisions wait on a person and are left out unless\n" +
-			"--type decision asks for them.\n" +
+			"--type decision asks for them. Reading the queue holds nothing, so claim the\n" +
+			"issue you take before working it.\n" +
 			"\n" +
 			"The priority column is the one the queue sorts by, and a * marks one inherited\n" +
 			"from what the issue blocks, its parent, or its initiative.",

@@ -577,6 +577,10 @@ func newIssuesReopenCommand() *cobra.Command {
 
 // --- Claims ---
 
+// defaultClaimMinutes is a day, so a session paused overnight on a question
+// still holds its issue. A claim whose holder died is freed by `release`.
+const defaultClaimMinutes = 1440
+
 func newIssuesClaimCommand() *cobra.Command {
 	var (
 		asJSON   bool
@@ -597,9 +601,10 @@ func newIssuesClaimCommand() *cobra.Command {
 			"open dependency or an open child, and before its deferral day. The refusal\n" +
 			"names which. Claiming one you already hold extends the claim.\n" +
 			"\n" +
-			"A claim lasts --minutes, or the API's default without it. One that runs out\n" +
-			"returns the issue to the queue, and `release` returns it sooner. --claimant\n" +
-			"defaults to the Claude Code session when run inside one, else user@host.\n" +
+			"A claim sets the issue in progress for --minutes. One that runs out returns\n" +
+			"the issue to the queue. `complete` lets go of it, and `release` hands it back\n" +
+			"unfinished. --claimant defaults to the Claude Code session when run inside\n" +
+			"one, else user@host.\n" +
 			"\n" +
 			"An empty queue prints nothing to claim, or null under --json, and exits 0.",
 		Example: "  icb issues claim\n" +
@@ -608,16 +613,13 @@ func newIssuesClaimCommand() *cobra.Command {
 		Args: usageArgs(cobra.MaximumNArgs(1)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
-			if f.Changed("minutes") && (minutes < 1 || minutes > 10080) {
+			if minutes < 1 || minutes > 10080 {
 				return usageError{fmt.Errorf("--minutes %d: a claim lasts 1 to 10080 minutes", minutes)}
 			}
 			if strings.TrimSpace(claimant) == "" {
 				return usageError{errors.New("--claimant cannot be empty — a claim names who holds it")}
 			}
-			in := api.IssueClaimInput{Claimant: claimant}
-			if f.Changed("minutes") {
-				in.Minutes = minutes
-			}
+			in := api.IssueClaimInput{Claimant: claimant, Minutes: minutes}
 			if len(args) == 1 {
 				for _, name := range readyQueueFlagNames {
 					if f.Changed(name) {
@@ -661,7 +663,7 @@ func newIssuesClaimCommand() *cobra.Command {
 	}
 	queue.register(cmd)
 	cmd.Flags().StringVar(&claimant, "claimant", actorIdentity(), "Who holds the claim")
-	cmd.Flags().IntVar(&minutes, "minutes", 0, "How long the claim holds, 1 to 10080 (default: the API's)")
+	cmd.Flags().IntVar(&minutes, "minutes", defaultClaimMinutes, "How long the claim holds, 1 to 10080")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the claimed issue as JSON to stdout")
 	return cmd
 }
