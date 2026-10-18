@@ -9,6 +9,7 @@ import (
 
 	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
+	"github.com/datapointchris/gotermstyle/cobrahelp"
 	"github.com/spf13/cobra"
 )
 
@@ -146,7 +147,7 @@ func NewRootCommand() *cobra.Command {
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return goclikit.UsageError(err)
 	})
-	useHelp(root)
+	cobrahelp.Install(root)
 
 	root.PersistentFlags().BoolVar(&noInput, "no-input", false,
 		"Never prompt; fail naming the flag that would have answered")
