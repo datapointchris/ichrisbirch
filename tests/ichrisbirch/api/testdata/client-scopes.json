@@ -7,6 +7,14 @@
     "PATCH /api/v1/issues/{id}",
     "POST /api/v1/issues/{id}/comments"
   ],
+  "icb.issues.plan": [
+    "GET /api/v1/issues/vocabulary",
+    "PATCH /api/v1/issues/initiatives/{id:path}",
+    "PATCH /api/v1/issues/{id}",
+    "POST /api/v1/issues",
+    "POST /api/v1/issues/initiatives",
+    "POST /api/v1/issues/{id}/rank"
+  ],
   "icb.issues.read": [
     "GET /api/v1/issues",
     "GET /api/v1/issues/initiatives",

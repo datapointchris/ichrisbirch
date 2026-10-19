@@ -20,6 +20,8 @@ from sqlalchemy.sql import Select
 
 from ichrisbirch import models
 from ichrisbirch import schemas
+from ichrisbirch.api.client_scopes import ISSUES_CLOSE
+from ichrisbirch.api.client_scopes import ISSUES_PLAN
 from ichrisbirch.api.endpoints.auth import CurrentCaller
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import ForbiddenException
@@ -464,8 +466,18 @@ def in_declared_order(values: set[str], declared: list[str]) -> list[str]:
     return [v for v in declared if v in values] + sorted(values - set(declared))
 
 
+def refuse_all_but_a_triage_filing(issue: schemas.IssueCreate) -> None:
+    """A scoped client's filing waits for a person, and names no parent, which would wait on it."""
+    if issue.parent is not None:
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_FILES_ONLY_INTO_TRIAGE}; this filing names a parent', logger)
+    if issue.status != 'triage':
+        raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_FILES_ONLY_INTO_TRIAGE}; this filing starts as {issue.status}', logger)
+
+
 @router.post('', response_model=schemas.IssueDetail, status_code=status.HTTP_201_CREATED)
-def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone):
+def create(issue: schemas.IssueCreate, session: DbSession, zone: RequestZone, caller: CurrentCaller):
+    if isinstance(caller, ScopedClient):
+        refuse_all_but_a_triage_filing(issue)
     if issue.status not in CREATE_STATUSES:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -515,8 +527,10 @@ def read_one(issue: IssueFromPath, session: DbSession, zone: RequestZone):
 
 
 # What a scoped client's update may carry. icb.issues.close reaches this route to complete an issue
-# whose fix merged, and an edit is no part of that.
+# whose fix merged, and icb.issues.plan to re-tier an issue or move it between initiatives. A body
+# naming a close field is a close, and any other is an edit.
 SCOPED_CLOSE_FIELDS = frozenset({'status', 'closed_by'})
+SCOPED_PLAN_FIELDS = frozenset({'priority', 'initiative'})
 
 
 def refuse_all_but_a_close(issue: models.Issue, update_data: dict) -> None:
@@ -528,13 +542,29 @@ def refuse_all_but_a_close(issue: models.Issue, update_data: dict) -> None:
         raise ForbiddenException(f'{Refusal.SCOPED_CLIENT_ONLY_CLOSES}; #{issue.number} is already {issue.status}', logger)
 
 
+def refuse_all_but_a_plan(update_data: dict) -> None:
+    if extra := sorted(set(update_data) - SCOPED_PLAN_FIELDS):
+        raise ForbiddenException(
+            f'{Refusal.SCOPED_CLIENT_ONLY_SETS_PRIORITY_AND_INITIATIVE}; this update also sets {", ".join(extra)}', logger
+        )
+
+
+def refuse_a_scoped_update(issue: models.Issue, update_data: dict, scopes: frozenset[str]) -> None:
+    """Narrow the body to the scope it is aimed at. The route gate admits a client holding either."""
+    closing = not SCOPED_CLOSE_FIELDS.isdisjoint(update_data)
+    if ISSUES_PLAN in scopes and not (closing and ISSUES_CLOSE in scopes):
+        refuse_all_but_a_plan(update_data)
+    else:
+        refuse_all_but_a_close(issue, update_data)
+
+
 @router.patch('/{id}', response_model=schemas.IssueDetail, status_code=status.HTTP_200_OK)
 def update(issue: IssueFromPath, update: schemas.IssueUpdate, session: DbSession, zone: RequestZone, caller: CurrentCaller):
     update_data = update.model_dump(exclude_unset=True)
     logger.debug('issue_update', number=issue.number, fields=sorted(update_data))
     now = dt.datetime.now(dt.UTC)
     if isinstance(caller, ScopedClient):
-        refuse_all_but_a_close(issue, update_data)
+        refuse_a_scoped_update(issue, update_data, caller.scopes)
         signed_in = caller.client_id
     else:
         signed_in = caller.email
