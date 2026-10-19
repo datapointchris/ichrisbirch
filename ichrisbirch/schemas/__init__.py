@@ -118,6 +118,7 @@ from ichrisbirch.schemas.recipe import UrlImportKind
 from ichrisbirch.schemas.recipe import UrlImportRequest
 from ichrisbirch.schemas.recipe import UrlImportResponse
 from ichrisbirch.schemas.recipe import UrlImportSaveResult
+from ichrisbirch.schemas.record_change import RecordChange
 from ichrisbirch.schemas.scheduler import SchedulerJob
 from ichrisbirch.schemas.scheduler import SchedulerJobRun
 from ichrisbirch.schemas.scheduler import SchedulerJobRunCreate
@@ -264,6 +265,7 @@ __all__ = [
     'UrlImportRequest',
     'UrlImportResponse',
     'UrlImportSaveResult',
+    'RecordChange',
     'SchedulerJob',
     'SchedulerJobRun',
     'SchedulerJobRunCreate',

@@ -11,7 +11,6 @@ from fastapi import Query
 from fastapi import Response
 from fastapi import status
 from sqlalchemy import and_
-from sqlalchemy import delete as sql_delete
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy import update as sql_update
@@ -36,6 +35,7 @@ from ichrisbirch.models.issue import ISSUE_PRIORITIES
 from ichrisbirch.models.issue import ISSUE_STATUSES
 from ichrisbirch.models.issue import ISSUE_TYPES
 from ichrisbirch.models.issue import TERMINAL_INITIATIVE_STATUSES
+from ichrisbirch.models.record_change import record_update
 from ichrisbirch.services.issue_rank import move_issue
 from ichrisbirch.services.issue_rank import rank_at_end
 from ichrisbirch.services.issue_readiness import IssueReadiness
@@ -427,15 +427,14 @@ def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone
     """
     issues, _ = ready_issues(session, zone, repo=request.repo, type=request.type, label=request.label, initiative=request.initiative)
     now = dt.datetime.now(dt.UTC)
+    values = claim_values(request.claimant, request.minutes, now)
     for candidate in issues:
         taken = session.execute(
-            sql_update(models.Issue)
-            .where(models.Issue.id == candidate.id, claimable(now))
-            .values(**claim_values(request.claimant, request.minutes, now))
-            .returning(models.Issue.id),
+            sql_update(models.Issue).where(models.Issue.id == candidate.id, claimable(now)).values(**values).returning(models.Issue.id),
             execution_options={'synchronize_session': False},
         ).scalar_one_or_none()
         if taken is not None:
+            record_update(session, candidate, values)
             session.commit()
             logger.info('issue_claimed', number=candidate.number, claimant=request.claimant)
             return schemas.IssueClaimResult(issue=single_view(session, candidate, zone))
@@ -665,10 +664,11 @@ def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbS
             detail = ' '.join(unready_reasons(issue, readiness)) or claim_conflict(issue)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
 
+    values = claim_values(request.claimant, request.minutes, now)
     taken = session.execute(
         sql_update(models.Issue)
         .where(models.Issue.id == issue.id, claimable(now, request.claimant))
-        .values(**claim_values(request.claimant, request.minutes, now))
+        .values(**values)
         .returning(models.Issue.id),
         execution_options={'synchronize_session': False},
     ).scalar_one_or_none()
@@ -676,6 +676,7 @@ def claim(issue: IssueFromPath, request: schemas.IssueClaimRequest, session: DbS
         session.rollback()
         session.refresh(issue)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=claim_conflict(issue))
+    record_update(session, issue, values)
     session.commit()
     logger.info('issue_claimed', number=issue.number, claimant=request.claimant)
     return single_view(session, issue, zone)
@@ -798,12 +799,9 @@ def create_comment(issue: IssueFromPath, comment: schemas.IssueCommentCreate, se
 
 @router.delete('/{id}/comments/{comment_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_comment(issue: IssueFromPath, comment_id: UUID, session: DbSession):
-    deleted = session.execute(
-        sql_delete(models.IssueComment)
-        .where(models.IssueComment.id == comment_id, models.IssueComment.issue_id == issue.id)
-        .returning(models.IssueComment.id)
-    ).scalar_one_or_none()
-    if deleted is None:
+    query = select(models.IssueComment).where(models.IssueComment.id == comment_id, models.IssueComment.issue_id == issue.id)
+    if (comment := session.scalars(query).first()) is None:
         raise NotFoundException('comment', str(comment_id), logger)
+    session.delete(comment)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

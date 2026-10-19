@@ -20,6 +20,7 @@ from ichrisbirch.api.oidc_auth import OIDCIdentity
 from ichrisbirch.api.oidc_auth import ScopedClient
 from ichrisbirch.api.oidc_auth import get_oidc_identity
 from tests.util import show_status_and_response
+from tests.utils.database import test_settings
 
 PROJECT_ITEMS = 'icb.project-items.read'
 ISSUES = 'icb.issues.read'
@@ -124,7 +125,7 @@ def as_caller(txn_api):
     def url(template):
         return template.format(item=item.id, project=project.id, issue=issue.number, neighbor=neighbor.number, initiative=initiative.name)
 
-    return SimpleNamespace(caller=caller, url=url, project=project)
+    return SimpleNamespace(caller=caller, url=url, project=project, issue=issue)
 
 
 @pytest.mark.parametrize(('scope', 'method', 'template'), SCOPED_ROUTES)
@@ -319,6 +320,29 @@ def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):
     client = as_caller.caller(OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-macmini'))
     response = client.post('/project-items', json={'title': 'written by a person', 'project_ids': [str(as_caller.project.id)]})
     assert response.status_code == status.HTTP_201_CREATED, show_status_and_response(response)
+
+
+def test_the_audit_trail_names_who_made_each_edit(as_caller):
+    """A claim is written by a statement the unit of work never sees, so it is audited by hand."""
+    person = OIDCIdentity(subject='authelia-user-uuid', client_id='icb-cli-laptop')
+    edited = as_caller.caller(person).patch(as_caller.url('/issues/{issue}'), json={'title': 'retitled'})
+    assert edited.status_code == status.HTTP_200_OK, show_status_and_response(edited)
+
+    service = as_caller.caller(ScopedClient(client_id=SERVICE, scopes=frozenset({PLAN, CLAIM})))
+    planned = service.patch(as_caller.url('/issues/{issue}'), json={'priority': 2})
+    assert planned.status_code == status.HTTP_200_OK, show_status_and_response(planned)
+    claimed = service.post(as_caller.url('/issues/{issue}/claim'), json={'claimant': SERVICE, 'minutes': 60})
+    assert claimed.status_code == status.HTTP_200_OK, show_status_and_response(claimed)
+
+    trail = as_caller.caller(person).get('/admin/record-changes', params={'table_name': 'issues', 'record_id': str(as_caller.issue.id)})
+    assert trail.status_code == status.HTTP_200_OK, show_status_and_response(trail)
+    claim, plan, retitle = (entry for entry in trail.json() if entry['operation'] == 'update')
+    assert (retitle['actor'], retitle['changes']['title']) == (
+        test_settings.oidc.cli_user_email,
+        {'old': 'scheduler issue', 'new': 'retitled'},
+    )
+    assert (plan['actor'], plan['changes']['priority']['new']) == (SERVICE, 2)
+    assert (claim['actor'], claim['changes']['claimed_by']['new']) == (SERVICE, SERVICE)
 
 
 def test_no_credentials_on_a_scoped_router_is_still_401(as_caller):

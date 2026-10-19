@@ -48,6 +48,7 @@ from ichrisbirch.models.recipe import RecipeDifficulty
 from ichrisbirch.models.recipe import RecipeIngredient
 from ichrisbirch.models.recipe import RecipeMealType
 from ichrisbirch.models.recipe import RecipeUnit
+from ichrisbirch.models.record_change import RecordChange
 from ichrisbirch.models.scheduler_job_run import SchedulerJobRun
 from ichrisbirch.models.shopping import ShoppingItem
 from ichrisbirch.models.shopping import ShoppingPurchase
@@ -113,6 +114,7 @@ __all__ = [
     'RecipeIngredient',
     'RecipeMealType',
     'RecipeUnit',
+    'RecordChange',
     'SchedulerJobRun',
     'ShoppingItem',
     'ShoppingPurchase',

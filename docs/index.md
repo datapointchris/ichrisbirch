@@ -13,6 +13,7 @@ Welcome to the iChrisBirch application documentation.
 - [Logging Configuration](logging-configuration.md) - Structlog setup, request tracing, and log viewing
 - [Dependency Reach](dependency-reach.md) - What each wide-reaching dependency sees and which callers feed it
 - [Admin Dashboard](admin.md) - The admin pages, the API guard behind them, and why the health read bounds every probe
+- [The icb Audit Trail](icb-audit-trail.md) - Why every write lands in one table, how its writer is named, and what a Core statement owes it
 
 ## Development
 
