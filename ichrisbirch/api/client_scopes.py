@@ -11,6 +11,10 @@ from starlette.routing import BaseRoute
 
 from ichrisbirch.api import API_PREFIX
 
+# The issue update reads these two to decide how far it narrows a scoped client's body.
+ISSUES_CLOSE = 'icb.issues.close'
+ISSUES_PLAN = 'icb.issues.plan'
+
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
     # The reads `icb issues list`, `search`, `next`, `show`, and `initiatives list` and `show`
     # make. `--blocked` filters `/issues`. An issue in a series often has no description of its
@@ -34,11 +38,26 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
         }
     ),
     # What `icb issues add-comment` and `complete` send, for a job closing an issue whose fix
-    # merged. The update handler lets a scoped client close an open issue and set nothing else.
-    'icb.issues.close': frozenset(
+    # merged. The update handler narrows a body naming `status` or `closed_by` to the close of an
+    # open issue.
+    ISSUES_CLOSE: frozenset(
         {
             ('POST', f'{API_PREFIX}/issues/{{id}}/comments'),
             ('PATCH', f'{API_PREFIX}/issues/{{id}}'),
+        }
+    ),
+    # What `icb issues edit --priority` and `--initiative`, `reorder`, `create`, and `initiatives
+    # create`, `edit`, `complete` and `drop` send, for a job ordering the queue. `create` reads the
+    # vocabulary before it files. The handlers narrow any other update to an issue's priority and
+    # initiative, and a filing to triage under no parent. Nothing here deletes.
+    ISSUES_PLAN: frozenset(
+        {
+            ('GET', f'{API_PREFIX}/issues/vocabulary'),
+            ('POST', f'{API_PREFIX}/issues'),
+            ('PATCH', f'{API_PREFIX}/issues/{{id}}'),
+            ('POST', f'{API_PREFIX}/issues/{{id}}/rank'),
+            ('POST', f'{API_PREFIX}/issues/initiatives'),
+            ('PATCH', f'{API_PREFIX}/issues/initiatives/{{id:path}}'),
         }
     ),
     # The reads the `icb projects items` commands make.

@@ -25,6 +25,7 @@ PROJECT_ITEMS = 'icb.project-items.read'
 ISSUES = 'icb.issues.read'
 CLAIM = 'icb.issues.claim'
 CLOSE = 'icb.issues.close'
+PLAN = 'icb.issues.plan'
 CLOSER = 'worker/close-job@service-box'
 SERVICE = 'icb-svc-worker'
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
@@ -35,6 +36,7 @@ SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 SCOPED_URLS = {
     f'{API_PREFIX}/issues': '/issues?search=scheduler&status=all',
     f'{API_PREFIX}/issues/ready': '/issues/ready',
+    f'{API_PREFIX}/issues/vocabulary': '/issues/vocabulary',
     f'{API_PREFIX}/issues/{{id}}': '/issues/{issue}',
     f'{API_PREFIX}/issues/initiatives': '/issues/initiatives',
     f'{API_PREFIX}/issues/initiatives/{{id:path}}': '/issues/initiatives/{initiative}',
@@ -48,17 +50,38 @@ SCOPED_URLS = {
 }
 
 # Each write a scope lists, as the CLI sends it: the claim holding the issue for the fix agent and
-# its release, the comment saying what landed, then the update that completes the issue and names
-# the job closing it.
+# its release, the comment saying what landed, the update that completes the issue and names the job
+# closing it, and each edit a planning job makes to the queue.
 SCOPED_WRITES = {
-    ('POST', f'{API_PREFIX}/issues/{{id}}/claim'): ('/issues/{issue}/claim', {'claimant': SERVICE, 'minutes': 60}, status.HTTP_200_OK),
-    ('DELETE', f'{API_PREFIX}/issues/{{id}}/claim'): ('/issues/{issue}/claim', None, status.HTTP_200_OK),
-    ('POST', f'{API_PREFIX}/issues/{{id}}/comments'): (
+    (CLAIM, 'POST', f'{API_PREFIX}/issues/{{id}}/claim'): (
+        '/issues/{issue}/claim',
+        {'claimant': SERVICE, 'minutes': 60},
+        status.HTTP_200_OK,
+    ),
+    (CLAIM, 'DELETE', f'{API_PREFIX}/issues/{{id}}/claim'): ('/issues/{issue}/claim', None, status.HTTP_200_OK),
+    (CLOSE, 'POST', f'{API_PREFIX}/issues/{{id}}/comments'): (
         '/issues/{issue}/comments',
         {'body': 'Landed: a merged fix'},
         status.HTTP_201_CREATED,
     ),
-    ('PATCH', f'{API_PREFIX}/issues/{{id}}'): ('/issues/{issue}', {'status': 'completed', 'closed_by': CLOSER}, status.HTTP_200_OK),
+    (CLOSE, 'PATCH', f'{API_PREFIX}/issues/{{id}}'): ('/issues/{issue}', {'status': 'completed', 'closed_by': CLOSER}, status.HTTP_200_OK),
+    (PLAN, 'PATCH', f'{API_PREFIX}/issues/{{id}}'): ('/issues/{issue}', {'priority': 2, 'initiative': '{initiative}'}, status.HTTP_200_OK),
+    (PLAN, 'POST', f'{API_PREFIX}/issues/{{id}}/rank'): ('/issues/{issue}/rank', {'after': '{neighbor}'}, status.HTTP_200_OK),
+    (PLAN, 'POST', f'{API_PREFIX}/issues'): (
+        '/issues',
+        {'title': 'left of the initiative', 'initiative': '{initiative}', 'status': 'triage'},
+        status.HTTP_201_CREATED,
+    ),
+    (PLAN, 'POST', f'{API_PREFIX}/issues/initiatives'): (
+        '/issues/initiatives',
+        {'name': 'grouped by a planning job'},
+        status.HTTP_201_CREATED,
+    ),
+    (PLAN, 'PATCH', f'{API_PREFIX}/issues/initiatives/{{id:path}}'): (
+        '/issues/initiatives/{initiative}',
+        {'status': 'dropped', 'status_reason': 'merged into another'},
+        status.HTTP_200_OK,
+    ),
 }
 
 
@@ -70,17 +93,6 @@ def scoped_routes() -> Iterator[tuple[str, str, str]]:
 
 SCOPED_ROUTES = sorted(scoped_routes())
 
-# How a refusal's list of what each scope reaches begins.
-REACHES = {
-    ISSUES: (
-        f'GET {API_PREFIX}/issues, GET {API_PREFIX}/issues/initiatives, GET {API_PREFIX}/issues/initiatives/{{id:path}}, '
-        f'GET {API_PREFIX}/issues/ready, GET {API_PREFIX}/issues/{{id}}'
-    ),
-    PROJECT_ITEMS: f'GET {API_PREFIX}/project-items, ',
-    CLAIM: f'DELETE {API_PREFIX}/issues/{{id}}/claim, POST {API_PREFIX}/issues/{{id}}/claim',
-    CLOSE: f'PATCH {API_PREFIX}/issues/{{id}}, POST {API_PREFIX}/issues/{{id}}/comments',
-}
-
 
 def scoped(scope: str) -> ScopedClient:
     return ScopedClient(client_id=SERVICE, scopes=frozenset({scope}))
@@ -88,7 +100,7 @@ def scoped(scope: str) -> ScopedClient:
 
 @pytest.fixture
 def as_caller(txn_api):
-    """Seed one item in one project, one issue, and one initiative.
+    """Seed one item in one project, two issues of one priority, and one initiative.
 
     `caller(identity)` sets who the token says is calling and returns the client, and `url(template)`
     fills a template with the seeded rows. The initiative is named, as the CLI names one.
@@ -97,8 +109,9 @@ def as_caller(txn_api):
     project = models.Project(name='scheduler project')
     item = models.ProjectItem(title='scheduler item')
     issue = models.Issue(title='scheduler issue', rank=1.0)
+    neighbor = models.Issue(title='scheduler neighbor', rank=2.0)
     initiative = models.Initiative(name='scheduler-initiative')
-    session.add_all([project, item, issue, initiative])
+    session.add_all([project, item, issue, neighbor, initiative])
     session.flush()
     session.add(models.ProjectItemMembership(item_id=item.id, project_id=project.id))
     session.add(models.ProjectItemTask(item_id=item.id, title='scheduler task'))
@@ -109,7 +122,7 @@ def as_caller(txn_api):
         return client
 
     def url(template):
-        return template.format(item=item.id, project=project.id, issue=issue.number, initiative=initiative.name)
+        return template.format(item=item.id, project=project.id, issue=issue.number, neighbor=neighbor.number, initiative=initiative.name)
 
     return SimpleNamespace(caller=caller, url=url, project=project)
 
@@ -119,7 +132,8 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
     if method == 'GET':
         url, body, expected = SCOPED_URLS[template], None, status.HTTP_200_OK
     else:
-        url, body, expected = SCOPED_WRITES[(method, template)]
+        url, body, expected = SCOPED_WRITES[(scope, method, template)]
+        body = body and {key: as_caller.url(value) if isinstance(value, str) else value for key, value in body.items()}
     response = as_caller.caller(scoped(scope)).request(method, as_caller.url(url), json=body)
     assert response.status_code == expected, show_status_and_response(response)
 
@@ -153,6 +167,8 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         (CLOSE, 'PATCH', '/issues/initiatives/{initiative}'),
         (CLAIM, 'POST', '/issues/ready/claim'),
         (CLAIM, 'PATCH', '/issues/{issue}'),
+        (PLAN, 'DELETE', '/issues/{issue}'),
+        (PLAN, 'DELETE', '/issues/initiatives/{initiative}'),
     ],
     ids=[
         'project-items-write-on-a-scoped-router',
@@ -181,13 +197,16 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         'close-initiative-update',
         'claim-the-queues-head',
         'claim-update',
+        'plan-delete',
+        'plan-initiative-delete',
     ],
 )
 def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
     response = as_caller.caller(scoped(scope)).request(method, as_caller.url(url), json={'title': 'written by a scoped client'})
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
-    assert Refusal.OUTSIDE_CLIENT_SCOPES in response.json()['message']
-    assert f'they reach only {REACHES[scope]}' in response.json()['message']
+    message = response.json()['message']
+    assert Refusal.OUTSIDE_CLIENT_SCOPES in message
+    assert all(f'{method} {template}' in message for method, template in SCOPE_ROUTES[scope])
 
 
 @pytest.mark.parametrize(
@@ -207,21 +226,47 @@ def test_a_scoped_client_beside_a_forged_remote_user_is_refused(as_caller, scope
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
 
 
+ONLY_CLOSES = Refusal.SCOPED_CLIENT_ONLY_CLOSES
+ONLY_PRIORITY_AND_INITIATIVE = Refusal.SCOPED_CLIENT_ONLY_SETS_PRIORITY_AND_INITIATIVE
+
+
 @pytest.mark.parametrize(
-    ('body', 'refused'),
+    ('scopes', 'body', 'refusal', 'refused'),
     [
-        ({'status': 'completed', 'title': 'renamed'}, 'this update also sets title'),
-        ({'priority': 0}, 'this update also sets priority'),
-        ({'status': 'in_progress'}, 'this update sets no closing status'),
-        ({'closed_by': CLOSER}, 'this update sets no closing status'),
+        ({CLOSE}, {'status': 'completed', 'title': 'renamed'}, ONLY_CLOSES, 'title'),
+        ({CLOSE}, {'priority': 0}, ONLY_CLOSES, 'priority'),
+        ({CLOSE}, {'status': 'in_progress'}, ONLY_CLOSES, 'status'),
+        ({PLAN}, {'status': 'completed'}, ONLY_PRIORITY_AND_INITIATIVE, 'status'),
+        ({PLAN, CLOSE}, {'title': 'renamed'}, ONLY_PRIORITY_AND_INITIATIVE, 'title'),
+        ({PLAN, CLOSE}, {'status': 'completed', 'priority': 2}, ONLY_CLOSES, 'priority'),
     ],
-    ids=['an-edit-beside-a-close', 'an-edit-alone', 'a-status-that-keeps-it-open', 'a-closer-alone'],
+    ids=[
+        'close-an-edit-beside-a-close',
+        'close-an-edit-alone',
+        'close-a-status-that-keeps-it-open',
+        'plan-a-close',
+        'both-a-title',
+        'both-an-edit-beside-a-close',
+    ],
 )
-def test_the_close_scope_closes_an_issue_and_edits_nothing(as_caller, body, refused):
-    response = as_caller.caller(scoped(CLOSE)).patch(as_caller.url('/issues/{issue}'), json=body)
+def test_a_scoped_update_is_a_close_or_sets_only_priority_and_initiative(as_caller, scopes, body, refusal, refused):
+    client = as_caller.caller(ScopedClient(client_id=SERVICE, scopes=frozenset(scopes)))
+    response = client.patch(as_caller.url('/issues/{issue}'), json=body)
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
-    assert Refusal.SCOPED_CLIENT_ONLY_CLOSES in response.json()['message']
+    assert refusal in response.json()['message']
     assert refused in response.json()['message']
+
+
+@pytest.mark.parametrize(
+    'body',
+    [{'title': 'ready on its own'}, {'title': 'holds its parent back', 'status': 'triage', 'parent': '{issue}'}],
+    ids=['an-open-filing', 'a-filing-under-a-parent'],
+)
+def test_a_scoped_filing_goes_into_triage_under_no_parent(as_caller, body):
+    body = {key: as_caller.url(value) for key, value in body.items()}
+    response = as_caller.caller(scoped(PLAN)).post(as_caller.url('/issues'), json=body)
+    assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
+    assert Refusal.SCOPED_CLIENT_FILES_ONLY_INTO_TRIAGE in response.json()['message']
 
 
 def test_the_close_scope_signs_with_its_client_id_and_closes_an_issue_once(as_caller):
@@ -233,7 +278,8 @@ def test_the_close_scope_signs_with_its_client_id_and_closes_an_issue_once(as_ca
 
     moved = client.patch(url, json={'status': 'canceled'})
     assert moved.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(moved)
-    assert 'is already completed' in moved.json()['message']
+    assert Refusal.SCOPED_CLIENT_ONLY_CLOSES in moved.json()['message']
+    assert 'completed' in moved.json()['message']
 
 
 def test_the_claim_scope_holds_an_issue_under_its_own_id_and_frees_only_that(as_caller):
