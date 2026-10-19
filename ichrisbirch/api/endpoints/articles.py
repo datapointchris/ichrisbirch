@@ -21,6 +21,7 @@ from ichrisbirch.ai.assistants.anthropic import AnthropicAssistant
 from ichrisbirch.api.article_import_worker import enqueue_bulk_import
 from ichrisbirch.api.article_import_worker import get_batch_status
 from ichrisbirch.api.endpoints.auth import DbSession
+from ichrisbirch.api.endpoints.auth import get_current_user
 from ichrisbirch.api.exceptions import FailedDependencyException
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.api.time_window import TimeWindowQuery
@@ -151,12 +152,12 @@ async def create_from_url(
 
 
 @router.post('/bulk-import', status_code=status.HTTP_202_ACCEPTED)
-def bulk_import(body: schemas.ArticleBulkImport, request: Request):
+def bulk_import(body: schemas.ArticleBulkImport, request: Request, user: models.User = Depends(get_current_user)):
     """Enqueue URLs for bulk import. Returns batch_id for status polling."""
     if not body.urls:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No URLs provided')
     redis_client = request.app.state.redis_client
-    batch_id = enqueue_bulk_import(redis_client, body.urls, body.notes)
+    batch_id = enqueue_bulk_import(redis_client, body.urls, body.notes, actor=user.email)
     return {'batch_id': batch_id, 'total': len(body.urls), 'status': 'queued'}
 
 

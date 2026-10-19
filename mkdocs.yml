@@ -127,6 +127,7 @@ nav:
       - Dependency Reach: dependency-reach.md
       - Logging: logging-configuration.md
       - Admin Dashboard: admin.md
+      - Audit Trail: icb-audit-trail.md
       - Database: alembic.md
       - Scheduler: scheduler.md
       - Tasks: tasks.md

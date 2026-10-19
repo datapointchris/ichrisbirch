@@ -206,7 +206,7 @@ class User(Base):
     alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
     name: Mapped[str] = mapped_column(Text, unique=False, nullable=False)
     email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(Text, primary_key=False, unique=False, nullable=False)
+    password: Mapped[str] = mapped_column(Text, primary_key=False, unique=False, nullable=False, info={'record_changes': False})
     is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
     created_on: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
     last_login: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))

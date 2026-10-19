@@ -22,6 +22,7 @@ from ichrisbirch.api.oidc_auth import get_oidc_identity
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.session import get_sqlalchemy_session
+from ichrisbirch.models.record_change import bind_actor
 
 logger = structlog.get_logger()
 
@@ -54,9 +55,13 @@ def validate_user_id(user_id: str, session: Session) -> models.User | None:
 
 def get_scoped_client(
     identity: Annotated[OIDCIdentity | ScopedClient | None, Depends(get_oidc_identity)],
+    session: Annotated[Session, Depends(get_sqlalchemy_session)],
 ) -> ScopedClient | None:
-    """The verified `icb-svc-` caller, or None for any other request."""
-    return identity if isinstance(identity, ScopedClient) else None
+    """The verified `icb-svc-` caller, or None for any other request. Its writes record its client id."""
+    if not isinstance(identity, ScopedClient):
+        return None
+    bind_actor(session, identity.client_id)
+    return identity
 
 
 def authenticate_with_oidc_bearer(
@@ -191,7 +196,9 @@ def authenticated_user(
         logger.debug('auth_method_app_headers')
     if not (user_id := oidc_user_id or authelia_user_id or app_headers):
         return None
-    return validate_user_id(user_id, session)
+    if user := validate_user_id(user_id, session):
+        bind_actor(session, user.email)
+    return user
 
 
 def refuse_scoped_client(client: ScopedClient | None) -> None:

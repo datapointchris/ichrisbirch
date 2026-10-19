@@ -16,7 +16,7 @@ class SchedulerJobRun(Base):
     """Tracks execution history for APScheduler jobs."""
 
     __tablename__ = 'scheduler_job_runs'
-    __table_args__ = {'schema': 'admin'}
+    __table_args__ = {'schema': 'admin', 'info': {'record_changes': False}}
 
     id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
     job_id: Mapped[str] = mapped_column(Text, nullable=False, index=True)

@@ -9,6 +9,7 @@ import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
+from fastapi import Query
 from fastapi import Request
 from fastapi import status
 from sqlalchemy import select
@@ -23,11 +24,13 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.endpoints.auth import get_admin_user
 from ichrisbirch.api.middleware import recent_errors
 from ichrisbirch.api.redis_client import get_redis_client
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
 from ichrisbirch.scheduler.main import get_jobstore
 from ichrisbirch.services.row_limit import CappedRowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -122,6 +125,28 @@ def get_scheduler_history(
     query = select(models.SchedulerJobRun).order_by(models.SchedulerJobRun.started_at.desc())
     if job_id:
         query = query.where(models.SchedulerJobRun.job_id == job_id)
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.get('/record-changes', response_model=list[schemas.RecordChange])
+def read_record_changes(
+    session: DbSession,
+    window: TimeWindowQuery,
+    table_name: str | None = Query(None, description="A table's full name, schema included where it has one: issues, coffee.coffee_shops"),
+    record_id: str | None = Query(None, description="The row's primary key as text"),
+    actor: str | None = Query(None, description="Who made the write: a user's email, a service client's id, or scheduler/<job_name>"),
+    limit: CappedRowLimit = 100,
+):
+    """Writes to any table, newest first, each naming who made it."""
+    query = select(models.RecordChange).order_by(models.RecordChange.changed_at.desc(), models.RecordChange.id.desc())
+    for column, value in (
+        (models.RecordChange.table_name, table_name),
+        (models.RecordChange.record_id, record_id),
+        (models.RecordChange.actor, actor),
+    ):
+        if value is not None:
+            query = query.where(column == value)
+    query = apply_time_window(query, models.RecordChange.changed_at, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

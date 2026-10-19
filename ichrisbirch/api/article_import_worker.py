@@ -1,7 +1,7 @@
 """Background worker for bulk article imports via Redis queue.
 
 Queue item format (JSON string in Redis list):
-    {"batch_id": "...", "url": "...", "notes": "...", "attempt": 1}
+    {"batch_id": "...", "url": "...", "notes": "...", "attempt": 1, "actor": "...", "request_id": "..."}
 
 Batch status (Redis hash at article_import:batch:{batch_id}):
     status, total, processed, succeeded, failed_count, errors (JSON), results (JSON),
@@ -27,6 +27,7 @@ import structlog
 from ichrisbirch.ai.assistants.anthropic import AssistantUsageLimitReached
 from ichrisbirch.config import Settings
 from ichrisbirch.database.session import create_session
+from ichrisbirch.models.record_change import bind_actor
 from ichrisbirch.services.article_creation import ArticleAlreadyExists
 from ichrisbirch.services.article_creation import summarize_and_create_article
 from ichrisbirch.services.outbound_http import PageStatusError
@@ -62,10 +63,14 @@ def worth_retrying(error: Exception) -> bool:
     return not (isinstance(error, PageStatusError) and error.status_code < 500)
 
 
-def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: dict[str, str] | None = None) -> str:
-    """Enqueue URLs for bulk import. Returns batch_id."""
+def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: dict[str, str] | None = None, *, actor: str) -> str:
+    """Enqueue URLs for bulk import. Returns batch_id.
+
+    Each item carries `actor` and the request's id, so the worker's writes are audited under them.
+    """
     batch_id = str(uuid.uuid4())
     notes_map = notes_map or {}
+    request_id = structlog.contextvars.get_contextvars().get('request_id')
 
     pipeline = redis_client.pipeline()
     for url in urls:
@@ -75,6 +80,8 @@ def enqueue_bulk_import(redis_client: redis.Redis, urls: list[str], notes_map: d
                 'url': clean_url(url.strip()),
                 'notes': notes_map.get(url),
                 'attempt': 1,
+                'actor': actor,
+                'request_id': request_id,
             }
         )
         pipeline.rpush(QUEUE_KEY, item)
@@ -174,7 +181,9 @@ class ArticleImportWorker:
             logger.warning('article_import_batch_missing', batch_id=batch_id, url=url)
 
         try:
-            with create_session(self.settings) as session:
+            with structlog.contextvars.bound_contextvars(request_id=item.get('request_id')), create_session(self.settings) as session:
+                if actor := item.get('actor'):
+                    bind_actor(session, actor)
                 article = asyncio.run(summarize_and_create_article(url, notes, session, self.settings))
                 self._record_success(batch_key, url, article.title)
         except AssistantUsageLimitReached as e:
@@ -185,14 +194,7 @@ class ArticleImportWorker:
 
             if attempt < MAX_ATTEMPTS and worth_retrying(e):
                 # Re-queue with incremented attempt
-                retry_item = json.dumps(
-                    {
-                        'batch_id': batch_id,
-                        'url': url,
-                        'notes': notes,
-                        'attempt': attempt + 1,
-                    }
-                )
+                retry_item = json.dumps(item | {'attempt': attempt + 1})
                 self.redis_client.rpush(QUEUE_KEY, retry_item)
             else:
                 self._record_failure(batch_key, url, error_msg)
