@@ -40,6 +40,7 @@ const (
 	issuesScope       = "icb.issues.read"
 	issuesClaimScope  = "icb.issues.claim"
 	issuesCloseScope  = "icb.issues.close"
+	issuesPlanScope   = "icb.issues.plan"
 )
 
 // ClientSecretEnv selects the client-credentials grant, for the client the
@@ -164,5 +165,5 @@ func IsService() bool { return ClientSecret() != "" }
 // grant. Nothing it obtains is stored, so it names no keyring or state
 // directory.
 func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope, issuesClaimScope, issuesCloseScope}}
+	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope, issuesClaimScope, issuesCloseScope, issuesPlanScope}}
 }
