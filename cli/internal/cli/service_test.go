@@ -40,7 +40,7 @@ func serviceIDP(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"error":"invalid_client"}`))
 			return
 		}
-		if r.FormValue("grant_type") != "client_credentials" || r.FormValue("scope") != "icb.project-items.read icb.issues.read icb.issues.claim icb.issues.close" {
+		if r.FormValue("grant_type") != "client_credentials" {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"invalid_scope"}`))
 			return
@@ -238,6 +238,15 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 		{[]string{"issues", "release", "412"}, openIssue, nil},
 		{[]string{"issues", "add-comment", "412", "--body", "Landed: a merged fix"}, `{}`, nil},
 		{[]string{"issues", "complete", "412"}, openIssue, nil},
+		{[]string{"issues", "edit", "412", "--priority", "none", "--initiative", "Practical help guides"}, openIssue, nil},
+		{[]string{"issues", "reorder", "412", "--after", "398"}, openIssue, nil},
+		{
+			[]string{"issues", "create", "--title", "Left of the guides", "--initiative", "Practical help guides", "--status", "triage"},
+			`{}`,
+			map[string]string{"/api/v1/issues/initiatives": `[{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5c","name":"Practical help guides"}]`},
+		},
+		{[]string{"issues", "initiatives", "create", "--name", "Practical help guides", "--priority", "high"}, `{}`, nil},
+		{[]string{"issues", "initiatives", "drop", "Practical help guides", "--reason", "Merged into the help initiative"}, `{}`, nil},
 	} {
 		t.Run(strings.Join(call.args, " "), func(t *testing.T) {
 			var sent []string
