@@ -134,7 +134,7 @@ def read_record_changes(
     window: TimeWindowQuery,
     table_name: str | None = Query(None, description="A table's full name, schema included where it has one: issues, coffee.coffee_shops"),
     record_id: str | None = Query(None, description="The row's primary key as text"),
-    actor: str | None = Query(None, description="A user's email or a service client's id"),
+    actor: str | None = Query(None, description="Who made the write: a user's email, a service client's id, or scheduler/<job_name>"),
     limit: CappedRowLimit = 100,
 ):
     """Writes to any table, newest first, each naming who made it."""

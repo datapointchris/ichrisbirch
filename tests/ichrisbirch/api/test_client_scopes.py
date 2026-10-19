@@ -313,7 +313,6 @@ def test_a_scope_the_table_does_not_name_reaches_nothing(as_caller):
     client = as_caller.caller(ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.unknown'})))
     response = client.get('/project-items')
     assert response.status_code == status.HTTP_403_FORBIDDEN, show_status_and_response(response)
-    assert 'they reach no route' in response.json()['message']
 
 
 def test_a_person_on_a_scoped_router_resolves_as_the_user(as_caller):

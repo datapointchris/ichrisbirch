@@ -665,7 +665,9 @@ class TestBulkImportUsageLimit:
         return json.loads(item_json)
 
     def test_the_refused_item_goes_back_first_and_the_queue_pauses_until_the_reset(self, test_redis):
-        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/first', 'https://example.com/second'])
+        batch_id = enqueue_bulk_import(
+            test_redis, ['https://example.com/first', 'https://example.com/second'], actor='importer@example.com'
+        )
         worker = ArticleImportWorker(test_redis, get_settings())
         item = self.take_first_item(test_redis)
         resets_at = dt.datetime.now(dt.UTC) + dt.timedelta(hours=2)
@@ -683,7 +685,7 @@ class TestBulkImportUsageLimit:
         assert test_redis.hget(batch_key, 'failed_count') == '0', 'a refused call is not a failed import'
 
     def test_a_limit_with_no_reset_time_holds_the_queue_for_the_recheck_interval(self, test_redis):
-        enqueue_bulk_import(test_redis, ['https://example.com/only'])
+        enqueue_bulk_import(test_redis, ['https://example.com/only'], actor='importer@example.com')
         worker = ArticleImportWorker(test_redis, get_settings())
         item = self.take_first_item(test_redis)
 
@@ -697,7 +699,7 @@ class TestBulkImportUsageLimit:
         """A weekly limit can hold the queue for days, longer than a completed batch's status is kept."""
         pause_seconds = 3 * BATCH_TTL
         test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(seconds=pause_seconds)).isoformat(), ex=pause_seconds)
-        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/late'])
+        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/late'], actor='importer@example.com')
         batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
         assert test_redis.ttl(batch_key) == -1, 'the batch would expire while its URL still waits'
 
@@ -711,7 +713,7 @@ class TestBulkImportUsageLimit:
 
     def test_an_item_whose_batch_is_gone_is_imported_without_recreating_the_batch(self, test_redis):
         """A write to a missing hash creates one with no total, which reads as completed and fails every status read."""
-        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/orphan'])
+        batch_id = enqueue_bulk_import(test_redis, ['https://example.com/orphan'], actor='importer@example.com')
         batch_key = f'{BATCH_KEY_PREFIX}{batch_id}'
         item = self.take_first_item(test_redis)
         test_redis.delete(batch_key)
@@ -725,7 +727,7 @@ class TestBulkImportUsageLimit:
 
     def test_a_paused_worker_takes_nothing_from_the_queue(self, test_redis):
         """A pause in Redis holds every worker, including one started after the limit was hit."""
-        enqueue_bulk_import(test_redis, ['https://example.com/waiting'])
+        enqueue_bulk_import(test_redis, ['https://example.com/waiting'], actor='importer@example.com')
         test_redis.set(PAUSE_KEY, (dt.datetime.now(dt.UTC) + dt.timedelta(minutes=1)).isoformat(), ex=60)
         worker = ArticleImportWorker(test_redis, get_settings())
 
