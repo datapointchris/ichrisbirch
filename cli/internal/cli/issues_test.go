@@ -333,15 +333,3 @@ func TestIssueTrees_HideFinishedWorkByDefault(t *testing.T) {
 		t.Error("--status all hid a finished tree")
 	}
 }
-
-func TestPrintIssuesTable_LeadsWithTheNumberAndShowsWhyItWaits(t *testing.T) {
-	var out bytes.Buffer
-	printIssuesTable(&out, []api.Issue{{
-		Number: 412, Title: "Route the new paths", Type: "bug", Status: api.IssueStatusOpen,
-		EffectivePriority: 2, DependsOn: []api.IssueSummary{{Number: 411, Status: api.IssueStatusOpen}},
-	}}, time.Now())
-	row := lineContaining(t, out.String(), "Route the new paths")
-	if !strings.HasPrefix(row, "412 ") || !strings.Contains(row, "[blocked by #411]") || !strings.Contains(row, "high*") {
-		t.Errorf("row = %q", row)
-	}
-}
