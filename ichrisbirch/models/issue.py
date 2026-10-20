@@ -68,7 +68,7 @@ class Initiative(Base):
 
     __tablename__ = 'initiatives'
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
-    # Drawn from the sequence issues and projects share, so a bare number names one thing.
+    # Drawn from `item_numbers`, so a bare number names one row across every table that draws from it.
     number: Mapped[int] = mapped_column(
         BigInteger, ITEM_NUMBER_SEQUENCE, server_default=ITEM_NUMBER_SEQUENCE.next_value(), nullable=False, unique=True
     )

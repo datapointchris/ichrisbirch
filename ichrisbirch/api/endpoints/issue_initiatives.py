@@ -24,6 +24,7 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.models.issue import CLOSED_ISSUE_STATUSES
 from ichrisbirch.models.issue import TERMINAL_INITIATIVE_STATUSES
 from ichrisbirch.services.issue_readiness import NO_PRIORITY_URGENCY
+from ichrisbirch.services.issue_refs import item_number
 from ichrisbirch.services.issue_refs import resolve_initiative
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
@@ -37,7 +38,7 @@ InitiativeSort = Literal['priority', 'open', 'newest']
 
 
 def path_initiative(id: str, session: DbSession) -> models.Initiative:
-    """Resolve the `{id}` segment, which is a UUID or the initiative's name.
+    """Resolve the `{id}` segment through `resolve_initiative`, which names the forms it accepts.
 
     The segment is a path, not a single segment, because a name may hold a
     slash: the client escapes it, and the path is decoded before routing.
@@ -63,6 +64,15 @@ def require_reason_when_dropped(initiative_status: str, reason: str | None) -> N
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail='Dropping an initiative requires a reason. Say why it is dropped.',
+        )
+
+
+def refuse_number_shaped_name(name: str) -> None:
+    """A name that reads as `N` or `#N` would resolve to the initiative holding that number."""
+    if (number := item_number(name)) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'{name!r} reads as the number {number}, so it cannot name an initiative. Name it in words.',
         )
 
 
@@ -166,6 +176,7 @@ def read_many(
 
 @router.post('', response_model=schemas.Initiative, status_code=status.HTTP_201_CREATED)
 def create(initiative: schemas.InitiativeCreate, session: DbSession):
+    refuse_number_shaped_name(initiative.name)
     validate_status(initiative.status, session)
     require_reason_when_dropped(initiative.status, initiative.status_reason)
     if initiative.status == 'active':
@@ -217,6 +228,8 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
 @router.patch('/{id:path}', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
+    if 'name' in update_data:
+        refuse_number_shaped_name(update_data['name'])
     resulting_status = update_data.get('status', initiative.status)
     resulting_name = update_data.get('name', initiative.name)
     if resulting_status == 'active' and (resulting_name != initiative.name or initiative.status != 'active'):
