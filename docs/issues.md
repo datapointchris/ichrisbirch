@@ -24,6 +24,7 @@ An issue is ready when all of these hold:
 - its not-before day, `deferred_until_date`, has arrived in the reader's calendar
 - every issue it depends on is closed
 - it has no open children
+- its initiative, if it has one, is not `someday`
 
 Every input to that test changes somewhere else. A blocker closes, a claim
 expires, a day arrives, a child closes. A stored flag would be wrong the
@@ -44,6 +45,17 @@ lens.
 
 The other types are `bug`, `feature`, `task` and `chore`. They differ only in
 what they say about the work, and `task` is the default.
+
+## A someday initiative holds ideas, so none of its issues is ready
+
+An initiative is `someday` when it is an idea not yet taken on. Its issues are
+captured in full, but the ready queue leaves every one of them out, so no agent
+takes work nobody chose. Reopening the initiative makes them ready. Moving one
+issue into an active initiative takes that one alone.
+
+`someday` is neither active nor terminal, as it is for projects. It lends no
+priority, and like a closed initiative it gives up its name, so an active one
+may take it.
 
 ## Triage holds what nobody has accepted yet
 
@@ -120,7 +132,7 @@ leaves out. Extending a claim already held skips the conditions.
 A refused claim answers 409 naming why. For a held issue the refusal names who
 holds it and until when, so the refused agent can tell whether to wait or move
 on. Otherwise it names the triage or closed status, the open dependencies, the
-open children or the deferral day.
+open children, the deferral day or the someday initiative.
 
 ## Nothing closes an issue for its age
 

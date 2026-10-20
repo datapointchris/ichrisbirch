@@ -31,10 +31,10 @@ issues toward one outcome. Issue numbers come from the sequence project items
 use, so a bare `#812` names one row in either store.
 
 `icb issues next` is the ready queue. An issue is ready when it is open or its
-claim has expired, its deferral day has arrived, and every dependency and child
-is closed. The queue leaves decisions out, because they wait on a person rather
-than an agent. `next --type decision` lists them. The queue orders by effective
-priority, then rank. A blocker inherits the most urgent priority of what it
+claim has expired, its deferral day has arrived, every dependency and child
+is closed, and its initiative is not someday. The queue leaves decisions out,
+because they wait on a person rather than an agent. `next --type decision`
+lists them. The queue orders by effective priority, then rank. A blocker inherits the most urgent priority of what it
 blocks, so a `none` issue gating an urgent bug prints as `urgent*`. The star
 marks a priority the issue did not set.
 

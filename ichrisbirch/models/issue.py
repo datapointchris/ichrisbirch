@@ -32,7 +32,9 @@ CLOSED_ISSUE_STATUSES = ['completed', 'canceled']
 # a person, so the ready queue an agent reads leaves it out.
 ISSUE_TYPES = ['bug', 'feature', 'task', 'chore', 'decision']
 
-INITIATIVE_STATUSES = ['active', 'completed', 'dropped']
+# `someday` holds ideas not yet taken on: none of its issues is ready until the
+# initiative is active, and it lends no priority.
+INITIATIVE_STATUSES = ['active', 'someday', 'completed', 'dropped']
 TERMINAL_INITIATIVE_STATUSES = ['completed', 'dropped']
 
 # Linear's scale. 0 is the absence of a priority and sorts after every level, so

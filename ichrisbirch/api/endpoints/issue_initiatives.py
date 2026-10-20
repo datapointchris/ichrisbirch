@@ -176,7 +176,10 @@ def read_one(initiative: InitiativeFromPath, session: DbSession):
 
 
 def apply_status_transition(initiative: models.Initiative, update_data: dict, session: Session) -> None:
-    """Stamp `closed_ts` on the move into a terminal status, and clear it and the reason on reopen."""
+    """Stamp `closed_ts` on the move into a terminal status, and clear it and the reason on any other move.
+
+    `someday` is open work set aside, so it clears them as `active` does.
+    """
     new_status = update_data.get('status')
     reason = update_data.get('status_reason', initiative.status_reason)
     if new_status is None:
@@ -184,7 +187,7 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
         return
     validate_status(new_status, session)
     require_reason_when_dropped(new_status, reason)
-    if new_status == 'active':
+    if new_status not in TERMINAL_INITIATIVE_STATUSES:
         update_data['status_reason'] = None
         update_data['closed_ts'] = None
     elif new_status != initiative.status:

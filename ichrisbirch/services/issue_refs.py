@@ -55,7 +55,7 @@ def resolve_issue(session: Session, ref: str | UUID | int) -> models.Issue:
 
 
 def initiative_by_name(session: Session, name: str) -> models.Initiative | None:
-    """The active initiative holding the name, else a lone closed one, else ambiguity named."""
+    """The active initiative holding the name, else a lone inactive one, else ambiguity named."""
     matches = session.scalars(select(models.Initiative).where(models.Initiative.name == name)).all()
     active = [initiative for initiative in matches if initiative.status == 'active']
     if active:
@@ -66,7 +66,7 @@ def initiative_by_name(session: Session, name: str) -> models.Initiative | None:
         candidates = ', '.join(f'{initiative.id} ({initiative.status})' for initiative in sorted(matches, key=lambda i: i.status))
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f'{name!r} names {len(matches)} closed initiatives and no active one. Use an id: {candidates}',
+            detail=f'{name!r} names {len(matches)} initiatives and no active one. Use an id: {candidates}',
         )
     return None
 

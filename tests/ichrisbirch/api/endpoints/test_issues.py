@@ -208,6 +208,17 @@ class TestReadyQueue:
         assert updated['effective_priority'] == 2
         assert updated['initiative']['name'] == 'Ship the issue tracker'
 
+    def test_a_someday_initiatives_issues_wait_until_it_is_reopened(self, client):
+        task = issue(client, 'Ready task without priority')
+        ok(patch(client, task['number'], initiative='Ship the issue tracker'))
+        ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'status': 'someday'}))
+        assert task['title'] not in titles(ok(client.get(f'{ISSUES}/ready')))
+        detail = refused(client.post(f'{ISSUES}/{task["number"]}/claim', json={'claimant': 'agent'}), 409)
+        assert 'Ship the issue tracker' in detail
+
+        ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'status': 'active'}))
+        assert task['title'] in titles(ok(client.get(f'{ISSUES}/ready')))
+
     def test_a_child_without_priority_takes_its_parent(self, client):
         bug = issue(client, 'Ready bug with high priority')
         child = create(client, parent=bug['number'])

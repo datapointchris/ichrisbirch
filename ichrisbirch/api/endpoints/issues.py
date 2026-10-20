@@ -643,6 +643,8 @@ def unready_reasons(issue: models.Issue, readiness: IssueReadiness) -> list[str]
         reasons.append(f'#{issue.number} waits on its open children: {numbered(children)}.')
     if issue.id in readiness.deferred:
         reasons.append(f'#{issue.number} is deferred until {issue.deferred_until_date}.')
+    if issue.initiative is not None and issue.initiative.status == 'someday':
+        reasons.append(f'#{issue.number} is in the someday initiative {issue.initiative.name!r}. Reopen the initiative to take its issues.')
     return reasons
 
 

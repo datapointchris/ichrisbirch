@@ -26,6 +26,7 @@ INITIATIVE_DATA = [
     ('Issue tracker', 'Track software work apart from personal projects', 'active', None, 2),
     ('Shared toolchain rollout', 'Every repo on one generated lint and test toolchain', 'active', None, 3),
     ('Docs site refresh', 'One index per repo, every page reachable from it', 'active', None, 0),
+    ('Usage metrics', 'Record every reading the app can take, then keep what proves useful', 'someday', None, 3),
     ('Monorepo experiment', 'Fold the CLIs into one module', 'dropped', 'Release cadence differs per tool', 0),
     ('Secrets on SOPS', 'Move every secret to SOPS and age', 'completed', None, 0),
 ]

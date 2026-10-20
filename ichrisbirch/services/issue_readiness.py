@@ -10,6 +10,8 @@ An issue is ready when all of these hold:
 - its deferral day, if any, has arrived in the reader's calendar
 - every issue it depends on is closed
 - it has no open children, since a parent is finished by its children
+- its initiative, if it has one, is not `someday`, which holds ideas not yet
+  taken on
 
 Order is effective priority, then rank, then number. An issue's own priority wins.
 With none, it takes its open parent's effective priority, else its active
@@ -80,6 +82,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
             select(models.Initiative.id, models.Initiative.priority).where(models.Initiative.status == 'active')
         ).all()
     }
+    someday_initiatives = set(session.scalars(select(models.Initiative.id).where(models.Initiative.status == 'someday')).all())
     edges = session.execute(select(models.IssueDependency.issue_id, models.IssueDependency.depends_on_id)).all()
 
     unclosed = {issue_id for issue_id, row in rows.items() if row.status not in CLOSED_ISSUE_STATUSES}
@@ -139,7 +142,13 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         takeable = row.status == 'open' or (
             row.status == 'in_progress' and row.claim_expires_ts is not None and row.claim_expires_ts <= now
         )
-        if takeable and issue_id not in deferred and issue_id not in blocked and not open_child_count.get(issue_id):
+        if (
+            takeable
+            and issue_id not in deferred
+            and issue_id not in blocked
+            and not open_child_count.get(issue_id)
+            and row.initiative_id not in someday_initiatives
+        ):
             ready.add(issue_id)
 
     return IssueReadiness(

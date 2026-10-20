@@ -23,7 +23,9 @@ func newIssueInitiativesCommand() *cobra.Command {
 		Short: "Group the issues that ship one outcome",
 		Long: "An initiative is an outcome that finishes. Most issues belong to none. An\n" +
 			"issue with no priority of its own takes its active initiative's. A finished\n" +
-			"initiative takes no new issues and leaves the ones it holds as they are.",
+			"initiative takes no new issues and leaves the ones it holds as they are. A\n" +
+			"someday initiative is an idea not yet taken on, and none of its issues is\n" +
+			"ready until it is reopened.",
 	})
 	goclikit.WithRecoveryHints(cmd, initiativeHints...)
 	splitReadingFromChanging(cmd)
@@ -36,6 +38,7 @@ func newIssueInitiativesCommand() *cobra.Command {
 		newInitiativesEditCommand(),
 		newInitiativesCompleteCommand(),
 		newInitiativesDropCommand(),
+		newInitiativesShelveCommand(),
 		newInitiativesReopenCommand(),
 		newInitiativesDeleteCommand(),
 	)...)
@@ -51,9 +54,10 @@ func newInitiativesListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List the active initiatives in the order to work them",
-		Long: "Active initiatives by priority, then position. Completed and dropped ones are\n" +
-			"hidden until --status asks for them, and come after, latest first.",
-		Example: "  icb issues initiatives list\n  icb issues initiatives list --status all --json",
+		Long: "Active initiatives by priority, then position. Someday, completed and dropped\n" +
+			"ones are hidden until --status asks for them. Finished ones come last, latest\n" +
+			"first.",
+		Example: "  icb issues initiatives list\n  icb issues initiatives list --status someday\n  icb issues initiatives list --status all --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.InitiativeStatuses, initiativeStatus) {
@@ -188,7 +192,7 @@ func newInitiativesEditCommand() *cobra.Command {
 		Use:   "edit <initiative> [flags]",
 		Short: "Change an initiative's fields",
 		Long: "Update only the fields whose flags you pass. --description \"\" clears it.\n" +
-			"Status moves through complete, drop and reopen.",
+			"Status moves through complete, drop, shelve and reopen.",
 		Example: "  icb issues initiatives edit \"Ship the tracker\" --priority urgent",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -285,11 +289,32 @@ func newInitiativesDropCommand() *cobra.Command {
 	return cmd
 }
 
+func newInitiativesShelveCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "shelve <initiative>",
+		Short: "Set an initiative aside for someday, so none of its issues is ready",
+		Long: "For an idea captured in full but not taken on. It moves to --status someday,\n" +
+			"out of the active list, and no close is recorded. Its issues keep their\n" +
+			"state, but `icb issues next` leaves every one out, so no agent takes them.\n" +
+			"It lends no priority, and gives up its name, so a new initiative may take\n" +
+			"it. `icb issues initiatives reopen` makes its issues ready again.",
+		Example: "  icb issues initiatives shelve \"Measure everything\"",
+		Args:    cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			someday := "someday"
+			return runInitiativeUpdate(cmd, args[0], api.InitiativeUpdateInput{Status: &someday}, nil, asJSON, "Shelved")
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the initiative as JSON to stdout")
+	return cmd
+}
+
 func newInitiativesReopenCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
 		Use:     "reopen <initiative>",
-		Short:   "Return a finished initiative to the active list",
+		Short:   "Return a shelved or finished initiative to the active list",
 		Long:    "Refused if an active initiative has taken the name in the meantime.",
 		Example: "  icb issues initiatives reopen \"Ship the tracker\"",
 		Args:    cobra.ExactArgs(1),

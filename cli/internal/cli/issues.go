@@ -52,11 +52,11 @@ func newIssuesCommand() *cobra.Command {
 			"the issues that ship together. Personal projects stay in `icb projects`.\n" +
 			"\n" +
 			"An issue is ready when it is open or its claim has run out, everything it\n" +
-			"depends on is closed, its deferral day has come, and none of its children is\n" +
-			"still open. `next` lists the ready issues in the order to take them: priority\n" +
-			"first, then rank. A blocker takes the most urgent priority of what it blocks,\n" +
-			"and an issue with no priority of its own takes its parent's or its\n" +
-			"initiative's.\n" +
+			"depends on is closed, its deferral day has come, none of its children is\n" +
+			"still open, and its initiative is not someday. `next` lists the ready issues\n" +
+			"in the order to take them: priority first, then rank. A blocker takes the\n" +
+			"most urgent priority of what it blocks, and an issue with no priority of its\n" +
+			"own takes its parent's or its initiative's.\n" +
 			"\n" +
 			"Working an issue starts with a claim and ends with a close. Before the\n" +
 			"first edit, `claim <issue>` takes it, or `claim` alone takes the head of\n" +

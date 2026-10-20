@@ -38,7 +38,7 @@ var IssueTypes = []string{"bug", "feature", "task", "chore", IssueTypeDecision}
 var IssuePriorityNames = []string{"none", "urgent", "high", "medium", "low"}
 
 // InitiativeStatuses is what an initiative's --status accepts.
-var InitiativeStatuses = []string{"active", "completed", "dropped", "all"}
+var InitiativeStatuses = []string{"active", "someday", "completed", "dropped", "all"}
 
 // IssueSummary is enough of another issue to print it beside this one.
 type IssueSummary struct {

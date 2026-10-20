@@ -600,8 +600,9 @@ func newIssuesClaimCommand() *cobra.Command {
 			"\n" +
 			"Naming an issue takes that one, a decision included. It is refused while\n" +
 			"someone else holds it, while it is in triage or closed, while it waits on an\n" +
-			"open dependency or an open child, and before its deferral day. The refusal\n" +
-			"names which. Claiming one you already hold extends the claim.\n" +
+			"open dependency or an open child, before its deferral day, and while its\n" +
+			"initiative is someday. The refusal names which. Claiming one you already\n" +
+			"hold extends the claim.\n" +
 			"\n" +
 			"A claim sets the issue in progress for --minutes. One that runs out returns\n" +
 			"the issue to the queue. `complete` lets go of it, and `release` hands it back\n" +
