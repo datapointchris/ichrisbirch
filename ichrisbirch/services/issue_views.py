@@ -84,7 +84,9 @@ def issue_view(issue: models.Issue, readiness: IssueReadiness, comments: dict[UU
         claim_expires_ts=issue.claim_expires_ts,
         initiative=None
         if initiative is None
-        else schemas.InitiativeSummary(id=initiative.id, name=initiative.name, status=initiative.status, priority=initiative.priority),
+        else schemas.InitiativeSummary(
+            id=initiative.id, number=initiative.number, name=initiative.name, status=initiative.status, priority=initiative.priority
+        ),
         parent=summary(issue.parent),
         discovered_from=summary(issue.discovered_from),
         duplicate_of=summary(issue.duplicate_of),

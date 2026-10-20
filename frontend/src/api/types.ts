@@ -1274,6 +1274,7 @@ export interface IssueSummary {
 
 export interface InitiativeSummary {
   id: string
+  number: number
   name: string
   status: InitiativeStatus
   priority: number
@@ -1418,14 +1419,16 @@ export interface IssueVocabulary {
   labels: IssueLabel[]
 }
 
-export type InitiativeStatus = 'active' | 'completed' | 'dropped'
+export type InitiativeStatus = 'active' | 'someday' | 'completed' | 'dropped'
 
 /**
  * `open_count`, `completed_count` and `canceled_count` partition `issue_count`.
  * `repos` lists the repos its issues are on, leaving out canceled ones.
+ * `number` comes from the sequence issues share, and the API accepts it wherever it accepts the name.
  */
 export interface Initiative {
   id: string
+  number: number
   name: string
   description: string | null
   status: InitiativeStatus

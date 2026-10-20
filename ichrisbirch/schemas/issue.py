@@ -11,11 +11,11 @@ from pydantic import model_validator
 from ichrisbirch.schemas.not_null import NotNull
 
 # What a caller may pass where an issue or an initiative is named. An issue
-# answers to its UUID or its number, an initiative to its UUID or its name, and
-# the API resolves either. `str` is in the issue union because a CLI forwards
-# what was typed, so a number arrives as "42".
+# answers to its UUID or its number, an initiative to its UUID, its number or
+# its name, and the API resolves each. `str` is in both unions because a CLI
+# forwards what was typed, so a number arrives as "42".
 IssueRef = UUID | int | str
-InitiativeRef = UUID | str
+InitiativeRef = UUID | int | str
 
 Priority = Annotated[int, Field(ge=0, le=4, description='0 none, 1 urgent, 2 high, 3 medium, 4 low')]
 Slug = Annotated[str, StringConstraints(pattern=r'^[a-z0-9]+(-[a-z0-9]+)*$')]
@@ -41,6 +41,7 @@ class IssueSummary(IssueConfig):
 
 class InitiativeSummary(IssueConfig):
     id: UUID
+    number: int
     name: str
     status: str
     priority: int
@@ -216,6 +217,7 @@ class Initiative(IssueConfig):
     """
 
     id: UUID
+    number: int
     name: str
     description: str | None = None
     status: str

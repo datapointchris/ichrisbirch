@@ -33,8 +33,14 @@ BASE_DATA: list[Issue] = [
 ]
 
 INITIATIVES: list[Initiative] = [
-    Initiative(name='Ship the issue tracker', description='Issues apart from projects', priority=2, position=1),
-    Initiative(name='Retire the old capture path', priority=0, position=2),
+    Initiative(
+        name='Ship the issue tracker',
+        description='Issues apart from projects',
+        priority=2,
+        position=1,
+        created_ts=dt.datetime(2026, 6, 1, 12, 0, tzinfo=dt.UTC),
+    ),
+    Initiative(name='Retire the old capture path', priority=0, position=2, created_ts=dt.datetime(2026, 7, 1, 12, 0, tzinfo=dt.UTC)),
     Initiative(name='Finished migration', status='completed', position=3, closed_ts=dt.datetime(2026, 8, 1, 12, 0, tzinfo=dt.UTC)),
 ]
 

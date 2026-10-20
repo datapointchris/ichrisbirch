@@ -68,6 +68,10 @@ class Initiative(Base):
 
     __tablename__ = 'initiatives'
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid7)
+    # Drawn from the sequence issues and projects share, so a bare number names one thing.
+    number: Mapped[int] = mapped_column(
+        BigInteger, ITEM_NUMBER_SEQUENCE, server_default=ITEM_NUMBER_SEQUENCE.next_value(), nullable=False, unique=True
+    )
     # Unique among ACTIVE initiatives only, as a project's name is.
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

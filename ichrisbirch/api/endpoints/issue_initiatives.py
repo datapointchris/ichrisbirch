@@ -1,5 +1,7 @@
 import datetime as dt
 from typing import Annotated
+from typing import Any
+from typing import Literal
 from uuid import UUID
 
 import structlog
@@ -9,6 +11,7 @@ from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
+from sqlalchemy import ColumnElement
 from sqlalchemy import case
 from sqlalchemy import distinct
 from sqlalchemy import func
@@ -29,6 +32,8 @@ logger = structlog.get_logger()
 router = APIRouter()
 
 ALL_STATUSES = 'all'
+
+InitiativeSort = Literal['priority', 'open', 'newest']
 
 
 def path_initiative(id: str, session: DbSession) -> models.Initiative:
@@ -90,6 +95,7 @@ def issue_count_columns():
 def initiative_view(initiative: models.Initiative, issue_count, open_count, completed_count, canceled_count, repos) -> schemas.Initiative:
     return schemas.Initiative(
         id=initiative.id,
+        number=initiative.number,
         name=initiative.name,
         description=initiative.description,
         status=initiative.status,
@@ -119,25 +125,39 @@ def read_many(
         alias='status',
         description="An initiative status, or 'all'. Finished initiatives are hidden by default.",
     ),
+    sort: InitiativeSort = Query(
+        'priority',
+        description='priority: the order to work them in. open: most unclosed issues first. newest: latest started first.',
+    ),
     limit: RowLimit = None,
 ):
-    """Active initiatives by priority then position; finished ones after, latest first.
+    """Active initiatives, then someday, completed and dropped ones, each status in `sort`'s order.
 
-    Priority 0 is no priority and sorts after every level, as it does on issues.
+    Finished ones come latest first whatever the sort. Priority 0 is no priority
+    and sorts after every level, as it does on issues.
     """
     if initiative_status != ALL_STATUSES:
         validate_status(initiative_status, session)
+    status_class = case(
+        (models.Initiative.status == 'active', 0),
+        (models.Initiative.status == 'someday', 1),
+        (models.Initiative.status == 'completed', 2),
+        else_=3,
+    )
     urgency = case((models.Initiative.priority == 0, NO_PRIORITY_URGENCY), else_=models.Initiative.priority)
+    counts = issue_count_columns()
+    open_count = counts[1]
+    orders: dict[str, tuple[ColumnElement[Any], ...]] = {
+        'priority': (urgency.asc(), models.Initiative.position.asc(), models.Initiative.created_ts.asc()),
+        'open': (open_count.desc(), urgency.asc(), models.Initiative.position.asc()),
+        'newest': (models.Initiative.created_ts.desc(),),
+    }
+    within_class = orders[sort]
     query = (
-        select(models.Initiative, *issue_count_columns())
+        select(models.Initiative, *counts)
         .outerjoin(models.Issue, models.Issue.initiative_id == models.Initiative.id)
         .group_by(models.Initiative.id)
-        .order_by(
-            models.Initiative.closed_ts.desc().nullsfirst(),
-            urgency.asc(),
-            models.Initiative.position.asc(),
-            models.Initiative.created_ts.asc(),
-        )
+        .order_by(status_class.asc(), models.Initiative.closed_ts.desc().nullsfirst(), *within_class)
     )
     if initiative_status != ALL_STATUSES:
         query = query.where(models.Initiative.status == initiative_status)

@@ -1,7 +1,7 @@
 """Resolve the references a person or an agent types for issues, initiatives and labels.
 
-An issue answers to its UUID or its number, an initiative to its UUID or its
-name, and a label to its slug. Each endpoint resolves what it was given inside
+An issue answers to its UUID or its number, an initiative to its UUID, its
+number or its name, and a label to its slug. Each endpoint resolves what it was given inside
 the request that was going to reach the database anyway.
 """
 
@@ -71,13 +71,21 @@ def initiative_by_name(session: Session, name: str) -> models.Initiative | None:
     return None
 
 
-def resolve_initiative(session: Session, ref: str | UUID) -> models.Initiative:
-    """Fetch an initiative by its UUID or its name."""
+def initiative_by_number(session: Session, number: int) -> models.Initiative | None:
+    return session.scalar(select(models.Initiative).where(models.Initiative.number == number))
+
+
+def resolve_initiative(session: Session, ref: str | UUID | int) -> models.Initiative:
+    """Fetch an initiative by its UUID, its number or its name."""
     initiative: models.Initiative | None
-    if isinstance(ref, UUID):
+    if isinstance(ref, int):
+        initiative = initiative_by_number(session, ref)
+    elif isinstance(ref, UUID):
         initiative = session.get(models.Initiative, ref)
     elif (initiative_id := parse_uuid(ref)) is not None:
         initiative = session.get(models.Initiative, initiative_id)
+    elif ref.lstrip('#').isdigit():
+        initiative = initiative_by_number(session, int(ref.lstrip('#')))
     else:
         initiative = initiative_by_name(session, ref)
         if initiative is None:

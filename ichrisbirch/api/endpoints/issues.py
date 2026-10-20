@@ -358,7 +358,7 @@ def ready_issues(
     repo: str | None,
     type: str | None,
     label: str | None,
-    initiative: str | UUID | None,
+    initiative: str | UUID | int | None,
 ) -> tuple[list[models.Issue], IssueReadiness]:
     """The ready queue in the order it is taken, and the readiness it was cut from.
 
