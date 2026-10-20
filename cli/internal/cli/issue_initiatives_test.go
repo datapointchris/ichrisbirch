@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"testing"
 	"unicode/utf8"
+
+	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
 func TestProgressBarShowsAnyStartAndHoldsBackFullUntilNothingIsOpen(t *testing.T) {
@@ -21,6 +23,26 @@ func TestProgressBarShowsAnyStartAndHoldsBackFullUntilNothingIsOpen(t *testing.T
 		if got := progressFilled(c.done, c.open); got != c.filled {
 			t.Errorf("progressFilled(%d done, %d open) = %d, want %d", c.done, c.open, got, c.filled)
 		}
+	}
+}
+
+// A number read off `icb issues initiatives list` files an issue into that
+// initiative, whether it is typed, typed with its #, or picked from the form.
+func TestIssuesCreateTakesTheNumberTheInitiativeListPrints(t *testing.T) {
+	validate := initiativeRef([]api.Initiative{{Number: 1501, Name: "Ship the tracker"}})
+	for answer, want := range map[string]string{
+		"1501":                  "1501",
+		"#1501":                 "#1501",
+		"1501 Ship the tracker": "1501",
+		"ship the tracker":      "Ship the tracker",
+	} {
+		got, err := validate(answer)
+		if err != nil || got != want {
+			t.Errorf("initiativeRef(%q) = %q, %v; want %q", answer, got, err, want)
+		}
+	}
+	if _, err := validate("Ship the router"); err == nil {
+		t.Error("an unknown initiative name was accepted")
 	}
 }
 

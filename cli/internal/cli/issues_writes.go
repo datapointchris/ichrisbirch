@@ -43,11 +43,10 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
-	names := make([]string, 0, len(initiatives))
+	initiativeChoices := make([]string, 0, len(initiatives))
 	for _, initiative := range initiatives {
-		names = append(names, initiative.Name)
+		initiativeChoices = append(initiativeChoices, initiativeChoice(initiative))
 	}
-	sort.Strings(names)
 	slugs := make([]string, 0, len(vocabulary.Labels))
 	for _, label := range vocabulary.Labels {
 		slugs = append(slugs, label.Slug)
@@ -81,10 +80,10 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 		{
 			Key:      "initiative",
 			Label:    "Initiative",
-			Hint:     "The outcome this ships toward. Most issues have none.",
-			Choices:  names,
+			Hint:     "The outcome this ships toward, by number or name. Most issues have none.",
+			Choices:  initiativeChoices,
 			Optional: true,
-			Validate: projectRef(names),
+			Validate: initiativeRef(initiatives),
 		},
 		{
 			Key:      "label",
@@ -109,6 +108,52 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 			Multiline: true,
 		},
 	}, nil
+}
+
+// initiativeChoice is how the form offers an initiative: the number it resolves
+// to, then the name, which Tab completion matches anywhere in the choice.
+func initiativeChoice(initiative api.Initiative) string {
+	return strconv.Itoa(initiative.Number) + " " + initiative.Name
+}
+
+// initiativeRef accepts an initiative as N, #N, a UUID, a name or an offered
+// choice. A number or a UUID passes straight through for the API to resolve,
+// because the choices hold only the active initiatives.
+func initiativeRef(initiatives []api.Initiative) func(string) (string, error) {
+	choices := make([]string, 0, len(initiatives))
+	for _, initiative := range initiatives {
+		choices = append(choices, initiativeChoice(initiative))
+	}
+	byChoice := prompt.OneOf(choices)
+	return func(answer string) (string, error) {
+		if isItemNumber(strings.TrimPrefix(answer, "#")) || looksLikeUUID(answer) {
+			return answer, nil
+		}
+		for _, initiative := range initiatives {
+			if strings.EqualFold(answer, initiative.Name) {
+				return initiative.Name, nil
+			}
+		}
+		chosen, err := byChoice(answer)
+		if err != nil {
+			return "", err
+		}
+		number, _, _ := strings.Cut(chosen, " ")
+		return number, nil
+	}
+}
+
+// isItemNumber reports whether s is a bare item number, the digits alone.
+func isItemNumber(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // priorityAnswer accepts a priority by name or value and answers with its name.

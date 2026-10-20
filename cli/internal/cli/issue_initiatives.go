@@ -177,7 +177,7 @@ func newInitiativesCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), initiative)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Started initiative %q\n", initiative.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Started initiative #%d %q\n", initiative.Number, initiative.Name)
 			return nil
 		},
 	}
@@ -253,7 +253,7 @@ func runInitiativeUpdate(cmd *cobra.Command, ref string, in api.InitiativeUpdate
 	if asJSON {
 		return encodeJSON(cmd.OutOrStdout(), initiative)
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s initiative %q (%s)\n", verb, initiative.Name, initiative.Status)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s initiative #%d %q (%s)\n", verb, initiative.Number, initiative.Name, initiative.Status)
 	return nil
 }
 
@@ -353,8 +353,8 @@ func newInitiativesDeleteCommand() *cobra.Command {
 				return handleArgumentAPIError(err)
 			}
 			if !yes {
-				question := fmt.Sprintf("Delete initiative %q? Its %d %s will belong to none.",
-					initiative.Name, initiative.IssueCount, plural(initiative.IssueCount, "issue", "issues"))
+				question := fmt.Sprintf("Delete initiative #%d %q? Its %d %s will belong to none.",
+					initiative.Number, initiative.Name, initiative.IssueCount, plural(initiative.IssueCount, "issue", "issues"))
 				ok, err := confirm(cmd, question)
 				if err != nil {
 					return err
@@ -367,7 +367,7 @@ func newInitiativesDeleteCommand() *cobra.Command {
 			if err := client.DeleteInitiative(cmd.Context(), initiative.ID); err != nil {
 				return handleAPIError(err)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted initiative %q\n", initiative.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted initiative #%d %q\n", initiative.Number, initiative.Name)
 			return nil
 		},
 	}

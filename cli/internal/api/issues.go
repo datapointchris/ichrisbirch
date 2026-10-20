@@ -509,7 +509,7 @@ func (c *Client) ListInitiatives(ctx context.Context, initiativeStatus, sort str
 	return initiatives, nil
 }
 
-// GetInitiative returns one initiative by name or UUID.
+// GetInitiative returns one initiative by any reference the API resolves.
 func (c *Client) GetInitiative(ctx context.Context, ref string) (Initiative, error) {
 	var initiative Initiative
 	if err := c.get(ctx, initiativePath(ref), &initiative); err != nil {
