@@ -406,7 +406,7 @@ func initiativeGroupLabel(initiative api.Initiative) string {
 // initiativeRows renders initiative rows sharing one set of column widths.
 type initiativeRows struct {
 	palette   gotermstyle.Palette
-	width     int
+	clip      bool
 	number    int
 	done      int
 	total     int
@@ -425,7 +425,7 @@ func newInitiativeRows(out io.Writer, initiatives []api.Initiative, sort string)
 	}
 	return initiativeRows{
 		palette:   gotermstyle.PaletteFor(out),
-		width:     clipWidth(out),
+		clip:      clipsToTerminal(out),
 		number:    widest(numbers),
 		done:      widest(done),
 		total:     widest(totals),
@@ -464,8 +464,8 @@ func (r initiativeRows) row(initiative api.Initiative) string {
 	used += 2 + progressCells + 2 + r.done + 1 + r.total
 
 	name, repos := initiative.Name, strings.Join(initiative.Repos, ", ")
-	if room := r.width - used - 2; r.width > 0 {
-		name, repos = fitNameAndRepos(name, repos, room)
+	if r.clip {
+		name, repos = fitNameAndRepos(name, repos, used+2)
 	}
 	cells = append(cells, name)
 	if repos != "" {
@@ -474,21 +474,33 @@ func (r initiativeRows) row(initiative api.Initiative) string {
 	return strings.Join(cells, "  ")
 }
 
-// repoFloor is the least a clipped repo list keeps before the name gives way.
-const repoFloor = 12
+// repoFloor is the least of a clipped repo list kept beside the name, and
+// nameFloor the least of the name kept before the repos are dropped for it.
+const (
+	repoFloor = 12
+	nameFloor = 20
+)
 
-// fitNameAndRepos fits the name and the repo list into room columns, with two
-// spaces between them.
-func fitNameAndRepos(name, repos string, room int) (string, string) {
+// fitNameAndRepos clips the name, which starts at column used, and the repo list
+// after it to the terminal. The repos give way first, down to repoFloor, then the
+// name. Where the name would keep less than nameFloor the repos are dropped, and
+// the name takes the line by gotermstyle.Clip's rule, which leaves it whole when
+// there is no room to say anything.
+func fitNameAndRepos(name, repos string, used int) (string, string) {
+	room := gotermstyle.Columns() - used
 	nameLen, reposLen := utf8.RuneCountInString(name), utf8.RuneCountInString(repos)
 	if repos == "" {
-		return fitTo(name, room), ""
+		return gotermstyle.Clip(name, used), ""
 	}
 	if nameLen+2+reposLen <= room {
 		return name, repos
 	}
 	repoRoom := max(room-nameLen-2, min(reposLen, repoFloor))
-	return fitTo(name, room-2-repoRoom), fitTo(repos, repoRoom)
+	if room-2-repoRoom < min(nameLen, nameFloor) {
+		return gotermstyle.Clip(name, used), ""
+	}
+	name = gotermstyle.Clip(name, used+2+repoRoom)
+	return name, gotermstyle.Clip(repos, used+utf8.RuneCountInString(name)+2)
 }
 
 // printInitiativesTable prints each initiative under a header for its tier in

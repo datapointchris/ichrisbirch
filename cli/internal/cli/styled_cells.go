@@ -41,18 +41,6 @@ func paint(color func(string) string, text string, width int) string {
 	return color(text) + strings.Repeat(" ", max(width-utf8.RuneCountInString(text), 0))
 }
 
-// fitTo shortens text to width runes, ending in an ellipsis.
-func fitTo(text string, width int) string {
-	runes := []rune(text)
-	if len(runes) <= width {
-		return text
-	}
-	if width < 1 {
-		return ""
-	}
-	return string(runes[:width-1]) + "…"
-}
-
 // tierCode is the color a priority word and its group header take. Only the
 // two tiers that ask for attention get a hue; medium is bright, and low and none
 // stay in the terminal's own foreground.
@@ -74,12 +62,9 @@ func tierColor(p gotermstyle.Palette, priority int) func(string) string {
 	return func(text string) string { return p.Paint(code, text) }
 }
 
-// clipWidth is the line width rows are clipped to, or 0 when out is not a
+// clipsToTerminal reports whether rows written to out are clipped to the
 // terminal. Piped and redirected output is read whole by whatever reads it.
-func clipWidth(out io.Writer) int {
+func clipsToTerminal(out io.Writer) bool {
 	file, ok := out.(*os.File)
-	if !ok || !term.IsTerminal(int(file.Fd())) {
-		return 0
-	}
-	return gotermstyle.Columns()
+	return ok && term.IsTerminal(int(file.Fd()))
 }
