@@ -35,7 +35,7 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
-	initiatives, err := client.ListInitiatives(ctx, "", nil)
+	initiatives, err := client.ListInitiatives(ctx, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func newIssuesCreateCommand() *cobra.Command {
 	f.String("type", "", "One of: "+strings.Join(api.IssueTypes, ", ")+" (default task)")
 	f.String("priority", "", "One of: "+priorityChoices()+" (default none)")
 	f.String("repo", "", "Repo this is work on, by registry name (omit for work on no repo)")
-	f.String("initiative", "", "Initiative this ships toward, by name or id")
+	f.String("initiative", "", "Initiative this ships toward, by number, name or id")
 	f.StringArray("label", nil, "Label to carry (repeatable; see: icb issues labels list)")
 	f.String("description", "", "What an agent could not find in the repo on its own")
 	f.String("acceptance", "", "How to verify it is done")
@@ -308,7 +308,7 @@ func (v *issueEditFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.repo, "repo", "", "Repo by registry name (empty takes it off every repo)")
 	f.StringVar(&v.issueType, "type", "", "One of: "+strings.Join(api.IssueTypes, ", "))
 	f.StringVar(&v.priority, "priority", "", "One of: "+priorityChoices())
-	f.StringVar(&v.initiative, "initiative", "", "Initiative by name or id (empty removes it)")
+	f.StringVar(&v.initiative, "initiative", "", "Initiative by number, name or id (empty removes it)")
 	f.StringVar(&v.parent, "parent", "", "Parent issue (empty removes it)")
 	f.StringVar(&v.discoveredFrom, "discovered-from", "", "Issue whose work turned this up (empty removes it)")
 	f.StringVar(&v.deferredUntil, "deferred-until", "", "Day before which it is not ready, as YYYY-MM-DD (empty clears)")

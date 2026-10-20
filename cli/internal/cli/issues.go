@@ -7,10 +7,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/datapointchris/goclikit"
+	"github.com/datapointchris/gotermstyle"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -145,7 +145,7 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 	f.StringVar(&v.repo, "repo", "", "Only issues on this repo (empty string for issues on no repo)")
 	f.StringVar(&v.issueType, "type", "", "One of: "+strings.Join(api.IssueTypes, ", "))
 	f.StringVar(&v.label, "label", "", "Only issues carrying this label (see: icb issues labels list)")
-	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by name or id")
+	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by number, name or id")
 	f.StringVar(&v.parent, "parent", "", "Only the children of this issue")
 	f.StringVar(&v.priority, "priority", "", "Only issues whose own priority is this: "+priorityChoices())
 	f.StringVar(&v.claimedBy, "claimed-by", "", "Only issues held by this claimant")
@@ -432,7 +432,7 @@ func (v *readyQueueFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.repo, "repo", "", "Only issues on this repo (empty string for issues on no repo)")
 	f.StringVar(&v.issueType, "type", "", "Only this type: "+strings.Join(api.IssueTypes, ", ")+" (decisions only when named)")
 	f.StringVar(&v.label, "label", "", "Only issues carrying this label")
-	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by name or id")
+	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by number, name or id")
 }
 
 func (v *readyQueueFlags) filter(cmd *cobra.Command) (api.ReadyFilter, error) {
@@ -582,17 +582,39 @@ func printIssuesTable(out io.Writer, issues []api.Issue, now time.Time) {
 		_, _ = fmt.Fprintln(out, "No issues.")
 		return
 	}
-	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "#\tPRIORITY\tTYPE\tSTATUS\tREPO\tTITLE")
-	for _, issue := range issues {
+	p := gotermstyle.PaletteFor(out)
+	header := []string{"#", "PRIORITY", "TYPE", "STATUS", "REPO"}
+	rows := make([][]string, len(issues))
+	for i, issue := range issues {
+		rows[i] = []string{strconv.Itoa(issue.Number), priorityCell(issue), issue.Type, issue.Status, orDash(strValue(issue.Repo))}
+	}
+	widths := make([]int, len(header))
+	for c := range header {
+		column := []string{header[c]}
+		for _, row := range rows {
+			column = append(column, row[c])
+		}
+		widths[c] = widest(column)
+	}
+
+	line := make([]string, 0, len(header)+1)
+	for c, title := range header {
+		line = append(line, paint(p.Bold, title, widths[c]))
+	}
+	_, _ = fmt.Fprintln(out, strings.Join(append(line, p.Bold("TITLE")), "  "))
+	plain := func(text string) string { return text }
+	for i, issue := range issues {
+		colors := []func(string) string{p.Cyan, tierColor(p, issue.EffectivePriority), plain, plain, plain}
+		line = line[:0]
+		for c, cell := range rows[i] {
+			line = append(line, paint(colors[c], cell, widths[c]))
+		}
 		title := issue.Title
 		if notes := issueStateNotes(issue, now); len(notes) > 0 {
 			title += "  [" + strings.Join(notes, "; ") + "]"
 		}
-		_, _ = fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\t%s\n",
-			issue.Number, priorityCell(issue), issue.Type, issue.Status, orDash(strValue(issue.Repo)), title)
+		_, _ = fmt.Fprintln(out, strings.Join(append(line, title), "  "))
 	}
-	_ = tw.Flush()
 }
 
 // priorityCell shows the priority the queue sorts by, starred when inherited.
@@ -743,7 +765,7 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 	field("priority", priority)
 	field("repo", orDash(strValue(issue.Repo)))
 	if issue.Initiative != nil {
-		field("initiative", issue.Initiative.Name)
+		field("initiative", fmt.Sprintf("%d %s", issue.Initiative.Number, issue.Initiative.Name))
 	}
 	if issue.Parent != nil {
 		field("parent", summaryLine(*issue.Parent))
