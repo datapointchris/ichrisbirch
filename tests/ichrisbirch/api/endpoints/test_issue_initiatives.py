@@ -37,12 +37,34 @@ def test_active_initiatives_order_by_priority_with_none_last(client):
     assert names(ok(client.get(INITIATIVES))) == ['Urgent cleanup', 'Ship the issue tracker', 'Retire the old capture path']
 
 
-def test_finished_initiatives_follow_the_active_ones(client):
-    assert names(ok(client.get(INITIATIVES, params={'status': 'all'})))[-1] == 'Finished migration'
+@pytest.mark.parametrize(
+    ('sort', 'expected'),
+    [
+        ('open', ['Retire the old capture path', 'Ship the issue tracker', 'Started last']),
+        ('newest', ['Started last', 'Retire the old capture path', 'Ship the issue tracker']),
+    ],
+)
+def test_a_sort_reorders_the_active_initiatives(client, sort, expected):
+    for title, initiative in (('a', 'Retire the old capture path'), ('b', 'Retire the old capture path'), ('c', 'Ship the issue tracker')):
+        ok(client.post('/issues', json={'title': title, 'initiative': initiative}), status.HTTP_201_CREATED)
+    ok(client.post(INITIATIVES, json={'name': 'Started last'}), status.HTTP_201_CREATED)
+    assert names(ok(client.get(INITIATIVES, params={'sort': sort}))) == expected
+
+
+def test_someday_initiatives_sit_between_the_active_and_the_finished(client):
+    ok(client.post(INITIATIVES, json={'name': 'Urgent idea', 'status': 'someday', 'priority': 1}), status.HTTP_201_CREATED)
+    assert names(ok(client.get(INITIATIVES, params={'status': 'all'})))[-2:] == ['Urgent idea', 'Finished migration']
 
 
 def test_an_initiative_answers_to_its_name(client):
     assert ok(client.get(f'{INITIATIVES}/Ship the issue tracker'))['priority'] == 2
+
+
+def test_an_initiative_answers_to_its_number(client):
+    number = ok(client.get(f'{INITIATIVES}/Ship the issue tracker'))['number']
+    assert ok(client.get(f'{INITIATIVES}/{number}'))['name'] == 'Ship the issue tracker'
+    filed = ok(client.post('/issues', json={'title': 'filed by number', 'initiative': f'#{number}'}), status.HTTP_201_CREATED)
+    assert filed['initiative']['number'] == number
 
 
 # The path is decoded before routing, so an escaped `%2F` arrives as a slash,

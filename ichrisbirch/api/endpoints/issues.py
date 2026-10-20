@@ -296,7 +296,7 @@ def read_many(
     repo: str | None = Query(None, description='A repo name, or an empty string for issues on no repo'),
     type: str | None = Query(None, description='An issue type'),
     label: str | None = Query(None, description='A label slug'),
-    initiative: str | None = Query(None, description='An initiative name or UUID'),
+    initiative: str | None = Query(None, description='An initiative, by any reference GET /issues/initiatives/{id} accepts'),
     parent: str | None = Query(None, description='A parent issue number or UUID: its children'),
     priority: int | None = Query(None, ge=0, le=4, description="The issue's own priority"),
     claimed_by: str | None = Query(None, description='Issues held by this claimant'),
@@ -358,7 +358,7 @@ def ready_issues(
     repo: str | None,
     type: str | None,
     label: str | None,
-    initiative: str | UUID | None,
+    initiative: str | UUID | int | None,
 ) -> tuple[list[models.Issue], IssueReadiness]:
     """The ready queue in the order it is taken, and the readiness it was cut from.
 
@@ -387,7 +387,7 @@ def read_ready(
     repo: str | None = Query(None, description='A repo name, or an empty string for issues on no repo'),
     type: str | None = Query(None, description='An issue type. Decisions are left out unless asked for here.'),
     label: str | None = Query(None, description='A label slug'),
-    initiative: str | None = Query(None, description='An initiative name or UUID'),
+    initiative: str | None = Query(None, description='An initiative, by any reference GET /issues/initiatives/{id} accepts'),
     limit: RowLimit = None,
 ):
     """The issues an agent could take now, in the order to take them; the first row is next."""

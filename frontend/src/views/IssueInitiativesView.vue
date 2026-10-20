@@ -202,6 +202,7 @@ const expandedId = ref<string | null>(null)
 
 const statusOptions: { value: InitiativeStatusFilter; label: string }[] = [
   { value: 'active', label: 'Active' },
+  { value: 'someday', label: 'Someday' },
   { value: 'completed', label: 'Completed' },
   { value: 'dropped', label: 'Dropped' },
   { value: 'all', label: 'Every Status' },

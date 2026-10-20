@@ -27,6 +27,7 @@ const vocabulary: IssueVocabulary = {
 
 const activeInitiative: Initiative = {
   id: 'init-1',
+  number: 1501,
   name: 'Ship the tracker',
   description: null,
   status: 'active',
@@ -58,7 +59,7 @@ const existing: Issue = {
   deferred_until_date: null,
   claimed_by: null,
   claim_expires_ts: null,
-  initiative: { id: 'init-9', name: 'Finished migration', status: 'completed', priority: 0 },
+  initiative: { id: 'init-9', number: 1509, name: 'Finished migration', status: 'completed', priority: 0 },
   parent: { id: 'id-900', number: 900, title: 'The parent', status: 'open' },
   discovered_from: null,
   duplicate_of: null,

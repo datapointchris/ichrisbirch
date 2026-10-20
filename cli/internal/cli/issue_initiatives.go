@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strconv"
 	"strings"
-	"text/tabwriter"
 	"time"
+	"unicode/utf8"
 
 	"github.com/datapointchris/goclikit"
+	"github.com/datapointchris/gotermstyle"
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
@@ -49,32 +51,38 @@ func newInitiativesListCommand() *cobra.Command {
 	var (
 		asJSON           bool
 		initiativeStatus string
+		sort             string
 		limit            int
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List the active initiatives in the order to work them",
-		Long: "Active initiatives by priority, then position. Someday, completed and dropped\n" +
-			"ones are hidden until --status asks for them. Finished ones come last, latest\n" +
-			"first.",
-		Example: "  icb issues initiatives list\n  icb issues initiatives list --status someday\n  icb issues initiatives list --status all --json",
+		Long: "Active initiatives by priority, then position, under a header for each tier.\n" +
+			"Someday, completed and dropped ones are hidden until --status asks for them,\n" +
+			"and come after the active ones, finished ones latest first.\n\n" +
+			"Each row leads with the initiative's number, which every initiative command\n" +
+			"and --initiative flag accepts. The bar is its issues done over done and open.",
+		Example: "  icb issues initiatives list\n  icb issues initiatives list --sort open\n  icb issues initiatives list --status all --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.InitiativeStatuses, initiativeStatus) {
 				return goclikit.UsageError(fmt.Errorf("unknown status %q — one of: %s", initiativeStatus, strings.Join(api.InitiativeStatuses, ", ")))
 			}
+			if cmd.Flags().Changed("sort") && !slices.Contains(api.InitiativeSorts, sort) {
+				return goclikit.UsageError(fmt.Errorf("unknown sort %q — one of: %s", sort, strings.Join(api.InitiativeSorts, ", ")))
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			initiatives, err := client.ListInitiatives(cmd.Context(), initiativeStatus, limitFlag(cmd))
+			initiatives, err := client.ListInitiatives(cmd.Context(), initiativeStatus, sort, limitFlag(cmd))
 			if err != nil {
 				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), initiatives)
 			}
-			printInitiativesTable(cmd.OutOrStdout(), initiatives)
+			printInitiativesTable(cmd.OutOrStdout(), initiatives, sort)
 			if !cmd.Flags().Changed("status") {
 				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\n"+initiativeHints[0])
 			}
@@ -82,6 +90,7 @@ func newInitiativesListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&initiativeStatus, "status", "", "One of: "+strings.Join(api.InitiativeStatuses, ", ")+" (default active)")
+	cmd.Flags().StringVar(&sort, "sort", "", "One of: "+strings.Join(api.InitiativeSorts, ", ")+" (default priority); open puts the most unclosed issues first")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output initiatives as JSON to stdout")
 	addLimitFlag(cmd, &limit)
 	return cmd
@@ -92,7 +101,7 @@ func newInitiativesShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <initiative>",
 		Short:   "Show an initiative and its unclosed issues in queue order",
-		Example: "  icb issues initiatives show \"Ship the tracker\"",
+		Example: "  icb issues initiatives show 1501\n  icb issues initiatives show \"Ship the tracker\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -168,7 +177,7 @@ func newInitiativesCreateCommand() *cobra.Command {
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), initiative)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Started initiative %q\n", initiative.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Started initiative #%d %q\n", initiative.Number, initiative.Name)
 			return nil
 		},
 	}
@@ -244,7 +253,7 @@ func runInitiativeUpdate(cmd *cobra.Command, ref string, in api.InitiativeUpdate
 	if asJSON {
 		return encodeJSON(cmd.OutOrStdout(), initiative)
 	}
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s initiative %q (%s)\n", verb, initiative.Name, initiative.Status)
+	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s initiative #%d %q (%s)\n", verb, initiative.Number, initiative.Name, initiative.Status)
 	return nil
 }
 
@@ -344,8 +353,8 @@ func newInitiativesDeleteCommand() *cobra.Command {
 				return handleArgumentAPIError(err)
 			}
 			if !yes {
-				question := fmt.Sprintf("Delete initiative %q? Its %d %s will belong to none.",
-					initiative.Name, initiative.IssueCount, plural(initiative.IssueCount, "issue", "issues"))
+				question := fmt.Sprintf("Delete initiative #%d %q? Its %d %s will belong to none.",
+					initiative.Number, initiative.Name, initiative.IssueCount, plural(initiative.IssueCount, "issue", "issues"))
 				ok, err := confirm(cmd, question)
 				if err != nil {
 					return err
@@ -358,7 +367,7 @@ func newInitiativesDeleteCommand() *cobra.Command {
 			if err := client.DeleteInitiative(cmd.Context(), initiative.ID); err != nil {
 				return handleAPIError(err)
 			}
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted initiative %q\n", initiative.Name)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Deleted initiative #%d %q\n", initiative.Number, initiative.Name)
 			return nil
 		},
 	}
@@ -366,25 +375,177 @@ func newInitiativesDeleteCommand() *cobra.Command {
 	return cmd
 }
 
-// printInitiativesTable prints the name shell-quoted, so a row's handle pastes
-// back as one argument.
-func printInitiativesTable(out io.Writer, initiatives []api.Initiative) {
+// progressCells is how many cells the bar of done over open-and-done spans.
+const progressCells = 10
+
+// progressFilled is how many of the bar's cells are filled. Any finished issue
+// fills one, and any open issue keeps one empty, so the bar never reads as
+// untouched or finished when it is not.
+func progressFilled(done, open int) int {
+	total := done + open
+	if done == 0 || total == 0 {
+		return 0
+	}
+	filled := (done*progressCells + total/2) / total
+	ceiling := progressCells
+	if open > 0 {
+		ceiling--
+	}
+	return min(max(filled, 1), ceiling)
+}
+
+// initiativeGroupLabel is the header a row sits under in work order: its tier
+// while it is active, and its status once it is not.
+func initiativeGroupLabel(initiative api.Initiative) string {
+	if initiative.Status == "active" {
+		return priorityName(initiative.Priority)
+	}
+	return initiative.Status
+}
+
+// initiativeRows renders initiative rows sharing one set of column widths.
+type initiativeRows struct {
+	palette   gotermstyle.Palette
+	clip      bool
+	number    int
+	done      int
+	total     int
+	label     int
+	byTier    bool
+	showStart bool
+}
+
+func newInitiativeRows(out io.Writer, initiatives []api.Initiative, sort string) initiativeRows {
+	var numbers, done, totals, labels []string
+	for _, initiative := range initiatives {
+		numbers = append(numbers, strconv.Itoa(initiative.Number))
+		done = append(done, strconv.Itoa(initiative.CompletedCount))
+		totals = append(totals, strconv.Itoa(initiative.CompletedCount+initiative.OpenCount))
+		labels = append(labels, initiativeGroupLabel(initiative))
+	}
+	return initiativeRows{
+		palette:   gotermstyle.PaletteFor(out),
+		clip:      clipsToTerminal(out),
+		number:    widest(numbers),
+		done:      widest(done),
+		total:     widest(totals),
+		label:     widest(labels),
+		byTier:    sort == "" || sort == "priority",
+		showStart: sort == "newest",
+	}
+}
+
+// row lays out one initiative. The number, the bar and the fraction never clip,
+// because the number is the handle. When the line runs past the terminal the
+// repos give way first, keeping a floor, and then the name.
+func (r initiativeRows) row(initiative api.Initiative) string {
+	p := r.palette
+	open, done := initiative.OpenCount, initiative.CompletedCount
+	filled := progressFilled(done, open)
+
+	cells := []string{"", paint(p.Cyan, strconv.Itoa(initiative.Number), r.number)}
+	used := 2 + r.number
+	if !r.byTier {
+		label := initiativeGroupLabel(initiative)
+		color := tierColor(p, initiative.Priority)
+		if initiative.Status != "active" {
+			color = p.Magenta
+		}
+		cells = append(cells, paint(color, label, r.label))
+		used += 2 + r.label
+	}
+	if r.showStart {
+		cells = append(cells, localDay(initiative.CreatedTS))
+		used += 2 + len(dayLayout)
+	}
+	bar := p.Green(strings.Repeat("▰", filled)) + strings.Repeat("▱", progressCells-filled)
+	fraction := padLeft(strconv.Itoa(done), r.done) + "/" + padRight(strconv.Itoa(done+open), r.total)
+	cells = append(cells, bar, fraction)
+	used += 2 + progressCells + 2 + r.done + 1 + r.total
+
+	name, repos := initiative.Name, strings.Join(initiative.Repos, ", ")
+	if r.clip {
+		name, repos = fitNameAndRepos(name, repos, used+2)
+	}
+	cells = append(cells, name)
+	if repos != "" {
+		cells = append(cells, p.Blue(repos))
+	}
+	return strings.Join(cells, "  ")
+}
+
+// repoFloor is the least of a clipped repo list kept beside the name, and
+// nameFloor the least of the name kept before the repos are dropped for it.
+const (
+	repoFloor = 12
+	nameFloor = 20
+)
+
+// fitNameAndRepos clips the name, which starts at column used, and the repo list
+// after it to the terminal. The repos give way first, down to repoFloor, then the
+// name. Where the name would keep less than nameFloor the repos are dropped, and
+// the name takes the line by gotermstyle.Clip's rule, which leaves it whole when
+// there is no room to say anything.
+func fitNameAndRepos(name, repos string, used int) (string, string) {
+	room := gotermstyle.Columns() - used
+	nameLen, reposLen := utf8.RuneCountInString(name), utf8.RuneCountInString(repos)
+	if repos == "" {
+		return gotermstyle.Clip(name, used), ""
+	}
+	if nameLen+2+reposLen <= room {
+		return name, repos
+	}
+	repoRoom := max(room-nameLen-2, min(reposLen, repoFloor))
+	if room-2-repoRoom < min(nameLen, nameFloor) {
+		return gotermstyle.Clip(name, used), ""
+	}
+	name = gotermstyle.Clip(name, used+2+repoRoom)
+	return name, gotermstyle.Clip(repos, used+utf8.RuneCountInString(name)+2)
+}
+
+// printInitiativesTable prints each initiative under a header for its tier in
+// work order, and as one flat list under any other sort, where each row names
+// its own tier. Each row leads with the number, which every initiative command
+// accepts.
+func printInitiativesTable(out io.Writer, initiatives []api.Initiative, sort string) {
 	if len(initiatives) == 0 {
 		_, _ = fmt.Fprintln(out, "No initiatives.")
 		return
 	}
-	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(tw, "NAME\tPRIORITY\tSTATUS\tOPEN\tDONE\tCANCELED\tREPOS")
-	for _, initiative := range initiatives {
-		_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%d\t%d\t%d\t%s\n",
-			shellQuote(initiative.Name), priorityName(initiative.Priority), initiative.Status,
-			initiative.OpenCount, initiative.CompletedCount, initiative.CanceledCount, repoList(initiative.Repos))
+	rows := newInitiativeRows(out, initiatives, sort)
+	if !rows.byTier {
+		for _, initiative := range initiatives {
+			_, _ = fmt.Fprintln(out, rows.row(initiative))
+		}
+		return
 	}
-	_ = tw.Flush()
+	p := rows.palette
+	for i := 0; i < len(initiatives); {
+		label := initiativeGroupLabel(initiatives[i])
+		end := i + 1
+		for end < len(initiatives) && initiativeGroupLabel(initiatives[end]) == label {
+			end++
+		}
+		if i > 0 {
+			_, _ = fmt.Fprintln(out)
+		}
+		// The color code leads because each one opens with a reset, which would
+		// undo a bold set before it.
+		code := tierCode(initiatives[i].Priority)
+		if initiatives[i].Status != "active" {
+			code = gotermstyle.CodeMagenta
+		}
+		_, _ = fmt.Fprintf(out, "%s · %d\n", p.Paint(code+gotermstyle.CodeBold, label), end-i)
+		for _, initiative := range initiatives[i:end] {
+			_, _ = fmt.Fprintln(out, rows.row(initiative))
+		}
+		i = end
+	}
 }
 
 func printInitiativeDetail(out io.Writer, initiative api.Initiative) {
-	_, _ = fmt.Fprintf(out, "%s\n", initiative.Name)
+	p := gotermstyle.PaletteFor(out)
+	_, _ = fmt.Fprintf(out, "%s  %s\n", p.Cyan("#"+strconv.Itoa(initiative.Number)), p.Bold(initiative.Name))
 	status := initiative.Status
 	if initiative.ClosedTS != nil {
 		status += " (" + localDay(*initiative.ClosedTS) + ")"
@@ -393,7 +554,7 @@ func printInitiativeDetail(out io.Writer, initiative api.Initiative) {
 	if reason := strValue(initiative.StatusReason); reason != "" {
 		_, _ = fmt.Fprintf(out, "  reason:    %s\n", reason)
 	}
-	_, _ = fmt.Fprintf(out, "  priority:  %s\n", priorityName(initiative.Priority))
+	_, _ = fmt.Fprintf(out, "  priority:  %s\n", tierColor(p, initiative.Priority)(priorityName(initiative.Priority)))
 	_, _ = fmt.Fprintf(out, "  issues:    %d (%d open, %d done, %d canceled)\n",
 		initiative.IssueCount, initiative.OpenCount, initiative.CompletedCount, initiative.CanceledCount)
 	_, _ = fmt.Fprintf(out, "  repos:     %s\n", repoList(initiative.Repos))

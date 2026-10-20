@@ -40,6 +40,10 @@ var IssuePriorityNames = []string{"none", "urgent", "high", "medium", "low"}
 // InitiativeStatuses is what an initiative's --status accepts.
 var InitiativeStatuses = []string{"active", "someday", "completed", "dropped", "all"}
 
+// InitiativeSorts is what an initiative list's --sort accepts. priority is the
+// order to work them in, and the API's default.
+var InitiativeSorts = []string{"priority", "open", "newest"}
+
 // IssueSummary is enough of another issue to print it beside this one.
 type IssueSummary struct {
 	ID     string `json:"id"`
@@ -52,6 +56,7 @@ type IssueSummary struct {
 // lends to issues that have none of their own.
 type InitiativeSummary struct {
 	ID       string `json:"id"`
+	Number   int    `json:"number"`
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Priority int    `json:"priority"`
@@ -447,6 +452,7 @@ func (c *Client) GetIssueVocabulary(ctx context.Context) (IssueVocabulary, error
 // canceled issues and keeping completed ones.
 type Initiative struct {
 	ID             string     `json:"id"`
+	Number         int        `json:"number"`
 	Name           string     `json:"name"`
 	Description    *string    `json:"description"`
 	Status         string     `json:"status"`
@@ -487,10 +493,13 @@ func initiativePath(ref string) string {
 
 // ListInitiatives returns initiatives in the order to work them. An empty
 // status takes the API's default, the active ones.
-func (c *Client) ListInitiatives(ctx context.Context, initiativeStatus string, limit *int) ([]Initiative, error) {
+func (c *Client) ListInitiatives(ctx context.Context, initiativeStatus, sort string, limit *int) ([]Initiative, error) {
 	query := url.Values{}
 	if initiativeStatus != "" {
 		query.Set("status", initiativeStatus)
+	}
+	if sort != "" {
+		query.Set("sort", sort)
 	}
 	applyLimit(query, limit)
 	var initiatives []Initiative
@@ -500,7 +509,7 @@ func (c *Client) ListInitiatives(ctx context.Context, initiativeStatus string, l
 	return initiatives, nil
 }
 
-// GetInitiative returns one initiative by name or UUID.
+// GetInitiative returns one initiative by any reference the API resolves.
 func (c *Client) GetInitiative(ctx context.Context, ref string) (Initiative, error) {
 	var initiative Initiative
 	if err := c.get(ctx, initiativePath(ref), &initiative); err != nil {

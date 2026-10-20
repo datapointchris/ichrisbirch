@@ -1,5 +1,7 @@
 import datetime as dt
 from typing import Annotated
+from typing import Any
+from typing import Literal
 from uuid import UUID
 
 import structlog
@@ -9,6 +11,7 @@ from fastapi import HTTPException
 from fastapi import Query
 from fastapi import Response
 from fastapi import status
+from sqlalchemy import ColumnElement
 from sqlalchemy import case
 from sqlalchemy import distinct
 from sqlalchemy import func
@@ -21,6 +24,7 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.models.issue import CLOSED_ISSUE_STATUSES
 from ichrisbirch.models.issue import TERMINAL_INITIATIVE_STATUSES
 from ichrisbirch.services.issue_readiness import NO_PRIORITY_URGENCY
+from ichrisbirch.services.issue_refs import item_number
 from ichrisbirch.services.issue_refs import resolve_initiative
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
@@ -30,9 +34,11 @@ router = APIRouter()
 
 ALL_STATUSES = 'all'
 
+InitiativeSort = Literal['priority', 'open', 'newest']
+
 
 def path_initiative(id: str, session: DbSession) -> models.Initiative:
-    """Resolve the `{id}` segment, which is a UUID or the initiative's name.
+    """Resolve the `{id}` segment through `resolve_initiative`, which names the forms it accepts.
 
     The segment is a path, not a single segment, because a name may hold a
     slash: the client escapes it, and the path is decoded before routing.
@@ -58,6 +64,15 @@ def require_reason_when_dropped(initiative_status: str, reason: str | None) -> N
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail='Dropping an initiative requires a reason. Say why it is dropped.',
+        )
+
+
+def refuse_number_shaped_name(name: str) -> None:
+    """A name that reads as `N` or `#N` would resolve to the initiative holding that number."""
+    if (number := item_number(name)) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'{name!r} reads as the number {number}, so it cannot name an initiative. Name it in words.',
         )
 
 
@@ -90,6 +105,7 @@ def issue_count_columns():
 def initiative_view(initiative: models.Initiative, issue_count, open_count, completed_count, canceled_count, repos) -> schemas.Initiative:
     return schemas.Initiative(
         id=initiative.id,
+        number=initiative.number,
         name=initiative.name,
         description=initiative.description,
         status=initiative.status,
@@ -119,25 +135,39 @@ def read_many(
         alias='status',
         description="An initiative status, or 'all'. Finished initiatives are hidden by default.",
     ),
+    sort: InitiativeSort = Query(
+        'priority',
+        description='priority: the order to work them in. open: most unclosed issues first. newest: latest started first.',
+    ),
     limit: RowLimit = None,
 ):
-    """Active initiatives by priority then position; finished ones after, latest first.
+    """Active initiatives, then someday, completed and dropped ones, each status in `sort`'s order.
 
-    Priority 0 is no priority and sorts after every level, as it does on issues.
+    Finished ones come latest first whatever the sort. Priority 0 is no priority
+    and sorts after every level, as it does on issues.
     """
     if initiative_status != ALL_STATUSES:
         validate_status(initiative_status, session)
+    status_class = case(
+        (models.Initiative.status == 'active', 0),
+        (models.Initiative.status == 'someday', 1),
+        (models.Initiative.status == 'completed', 2),
+        else_=3,
+    )
     urgency = case((models.Initiative.priority == 0, NO_PRIORITY_URGENCY), else_=models.Initiative.priority)
+    counts = issue_count_columns()
+    open_count = counts[1]
+    orders: dict[str, tuple[ColumnElement[Any], ...]] = {
+        'priority': (urgency.asc(), models.Initiative.position.asc(), models.Initiative.created_ts.asc()),
+        'open': (open_count.desc(), urgency.asc(), models.Initiative.position.asc()),
+        'newest': (models.Initiative.created_ts.desc(),),
+    }
+    within_class = orders[sort]
     query = (
-        select(models.Initiative, *issue_count_columns())
+        select(models.Initiative, *counts)
         .outerjoin(models.Issue, models.Issue.initiative_id == models.Initiative.id)
         .group_by(models.Initiative.id)
-        .order_by(
-            models.Initiative.closed_ts.desc().nullsfirst(),
-            urgency.asc(),
-            models.Initiative.position.asc(),
-            models.Initiative.created_ts.asc(),
-        )
+        .order_by(status_class.asc(), models.Initiative.closed_ts.desc().nullsfirst(), *within_class)
     )
     if initiative_status != ALL_STATUSES:
         query = query.where(models.Initiative.status == initiative_status)
@@ -146,6 +176,7 @@ def read_many(
 
 @router.post('', response_model=schemas.Initiative, status_code=status.HTTP_201_CREATED)
 def create(initiative: schemas.InitiativeCreate, session: DbSession):
+    refuse_number_shaped_name(initiative.name)
     validate_status(initiative.status, session)
     require_reason_when_dropped(initiative.status, initiative.status_reason)
     if initiative.status == 'active':
@@ -197,6 +228,8 @@ def apply_status_transition(initiative: models.Initiative, update_data: dict, se
 @router.patch('/{id:path}', response_model=schemas.Initiative, status_code=status.HTTP_200_OK)
 def update(initiative: InitiativeFromPath, update: schemas.InitiativeUpdate, session: DbSession):
     update_data = update.model_dump(exclude_unset=True)
+    if 'name' in update_data:
+        refuse_number_shaped_name(update_data['name'])
     resulting_status = update_data.get('status', initiative.status)
     resulting_name = update_data.get('name', initiative.name)
     if resulting_status == 'active' and (resulting_name != initiative.name or initiative.status != 'active'):

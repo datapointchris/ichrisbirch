@@ -11,6 +11,7 @@ export type InitiativeStatusFilter = InitiativeStatus | 'all'
 
 export const INITIATIVE_STATUS_LABELS: Record<InitiativeStatus, string> = {
   active: 'Active',
+  someday: 'Someday',
   completed: 'Completed',
   dropped: 'Dropped',
 }

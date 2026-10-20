@@ -30,7 +30,7 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 ### Issues and Projects Are Separate Stores
 
 Issues (`/issues`, `icb issues`) hold software work, written for the agent that will do it. Projects (`/projects`, `icb projects`) hold personal projects, and are not an SDLC tracker — never file development work into one.
-The two share the item number sequence, so a bare number is never ambiguous between them.
+Issues, project items and initiatives share the item number sequence, so a bare number is never ambiguous between them.
 Readiness (`is_ready`, `is_blocked`) and effective priority are derived on every read in `services/issue_readiness.py`; a client filters on those flags and never re-derives them.
 `docs/issues.md` explains the ready queue, the order and the claim.
 

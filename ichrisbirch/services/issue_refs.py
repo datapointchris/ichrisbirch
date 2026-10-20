@@ -1,7 +1,7 @@
 """Resolve the references a person or an agent types for issues, initiatives and labels.
 
-An issue answers to its UUID or its number, an initiative to its UUID or its
-name, and a label to its slug. Each endpoint resolves what it was given inside
+An issue answers to its UUID or its number, an initiative to its UUID, its
+number or its name, and a label to its slug. Each endpoint resolves what it was given inside
 the request that was going to reach the database anyway.
 """
 
@@ -27,6 +27,14 @@ def parse_uuid(ref: str) -> UUID | None:
         return None
 
 
+def item_number(ref: str) -> int | None:
+    """The item number `ref` names as `N` or `#N`, or None when it names none."""
+    digits = ref.removeprefix('#')
+    if digits.isascii() and digits.isdecimal():
+        return int(digits)
+    return None
+
+
 def issue_by_number(session: Session, number: int) -> models.Issue | None:
     return session.scalar(select(models.Issue).where(models.Issue.number == number))
 
@@ -42,8 +50,8 @@ def resolve_issue(session: Session, ref: str | UUID | int) -> models.Issue:
     # all-digits test. No number will ever be that long.
     elif (issue_id := parse_uuid(ref)) is not None:
         issue = session.get(models.Issue, issue_id)
-    elif ref.lstrip('#').isdigit():
-        issue = issue_by_number(session, int(ref.lstrip('#')))
+    elif (number := item_number(ref)) is not None:
+        issue = issue_by_number(session, number)
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -71,13 +79,21 @@ def initiative_by_name(session: Session, name: str) -> models.Initiative | None:
     return None
 
 
-def resolve_initiative(session: Session, ref: str | UUID) -> models.Initiative:
-    """Fetch an initiative by its UUID or its name."""
+def initiative_by_number(session: Session, number: int) -> models.Initiative | None:
+    return session.scalar(select(models.Initiative).where(models.Initiative.number == number))
+
+
+def resolve_initiative(session: Session, ref: str | UUID | int) -> models.Initiative:
+    """Fetch an initiative by its UUID, its number or its name."""
     initiative: models.Initiative | None
-    if isinstance(ref, UUID):
+    if isinstance(ref, int):
+        initiative = initiative_by_number(session, ref)
+    elif isinstance(ref, UUID):
         initiative = session.get(models.Initiative, ref)
     elif (initiative_id := parse_uuid(ref)) is not None:
         initiative = session.get(models.Initiative, initiative_id)
+    elif (number := item_number(ref)) is not None:
+        initiative = initiative_by_number(session, number)
     else:
         initiative = initiative_by_name(session, ref)
         if initiative is None:

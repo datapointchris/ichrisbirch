@@ -35,7 +35,7 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
-	initiatives, err := client.ListInitiatives(ctx, "", nil)
+	initiatives, err := client.ListInitiatives(ctx, "", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -43,11 +43,10 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
-	names := make([]string, 0, len(initiatives))
+	initiativeChoices := make([]string, 0, len(initiatives))
 	for _, initiative := range initiatives {
-		names = append(names, initiative.Name)
+		initiativeChoices = append(initiativeChoices, initiativeChoice(initiative))
 	}
-	sort.Strings(names)
 	slugs := make([]string, 0, len(vocabulary.Labels))
 	for _, label := range vocabulary.Labels {
 		slugs = append(slugs, label.Slug)
@@ -81,10 +80,10 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 		{
 			Key:      "initiative",
 			Label:    "Initiative",
-			Hint:     "The outcome this ships toward. Most issues have none.",
-			Choices:  names,
+			Hint:     "The outcome this ships toward, by number or name. Most issues have none.",
+			Choices:  initiativeChoices,
 			Optional: true,
-			Validate: projectRef(names),
+			Validate: initiativeRef(initiatives),
 		},
 		{
 			Key:      "label",
@@ -109,6 +108,52 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 			Multiline: true,
 		},
 	}, nil
+}
+
+// initiativeChoice is how the form offers an initiative: the number it resolves
+// to, then the name, which Tab completion matches anywhere in the choice.
+func initiativeChoice(initiative api.Initiative) string {
+	return strconv.Itoa(initiative.Number) + " " + initiative.Name
+}
+
+// initiativeRef accepts an initiative as N, #N, a UUID, a name or an offered
+// choice. A number or a UUID passes straight through for the API to resolve,
+// because the choices hold only the active initiatives.
+func initiativeRef(initiatives []api.Initiative) func(string) (string, error) {
+	choices := make([]string, 0, len(initiatives))
+	for _, initiative := range initiatives {
+		choices = append(choices, initiativeChoice(initiative))
+	}
+	byChoice := prompt.OneOf(choices)
+	return func(answer string) (string, error) {
+		if isItemNumber(strings.TrimPrefix(answer, "#")) || looksLikeUUID(answer) {
+			return answer, nil
+		}
+		for _, initiative := range initiatives {
+			if strings.EqualFold(answer, initiative.Name) {
+				return initiative.Name, nil
+			}
+		}
+		chosen, err := byChoice(answer)
+		if err != nil {
+			return "", err
+		}
+		number, _, _ := strings.Cut(chosen, " ")
+		return number, nil
+	}
+}
+
+// isItemNumber reports whether s is a bare item number, the digits alone.
+func isItemNumber(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // priorityAnswer accepts a priority by name or value and answers with its name.
@@ -234,7 +279,7 @@ func newIssuesCreateCommand() *cobra.Command {
 	f.String("type", "", "One of: "+strings.Join(api.IssueTypes, ", ")+" (default task)")
 	f.String("priority", "", "One of: "+priorityChoices()+" (default none)")
 	f.String("repo", "", "Repo this is work on, by registry name (omit for work on no repo)")
-	f.String("initiative", "", "Initiative this ships toward, by name or id")
+	f.String("initiative", "", "Initiative this ships toward, by number, name or id")
 	f.StringArray("label", nil, "Label to carry (repeatable; see: icb issues labels list)")
 	f.String("description", "", "What an agent could not find in the repo on its own")
 	f.String("acceptance", "", "How to verify it is done")
@@ -308,7 +353,7 @@ func (v *issueEditFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.repo, "repo", "", "Repo by registry name (empty takes it off every repo)")
 	f.StringVar(&v.issueType, "type", "", "One of: "+strings.Join(api.IssueTypes, ", "))
 	f.StringVar(&v.priority, "priority", "", "One of: "+priorityChoices())
-	f.StringVar(&v.initiative, "initiative", "", "Initiative by name or id (empty removes it)")
+	f.StringVar(&v.initiative, "initiative", "", "Initiative by number, name or id (empty removes it)")
 	f.StringVar(&v.parent, "parent", "", "Parent issue (empty removes it)")
 	f.StringVar(&v.discoveredFrom, "discovered-from", "", "Issue whose work turned this up (empty removes it)")
 	f.StringVar(&v.deferredUntil, "deferred-until", "", "Day before which it is not ready, as YYYY-MM-DD (empty clears)")

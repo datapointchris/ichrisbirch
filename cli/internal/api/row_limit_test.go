@@ -70,7 +70,7 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 			return err
 		},
 		"ListInitiatives": func(c *Client) error {
-			_, err := c.ListInitiatives(ctx, "", intptr(3))
+			_, err := c.ListInitiatives(ctx, "", "", intptr(3))
 			return err
 		},
 		"ListIssueComments": func(c *Client) error {

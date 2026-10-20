@@ -25,6 +25,7 @@ function linkTarget(element: { attributes: (name: string) => string | undefined 
 function makeInitiative(overrides: Partial<Initiative> = {}): Initiative {
   return {
     id: 'init-1',
+    number: 1501,
     name: 'Ship the tracker',
     description: null,
     status: 'active',
