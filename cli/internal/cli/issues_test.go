@@ -28,6 +28,7 @@ func TestIssues_AUsageRefusalDoesNotWaitOnTheNetwork(t *testing.T) {
 		{"a claim shorter than a minute", []string{"issues", "claim", "--minutes", "0"}},
 		{"a claim with no claimant", []string{"issues", "claim", "--claimant", ""}},
 		{"a cancel with no reason", []string{"issues", "cancel", "412"}},
+		{"a comment given twice", []string{"issues", "add-comment", "412", "shipped", "--body", "shipped"}},
 		{"an edit changing nothing", []string{"issues", "edit", "412"}},
 		{"emptying the title", []string{"issues", "edit", "412", "--title", ""}},
 		{"a label beside an empty one", []string{"issues", "edit", "412", "--label", "area-api", "--label", ""}},
@@ -167,6 +168,26 @@ func TestIssues_CompleteAndCancelSendWhoIsClosingInTheirPatch(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestIssues_AddCommentTakesTheTextAfterTheIssue(t *testing.T) {
+	var comment struct {
+		Body string `json:"body"`
+	}
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&comment)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+
+	if _, err := runService(t, "issues", "add-comment", "412", "Shipped in 55a0881"); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if comment.Body != "Shipped in 55a0881" {
+		t.Errorf("sent body %q, want the text after the issue", comment.Body)
 	}
 }
 

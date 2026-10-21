@@ -12,6 +12,7 @@ import (
 
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 	"github.com/datapointchris/ichrisbirch/cli/internal/config"
@@ -934,17 +935,25 @@ func newIssuesAddCommentCommand() *cobra.Command {
 		asJSON bool
 	)
 	cmd := &cobra.Command{
-		Use:   "add-comment <issue> --body <text>",
+		Use:   "add-comment <issue> [<text>]",
 		Short: "Leave a comment on an issue",
-		Long: "Progress, a handoff, or what completing it shipped. The body is markdown and\n" +
-			"usually arrives from a file. --author defaults to who is running icb: the\n" +
-			"Claude Code session, the worker $" + actorWorkerEnv + " names, or user@host.",
-		Example: "  icb issues add-comment 412 --body \"Root cause: the router order\"\n" +
+		Long: "Progress, a handoff, or what completing it shipped. The comment is markdown,\n" +
+			"given after the issue or in --body. One that opens with - goes after --.\n" +
+			"--author defaults to who is running icb: the Claude Code session, the worker\n" +
+			"$" + actorWorkerEnv + " names, or user@host.",
+		Example: "  icb issues add-comment 412 \"Root cause: the router order\"\n" +
+			"  icb issues add-comment 412 -- \"- shipped the rules\"\n" +
 			"  icb issues add-comment 412 --body \"$(cat handoff.md)\"",
-		Args: cobra.ExactArgs(1),
+		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 2 {
+				if cmd.Flags().Changed("body") {
+					return goclikit.UsageError(errors.New("give the comment once — after the issue, or in --body"))
+				}
+				body = args[1]
+			}
 			if strings.TrimSpace(body) == "" {
-				return goclikit.UsageError(errors.New("--body is required and cannot be blank"))
+				return goclikit.UsageError(errors.New("the comment is required and cannot be blank — give it after the issue, or in --body"))
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -966,9 +975,17 @@ func newIssuesAddCommentCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&body, "body", "", "The comment, as markdown (required)")
+	cmd.Flags().StringVar(&body, "body", "", "The comment, as markdown, in place of the text after the issue")
 	cmd.Flags().StringVar(&author, "author", actorIdentity(), "Who wrote it (empty leaves it unsigned)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the comment as JSON to stdout")
+	// A comment that opens with a bullet parses as a group of short flags.
+	cmd.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
+		var unknown *pflag.NotExistError
+		if errors.As(err, &unknown) && unknown.GetSpecifiedShortnames() != "" {
+			err = fmt.Errorf("%w — a comment that opens with - goes after --, as in: icb issues add-comment 412 -- \"- shipped\"", err)
+		}
+		return goclikit.UsageError(err)
+	})
 	return cmd
 }
 
