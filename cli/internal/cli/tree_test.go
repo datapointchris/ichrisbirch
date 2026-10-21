@@ -216,8 +216,8 @@ func TestTreeForItem_AnItemWithNoEdgesReportsItselfUnconnected(t *testing.T) {
 	}
 }
 
-// cli-design.md § "A fact on screen is reachable through some machine door":
-// every row the drawing shows has to come back through --json.
+// Anything the drawing shows is reachable through --json, so a script never
+// parses the drawing: every row it shows has to come back in the document.
 func TestBuildTreeJSON_CarriesEveryNodeTheDrawingShows(t *testing.T) {
 	g, byID := indexed(treeItems())
 
