@@ -13,6 +13,10 @@ An issue is ready when all of these hold:
 - its initiative, if it has one, is not `someday`, which holds ideas not yet
   taken on
 
+An issue is autofixable when neither it nor its initiative says `autofix` is
+false. That says whether an unattended fix may take it, and nothing about
+whether anyone may take it now, which `ready` answers.
+
 Order is effective priority, then rank, then number. An issue's own priority wins.
 With none, it takes its open parent's effective priority, else its active
 initiative's. Then it is raised to the most urgent effective priority of any
@@ -52,6 +56,7 @@ class IssueReadiness:
     blocked: frozenset[UUID]
     deferred: frozenset[UUID]
     ready: frozenset[UUID]
+    autofixable: frozenset[UUID]
     child_count: dict[UUID, int]
     open_child_count: dict[UUID, int]
 
@@ -74,6 +79,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         models.Issue.parent_id,
         models.Issue.deferred_until_date,
         models.Issue.claim_expires_ts,
+        models.Issue.autofix,
     )
     rows = {row.id: row for row in session.execute(select(*columns)).all()}
     initiative_urgency = {
@@ -83,6 +89,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         ).all()
     }
     someday_initiatives = set(session.scalars(select(models.Initiative.id).where(models.Initiative.status == 'someday')).all())
+    no_autofix_initiatives = set(session.scalars(select(models.Initiative.id).where(models.Initiative.autofix.is_(False))).all())
     edges = session.execute(select(models.IssueDependency.issue_id, models.IssueDependency.depends_on_id)).all()
 
     unclosed = {issue_id for issue_id, row in rows.items() if row.status not in CLOSED_ISSUE_STATUSES}
@@ -151,11 +158,14 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         ):
             ready.add(issue_id)
 
+    autofixable = {issue_id for issue_id, row in rows.items() if row.autofix and row.initiative_id not in no_autofix_initiatives}
+
     return IssueReadiness(
         effective_priority=effective_priority,
         blocked=frozenset(blocked),
         deferred=frozenset(deferred),
         ready=frozenset(ready),
+        autofixable=frozenset(autofixable),
         child_count=child_count,
         open_child_count=open_child_count,
     )

@@ -24,6 +24,7 @@ const initiative: Initiative = {
   status_reason: null,
   priority: 2,
   position: 0,
+  autofix: true,
   created_ts: '2026-10-01T12:00:00Z',
   closed_ts: null,
   issue_count: 3,

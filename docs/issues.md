@@ -57,6 +57,25 @@ issue into an active initiative takes that one alone.
 priority, and like a closed initiative it gives up its name, so an active one
 may take it.
 
+## `autofix: false` keeps an issue from an unattended fix and leaves it ready for a session
+
+An unattended fix takes one ready issue, lands one small commit nobody reads
+first, and closes it. Two kinds of work must never reach it. An initiative
+worked as one design would have a step landed alone, out of the design it
+belongs to. A standalone issue may need a person, or someone may simply want
+to do it themselves.
+
+Issues and initiatives each carry `autofix`, true by default. An issue is
+autofixable when neither it nor its initiative says false. That is derived on
+every read with readiness and returned as `is_autofixable`, so an issue filed
+into such an initiative later is covered with nothing set on it.
+
+`autofix` says nothing about whether an issue is ready. A session reads the
+whole queue with `icb issues next`. An unattended fix reads `icb issues next
+--autofix`, which is `GET /issues/ready?autofix=true`. Neither status nor
+someday carries this, because a claim and a release rewrite the status, and
+someday means nobody has taken the work on.
+
 ## Triage holds what nobody has accepted yet
 
 An issue filed as `triage` sits outside the ready queue until someone accepts

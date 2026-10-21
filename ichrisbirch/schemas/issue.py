@@ -45,6 +45,7 @@ class InitiativeSummary(IssueConfig):
     name: str
     status: str
     priority: int
+    autofix: bool
 
 
 class IssueCreate(IssueConfig):
@@ -58,6 +59,7 @@ class IssueCreate(IssueConfig):
     status: str = 'open'
     priority: Priority = 0
     deferred_until_date: dt.date | None = None
+    autofix: bool = True
     initiative: InitiativeRef | None = None
     parent: IssueRef | None = None
     discovered_from: IssueRef | None = None
@@ -84,6 +86,7 @@ class IssueUpdate(IssueConfig):
     status_reason: str | None = None
     priority: NotNull[Priority] = None
     deferred_until_date: dt.date | None = None
+    autofix: NotNull[bool] = None
     initiative: InitiativeRef | None = None
     parent: IssueRef | None = None
     discovered_from: IssueRef | None = None
@@ -99,6 +102,8 @@ class Issue(IssueConfig):
     own, else its open parent's or its active initiative's, raised to the most
     urgent of anything it blocks. `is_ready` says whether an agent could take it
     now, whatever its type; the ready queue leaves decisions out separately.
+    `autofix` is the issue's own setting, and `is_autofixable` is false when it
+    or its initiative's is.
     """
 
     id: UUID
@@ -116,6 +121,7 @@ class Issue(IssueConfig):
     deferred_until_date: dt.date | None = None
     claimed_by: str | None = None
     claim_expires_ts: dt.datetime | None = None
+    autofix: bool
     initiative: InitiativeSummary | None = None
     parent: IssueSummary | None = None
     discovered_from: IssueSummary | None = None
@@ -128,6 +134,7 @@ class Issue(IssueConfig):
     comment_count: int = 0
     is_blocked: bool
     is_ready: bool
+    is_autofixable: bool
     created_ts: dt.datetime
     updated_ts: dt.datetime
     closed_ts: dt.datetime | None = None
@@ -168,6 +175,7 @@ class IssueReadyClaimRequest(IssueClaimRequest):
     type: str | None = None
     label: Slug | None = None
     initiative: InitiativeRef | None = None
+    autofix: bool | None = None
 
 
 class IssueClaimResult(IssueConfig):
@@ -196,6 +204,7 @@ class InitiativeCreate(IssueConfig):
     status_reason: str | None = None
     priority: Priority = 0
     position: int | None = None
+    autofix: bool = True
 
 
 class InitiativeUpdate(IssueConfig):
@@ -207,6 +216,7 @@ class InitiativeUpdate(IssueConfig):
     status_reason: str | None = None
     priority: NotNull[Priority] = None
     position: NotNull[int] = None
+    autofix: NotNull[bool] = None
 
 
 class Initiative(IssueConfig):
@@ -224,6 +234,7 @@ class Initiative(IssueConfig):
     status_reason: str | None = None
     priority: int
     position: int
+    autofix: bool
     created_ts: dt.datetime
     closed_ts: dt.datetime | None = None
     issue_count: int = 0

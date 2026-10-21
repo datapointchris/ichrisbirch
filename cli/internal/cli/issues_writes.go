@@ -181,6 +181,7 @@ func newIssuesCreateCommand() *cobra.Command {
 		discoveredFrom string
 		dependsOn      []string
 		deferredUntil  string
+		autofix        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "create [flags]",
@@ -193,8 +194,10 @@ func newIssuesCreateCommand() *cobra.Command {
 			"--status triage holds it for a person to accept before an agent may take it.\n" +
 			"Anything a hook or a script files belongs there.\n" +
 			"\n" +
-			"--parent, --discovered-from, --depends-on and --deferred-until are never\n" +
-			"asked for. A new issue that depends on its own parent is refused, since\n" +
+			"--autofix=false keeps it from an unattended fix, so only a session takes it.\n" +
+			"\n" +
+			"--parent, --discovered-from, --depends-on, --deferred-until and --autofix are\n" +
+			"never asked for. A new issue that depends on its own parent is refused, since\n" +
 			"neither could ever start.",
 		Example: "  icb issues create\n" +
 			"  icb issues create --title \"Routing drops /issues\" --type bug --repo ichrisbirch --priority high\n" +
@@ -262,6 +265,9 @@ func newIssuesCreateCommand() *cobra.Command {
 			in.Parent = valuedStrFlag(f, "parent", &parent)
 			in.DiscoveredFrom = valuedStrFlag(f, "discovered-from", &discoveredFrom)
 			in.DeferredUntilDate = valuedStrFlag(f, "deferred-until", &deferredUntil)
+			if f.Changed("autofix") {
+				in.Autofix = &autofix
+			}
 
 			issue, err := client.CreateIssue(cmd.Context(), in, issueZone())
 			if err != nil {
@@ -288,6 +294,7 @@ func newIssuesCreateCommand() *cobra.Command {
 	f.StringVar(&discoveredFrom, "discovered-from", "", "Issue whose work turned this up")
 	f.StringArrayVar(&dependsOn, "depends-on", nil, "Issue this waits on (repeatable)")
 	f.StringVar(&deferredUntil, "deferred-until", "", "Day before which it is not ready, as YYYY-MM-DD")
+	f.BoolVar(&autofix, "autofix", true, autofixSetHelp)
 	f.BoolVar(&asJSON, "json", false, "Output the filed issue as JSON to stdout")
 	return cmd
 }
@@ -305,10 +312,15 @@ var issueClearableFlags = map[string]string{
 // issueRequiredFlags are the fields every issue carries, so none can be emptied.
 var issueRequiredFlags = []string{"title", "type", "priority"}
 
+// autofixSetHelp is the help every write's --autofix carries, on issues and
+// initiatives alike.
+const autofixSetHelp = "Whether an unattended fix may take it (--autofix=false leaves it to a session)"
+
 type issueEditFlags struct {
 	title, description, acceptance, repo, issueType, priority string
 	initiative, parent, discoveredFrom, deferredUntil         string
 	labels                                                    []string
+	autofix                                                   bool
 }
 
 func newIssuesEditCommand() *cobra.Command {
@@ -326,8 +338,9 @@ func newIssuesEditCommand() *cobra.Command {
 			"--deferred-until \"\" makes it ready today. --label replaces the whole set,\n" +
 			"and --label \"\" removes every label. --title, --type and --priority cannot\n" +
 			"be emptied. --priority none drops the issue's own, so it takes its parent's\n" +
-			"or its initiative's.",
+			"or its initiative's. --autofix=false keeps it from an unattended fix.",
 		Example: "  icb issues edit 412 --priority urgent\n" +
+			"  icb issues edit 412 --autofix=false\n" +
 			"  icb issues edit 412 --acceptance \"$(cat acceptance.md)\"\n" +
 			"  icb issues edit 412 --label area-api --label needs-design\n" +
 			"  icb issues edit 412 --initiative \"\" --deferred-until 2026-11-01",
@@ -358,6 +371,7 @@ func (v *issueEditFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.discoveredFrom, "discovered-from", "", "Issue whose work turned this up (empty removes it)")
 	f.StringVar(&v.deferredUntil, "deferred-until", "", "Day before which it is not ready, as YYYY-MM-DD (empty clears)")
 	f.StringArrayVar(&v.labels, "label", nil, "Label (repeatable; replaces the set, empty removes every label)")
+	f.BoolVar(&v.autofix, "autofix", true, autofixSetHelp)
 }
 
 // update settles every refusal that needs no server state, then builds the body
@@ -403,6 +417,9 @@ func (v *issueEditFlags) update(cmd *cobra.Command) (api.IssueUpdateInput, []str
 			return api.IssueUpdateInput{}, nil, goclikit.UsageError(fmt.Errorf("--priority: %w", err))
 		}
 		in.Priority = &priority
+	}
+	if f.Changed("autofix") {
+		in.Autofix = &v.autofix
 	}
 	switch readFlagIntent(f, "label") {
 	case flagClears:

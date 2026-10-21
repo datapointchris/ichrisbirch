@@ -34,7 +34,8 @@ use, so a bare `#812` names one row in either store.
 claim has expired, its deferral day has arrived, every dependency and child
 is closed, and its initiative is not someday. The queue leaves decisions out,
 because they wait on a person rather than an agent. `next --type decision`
-lists them. The queue orders by effective priority, then rank. A blocker inherits the most urgent priority of what it
+lists them. `next --autofix` keeps only what an unattended fix may take: an
+issue whose own `autofix` and whose initiative's are both true. The queue orders by effective priority, then rank. A blocker inherits the most urgent priority of what it
 blocks, so a `none` issue gating an urgent bug prints as `urgent*`. The star
 marks a priority the issue did not set.
 

@@ -152,6 +152,15 @@
               @update:model-value="form.deferred_until_date = $event"
             />
           </div>
+          <div class="add-edit-modal__form-item">
+            <label for="issue-autofix">Autofix</label>
+            <input
+              id="issue-autofix"
+              v-model="form.autofix"
+              data-testid="issue-autofix-input"
+              type="checkbox"
+            />
+          </div>
         </div>
 
         <div class="add-edit-modal__form-item">
@@ -258,6 +267,7 @@ function createEmptyForm() {
     parent: '',
     depends_on: '',
     deferred_until_date: '',
+    autofix: true,
     description: '',
     acceptance: '',
   }
@@ -318,6 +328,7 @@ watch(
         labels: [...issue.labels],
         parent: issue.parent ? `#${issue.parent.number}` : '',
         deferred_until_date: issue.deferred_until_date ?? '',
+        autofix: issue.autofix,
         description: issue.description ?? '',
         acceptance: issue.acceptance ?? '',
       })
@@ -340,6 +351,7 @@ function buildCreate(parent: number | null, dependsOn: number[]): IssueCreate {
   if (parent !== null) payload.parent = parent
   if (dependsOn.length > 0) payload.depends_on = dependsOn
   if (form.deferred_until_date) payload.deferred_until_date = form.deferred_until_date
+  if (!form.autofix) payload.autofix = false
   if (form.description.trim()) payload.description = form.description.trim()
   if (form.acceptance.trim()) payload.acceptance = form.acceptance.trim()
   return payload
@@ -356,6 +368,7 @@ function buildUpdate(parent: number | null): IssueUpdate {
     labels: [...form.labels],
     parent,
     deferred_until_date: form.deferred_until_date || null,
+    autofix: form.autofix,
     description: form.description.trim() || null,
     acceptance: form.acceptance.trim() || null,
   }

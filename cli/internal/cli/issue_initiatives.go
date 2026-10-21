@@ -27,7 +27,8 @@ func newIssueInitiativesCommand() *cobra.Command {
 			"issue with no priority of its own takes its active initiative's. A finished\n" +
 			"initiative takes no new issues and leaves the ones it holds as they are. A\n" +
 			"someday initiative is an idea not yet taken on, and none of its issues is\n" +
-			"ready until it is reopened.",
+			"ready until it is reopened. One worked as a single design sets\n" +
+			"--autofix=false, so an unattended fix never lands one of its steps alone.",
 	})
 	goclikit.WithRecoveryHints(cmd, initiativeHints...)
 	splitReadingFromChanging(cmd)
@@ -143,13 +144,15 @@ func newInitiativesCreateCommand() *cobra.Command {
 		description string
 		priority    string
 		position    int
+		autofix     bool
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
-		Use:     "create --name <name> [flags]",
-		Short:   "Start an initiative",
-		Example: "  icb issues initiatives create --name \"Ship the tracker\" --priority high",
-		Args:    cobra.NoArgs,
+		Use:   "create --name <name> [flags]",
+		Short: "Start an initiative",
+		Example: "  icb issues initiatives create --name \"Ship the tracker\" --priority high\n" +
+			"  icb issues initiatives create --name \"Build day\" --autofix=false",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if strings.TrimSpace(name) == "" {
 				return goclikit.UsageError(errors.New("--name is required"))
@@ -165,6 +168,9 @@ func newInitiativesCreateCommand() *cobra.Command {
 			}
 			if f.Changed("position") {
 				in.Position = &position
+			}
+			if f.Changed("autofix") {
+				in.Autofix = &autofix
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
@@ -185,6 +191,7 @@ func newInitiativesCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&description, "description", "", "The outcome, and how you will know it is done")
 	cmd.Flags().StringVar(&priority, "priority", "", "One of: "+priorityChoices()+" (default none)")
 	cmd.Flags().IntVar(&position, "position", 0, "Place among initiatives of its priority (default last)")
+	cmd.Flags().BoolVar(&autofix, "autofix", true, initiativeAutofixHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the initiative as JSON to stdout")
 	return cmd
 }
@@ -195,6 +202,7 @@ func newInitiativesEditCommand() *cobra.Command {
 		description string
 		priority    string
 		position    int
+		autofix     bool
 		asJSON      bool
 	)
 	cmd := &cobra.Command{
@@ -202,8 +210,9 @@ func newInitiativesEditCommand() *cobra.Command {
 		Short: "Change an initiative's fields",
 		Long: "Update only the fields whose flags you pass. --description \"\" clears it.\n" +
 			"Status moves through complete, drop, shelve and reopen.",
-		Example: "  icb issues initiatives edit \"Ship the tracker\" --priority urgent",
-		Args:    cobra.ExactArgs(1),
+		Example: "  icb issues initiatives edit \"Ship the tracker\" --priority urgent\n" +
+			"  icb issues initiatives edit 1491 --autofix=false",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if readFlagIntent(f, "name") == flagClears {
@@ -223,12 +232,15 @@ func newInitiativesEditCommand() *cobra.Command {
 			if f.Changed("position") {
 				in.Position = &position
 			}
+			if f.Changed("autofix") {
+				in.Autofix = &autofix
+			}
 			var clear []string
 			if readFlagIntent(f, "description") == flagClears {
 				clear = append(clear, "description")
 			}
 			if in == (api.InitiativeUpdateInput{}) && len(clear) == 0 {
-				return goclikit.UsageError(errors.New("nothing to change — pass at least one of --name/--description/--priority/--position"))
+				return goclikit.UsageError(errors.New("nothing to change — pass at least one of --name/--description/--priority/--position/--autofix"))
 			}
 			return runInitiativeUpdate(cmd, args[0], in, clear, asJSON, "Updated")
 		},
@@ -237,9 +249,12 @@ func newInitiativesEditCommand() *cobra.Command {
 	cmd.Flags().StringVar(&description, "description", "", "New description (empty clears)")
 	cmd.Flags().StringVar(&priority, "priority", "", "One of: "+priorityChoices())
 	cmd.Flags().IntVar(&position, "position", 0, "New place among initiatives of its priority")
+	cmd.Flags().BoolVar(&autofix, "autofix", true, initiativeAutofixHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the initiative as JSON to stdout")
 	return cmd
 }
+
+const initiativeAutofixHelp = "Whether an unattended fix may take its issues (--autofix=false leaves them to a session)"
 
 func runInitiativeUpdate(cmd *cobra.Command, ref string, in api.InitiativeUpdateInput, clear []string, asJSON bool, verb string) error {
 	client, err := newAPIClient(cmd.Context())

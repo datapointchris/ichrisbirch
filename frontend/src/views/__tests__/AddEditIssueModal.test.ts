@@ -34,6 +34,7 @@ const activeInitiative: Initiative = {
   status_reason: null,
   priority: 2,
   position: 0,
+  autofix: true,
   created_ts: '2026-10-01T12:00:00Z',
   closed_ts: null,
   issue_count: 0,
@@ -59,7 +60,7 @@ const existing: Issue = {
   deferred_until_date: null,
   claimed_by: null,
   claim_expires_ts: null,
-  initiative: { id: 'init-9', number: 1509, name: 'Finished migration', status: 'completed', priority: 0 },
+  initiative: { id: 'init-9', number: 1509, name: 'Finished migration', status: 'completed', priority: 0, autofix: true },
   parent: { id: 'id-900', number: 900, title: 'The parent', status: 'open' },
   discovered_from: null,
   duplicate_of: null,
@@ -71,6 +72,8 @@ const existing: Issue = {
   comment_count: 0,
   is_blocked: false,
   is_ready: true,
+  autofix: true,
+  is_autofixable: true,
   created_ts: '2026-10-01T12:00:00Z',
   updated_ts: '2026-10-01T12:00:00Z',
   closed_ts: null,
@@ -170,16 +173,18 @@ describe('AddEditIssueModal write contract', () => {
     expect(updated(wrapper).labels).toEqual(['area-cli'])
   })
 
-  it('sends a cleared field on an edit as an explicit null', async () => {
+  it('sends an edit with each cleared field as an explicit null and autofix as set', async () => {
     const wrapper = await mountModal(existing)
     await wrapper.find('[data-testid="issue-description-input"]').setValue('')
     await wrapper.find('[data-testid="issue-repo-input"]').setValue('')
     await wrapper.find('[data-testid="issue-parent-input"]').setValue('')
+    await wrapper.find('[data-testid="issue-autofix-input"]').setValue(false)
     await wrapper.find('form').trigger('submit')
     const payload = updated(wrapper)
     expect(payload.description).toBeNull()
     expect(payload.repo).toBeNull()
     expect(payload.parent).toBeNull()
+    expect(payload.autofix).toBe(false)
     expect(wrapper.emitted('update')![0]![0]).toEqual(existing)
   })
 

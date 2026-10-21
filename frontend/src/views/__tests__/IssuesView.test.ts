@@ -51,6 +51,8 @@ function makeIssue(overrides: Partial<Issue>): Issue {
     comment_count: 0,
     is_blocked: false,
     is_ready: true,
+    autofix: true,
+    is_autofixable: true,
     created_ts: '2026-10-01T12:00:00Z',
     updated_ts: '2026-10-01T12:00:00Z',
     closed_ts: null,

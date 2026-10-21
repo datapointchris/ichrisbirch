@@ -112,6 +112,7 @@ def initiative_view(initiative: models.Initiative, issue_count, open_count, comp
         status_reason=initiative.status_reason,
         priority=initiative.priority,
         position=initiative.position,
+        autofix=initiative.autofix,
         created_ts=initiative.created_ts,
         closed_ts=initiative.closed_ts,
         issue_count=issue_count,
@@ -192,6 +193,7 @@ def create(initiative: schemas.InitiativeCreate, session: DbSession):
         status_reason=initiative.status_reason,
         priority=initiative.priority,
         position=position,
+        autofix=initiative.autofix,
     )
     if db_obj.status in TERMINAL_INITIATIVE_STATUSES:
         db_obj.closed_ts = dt.datetime.now(dt.UTC)

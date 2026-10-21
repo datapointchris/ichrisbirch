@@ -42,6 +42,17 @@
         </div>
 
         <div class="add-edit-modal__form-item">
+          <label for="initiative-autofix">Autofix</label>
+          <input
+            id="initiative-autofix"
+            v-model="form.autofix"
+            data-testid="initiative-autofix-input"
+            type="checkbox"
+          />
+          <p class="issue-modal__note">Off for work done as one design, so an unattended fix never lands one of its steps alone.</p>
+        </div>
+
+        <div class="add-edit-modal__form-item">
           <label for="initiative-description">Description</label>
           <textarea
             id="initiative-description"
@@ -98,7 +109,7 @@ const nameInput = ref<HTMLInputElement | null>(null)
 const priorityOptions = computed(() => issues.vocabulary.priorities.map((entry) => ({ value: entry.value, label: entry.name })))
 
 function createEmptyForm() {
-  return { name: '', priority: 0, description: '' }
+  return { name: '', priority: 0, description: '', autofix: true }
 }
 
 const form = reactive(createEmptyForm())
@@ -111,6 +122,7 @@ watch(
         name: props.editData.name,
         priority: props.editData.priority,
         description: props.editData.description ?? '',
+        autofix: props.editData.autofix,
       })
     } else if (val) {
       Object.assign(form, createEmptyForm())
@@ -128,9 +140,9 @@ function handleSubmit(handleSuccess: () => void) {
   if (!name) return
   const description = form.description.trim()
   if (props.editData) {
-    emit('update', props.editData, { name, priority: form.priority, description: description || null })
+    emit('update', props.editData, { name, priority: form.priority, description: description || null, autofix: form.autofix })
   } else {
-    const payload: InitiativeCreate = { name, priority: form.priority }
+    const payload: InitiativeCreate = { name, priority: form.priority, autofix: form.autofix }
     if (description) payload.description = description
     emit('create', payload)
   }

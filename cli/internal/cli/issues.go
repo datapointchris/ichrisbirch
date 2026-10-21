@@ -137,6 +137,7 @@ type issueFilterFlags struct {
 	claimedBy  string
 	closedBy   string
 	blocked    bool
+	autofix    bool
 }
 
 func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
@@ -151,7 +152,10 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 	f.StringVar(&v.claimedBy, "claimed-by", "", "Only issues held by this claimant")
 	f.StringVar(&v.closedBy, "closed-by", "", "Only issues whose closer starts with this, such as claude-code/")
 	f.BoolVar(&v.blocked, "blocked", false, "Only issues waiting on an unclosed dependency (--blocked=false for the rest)")
+	f.BoolVar(&v.autofix, "autofix", false, autofixFilterHelp)
 }
+
+const autofixFilterHelp = "Only issues an unattended fix may take (--autofix=false for the rest)"
 
 // filter validates what can be refused without the API and builds the query.
 func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
@@ -181,6 +185,9 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 	}
 	if f.Changed("blocked") {
 		filter.Blocked = &v.blocked
+	}
+	if f.Changed("autofix") {
+		filter.Autofix = &v.autofix
 	}
 	return filter, nil
 }
@@ -371,14 +378,16 @@ func newIssuesNextCommand() *cobra.Command {
 		Long: "Open, unblocked, not deferred past today, with no open children, and not held\n" +
 			"by a live claim. The first row is what `icb issues claim` with no issue would\n" +
 			"take, under the same flags. Decisions wait on a person and are left out unless\n" +
-			"--type decision asks for them. Reading the queue holds nothing, so claim the\n" +
-			"issue you take before working it.\n" +
+			"--type decision asks for them. --autofix keeps only the issues an unattended\n" +
+			"fix may take: neither the issue nor its initiative sets autofix false.\n" +
+			"Reading the queue holds nothing, so claim the issue you take before working it.\n" +
 			"\n" +
 			"The priority column is the one the queue sorts by, and a * marks one inherited\n" +
 			"from what the issue blocks, its parent, or its initiative.",
 		Example: "  icb issues next\n" +
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues next --label area-cli --json\n" +
+			"  icb issues next --autofix --json\n" +
 			"  icb issues next --type decision",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -423,9 +432,10 @@ type readyQueueFlags struct {
 	issueType  string
 	label      string
 	initiative string
+	autofix    bool
 }
 
-var readyQueueFlagNames = []string{"repo", "type", "label", "initiative"}
+var readyQueueFlagNames = []string{"repo", "type", "label", "initiative", "autofix"}
 
 func (v *readyQueueFlags) register(cmd *cobra.Command) {
 	f := cmd.Flags()
@@ -433,18 +443,23 @@ func (v *readyQueueFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.issueType, "type", "", "Only this type: "+strings.Join(api.IssueTypes, ", ")+" (decisions only when named)")
 	f.StringVar(&v.label, "label", "", "Only issues carrying this label")
 	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by number, name or id")
+	f.BoolVar(&v.autofix, "autofix", false, autofixFilterHelp)
 }
 
 func (v *readyQueueFlags) filter(cmd *cobra.Command) (api.ReadyFilter, error) {
 	if err := validateIssueType(cmd.Flags(), "type", v.issueType); err != nil {
 		return api.ReadyFilter{}, err
 	}
-	return api.ReadyFilter{
+	filter := api.ReadyFilter{
 		Repo:       repoFlagValue(cmd, v.repo),
 		Type:       v.issueType,
 		Label:      v.label,
 		Initiative: v.initiative,
-	}, nil
+	}
+	if cmd.Flags().Changed("autofix") {
+		filter.Autofix = &v.autofix
+	}
+	return filter, nil
 }
 
 // --- Reads of one issue ---
@@ -766,6 +781,13 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 	field("repo", orDash(strValue(issue.Repo)))
 	if issue.Initiative != nil {
 		field("initiative", fmt.Sprintf("%d %s", issue.Initiative.Number, issue.Initiative.Name))
+	}
+	if !issue.IsAutofixable && !isClosedIssue(issue.Issue) {
+		if issue.Autofix {
+			field("autofix", "off, from its initiative")
+		} else {
+			field("autofix", "off")
+		}
 	}
 	if issue.Parent != nil {
 		field("parent", summaryLine(*issue.Parent))
