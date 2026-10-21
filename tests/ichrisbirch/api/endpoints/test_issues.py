@@ -219,15 +219,18 @@ class TestReadyQueue:
         ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'status': 'active'}))
         assert task['title'] in titles(ok(client.get(f'{ISSUES}/ready')))
 
-    def test_autofix_false_on_an_issue_or_its_initiative_keeps_it_from_the_autofix_queue(self, client):
+    def test_autofix_false_on_an_issue_its_parent_or_its_initiative_keeps_it_from_the_autofixable_queue(self, client):
         bug = issue(client, 'Ready bug with high priority')
         task = issue(client, 'Ready task without priority')
         ok(patch(client, bug['number'], autofix=False))
         ok(patch(client, task['number'], initiative='Ship the issue tracker'))
         ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'autofix': False}))
+        parent = create(client, title='Parent with autofix off', autofix=False)
+        child = create(client, title='Child of that parent', parent=parent['number'])
 
-        assert titles(ok(client.get(f'{ISSUES}/ready', params={'autofix': True}))) == ['Ready chore with low priority']
-        assert set(titles(ok(client.get(f'{ISSUES}/ready')))) == {bug['title'], task['title'], 'Ready chore with low priority'}
+        assert titles(ok(client.get(f'{ISSUES}/ready', params={'autofixable': True}))) == ['Ready chore with low priority']
+        everything = {bug['title'], task['title'], child['title'], 'Ready chore with low priority'}
+        assert set(titles(ok(client.get(f'{ISSUES}/ready')))) == everything
         assert issue(client, task['title'])['is_autofixable'] is False
 
     def test_a_child_without_priority_takes_its_parent(self, client):

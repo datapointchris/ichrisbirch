@@ -127,17 +127,17 @@ func newIssuesCommand() *cobra.Command {
 // issueFilterFlags are the questions a list of issues answers, declared once
 // so list and search ask them the same way.
 type issueFilterFlags struct {
-	status     string
-	repo       string
-	issueType  string
-	label      string
-	initiative string
-	parent     string
-	priority   string
-	claimedBy  string
-	closedBy   string
-	blocked    bool
-	autofix    bool
+	status      string
+	repo        string
+	issueType   string
+	label       string
+	initiative  string
+	parent      string
+	priority    string
+	claimedBy   string
+	closedBy    string
+	blocked     bool
+	autofixable bool
 }
 
 func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
@@ -152,10 +152,10 @@ func (v *issueFilterFlags) register(cmd *cobra.Command, statusDefault string) {
 	f.StringVar(&v.claimedBy, "claimed-by", "", "Only issues held by this claimant")
 	f.StringVar(&v.closedBy, "closed-by", "", "Only issues whose closer starts with this, such as claude-code/")
 	f.BoolVar(&v.blocked, "blocked", false, "Only issues waiting on an unclosed dependency (--blocked=false for the rest)")
-	f.BoolVar(&v.autofix, "autofix", false, autofixFilterHelp)
+	f.BoolVar(&v.autofixable, "autofixable", false, autofixableFilterHelp)
 }
 
-const autofixFilterHelp = "Only issues an unattended fix may take (--autofix=false for the rest)"
+const autofixableFilterHelp = "Only issues whose own, initiative's and parents' autofix are all on (--autofixable=false for the rest)"
 
 // filter validates what can be refused without the API and builds the query.
 func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
@@ -186,10 +186,24 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 	if f.Changed("blocked") {
 		filter.Blocked = &v.blocked
 	}
-	if f.Changed("autofix") {
-		filter.Autofix = &v.autofix
+	if f.Changed("autofixable") {
+		filter.Autofixable = &v.autofixable
 	}
 	return filter, nil
+}
+
+// honoredAutofixable refuses a reply an API that predates the filter answered
+// unfiltered, which would hand an unattended fix the work kept from it.
+func honoredAutofixable(want *bool, issues []api.Issue) error {
+	if want == nil {
+		return nil
+	}
+	for _, issue := range issues {
+		if issue.IsAutofixable == nil || *issue.IsAutofixable != *want {
+			return fmt.Errorf("the API ignored --autofixable: #%d came back without a matching is_autofixable, so it predates the filter", issue.Number)
+		}
+	}
+	return nil
 }
 
 func validateIssueType(f *pflag.FlagSet, name, value string) error {
@@ -272,7 +286,11 @@ func newIssuesListCommand() *cobra.Command {
 			}
 			hidClosed := !cmd.Flags().Changed("status")
 			return runIssuesCollection(cmd, asJSON, hidClosed, func(c *api.Client) ([]api.Issue, error) {
-				return c.ListIssues(cmd.Context(), filter, window, issueZone(), limitFlag(cmd))
+				issues, err := c.ListIssues(cmd.Context(), filter, window, issueZone(), limitFlag(cmd))
+				if err != nil {
+					return nil, err
+				}
+				return issues, honoredAutofixable(filter.Autofixable, issues)
 			})
 		},
 	}
@@ -307,7 +325,11 @@ func newIssuesSearchCommand() *cobra.Command {
 			}
 			filter.Search = args[0]
 			return runIssuesCollection(cmd, asJSON, false, func(c *api.Client) ([]api.Issue, error) {
-				return c.ListIssues(cmd.Context(), filter, api.Window{}, issueZone(), limitFlag(cmd))
+				issues, err := c.ListIssues(cmd.Context(), filter, api.Window{}, issueZone(), limitFlag(cmd))
+				if err != nil {
+					return nil, err
+				}
+				return issues, honoredAutofixable(filter.Autofixable, issues)
 			})
 		},
 	}
@@ -378,8 +400,8 @@ func newIssuesNextCommand() *cobra.Command {
 		Long: "Open, unblocked, not deferred past today, with no open children, and not held\n" +
 			"by a live claim. The first row is what `icb issues claim` with no issue would\n" +
 			"take, under the same flags. Decisions wait on a person and are left out unless\n" +
-			"--type decision asks for them. --autofix keeps only the issues an unattended\n" +
-			"fix may take: neither the issue nor its initiative sets autofix false.\n" +
+			"--type decision asks for them. --autofixable keeps only the issues whose own,\n" +
+			"initiative's and parents' autofix are all on, the queue an unattended fix reads.\n" +
 			"Reading the queue holds nothing, so claim the issue you take before working it.\n" +
 			"\n" +
 			"The priority column is the one the queue sorts by, and a * marks one inherited\n" +
@@ -387,7 +409,7 @@ func newIssuesNextCommand() *cobra.Command {
 		Example: "  icb issues next\n" +
 			"  icb issues next --repo ichrisbirch --limit 1\n" +
 			"  icb issues next --label area-cli --json\n" +
-			"  icb issues next --autofix --json\n" +
+			"  icb issues next --autofixable --json\n" +
 			"  icb issues next --type decision",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -403,6 +425,9 @@ func newIssuesNextCommand() *cobra.Command {
 			ready, err := client.ListReadyIssues(cmd.Context(), filter, issueZone(), nil)
 			if err != nil {
 				return handleArgumentAPIError(err)
+			}
+			if err := honoredAutofixable(filter.Autofixable, ready); err != nil {
+				return err
 			}
 			shown := ready[:min(limit, len(ready))]
 			if asJSON {
@@ -428,14 +453,21 @@ func newIssuesNextCommand() *cobra.Command {
 
 // readyQueueFlags narrow the ready queue, on `next` and on `claim` with no issue.
 type readyQueueFlags struct {
-	repo       string
-	issueType  string
-	label      string
-	initiative string
-	autofix    bool
+	repo        string
+	issueType   string
+	label       string
+	initiative  string
+	autofixable bool
 }
 
-var readyQueueFlagNames = []string{"repo", "type", "label", "initiative", "autofix"}
+// readyQueueFlagNames are refused by a claim that names its issue.
+func readyQueueFlagNames() []string {
+	probe := &cobra.Command{}
+	new(readyQueueFlags).register(probe)
+	var names []string
+	probe.Flags().VisitAll(func(f *pflag.Flag) { names = append(names, f.Name) })
+	return names
+}
 
 func (v *readyQueueFlags) register(cmd *cobra.Command) {
 	f := cmd.Flags()
@@ -443,7 +475,7 @@ func (v *readyQueueFlags) register(cmd *cobra.Command) {
 	f.StringVar(&v.issueType, "type", "", "Only this type: "+strings.Join(api.IssueTypes, ", ")+" (decisions only when named)")
 	f.StringVar(&v.label, "label", "", "Only issues carrying this label")
 	f.StringVar(&v.initiative, "initiative", "", "Only issues in this initiative, by number, name or id")
-	f.BoolVar(&v.autofix, "autofix", false, autofixFilterHelp)
+	f.BoolVar(&v.autofixable, "autofixable", false, autofixableFilterHelp)
 }
 
 func (v *readyQueueFlags) filter(cmd *cobra.Command) (api.ReadyFilter, error) {
@@ -456,8 +488,8 @@ func (v *readyQueueFlags) filter(cmd *cobra.Command) (api.ReadyFilter, error) {
 		Label:      v.label,
 		Initiative: v.initiative,
 	}
-	if cmd.Flags().Changed("autofix") {
-		filter.Autofix = &v.autofix
+	if cmd.Flags().Changed("autofixable") {
+		filter.Autofixable = &v.autofixable
 	}
 	return filter, nil
 }
@@ -782,12 +814,8 @@ func printIssueDetail(out io.Writer, issue api.IssueDetail, now time.Time) {
 	if issue.Initiative != nil {
 		field("initiative", fmt.Sprintf("%d %s", issue.Initiative.Number, issue.Initiative.Name))
 	}
-	if !issue.IsAutofixable && !isClosedIssue(issue.Issue) {
-		if issue.Autofix {
-			field("autofix", "off, from its initiative")
-		} else {
-			field("autofix", "off")
-		}
+	if issue.IsAutofixable != nil && !*issue.IsAutofixable && !isClosedIssue(issue.Issue) {
+		field("autofix", "off")
 	}
 	if issue.Parent != nil {
 		field("parent", summaryLine(*issue.Parent))

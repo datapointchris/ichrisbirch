@@ -254,7 +254,7 @@ func newInitiativesEditCommand() *cobra.Command {
 	return cmd
 }
 
-const initiativeAutofixHelp = "Whether an unattended fix may take its issues (--autofix=false leaves them to a session)"
+const initiativeAutofixHelp = "False keeps every issue in it from an unattended fix, so a session takes them"
 
 func runInitiativeUpdate(cmd *cobra.Command, ref string, in api.InitiativeUpdateInput, clear []string, asJSON bool, verb string) error {
 	client, err := newAPIClient(cmd.Context())
@@ -570,6 +570,9 @@ func printInitiativeDetail(out io.Writer, initiative api.Initiative) {
 		_, _ = fmt.Fprintf(out, "  reason:    %s\n", reason)
 	}
 	_, _ = fmt.Fprintf(out, "  priority:  %s\n", tierColor(p, initiative.Priority)(priorityName(initiative.Priority)))
+	if !initiative.Autofix {
+		_, _ = fmt.Fprintf(out, "  autofix:   off\n")
+	}
 	_, _ = fmt.Fprintf(out, "  issues:    %d (%d open, %d done, %d canceled)\n",
 		initiative.IssueCount, initiative.OpenCount, initiative.CompletedCount, initiative.CanceledCount)
 	_, _ = fmt.Fprintf(out, "  repos:     %s\n", repoList(initiative.Repos))

@@ -1288,8 +1288,8 @@ export interface InitiativeSummary {
  * is what the queue sorts by: the issue's own, else its parent's or its
  * initiative's, raised to the most urgent of anything it blocks.
  * `deferred_until_date` is a calendar day; the claim and the stamps are instants.
- * `autofix` is the issue's own setting, and `is_autofixable` is false when it or
- * its initiative's is.
+ * `autofix` is the issue's own setting, and `is_autofixable` is false when it,
+ * its initiative's or an unclosed parent's is false.
  */
 export interface Issue {
   id: string

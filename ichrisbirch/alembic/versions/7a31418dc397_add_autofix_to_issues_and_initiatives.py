@@ -4,9 +4,8 @@ Revision ID: 7a31418dc397
 Revises: 7e7af73fb30a
 Create Date: 2026-10-21 02:06:36.907676
 
-Every existing row takes true, which leaves each issue where it was: open to an
-unattended fix unless something else keeps it out. The server default also
-covers the outgoing color during a deploy, whose inserts never name the column.
+The column defaults to true on the server, so an insert that never names it
+succeeds.
 """
 
 from collections.abc import Sequence

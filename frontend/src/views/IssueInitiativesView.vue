@@ -141,6 +141,13 @@
                 <span class="issue-initiatives__detail-field-label">Why it was dropped</span>
                 <span class="issue-initiatives__detail-field-value">{{ initiative.status_reason }}</span>
               </div>
+              <div
+                v-if="!initiative.autofix"
+                class="issue-initiatives__detail-field"
+              >
+                <span class="issue-initiatives__detail-field-label">Autofix</span>
+                <span class="issue-initiatives__detail-field-value">off</span>
+              </div>
               <div class="issue-initiatives__detail-field">
                 <span class="issue-initiatives__detail-field-label">Started</span>
                 <span class="issue-initiatives__detail-field-value">{{ formatDate(initiative.created_ts, 'shortDate') }}</span>

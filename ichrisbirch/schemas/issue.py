@@ -102,8 +102,8 @@ class Issue(IssueConfig):
     own, else its open parent's or its active initiative's, raised to the most
     urgent of anything it blocks. `is_ready` says whether an agent could take it
     now, whatever its type; the ready queue leaves decisions out separately.
-    `autofix` is the issue's own setting, and `is_autofixable` is false when it
-    or its initiative's is.
+    `autofix` is the issue's own setting, and `is_autofixable` is false when it,
+    its initiative's or an unclosed parent's is false.
     """
 
     id: UUID
@@ -175,7 +175,7 @@ class IssueReadyClaimRequest(IssueClaimRequest):
     type: str | None = None
     label: Slug | None = None
     initiative: InitiativeRef | None = None
-    autofix: bool | None = None
+    autofixable: bool | None = None
 
 
 class IssueClaimResult(IssueConfig):

@@ -194,7 +194,8 @@ func newIssuesCreateCommand() *cobra.Command {
 			"--status triage holds it for a person to accept before an agent may take it.\n" +
 			"Anything a hook or a script files belongs there.\n" +
 			"\n" +
-			"--autofix=false keeps it from an unattended fix, so only a session takes it.\n" +
+			"--autofix=false keeps it and its children from an unattended fix, so only a\n" +
+			"session takes them.\n" +
 			"\n" +
 			"--parent, --discovered-from, --depends-on, --deferred-until and --autofix are\n" +
 			"never asked for. A new issue that depends on its own parent is refused, since\n" +
@@ -312,9 +313,8 @@ var issueClearableFlags = map[string]string{
 // issueRequiredFlags are the fields every issue carries, so none can be emptied.
 var issueRequiredFlags = []string{"title", "type", "priority"}
 
-// autofixSetHelp is the help every write's --autofix carries, on issues and
-// initiatives alike.
-const autofixSetHelp = "Whether an unattended fix may take it (--autofix=false leaves it to a session)"
+// autofixSetHelp is the help an issue write's --autofix carries.
+const autofixSetHelp = "False keeps it and its children from an unattended fix, as its initiative's or a parent's false does"
 
 type issueEditFlags struct {
 	title, description, acceptance, repo, issueType, priority string
@@ -338,7 +338,8 @@ func newIssuesEditCommand() *cobra.Command {
 			"--deferred-until \"\" makes it ready today. --label replaces the whole set,\n" +
 			"and --label \"\" removes every label. --title, --type and --priority cannot\n" +
 			"be emptied. --priority none drops the issue's own, so it takes its parent's\n" +
-			"or its initiative's. --autofix=false keeps it from an unattended fix.",
+			"or its initiative's. --autofix=false keeps it and its children from an\n" +
+			"unattended fix.",
 		Example: "  icb issues edit 412 --priority urgent\n" +
 			"  icb issues edit 412 --autofix=false\n" +
 			"  icb issues edit 412 --acceptance \"$(cat acceptance.md)\"\n" +
@@ -694,7 +695,7 @@ func newIssuesClaimCommand() *cobra.Command {
 			}
 			in := api.IssueClaimInput{Claimant: claimant, Minutes: minutes}
 			if len(args) == 1 {
-				for _, name := range readyQueueFlagNames {
+				for _, name := range readyQueueFlagNames() {
 					if f.Changed(name) {
 						return goclikit.UsageError(fmt.Errorf("--%s narrows the queue an unnamed claim takes from — a named issue is not taken from it", name))
 					}
@@ -721,6 +722,14 @@ func newIssuesClaimCommand() *cobra.Command {
 					return handleArgumentAPIError(err)
 				}
 				claimed = result.Issue
+				if claimed != nil {
+					if err := honoredAutofixable(filter.Autofixable, []api.Issue{*claimed}); err != nil {
+						if _, releaseErr := client.ReleaseIssue(cmd.Context(), strconv.Itoa(claimed.Number), issueZone()); releaseErr != nil {
+							return fmt.Errorf("%w; releasing #%d failed too: %w", err, claimed.Number, releaseErr)
+						}
+						return err
+					}
+				}
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), claimed)

@@ -282,6 +282,8 @@ def single_view(session: Session, issue: models.Issue, zone: str) -> schemas.Iss
 # `/ready` and `/vocabulary` are declared ahead of `/{id}`, which would
 # otherwise take either segment as an issue reference.
 
+AUTOFIXABLE_FILTER = "True for issues whose own, initiative's and parents' autofix are all on, false for the rest"
+
 
 @router.get('', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
 def read_many(
@@ -303,7 +305,7 @@ def read_many(
     closed_by: str | None = Query(None, description="Issues whose closer starts with this, such as 'claude-code/'"),
     search: str | None = Query(None, description='Text to find in the title or description'),
     blocked: bool | None = Query(None, description='True for issues waiting on an unclosed dependency, false for the rest'),
-    autofix: bool | None = Query(None, description='True for issues an unattended fix may take, false for the rest'),
+    autofixable: bool | None = Query(None, description=AUTOFIXABLE_FILTER),
     limit: RowLimit = None,
 ):
     """List issues, open work first by effective priority then rank, closed work after it.
@@ -347,16 +349,16 @@ def read_many(
     issues = sorted(session.scalars(query).all(), key=list_order(readiness))
     if blocked is not None:
         issues = [issue for issue in issues if (issue.id in readiness.blocked) == blocked]
-    issues = autofix_filtered(issues, readiness, autofix)
+    issues = autofixable_filtered(issues, readiness, autofixable)
     if limit is not None:
         issues = issues[:limit]
     return issue_views(session, issues, zone, readiness)
 
 
-def autofix_filtered(issues: list[models.Issue], readiness: IssueReadiness, autofix: bool | None) -> list[models.Issue]:
-    if autofix is None:
+def autofixable_filtered(issues: list[models.Issue], readiness: IssueReadiness, autofixable: bool | None) -> list[models.Issue]:
+    if autofixable is None:
         return issues
-    return [issue for issue in issues if (issue.id in readiness.autofixable) == autofix]
+    return [issue for issue in issues if (issue.id in readiness.autofixable) == autofixable]
 
 
 def ready_issues(
@@ -367,7 +369,7 @@ def ready_issues(
     type: str | None,
     label: str | None,
     initiative: str | UUID | int | None,
-    autofix: bool | None,
+    autofixable: bool | None,
 ) -> tuple[list[models.Issue], IssueReadiness]:
     """The ready queue in the order it is taken, and the readiness it was cut from.
 
@@ -387,7 +389,7 @@ def ready_issues(
     query = apply_repo_filter(query, repo)
     query = apply_label_filter(query, label, session)
     issues = sorted(session.scalars(query).all(), key=readiness.sort_key)
-    return autofix_filtered(issues, readiness, autofix), readiness
+    return autofixable_filtered(issues, readiness, autofixable), readiness
 
 
 @router.get('/ready', response_model=list[schemas.Issue], status_code=status.HTTP_200_OK)
@@ -398,11 +400,11 @@ def read_ready(
     type: str | None = Query(None, description='An issue type. Decisions are left out unless asked for here.'),
     label: str | None = Query(None, description='A label slug'),
     initiative: str | None = Query(None, description='An initiative, by any reference GET /issues/initiatives/{id} accepts'),
-    autofix: bool | None = Query(None, description='True for issues an unattended fix may take, false for the rest'),
+    autofixable: bool | None = Query(None, description=AUTOFIXABLE_FILTER),
     limit: RowLimit = None,
 ):
     """The issues an agent could take now, in the order to take them; the first row is next."""
-    issues, readiness = ready_issues(session, zone, repo=repo, type=type, label=label, initiative=initiative, autofix=autofix)
+    issues, readiness = ready_issues(session, zone, repo=repo, type=type, label=label, initiative=initiative, autofixable=autofixable)
     if limit is not None:
         issues = issues[:limit]
     return issue_views(session, issues, zone, readiness)
@@ -443,7 +445,7 @@ def claim_next(request: schemas.IssueReadyClaimRequest, session: DbSession, zone
         type=request.type,
         label=request.label,
         initiative=request.initiative,
-        autofix=request.autofix,
+        autofixable=request.autofixable,
     )
     now = dt.datetime.now(dt.UTC)
     for candidate in issues:

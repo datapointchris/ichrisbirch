@@ -87,8 +87,9 @@ type Issue struct {
 	DeferredUntilDate *string    `json:"deferred_until_date"`
 	ClaimedBy         *string    `json:"claimed_by"`
 	ClaimExpiresTS    *time.Time `json:"claim_expires_ts"`
-	// Autofix is the issue's own setting. IsAutofixable is false when it or
-	// its initiative's is.
+	// Autofix is the issue's own setting. IsAutofixable is false when it, its
+	// initiative's or an unclosed parent's is false, and nil from an API that
+	// predates the field.
 	Autofix        bool               `json:"autofix"`
 	Initiative     *InitiativeSummary `json:"initiative"`
 	Parent         *IssueSummary      `json:"parent"`
@@ -102,7 +103,7 @@ type Issue struct {
 	CommentCount   int                `json:"comment_count"`
 	IsBlocked      bool               `json:"is_blocked"`
 	IsReady        bool               `json:"is_ready"`
-	IsAutofixable  bool               `json:"is_autofixable"`
+	IsAutofixable  *bool              `json:"is_autofixable"`
 	CreatedTS      time.Time          `json:"created_ts"`
 	UpdatedTS      time.Time          `json:"updated_ts"`
 	ClosedTS       *time.Time         `json:"closed_ts"`
@@ -172,21 +173,20 @@ type IssueUpdateInput struct {
 
 // IssueFilter narrows a list. A zero field narrows nothing. Repo is a pointer
 // because an empty string is its own question: the issues no single repo owns.
-// Priority, Blocked and Autofix are pointers because their zero values are
-// answers too.
+// A pointer field's zero value is an answer too, so nil is what narrows nothing.
 type IssueFilter struct {
-	Status     string
-	Repo       *string
-	Type       string
-	Label      string
-	Initiative string
-	Parent     string
-	Priority   *int
-	Blocked    *bool
-	Autofix    *bool
-	ClaimedBy  string
-	ClosedBy   string
-	Search     string
+	Status      string
+	Repo        *string
+	Type        string
+	Label       string
+	Initiative  string
+	Parent      string
+	Priority    *int
+	Blocked     *bool
+	Autofixable *bool
+	ClaimedBy   string
+	ClosedBy    string
+	Search      string
 }
 
 func (f IssueFilter) query() url.Values {
@@ -211,21 +211,20 @@ func (f IssueFilter) query() url.Values {
 	if f.Blocked != nil {
 		query.Set("blocked", strconv.FormatBool(*f.Blocked))
 	}
-	if f.Autofix != nil {
-		query.Set("autofix", strconv.FormatBool(*f.Autofix))
+	if f.Autofixable != nil {
+		query.Set("autofixable", strconv.FormatBool(*f.Autofixable))
 	}
 	return query
 }
 
 // ReadyFilter narrows the ready queue. An empty Type leaves decisions out,
 // because they wait on a person. Type "decision" is the only way to see them.
-// A true Autofix keeps only the issues an unattended fix may take.
 type ReadyFilter struct {
-	Repo       *string `json:"repo,omitempty"`
-	Type       string  `json:"type,omitempty"`
-	Label      string  `json:"label,omitempty"`
-	Initiative string  `json:"initiative,omitempty"`
-	Autofix    *bool   `json:"autofix,omitempty"`
+	Repo        *string `json:"repo,omitempty"`
+	Type        string  `json:"type,omitempty"`
+	Label       string  `json:"label,omitempty"`
+	Initiative  string  `json:"initiative,omitempty"`
+	Autofixable *bool   `json:"autofixable,omitempty"`
 }
 
 func (f ReadyFilter) query() url.Values {
@@ -235,8 +234,8 @@ func (f ReadyFilter) query() url.Values {
 			query.Set(name, value)
 		}
 	}
-	if f.Autofix != nil {
-		query.Set("autofix", strconv.FormatBool(*f.Autofix))
+	if f.Autofixable != nil {
+		query.Set("autofixable", strconv.FormatBool(*f.Autofixable))
 	}
 	return query
 }

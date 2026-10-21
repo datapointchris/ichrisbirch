@@ -13,9 +13,10 @@ An issue is ready when all of these hold:
 - its initiative, if it has one, is not `someday`, which holds ideas not yet
   taken on
 
-An issue is autofixable when neither it nor its initiative says `autofix` is
-false. That says whether an unattended fix may take it, and nothing about
-whether anyone may take it now, which `ready` answers.
+An issue is autofixable when none of it, its initiative and its unclosed parent
+says `autofix` is false, and the parent is read the same way up the tree. That
+is a person's veto on an unattended fix, and says nothing about whether anyone
+may take the issue now, which `ready` answers.
 
 Order is effective priority, then rank, then number. An issue's own priority wins.
 With none, it takes its open parent's effective priority, else its active
@@ -158,7 +159,19 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         ):
             ready.add(issue_id)
 
-    autofixable = {issue_id for issue_id, row in rows.items() if row.autofix and row.initiative_id not in no_autofix_initiatives}
+    withheld_memo: dict[UUID, bool] = {}
+
+    def withheld(issue_id: UUID) -> bool:
+        if issue_id in withheld_memo:
+            return withheld_memo[issue_id]
+        # Seeded before the walk, so a parent loop written around the write check ends.
+        withheld_memo[issue_id] = False
+        row = rows[issue_id]
+        result = not row.autofix or row.initiative_id in no_autofix_initiatives or (row.parent_id in unclosed and withheld(row.parent_id))
+        withheld_memo[issue_id] = result
+        return result
+
+    autofixable = {issue_id for issue_id in rows if not withheld(issue_id)}
 
     return IssueReadiness(
         effective_priority=effective_priority,
