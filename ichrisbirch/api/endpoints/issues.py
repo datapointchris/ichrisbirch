@@ -303,7 +303,7 @@ def read_many(
     priority: int | None = Query(None, ge=0, le=4, description="The issue's own priority"),
     claimed_by: str | None = Query(None, description='Issues held by this claimant'),
     closed_by: str | None = Query(None, description="Issues whose closer starts with this, such as 'claude-code/'"),
-    search: str | None = Query(None, description='Text to find in the title or description'),
+    search: str | None = Query(None, description='Words that must each appear in the title or description, in any order'),
     blocked: bool | None = Query(None, description='True for issues waiting on an unclosed dependency, false for the rest'),
     autofixable: bool | None = Query(None, description=AUTOFIXABLE_FILTER),
     limit: RowLimit = None,
@@ -337,9 +337,10 @@ def read_many(
         query = query.where(models.Issue.claimed_by == claimed_by)
     if closed_by:
         query = query.where(models.Issue.closed_by.startswith(closed_by, autoescape=True))
-    if search:
-        pattern = f'%{search}%'
-        query = query.where(or_(models.Issue.title.ilike(pattern), models.Issue.description.ilike(pattern)))
+    for word in (search or '').split():
+        query = query.where(
+            or_(models.Issue.title.icontains(word, autoescape=True), models.Issue.description.icontains(word, autoescape=True))
+        )
     query = apply_repo_filter(query, repo)
     query = apply_label_filter(query, label, session)
     query = apply_time_window(query, models.Issue.closed_ts, window, zone=None)

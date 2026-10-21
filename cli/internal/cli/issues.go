@@ -310,7 +310,8 @@ func newIssuesSearchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "search <query>",
 		Short: "Find issues by title or description, closed ones included",
-		Long: "Searches every status unless --status narrows it, because the issue you\n" +
+		Long: "Every word of the query must appear in the title or the description, in any\n" +
+			"order. Searches every status unless --status narrows it, because the issue you\n" +
 			"remember may be the one that was finished or canceled.",
 		Example: "  icb issues search \"rank renumber\"\n" +
 			"  icb issues search routing --repo ichrisbirch --status open",
