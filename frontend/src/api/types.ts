@@ -1278,6 +1278,7 @@ export interface InitiativeSummary {
   name: string
   status: InitiativeStatus
   priority: number
+  autofix: boolean
 }
 
 /**
@@ -1287,6 +1288,8 @@ export interface InitiativeSummary {
  * is what the queue sorts by: the issue's own, else its parent's or its
  * initiative's, raised to the most urgent of anything it blocks.
  * `deferred_until_date` is a calendar day; the claim and the stamps are instants.
+ * `autofix` is the issue's own setting, and `is_autofixable` is false when it,
+ * its initiative's or an unclosed parent's is false.
  */
 export interface Issue {
   id: string
@@ -1304,6 +1307,7 @@ export interface Issue {
   deferred_until_date: string | null
   claimed_by: string | null
   claim_expires_ts: string | null
+  autofix: boolean
   initiative: InitiativeSummary | null
   parent: IssueSummary | null
   discovered_from: IssueSummary | null
@@ -1316,6 +1320,7 @@ export interface Issue {
   comment_count: number
   is_blocked: boolean
   is_ready: boolean
+  is_autofixable: boolean
   created_ts: string
   updated_ts: string
   closed_ts: string | null
@@ -1345,6 +1350,7 @@ export interface IssueCreate {
   status?: 'open' | 'triage'
   priority?: number
   deferred_until_date?: string
+  autofix?: boolean
   initiative?: string
   parent?: number
   discovered_from?: number
@@ -1363,6 +1369,7 @@ export interface IssueUpdate {
   status_reason?: string | null
   priority?: number
   deferred_until_date?: string | null
+  autofix?: boolean
   initiative?: string | null
   parent?: number | null
   discovered_from?: number | null
@@ -1435,6 +1442,7 @@ export interface Initiative {
   status_reason: string | null
   priority: number
   position: number
+  autofix: boolean
   created_ts: string
   closed_ts: string | null
   issue_count: number
@@ -1448,6 +1456,7 @@ export interface InitiativeCreate {
   name: string
   description?: string
   priority?: number
+  autofix?: boolean
 }
 
 /**
@@ -1461,6 +1470,7 @@ export interface InitiativeUpdate {
   status_reason?: string | null
   priority?: number
   position?: number
+  autofix?: boolean
 }
 
 // --- Shopping list ---

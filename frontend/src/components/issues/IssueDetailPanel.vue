@@ -227,6 +227,7 @@ const fields = computed(() => {
   if (issue.discovered_from) rows.push({ label: 'Found while on', value: summaryLine(issue.discovered_from) })
   if (issue.labels.length > 0) rows.push({ label: 'Labels', value: issue.labels.join(', ') })
   if (issue.deferred_until_date) rows.push({ label: 'Not before', value: formatDate(issue.deferred_until_date, 'shortDate') })
+  if (!issue.is_autofixable && !issue.closed_ts) rows.push({ label: 'Autofix', value: 'off' })
   rows.push({ label: 'Filed', value: formatDate(issue.created_ts, 'dateTime') })
   rows.push({ label: 'Updated', value: formatDate(issue.updated_ts, 'dateTime') })
   if (issue.closed_ts) {

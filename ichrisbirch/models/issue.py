@@ -5,6 +5,7 @@ from uuid import UUID
 from uuid import uuid7
 
 from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Date
 from sqlalchemy import DateTime
@@ -79,6 +80,9 @@ class Initiative(Base):
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     priority: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default='0')
     position: Mapped[int] = mapped_column(Integer, nullable=False, server_default='0')
+    # False keeps every issue in it from an unattended fix, so a step of one
+    # design is never landed alone.
+    autofix: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text('true'))
     created_ts: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text('now()'))
     closed_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -134,6 +138,8 @@ class Issue(FractionallyRanked, Base):
     deferred_until_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     claimed_by: Mapped[str | None] = mapped_column(Text, nullable=True)
     claim_expires_ts: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # False keeps the issue from an unattended fix. Its initiative's false does too.
+    autofix: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text('true'))
     initiative_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey('initiatives.id', ondelete='SET NULL'), nullable=True, index=True)
     # A parent is work too large for one issue, split into children. While any
     # child is open the parent is not ready and cannot be completed.

@@ -13,6 +13,11 @@ An issue is ready when all of these hold:
 - its initiative, if it has one, is not `someday`, which holds ideas not yet
   taken on
 
+An issue is autofixable when none of it, its initiative and its unclosed parent
+says `autofix` is false, and the parent is read the same way up the tree. That
+is a person's veto on an unattended fix, and says nothing about whether anyone
+may take the issue now, which `ready` answers.
+
 Order is effective priority, then rank, then number. An issue's own priority wins.
 With none, it takes its open parent's effective priority, else its active
 initiative's. Then it is raised to the most urgent effective priority of any
@@ -52,6 +57,7 @@ class IssueReadiness:
     blocked: frozenset[UUID]
     deferred: frozenset[UUID]
     ready: frozenset[UUID]
+    autofixable: frozenset[UUID]
     child_count: dict[UUID, int]
     open_child_count: dict[UUID, int]
 
@@ -74,6 +80,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         models.Issue.parent_id,
         models.Issue.deferred_until_date,
         models.Issue.claim_expires_ts,
+        models.Issue.autofix,
     )
     rows = {row.id: row for row in session.execute(select(*columns)).all()}
     initiative_urgency = {
@@ -83,6 +90,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         ).all()
     }
     someday_initiatives = set(session.scalars(select(models.Initiative.id).where(models.Initiative.status == 'someday')).all())
+    no_autofix_initiatives = set(session.scalars(select(models.Initiative.id).where(models.Initiative.autofix.is_(False))).all())
     edges = session.execute(select(models.IssueDependency.issue_id, models.IssueDependency.depends_on_id)).all()
 
     unclosed = {issue_id for issue_id, row in rows.items() if row.status not in CLOSED_ISSUE_STATUSES}
@@ -151,11 +159,26 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         ):
             ready.add(issue_id)
 
+    withheld_memo: dict[UUID, bool] = {}
+
+    def withheld(issue_id: UUID) -> bool:
+        if issue_id in withheld_memo:
+            return withheld_memo[issue_id]
+        # Seeded before the walk, so a parent loop written around the write check ends.
+        withheld_memo[issue_id] = False
+        row = rows[issue_id]
+        result = not row.autofix or row.initiative_id in no_autofix_initiatives or (row.parent_id in unclosed and withheld(row.parent_id))
+        withheld_memo[issue_id] = result
+        return result
+
+    autofixable = {issue_id for issue_id in rows if not withheld(issue_id)}
+
     return IssueReadiness(
         effective_priority=effective_priority,
         blocked=frozenset(blocked),
         deferred=frozenset(deferred),
         ready=frozenset(ready),
+        autofixable=frozenset(autofixable),
         child_count=child_count,
         open_child_count=open_child_count,
     )

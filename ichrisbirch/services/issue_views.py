@@ -82,10 +82,16 @@ def issue_view(issue: models.Issue, readiness: IssueReadiness, comments: dict[UU
         deferred_until_date=issue.deferred_until_date,
         claimed_by=issue.claimed_by,
         claim_expires_ts=issue.claim_expires_ts,
+        autofix=issue.autofix,
         initiative=None
         if initiative is None
         else schemas.InitiativeSummary(
-            id=initiative.id, number=initiative.number, name=initiative.name, status=initiative.status, priority=initiative.priority
+            id=initiative.id,
+            number=initiative.number,
+            name=initiative.name,
+            status=initiative.status,
+            priority=initiative.priority,
+            autofix=initiative.autofix,
         ),
         parent=summary(issue.parent),
         discovered_from=summary(issue.discovered_from),
@@ -98,6 +104,7 @@ def issue_view(issue: models.Issue, readiness: IssueReadiness, comments: dict[UU
         comment_count=comments.get(issue.id, 0),
         is_blocked=issue.id in readiness.blocked,
         is_ready=issue.id in readiness.ready,
+        is_autofixable=issue.id in readiness.autofixable,
         created_ts=issue.created_ts,
         updated_ts=issue.updated_ts,
         closed_ts=issue.closed_ts,

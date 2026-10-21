@@ -57,6 +57,35 @@ issue into an active initiative takes that one alone.
 priority, and like a closed initiative it gives up its name, so an active one
 may take it.
 
+## `autofix: false` keeps an issue from an unattended fix and leaves it ready for a session
+
+An unattended fix is a commit nobody reads before it lands. Two kinds of work
+must stay out of one. A step of a larger design would land alone, out of the
+design it belongs to. That design is an initiative, or a parent issue split
+into children. A standalone issue may need a person, or someone may simply
+want to do it themselves.
+
+Issues and initiatives each carry `autofix`, true by default. An issue is
+autofixable when none of it, its initiative and its unclosed parent says false,
+and the parent is read the same way up the tree. That is derived on every read
+with readiness and returned as `is_autofixable`. So an issue filed later into
+such an initiative, or under such a parent, is covered with nothing set on it.
+
+`autofix` says nothing about whether an issue is ready. A session reads the
+whole queue with `icb issues next`. `icb issues next --autofixable` is the
+queue for an unattended fix, and is `GET /issues/ready?autofixable=true`. The
+filter is named for `is_autofixable`, the derived fact it reads, the way
+`blocked` reads `is_blocked`. `autofix` stays the stored setting.
+
+The flag is a veto the reader asks to honor. A claim by number takes an issue
+whatever its flag says, and a fixer narrowing further, by type or repo, does so
+on its own side. An API that predates the field ignores the filter, so the CLI
+refuses any row under `--autofixable` whose `is_autofixable` is missing or
+does not match. A claim it refuses that way is released first.
+
+Neither status nor someday carries this, because a claim and a release rewrite
+the status, and someday means nobody has taken the work on.
+
 ## Triage holds what nobody has accepted yet
 
 An issue filed as `triage` sits outside the ready queue until someone accepts

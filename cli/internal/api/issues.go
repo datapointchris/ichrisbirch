@@ -60,6 +60,7 @@ type InitiativeSummary struct {
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Priority int    `json:"priority"`
+	Autofix  bool   `json:"autofix"`
 }
 
 // Issue mirrors the API's issue read. Every list row carries what a table or an
@@ -83,25 +84,30 @@ type Issue struct {
 	Rank              float64 `json:"rank"`
 	// DeferredUntilDate is a day, so it decodes as the string the API sends. A
 	// time.Time would refuse the bare YYYY-MM-DD and fail the whole list.
-	DeferredUntilDate *string            `json:"deferred_until_date"`
-	ClaimedBy         *string            `json:"claimed_by"`
-	ClaimExpiresTS    *time.Time         `json:"claim_expires_ts"`
-	Initiative        *InitiativeSummary `json:"initiative"`
-	Parent            *IssueSummary      `json:"parent"`
-	DiscoveredFrom    *IssueSummary      `json:"discovered_from"`
-	DuplicateOf       *IssueSummary      `json:"duplicate_of"`
-	Labels            []string           `json:"labels"`
-	DependsOn         []IssueSummary     `json:"depends_on"`
-	Blocks            []IssueSummary     `json:"blocks"`
-	ChildCount        int                `json:"child_count"`
-	OpenChildCount    int                `json:"open_child_count"`
-	CommentCount      int                `json:"comment_count"`
-	IsBlocked         bool               `json:"is_blocked"`
-	IsReady           bool               `json:"is_ready"`
-	CreatedTS         time.Time          `json:"created_ts"`
-	UpdatedTS         time.Time          `json:"updated_ts"`
-	ClosedTS          *time.Time         `json:"closed_ts"`
-	ClosedBy          *string            `json:"closed_by"`
+	DeferredUntilDate *string    `json:"deferred_until_date"`
+	ClaimedBy         *string    `json:"claimed_by"`
+	ClaimExpiresTS    *time.Time `json:"claim_expires_ts"`
+	// Autofix is the issue's own setting. IsAutofixable is false when it, its
+	// initiative's or an unclosed parent's is false, and nil from an API that
+	// predates the field.
+	Autofix        bool               `json:"autofix"`
+	Initiative     *InitiativeSummary `json:"initiative"`
+	Parent         *IssueSummary      `json:"parent"`
+	DiscoveredFrom *IssueSummary      `json:"discovered_from"`
+	DuplicateOf    *IssueSummary      `json:"duplicate_of"`
+	Labels         []string           `json:"labels"`
+	DependsOn      []IssueSummary     `json:"depends_on"`
+	Blocks         []IssueSummary     `json:"blocks"`
+	ChildCount     int                `json:"child_count"`
+	OpenChildCount int                `json:"open_child_count"`
+	CommentCount   int                `json:"comment_count"`
+	IsBlocked      bool               `json:"is_blocked"`
+	IsReady        bool               `json:"is_ready"`
+	IsAutofixable  *bool              `json:"is_autofixable"`
+	CreatedTS      time.Time          `json:"created_ts"`
+	UpdatedTS      time.Time          `json:"updated_ts"`
+	ClosedTS       *time.Time         `json:"closed_ts"`
+	ClosedBy       *string            `json:"closed_by"`
 }
 
 // IssueComment is a note on an issue: progress, a handoff, or what closing it shipped.
@@ -132,6 +138,7 @@ type IssueCreateInput struct {
 	Status            *string  `json:"status,omitempty"`
 	Priority          *int     `json:"priority,omitempty"`
 	DeferredUntilDate *string  `json:"deferred_until_date,omitempty"`
+	Autofix           *bool    `json:"autofix,omitempty"`
 	Initiative        *string  `json:"initiative,omitempty"`
 	Parent            *string  `json:"parent,omitempty"`
 	DiscoveredFrom    *string  `json:"discovered_from,omitempty"`
@@ -155,6 +162,7 @@ type IssueUpdateInput struct {
 	StatusReason      *string   `json:"status_reason,omitempty"`
 	Priority          *int      `json:"priority,omitempty"`
 	DeferredUntilDate *string   `json:"deferred_until_date,omitempty"`
+	Autofix           *bool     `json:"autofix,omitempty"`
 	Initiative        *string   `json:"initiative,omitempty"`
 	Parent            *string   `json:"parent,omitempty"`
 	DiscoveredFrom    *string   `json:"discovered_from,omitempty"`
@@ -165,19 +173,20 @@ type IssueUpdateInput struct {
 
 // IssueFilter narrows a list. A zero field narrows nothing. Repo is a pointer
 // because an empty string is its own question: the issues no single repo owns.
-// Priority and Blocked are pointers because their zero values are answers too.
+// A pointer field's zero value is an answer too, so nil is what narrows nothing.
 type IssueFilter struct {
-	Status     string
-	Repo       *string
-	Type       string
-	Label      string
-	Initiative string
-	Parent     string
-	Priority   *int
-	Blocked    *bool
-	ClaimedBy  string
-	ClosedBy   string
-	Search     string
+	Status      string
+	Repo        *string
+	Type        string
+	Label       string
+	Initiative  string
+	Parent      string
+	Priority    *int
+	Blocked     *bool
+	Autofixable *bool
+	ClaimedBy   string
+	ClosedBy    string
+	Search      string
 }
 
 func (f IssueFilter) query() url.Values {
@@ -202,16 +211,20 @@ func (f IssueFilter) query() url.Values {
 	if f.Blocked != nil {
 		query.Set("blocked", strconv.FormatBool(*f.Blocked))
 	}
+	if f.Autofixable != nil {
+		query.Set("autofixable", strconv.FormatBool(*f.Autofixable))
+	}
 	return query
 }
 
 // ReadyFilter narrows the ready queue. An empty Type leaves decisions out,
 // because they wait on a person. Type "decision" is the only way to see them.
 type ReadyFilter struct {
-	Repo       *string `json:"repo,omitempty"`
-	Type       string  `json:"type,omitempty"`
-	Label      string  `json:"label,omitempty"`
-	Initiative string  `json:"initiative,omitempty"`
+	Repo        *string `json:"repo,omitempty"`
+	Type        string  `json:"type,omitempty"`
+	Label       string  `json:"label,omitempty"`
+	Initiative  string  `json:"initiative,omitempty"`
+	Autofixable *bool   `json:"autofixable,omitempty"`
 }
 
 func (f ReadyFilter) query() url.Values {
@@ -220,6 +233,9 @@ func (f ReadyFilter) query() url.Values {
 		if value != "" {
 			query.Set(name, value)
 		}
+	}
+	if f.Autofixable != nil {
+		query.Set("autofixable", strconv.FormatBool(*f.Autofixable))
 	}
 	return query
 }
@@ -459,6 +475,7 @@ type Initiative struct {
 	StatusReason   *string    `json:"status_reason"`
 	Priority       int        `json:"priority"`
 	Position       int        `json:"position"`
+	Autofix        bool       `json:"autofix"`
 	CreatedTS      time.Time  `json:"created_ts"`
 	ClosedTS       *time.Time `json:"closed_ts"`
 	IssueCount     int        `json:"issue_count"`
@@ -475,6 +492,7 @@ type InitiativeCreateInput struct {
 	Description *string `json:"description,omitempty"`
 	Priority    *int    `json:"priority,omitempty"`
 	Position    *int    `json:"position,omitempty"`
+	Autofix     *bool   `json:"autofix,omitempty"`
 }
 
 // InitiativeUpdateInput is a partial update, cleared the way IssueUpdateInput is.
@@ -485,6 +503,7 @@ type InitiativeUpdateInput struct {
 	StatusReason *string `json:"status_reason,omitempty"`
 	Priority     *int    `json:"priority,omitempty"`
 	Position     *int    `json:"position,omitempty"`
+	Autofix      *bool   `json:"autofix,omitempty"`
 }
 
 func initiativePath(ref string) string {
