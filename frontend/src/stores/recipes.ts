@@ -16,11 +16,27 @@ import type {
   UrlImportResponse,
   UrlImportCandidate,
   UrlImportSaveResult,
+  RecipeVocabulary,
 } from '@/api/client'
 
 const logger = createLogger('RecipesStore')
 
 export type IngredientMatch = 'any' | 'all'
+
+/** Render a vocabulary key for a person: `mediterranean` to Mediterranean. */
+export function humanizeRecipeValue(value: string): string {
+  return value
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+/** An empty vocabulary, so the view renders before the fetch lands. */
+const EMPTY_VOCABULARY: RecipeVocabulary = {
+  cuisine: [],
+  meal_type: [],
+  difficulty: [],
+}
 
 export const useRecipesStore = defineStore('recipes', () => {
   const recipes = ref<Recipe[]>([])
@@ -40,6 +56,11 @@ export const useRecipesStore = defineStore('recipes', () => {
   const aiLoading = ref(false)
   const urlImportCandidate = ref<UrlImportCandidate | null>(null)
   const urlImportLoading = ref(false)
+
+  // Read from the API rather than declared here. The values are lookup tables,
+  // so adding one is an insert on the server; a copy in this file would make it
+  // a deploy of the frontend as well.
+  const vocabulary = ref<RecipeVocabulary>(EMPTY_VOCABULARY)
 
   const filteredRecipes = computed(() => {
     let result = recipes.value
@@ -132,6 +153,20 @@ export const useRecipesStore = defineStore('recipes', () => {
       throw apiError
     } finally {
       loading.value = false
+    }
+  }
+
+  async function fetchVocabulary() {
+    try {
+      const response = await api.get<RecipeVocabulary>('/recipes/vocabulary')
+      vocabulary.value = response.data
+      logger.info('recipe_vocabulary_fetched', { cuisines: response.data.cuisine.length })
+      return response.data
+    } catch (e) {
+      const apiError = e instanceof ApiError ? e : new ApiError({ message: String(e), detail: String(e) })
+      error.value = apiError
+      logger.error('recipe_vocabulary_fetch_failed', { detail: apiError.detail, status: apiError.status })
+      throw apiError
     }
   }
 
@@ -370,6 +405,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     ingredientSearchActive,
     aiCandidates,
     aiLoading,
+    vocabulary,
     filteredRecipes,
     sortedRecipes,
     cuisineCounts,
@@ -380,6 +416,7 @@ export const useRecipesStore = defineStore('recipes', () => {
     setRatingMin,
     setSort,
     fetchAll,
+    fetchVocabulary,
     fetchOne,
     create,
     update,

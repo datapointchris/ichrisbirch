@@ -84,6 +84,32 @@ func TestSearchRecipesByIngredients_Decodes(t *testing.T) {
 	}
 }
 
+func TestGetRecipeVocabulary_DecodesEachField(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/recipes/vocabulary" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"cuisine":["italian","thai"],"meal_type":["dinner"],"difficulty":["easy","medium","hard"]}`))
+	}))
+	defer srv.Close()
+
+	client := New(srv.URL, staticTokenClient("t"))
+	vocabulary, err := client.GetRecipeVocabulary(context.Background())
+	if err != nil {
+		t.Fatalf("GetRecipeVocabulary: %v", err)
+	}
+	if len(vocabulary.Cuisine) != 2 || vocabulary.Cuisine[1] != "thai" {
+		t.Errorf("cuisine = %v", vocabulary.Cuisine)
+	}
+	if len(vocabulary.MealType) != 1 || vocabulary.MealType[0] != "dinner" {
+		t.Errorf("meal_type = %v", vocabulary.MealType)
+	}
+	if len(vocabulary.Difficulty) != 3 || vocabulary.Difficulty[2] != "hard" {
+		t.Errorf("difficulty = %v", vocabulary.Difficulty)
+	}
+}
+
 func TestUpdateRecipe_ClearSendsExplicitNulls(t *testing.T) {
 	var gotBody map[string]json.RawMessage
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

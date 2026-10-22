@@ -160,6 +160,18 @@ class RecipeStats(RecipeConfig):
     untried: list[Recipe]
 
 
+class RecipeVocabulary(RecipeConfig):
+    """Every value a recipe's closed fields accept, keyed by the field it constrains.
+
+    A client builds its pickers and flag help from this rather than keeping its
+    own copy, so a value added to a lookup table reaches every client at once.
+    """
+
+    cuisine: list[str]
+    meal_type: list[str]
+    difficulty: list[str]
+
+
 class CookingTechniqueBase(RecipeConfig):
     name: str
     category: str

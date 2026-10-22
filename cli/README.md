@@ -62,7 +62,8 @@ The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
 — `articles current` and `articles read`, `habits complete` and `habits today`,
 `tasks snooze`, `pin`, `unpin`, `drop` and `reopen` with `tasks categories` for each
-category's window, the recipe suggest/import flows, `strains vocabulary`.
+category's window, the recipe suggest/import flows, `recipes vocabulary` and
+`strains vocabulary`.
 
 The open task list is ordered by a sort date the CLI never prints: a task's
 window in days, counted from when it was added or last snoozed. `tasks list`
@@ -73,12 +74,14 @@ program that wants it.
 or still due, ordered by category. It takes no `--limit`, because the set is
 what you owe today and a cap can only hide one of them.
 
-`strains` is the one whose closed vocabularies are fetched rather than compiled
-in. `--type`, `--status`, `--effect`, `--flavor` and `--terpene` are all lookup
-tables, so their values are read from the server on every create and edit and a
-wrong one is refused with the list of what would have worked. Adding a value is
-an insert on the server, not a release of this binary. `icb strains vocabulary`
-prints every value with how many strains carry it.
+`strains` and `recipes` fetch their closed vocabularies rather than compiling
+them in. Adding a value is an insert on the server, not a release of this
+binary. On `strains`, `--type`, `--status`, `--effect`, `--flavor` and
+`--terpene` are all lookup tables, so their values are read from the server on
+every create and edit and a wrong one is refused with the list of what would
+have worked. `icb strains vocabulary` prints every value with how many strains
+carry it. On `recipes`, `icb recipes vocabulary` prints what `--cuisine`,
+`--meal-type` and `--difficulty` accept.
 
 `shopping` takes its own verbs, because an item is a catalog row rather than a
 record made once. `add` puts names on the list, and a name bought before goes

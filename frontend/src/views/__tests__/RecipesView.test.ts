@@ -94,10 +94,11 @@ describe('RecipesView', () => {
     vi.clearAllMocks()
   })
 
-  it('calls fetchAll on mount', () => {
+  it('fetches the recipes and the vocabulary its filters read on mount', () => {
     createWrapper()
     const store = useRecipesStore()
     expect(store.fetchAll).toHaveBeenCalledOnce()
+    expect(store.fetchVocabulary).toHaveBeenCalledOnce()
   })
 
   it('renders loading state', () => {

@@ -14,6 +14,7 @@ from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
@@ -24,6 +25,9 @@ from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
 from ichrisbirch.config import Settings
 from ichrisbirch.config import get_settings
+from ichrisbirch.models.recipe import RECIPE_CUISINES
+from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
+from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
 from ichrisbirch.services import url_ingest
 from ichrisbirch.services.outbound_http import PageFetchError
 from ichrisbirch.services.outbound_http import PageStatusError
@@ -277,6 +281,29 @@ def stats(session: DbSession):
         most_made=[schemas.Recipe.model_validate(r) for r in most_made],
         highest_rated=[schemas.Recipe.model_validate(r) for r in highest_rated],
         untried=[schemas.Recipe.model_validate(r) for r in untried],
+    )
+
+
+def lookup_names_in_declared_order(session: Session, lookup: InstrumentedAttribute, declared: list[str]) -> list[str]:
+    """The lookup table's values, the declared ones first in their order, then any added beyond them.
+
+    The declared order carries meaning a sort would lose: easy, medium, hard.
+    """
+    names = set(session.scalars(select(lookup)).all())
+    return [name for name in declared if name in names] + sorted(names - set(declared))
+
+
+@router.get('/vocabulary', response_model=schemas.RecipeVocabulary, status_code=status.HTTP_200_OK)
+def vocabulary(session: DbSession):
+    """Every value a recipe's cuisine, meal type and difficulty accept.
+
+    Read from the lookup tables the columns reference, so the list is exactly
+    what a write is checked against.
+    """
+    return schemas.RecipeVocabulary(
+        cuisine=lookup_names_in_declared_order(session, models.RecipeCuisine.name, RECIPE_CUISINES),
+        meal_type=lookup_names_in_declared_order(session, models.RecipeMealType.name, RECIPE_MEAL_TYPES),
+        difficulty=lookup_names_in_declared_order(session, models.RecipeDifficulty.name, RECIPE_DIFFICULTIES),
     )
 
 

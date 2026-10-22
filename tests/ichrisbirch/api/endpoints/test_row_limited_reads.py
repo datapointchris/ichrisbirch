@@ -67,6 +67,8 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 #                         build its dropdowns — a short one offers fewer values
 #   /issues/vocabulary    every value an issue's closed fields accept, for the
 #                         same reason
+#   /recipes/vocabulary   every value a recipe's closed fields accept, for the
+#                         same reason
 #   /issues/labels        the closed label vocabulary, which a picker must
 #                         offer whole
 #   /tasks/categories     every task category with its window, for the same reason
@@ -103,6 +105,7 @@ UNCAPPED_READS = {
     '/recipes/search-by-ingredients',
     '/recipes/search',
     '/recipes/stats',
+    '/recipes/vocabulary',
     '/strains/vocabulary',
     '/tasks/categories',
     '/tasks/completed',

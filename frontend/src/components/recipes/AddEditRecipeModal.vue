@@ -286,6 +286,9 @@ import { reactive, ref, watch, computed } from 'vue'
 import type { Recipe, RecipeCreate, RecipeUpdate, RecipeIngredientCreate } from '@/api/client'
 import AddEditModal from '@/components/AddEditModal.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
+import { useRecipesStore, humanizeRecipeValue } from '@/stores/recipes'
+
+const store = useRecipesStore()
 
 const props = defineProps<{
   visible: boolean
@@ -300,36 +303,16 @@ const emit = defineEmits<{
 
 const nameInput = ref<HTMLInputElement | null>(null)
 
-const cuisineOptions = [
-  { value: '', label: '—' },
-  { value: 'american', label: 'American' },
-  { value: 'italian', label: 'Italian' },
-  { value: 'mexican', label: 'Mexican' },
-  { value: 'asian', label: 'Asian' },
-  { value: 'indian', label: 'Indian' },
-  { value: 'mediterranean', label: 'Mediterranean' },
-  { value: 'french', label: 'French' },
-  { value: 'other', label: 'Other' },
-]
+// Every option comes from the fetched vocabulary, so a value added to a lookup
+// table is offered here without a frontend deploy. The page hosting this modal
+// fetches it.
+function pickerOptions(values: string[]) {
+  return [{ value: '', label: '—' }, ...values.map((value) => ({ value, label: humanizeRecipeValue(value) }))]
+}
 
-const mealTypeOptions = [
-  { value: '', label: '—' },
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
-  { value: 'dessert', label: 'Dessert' },
-  { value: 'side', label: 'Side' },
-  { value: 'sauce', label: 'Sauce' },
-  { value: 'drink', label: 'Drink' },
-]
-
-const difficultyOptions = [
-  { value: '', label: '—' },
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
-]
+const cuisineOptions = computed(() => pickerOptions(store.vocabulary.cuisine))
+const mealTypeOptions = computed(() => pickerOptions(store.vocabulary.meal_type))
+const difficultyOptions = computed(() => pickerOptions(store.vocabulary.difficulty))
 
 const unitOptions = [
   { value: '', label: '—' },

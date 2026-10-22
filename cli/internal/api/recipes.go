@@ -10,23 +10,26 @@ import (
 	"time"
 )
 
-// The lookup tables --difficulty, --cuisine and --meal-type accept. The API's
-// recipe_difficulty, recipe_cuisine and recipe_meal_type tables are the
-// authority and reject anything else; these are what the flag help names, so a
-// reader learns the vocabulary from the flag rather than from a rejection.
-var (
-	RecipeDifficulties = []string{"easy", "medium", "hard"}
+// RecipeVocabulary is every value --cuisine, --meal-type and --difficulty
+// accept, read from the lookup tables the API checks a write against. Fetched
+// rather than compiled in, so adding a cuisine is an insert on the server and
+// not a release of this binary. Each list is keyed by the record field it
+// constrains.
+type RecipeVocabulary struct {
+	Cuisine    []string `json:"cuisine"`
+	MealType   []string `json:"meal_type"`
+	Difficulty []string `json:"difficulty"`
+}
 
-	RecipeCuisines = []string{
-		"american", "italian", "mexican", "asian",
-		"indian", "mediterranean", "french", "other",
+// GetRecipeVocabulary returns every value a recipe's closed fields accept
+// (GET /recipes/vocabulary).
+func (c *Client) GetRecipeVocabulary(ctx context.Context) (RecipeVocabulary, error) {
+	var vocabulary RecipeVocabulary
+	if err := c.get(ctx, "/recipes/vocabulary", &vocabulary); err != nil {
+		return RecipeVocabulary{}, err
 	}
-
-	RecipeMealTypes = []string{
-		"breakfast", "lunch", "dinner", "snack",
-		"dessert", "side", "sauce", "drink",
-	}
-)
+	return vocabulary, nil
+}
 
 // RecipeIngredient mirrors an ingredient row on a recipe. scaled_quantity is
 // populated only when the recipe was fetched with a servings override.

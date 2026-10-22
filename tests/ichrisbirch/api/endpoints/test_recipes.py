@@ -8,6 +8,8 @@ from fastapi import status
 from ichrisbirch import schemas
 from ichrisbirch.ai.assistants.anthropic import AssistantFailure
 from ichrisbirch.ai.assistants.anthropic import AssistantOutputError
+from ichrisbirch.models.recipe import RECIPE_CUISINES
+from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
 from ichrisbirch.services.outbound_http import PageFetchError
 from tests.util import show_status_and_response
 from tests.utils.database import insert_test_data_transactional
@@ -333,6 +335,18 @@ class TestStats:
         # Untried: Test Dessert has times_made=0
         untried_names = [r['name'] for r in data['untried']]
         assert 'Test Dessert' in untried_names
+
+
+def test_vocabulary_serves_every_lookup_value_in_declared_order(recipe_crud_tester):
+    """The lists clients build their pickers from are the lookup tables, difficulty easiest first."""
+    client, _ = recipe_crud_tester
+    response = client.get(f'{ENDPOINT}/vocabulary')
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert response.json() == {
+        'cuisine': RECIPE_CUISINES,
+        'meal_type': RECIPE_MEAL_TYPES,
+        'difficulty': ['easy', 'medium', 'hard'],
+    }
 
 
 class TestAISuggest:

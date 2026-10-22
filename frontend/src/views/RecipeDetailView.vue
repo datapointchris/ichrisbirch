@@ -225,7 +225,17 @@ async function loadRecipe(servings?: number) {
   }
 }
 
-onMounted(() => loadRecipe())
+// The edit modal's cuisine, meal type and difficulty pickers read this.
+async function loadVocabulary() {
+  try {
+    await store.fetchVocabulary()
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to load recipe options: ${detail}`, 'error')
+  }
+}
+
+onMounted(() => Promise.all([loadRecipe(), loadVocabulary()]))
 
 watch(
   () => route.params.id,

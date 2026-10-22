@@ -281,13 +281,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppSubnav from '@/components/AppSubnav.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import NeuSelect from '@/components/NeuSelect.vue'
 import AddEditRecipeModal from '@/components/recipes/AddEditRecipeModal.vue'
-import { useRecipesStore } from '@/stores/recipes'
+import { useRecipesStore, humanizeRecipeValue } from '@/stores/recipes'
 import { useNotifications } from '@/composables/useNotifications'
 import { ApiError } from '@/api/errors'
 import type { Recipe } from '@/api/client'
@@ -305,44 +305,32 @@ const ingredientInput = ref('')
 const ingredientMatch = ref<'any' | 'all'>('any')
 const searchMode = ref<'name' | 'ingredients'>('name')
 
-const cuisineFilterOptions = [
-  { value: 'all', label: 'All Cuisines' },
-  { value: 'american', label: 'American' },
-  { value: 'italian', label: 'Italian' },
-  { value: 'mexican', label: 'Mexican' },
-  { value: 'asian', label: 'Asian' },
-  { value: 'indian', label: 'Indian' },
-  { value: 'mediterranean', label: 'Mediterranean' },
-  { value: 'french', label: 'French' },
-  { value: 'other', label: 'Other' },
-]
+function filterOptions(allLabel: string, values: string[]) {
+  return [{ value: 'all', label: allLabel }, ...values.map((value) => ({ value, label: humanizeRecipeValue(value) }))]
+}
 
-const mealTypeFilterOptions = [
-  { value: 'all', label: 'All Meals' },
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
-  { value: 'dessert', label: 'Dessert' },
-  { value: 'side', label: 'Side' },
-  { value: 'sauce', label: 'Sauce' },
-  { value: 'drink', label: 'Drink' },
-]
-
-const difficultyFilterOptions = [
-  { value: 'all', label: 'All Difficulties' },
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
-]
+const cuisineFilterOptions = computed(() => filterOptions('All Cuisines', store.vocabulary.cuisine))
+const mealTypeFilterOptions = computed(() => filterOptions('All Meals', store.vocabulary.meal_type))
+const difficultyFilterOptions = computed(() => filterOptions('All Difficulties', store.vocabulary.difficulty))
 
 const matchOptions = [
   { value: 'any', label: 'Any ingredient' },
   { value: 'all', label: 'All ingredients' },
 ]
 
+// The vocabulary fills the filter dropdowns and the modal's pickers.
+async function loadVocabulary() {
+  try {
+    await store.fetchVocabulary()
+  } catch (e) {
+    const detail = e instanceof ApiError ? e.userMessage : String(e)
+    notify(`Failed to load recipe options: ${detail}`, 'error')
+  }
+}
+
 onMounted(() => {
   store.fetchAll()
+  loadVocabulary()
 })
 
 function sortIndicator(field: string): string {

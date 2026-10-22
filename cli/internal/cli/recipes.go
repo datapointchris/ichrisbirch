@@ -22,13 +22,17 @@ func newRecipesCommand() *cobra.Command {
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
 	})
-	goclikit.WithRecoveryHints(cmd, "Search recipes by name, instructions, or tags: icb recipes search <query>")
+	goclikit.WithRecoveryHints(cmd,
+		"Search recipes by name, instructions, or tags: icb recipes search <query>",
+		"See every value --cuisine, --meal-type and --difficulty accept: icb recipes vocabulary",
+	)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newRecipesListCommand(),
 		newRecipesShowCommand(),
 		newRecipesSearchCommand(),
 		newRecipesSearchIngredientsCommand(),
+		newRecipesVocabularyCommand(),
 		newRecipesAISuggestCommand(),
 		newRecipesAIImportCommand(),
 	)...)
@@ -73,9 +77,9 @@ func newRecipesListCommand() *cobra.Command {
 			})
 		},
 	}
-	cmd.Flags().StringVar(&cuisine, "cuisine", "", "Filter by cuisine, one of: "+strings.Join(api.RecipeCuisines, ", "))
-	cmd.Flags().StringVar(&mealType, "meal-type", "", "Filter by meal type, one of: "+strings.Join(api.RecipeMealTypes, ", "))
-	cmd.Flags().StringVar(&difficulty, "difficulty", "", "Filter by difficulty, one of: "+strings.Join(api.RecipeDifficulties, ", "))
+	cmd.Flags().StringVar(&cuisine, "cuisine", "", "Filter by cuisine (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(&mealType, "meal-type", "", "Filter by meal type (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(&difficulty, "difficulty", "", "Filter by difficulty (see: icb recipes vocabulary)")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().IntVar(&maxTotalTime, "max-total-time", 0, "Maximum total time in minutes")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output recipes as JSON to stdout")
@@ -575,6 +579,55 @@ func newRecipesAISaveImportCommand() *cobra.Command {
 	return cmd
 }
 
+func newRecipesVocabularyCommand() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "vocabulary",
+		Short: "Show every value a recipe's cuisine, meal type and difficulty accept",
+		Long: "The values --cuisine, --meal-type and --difficulty accept, read from the\n" +
+			"server's lookup tables. Difficulty is listed easiest first.",
+		Example: "  icb recipes vocabulary\n  icb recipes vocabulary --json",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			client, err := newAPIClient(cmd.Context())
+			if err != nil {
+				return handleArgumentAPIError(err)
+			}
+			vocabulary, err := client.GetRecipeVocabulary(cmd.Context())
+			if err != nil {
+				return handleArgumentAPIError(err)
+			}
+			if asJSON {
+				return encodeJSON(cmd.OutOrStdout(), vocabulary)
+			}
+			printRecipeVocabulary(cmd.OutOrStdout(), vocabulary)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the vocabulary as JSON to stdout")
+	return cmd
+}
+
+func printRecipeVocabulary(out io.Writer, v api.RecipeVocabulary) {
+	sections := []struct {
+		label  string
+		values []string
+	}{
+		{"cuisine", v.Cuisine},
+		{"meal_type", v.MealType},
+		{"difficulty", v.Difficulty},
+	}
+	for i, section := range sections {
+		if i > 0 {
+			_, _ = fmt.Fprintln(out)
+		}
+		_, _ = fmt.Fprintf(out, "%s\n", strings.ToUpper(section.label))
+		for _, value := range section.values {
+			_, _ = fmt.Fprintf(out, "  %s\n", value)
+		}
+	}
+}
+
 // addRecipeScalarFlags registers the create/edit scalar flags shared by both so
 // they stay in lockstep.
 func addRecipeScalarFlags(cmd *cobra.Command, description, sourceURL, sourceName *string, prepTime, cookTime, totalTime *int, difficulty, cuisine, mealType *string, tags *[]string, notes *string, rating *int) {
@@ -584,9 +637,9 @@ func addRecipeScalarFlags(cmd *cobra.Command, description, sourceURL, sourceName
 	cmd.Flags().IntVar(prepTime, "prep-time", 0, "Prep time in minutes")
 	cmd.Flags().IntVar(cookTime, "cook-time", 0, "Cook time in minutes")
 	cmd.Flags().IntVar(totalTime, "total-time", 0, "Total time in minutes")
-	cmd.Flags().StringVar(difficulty, "difficulty", "", "One of: "+strings.Join(api.RecipeDifficulties, ", "))
-	cmd.Flags().StringVar(cuisine, "cuisine", "", "One of: "+strings.Join(api.RecipeCuisines, ", "))
-	cmd.Flags().StringVar(mealType, "meal-type", "", "One of: "+strings.Join(api.RecipeMealTypes, ", "))
+	cmd.Flags().StringVar(difficulty, "difficulty", "", "Difficulty (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(cuisine, "cuisine", "", "Cuisine (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(mealType, "meal-type", "", "Meal type (see: icb recipes vocabulary)")
 	cmd.Flags().StringArrayVar(tags, "tag", nil, "Tag (repeatable; replaces the tag list)")
 	cmd.Flags().StringVar(notes, "notes", "", "Notes")
 	cmd.Flags().IntVar(rating, "rating", 0, "Rating (1-5)")

@@ -906,9 +906,16 @@ export interface AdminSettingsUpdate {
 
 // --- Recipe ---
 
-export type RecipeDifficulty = 'easy' | 'medium' | 'hard'
-export type RecipeCuisine = 'american' | 'italian' | 'mexican' | 'asian' | 'indian' | 'mediterranean' | 'french' | 'other'
-export type RecipeMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' | 'side' | 'sauce' | 'drink'
+/**
+ * Every value a recipe's closed fields accept, read from `GET /recipes/vocabulary`.
+ * Each list is keyed by the field it constrains, and difficulty is easiest first.
+ */
+export interface RecipeVocabulary {
+  cuisine: string[]
+  meal_type: string[]
+  difficulty: string[]
+}
+
 export type RecipeUnit =
   | 'cup'
   | 'tbsp'
@@ -963,9 +970,9 @@ export interface Recipe {
   cook_time_minutes: number | null
   total_time_minutes: number | null
   servings: number
-  difficulty: RecipeDifficulty | string | null
-  cuisine: RecipeCuisine | string | null
-  meal_type: RecipeMealType | string | null
+  difficulty: string | null
+  cuisine: string | null
+  meal_type: string | null
   tags: string[] | null
   instructions: string
   notes: string | null

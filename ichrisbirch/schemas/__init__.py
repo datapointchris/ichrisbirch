@@ -113,6 +113,7 @@ from ichrisbirch.schemas.recipe import RecipeStats
 from ichrisbirch.schemas.recipe import RecipeSuggestionRequest
 from ichrisbirch.schemas.recipe import RecipeSuggestionResponse
 from ichrisbirch.schemas.recipe import RecipeUpdate
+from ichrisbirch.schemas.recipe import RecipeVocabulary
 from ichrisbirch.schemas.recipe import UrlImportCandidate
 from ichrisbirch.schemas.recipe import UrlImportKind
 from ichrisbirch.schemas.recipe import UrlImportRequest
@@ -260,6 +261,7 @@ __all__ = [
     'RecipeSuggestionRequest',
     'RecipeSuggestionResponse',
     'RecipeUpdate',
+    'RecipeVocabulary',
     'UrlImportCandidate',
     'UrlImportKind',
     'UrlImportRequest',
