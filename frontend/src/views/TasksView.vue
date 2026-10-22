@@ -15,7 +15,7 @@
 
     <!-- Priority Tasks (index page) -->
     <template v-if="activePage === 'priority'">
-      <div class="grid grid--two-columns-wide grid--tight">
+      <div class="grid grid--one-column-wide grid--tight">
         <div :class="gridClass">
           <h2 class="task-layout__title">Priority Tasks</h2>
           <template v-if="viewType === 'block'">
