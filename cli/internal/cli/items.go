@@ -133,7 +133,10 @@ func newItemsListCommand() *cobra.Command {
 				return err
 			}
 			if project == "" {
-				filter := repoFlagValue(cmd, repo)
+				filter, err := repoFlagValue(cmd, repo)
+				if err != nil {
+					return err
+				}
 				if err := runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
 					return c.ListItems(cmd.Context(), filter, itemStatus, window, limitFlag(cmd))
 				}); err != nil {
@@ -215,11 +218,11 @@ func hintHiddenItems(cmd *cobra.Command, asJSON bool, itemStatus string) {
 	_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\nCompleted and archived items are hidden: %s --status all\n", widen)
 }
 
-// validateRepoFlag rejects a --repo the registry does not know, on the writes
-// only. A typo'd tag is invisible rather than wrong — the item silently drops
-// out of every repo view — so it is worth catching at the moment it is typed.
-// Reads stay unvalidated: filtering by a name nothing carries is a legitimate
-// question with an empty answer.
+// validateRepoFlag rejects a --repo the registry does not know, on reads and
+// writes alike. On a write a typo'd tag is invisible rather than wrong: the item
+// silently drops out of every repo view. On a read a name that selects nothing
+// answers with an empty list and exit 0, which is also the answer for a repo
+// with no work. A caller could not tell "nothing to do" from "no such repo".
 func validateRepoFlag(cmd *cobra.Command, repo string) error {
 	if !cmd.Flags().Changed("repo") {
 		return nil
@@ -234,15 +237,18 @@ func validateRepoFlag(cmd *cobra.Command, repo string) error {
 	return nil
 }
 
-// repoFlagValue renders --repo for the API client. Absent is nil (no filter);
-// present-but-empty is a pointer to "", which asks for the items that are not
-// repo work at all. Collapsing those two would make the untagged work — errands,
-// home projects — unreachable.
-func repoFlagValue(cmd *cobra.Command, repo string) *string {
+// repoFlagValue validates --repo and renders it as a read's filter. Absent is
+// nil (no filter); present-but-empty is a pointer to "", which asks for the
+// items that are not repo work at all. Collapsing those two would make the
+// untagged work — errands, home projects — unreachable.
+func repoFlagValue(cmd *cobra.Command, repo string) (*string, error) {
 	if !cmd.Flags().Changed("repo") {
-		return nil
+		return nil, nil
 	}
-	return &repo
+	if err := validateRepoFlag(cmd, repo); err != nil {
+		return nil, err
+	}
+	return &repo, nil
 }
 
 // itemsOfKind keeps the items belonging to at least one project of the given
@@ -275,7 +281,10 @@ func newItemsBlockedCommand() *cobra.Command {
 		Example: "  icb projects items blocked\n  icb projects items blocked --repo homelab",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			filter := repoFlagValue(cmd, repo)
+			filter, err := repoFlagValue(cmd, repo)
+			if err != nil {
+				return err
+			}
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
 				return c.ListBlockedItems(cmd.Context(), filter)
 			})
@@ -297,7 +306,10 @@ func newItemsSearchCommand() *cobra.Command {
 		Example: "  icb projects items search kitchen\n  icb projects items search backup --repo dotfiles",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			filter := repoFlagValue(cmd, repo)
+			filter, err := repoFlagValue(cmd, repo)
+			if err != nil {
+				return err
+			}
 			return runItemsCollection(cmd, asJSON, func(c *api.Client) ([]api.ProjectItem, error) {
 				return c.SearchItems(cmd.Context(), args[0], filter)
 			})

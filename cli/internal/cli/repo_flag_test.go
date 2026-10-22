@@ -3,7 +3,6 @@ package cli
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -19,34 +18,39 @@ func repoFlagCommand() *cobra.Command {
 }
 
 func TestRepoFlagValue_AbsentIsNoFilter(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
 	cmd := repoFlagCommand()
 	if err := cmd.ParseFlags(nil); err != nil {
 		t.Fatalf("ParseFlags: %v", err)
 	}
-	if got := repoFlagValue(cmd, ""); got != nil {
-		t.Errorf("repoFlagValue = %v, want nil — an unset flag must not filter", got)
+	if got, err := repoFlagValue(cmd, ""); got != nil || err != nil {
+		t.Errorf("repoFlagValue = %v, %v, want nil, nil — an unset flag must not filter", got, err)
 	}
 }
 
+// `--repo ""` asks for untagged work on a read and unlinks an item on a write,
+// so it must survive validation rather than being read as an unknown name.
 func TestRepoFlagValue_EmptyIsTheUntaggedQuestion(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
 	cmd := repoFlagCommand()
 	if err := cmd.ParseFlags([]string{"--repo", ""}); err != nil {
 		t.Fatalf("ParseFlags: %v", err)
 	}
-	got := repoFlagValue(cmd, "")
-	if got == nil || *got != "" {
-		t.Errorf("repoFlagValue = %v, want a pointer to \"\" — --repo \"\" asks for untagged work", got)
+	got, err := repoFlagValue(cmd, "")
+	if err != nil || got == nil || *got != "" {
+		t.Errorf("repoFlagValue = %v, %v, want a pointer to \"\" — --repo \"\" asks for untagged work", got, err)
 	}
 }
 
-func TestRepoFlagValue_NamePassesThrough(t *testing.T) {
+func TestRepoFlagValue_RegisteredNamePassesThrough(t *testing.T) {
+	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
 	cmd := repoFlagCommand()
 	if err := cmd.ParseFlags([]string{"--repo", "dotfiles"}); err != nil {
 		t.Fatalf("ParseFlags: %v", err)
 	}
-	got := repoFlagValue(cmd, "dotfiles")
-	if got == nil || *got != "dotfiles" {
-		t.Errorf("repoFlagValue = %v, want dotfiles", got)
+	got, err := repoFlagValue(cmd, "dotfiles")
+	if err != nil || got == nil || *got != "dotfiles" {
+		t.Errorf("repoFlagValue = %v, %v, want dotfiles", got, err)
 	}
 }
 
@@ -66,52 +70,25 @@ func withRegistry(t *testing.T, body string) {
 	t.Setenv("XDG_DATA_HOME", data)
 }
 
-func TestValidateRepoFlag_RejectsAnUnregisteredRepo(t *testing.T) {
-	withRegistry(t, `{"repos":[{"name":"dotfiles"},{"name":"todoui"}]}`)
-	cmd := repoFlagCommand()
-	if err := cmd.ParseFlags([]string{"--repo", "dotfile"}); err != nil {
-		t.Fatalf("ParseFlags: %v", err)
-	}
-	err := validateRepoFlag(cmd, "dotfile")
-	if err == nil {
-		t.Fatal("a typo'd repo must be rejected at the moment it is typed")
-	}
-	if !strings.Contains(err.Error(), "dotfiles") {
-		t.Errorf("expected the near-match in the message, got %q", err)
-	}
-}
-
-func TestValidateRepoFlag_AcceptsARegisteredRepo(t *testing.T) {
+// A read filtering on a repo the registry does not know would answer with an
+// empty list and exit 0, the same answer a repo with no work gets. Each read
+// refuses it as a usage mistake before reaching the API.
+func TestAReadRefusesAnUnregisteredRepo(t *testing.T) {
 	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
-	cmd := repoFlagCommand()
-	if err := cmd.ParseFlags([]string{"--repo", "dotfiles"}); err != nil {
-		t.Fatalf("ParseFlags: %v", err)
-	}
-	if err := validateRepoFlag(cmd, "dotfiles"); err != nil {
-		t.Errorf("validateRepoFlag = %v, want nil", err)
-	}
-}
-
-// `--repo ""` is how an item is unlinked from its repo, so it must survive
-// validation rather than being read as an unknown name.
-func TestValidateRepoFlag_EmptyUnlinksRatherThanFailing(t *testing.T) {
-	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
-	cmd := repoFlagCommand()
-	if err := cmd.ParseFlags([]string{"--repo", ""}); err != nil {
-		t.Fatalf("ParseFlags: %v", err)
-	}
-	if err := validateRepoFlag(cmd, ""); err != nil {
-		t.Errorf("validateRepoFlag = %v, want nil", err)
-	}
-}
-
-func TestValidateRepoFlag_UnsetIsNotValidated(t *testing.T) {
-	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
-	cmd := repoFlagCommand()
-	if err := cmd.ParseFlags(nil); err != nil {
-		t.Fatalf("ParseFlags: %v", err)
-	}
-	if err := validateRepoFlag(cmd, ""); err != nil {
-		t.Errorf("validateRepoFlag = %v, want nil for an unset flag", err)
+	for _, args := range [][]string{
+		{"issues", "list", "--repo", "dotfile"},
+		{"issues", "search", "backup", "--repo", "dotfile"},
+		{"issues", "next", "--repo", "dotfile"},
+		{"issues", "tree", "--repo", "dotfile"},
+		{"projects", "list", "--repo", "dotfile"},
+		{"projects", "next", "--repo", "dotfile"},
+		{"projects", "items", "list", "--repo", "dotfile"},
+		{"projects", "items", "blocked", "--repo", "dotfile"},
+		{"projects", "items", "search", "backup", "--repo", "dotfile"},
+		{"projects", "items", "tree", "--repo", "dotfile"},
+	} {
+		if got := runTree(t, args...); got != 2 {
+			t.Errorf("%v exit = %d, want 2", args, got)
+		}
 	}
 }

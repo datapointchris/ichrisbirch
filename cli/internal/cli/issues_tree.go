@@ -53,6 +53,10 @@ func newIssuesTreeCommand() *cobra.Command {
 			if cmd.Flags().Changed("depth") {
 				maxDepth = depth
 			}
+			filter, err := repoFlagValue(cmd, repo)
+			if err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
@@ -87,7 +91,6 @@ func newIssuesTreeCommand() *cobra.Command {
 				}
 				trees = []drawTree{tree}
 			} else {
-				filter := repoFlagValue(cmd, repo)
 				for _, members := range g.Components() {
 					if issueComponentMatches(members, byID, issueStatus, filter) {
 						trees = append(trees, drawTree{roots: g.Roots(members, invert), members: members})

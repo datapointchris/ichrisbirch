@@ -166,9 +166,13 @@ func (v *issueFilterFlags) filter(cmd *cobra.Command) (api.IssueFilter, error) {
 	if err := validateIssueType(f, "type", v.issueType); err != nil {
 		return api.IssueFilter{}, err
 	}
+	repo, err := repoFlagValue(cmd, v.repo)
+	if err != nil {
+		return api.IssueFilter{}, err
+	}
 	filter := api.IssueFilter{
 		Status:     v.status,
-		Repo:       repoFlagValue(cmd, v.repo),
+		Repo:       repo,
 		Type:       v.issueType,
 		Label:      v.label,
 		Initiative: v.initiative,
@@ -483,8 +487,12 @@ func (v *readyQueueFlags) filter(cmd *cobra.Command) (api.ReadyFilter, error) {
 	if err := validateIssueType(cmd.Flags(), "type", v.issueType); err != nil {
 		return api.ReadyFilter{}, err
 	}
+	repo, err := repoFlagValue(cmd, v.repo)
+	if err != nil {
+		return api.ReadyFilter{}, err
+	}
 	filter := api.ReadyFilter{
-		Repo:       repoFlagValue(cmd, v.repo),
+		Repo:       repo,
 		Type:       v.issueType,
 		Label:      v.label,
 		Initiative: v.initiative,

@@ -81,11 +81,14 @@ func newProjectsListCommand() *cobra.Command {
 			"  icb projects list --status completed\n  icb projects list --status all --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			filter, err := repoFlagValue(cmd, repo)
+			if err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			filter := repoFlagValue(cmd, repo)
 			projects, err := client.ListProjects(cmd.Context(), filter, projectStatus, limitFlag(cmd))
 			if err != nil {
 				return handleAPIError(err)
@@ -157,11 +160,14 @@ func newProjectsNextCommand() *cobra.Command {
 			"  icb projects next --limit 1 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			filter, err := repoFlagValue(cmd, repo)
+			if err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			filter := repoFlagValue(cmd, repo)
 			// Every open item, uncapped: the blocked set is computed from the
 			// whole graph, and --limit here caps what is printed rather than
 			// what is read.
