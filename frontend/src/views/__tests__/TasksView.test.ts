@@ -106,6 +106,7 @@ function createWrapper(storeState: Record<string, unknown> = {}) {
 describe('TasksView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
   })
 
   // --- Rendering ---
@@ -238,6 +239,17 @@ describe('TasksView', () => {
     await wrapper.find('[data-testid="task-delete-button"]').trigger('click')
 
     expect(store.remove).toHaveBeenCalledWith(1)
+  })
+
+  it('opens in the layout chosen on the previous visit', async () => {
+    const first = createWrapper({ tasks: testTasks })
+    expect(first.findComponent({ name: 'TaskInfoBar' }).props('viewType')).toBe('block')
+    first.findComponent({ name: 'TaskInfoBar' }).vm.$emit('update:viewType', 'compact')
+    await first.vm.$nextTick()
+    first.unmount()
+
+    const second = createWrapper({ tasks: testTasks })
+    expect(second.findComponent({ name: 'TaskInfoBar' }).props('viewType')).toBe('compact')
   })
 
   // --- Modal wiring ---

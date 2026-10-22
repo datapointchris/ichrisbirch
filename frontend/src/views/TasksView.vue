@@ -336,7 +336,27 @@ const route = useRoute()
 const store = useTasksStore()
 const { show } = useNotifications()
 
-const viewType = ref<'block' | 'compact'>('block')
+type ViewType = 'block' | 'compact'
+const VIEW_TYPE_STORAGE_KEY = 'tasks-view-type'
+
+function storedViewType(): ViewType {
+  try {
+    return localStorage.getItem(VIEW_TYPE_STORAGE_KEY) === 'compact' ? 'compact' : 'block'
+  } catch {
+    return 'block'
+  }
+}
+
+const viewType = ref<ViewType>(storedViewType())
+
+watch(viewType, (next) => {
+  try {
+    localStorage.setItem(VIEW_TYPE_STORAGE_KEY, next)
+  } catch {
+    // A private window refuses storage; the layout then lasts until the page closes.
+  }
+})
+
 const selectedFilter = ref<DateFilterKey>('this_week')
 const selectedCategory = ref<string>('')
 const completedToday = ref<CompletedTask[]>([])
