@@ -111,8 +111,8 @@ func NewRootCommand() *cobra.Command {
 		Use:   "icb",
 		Short: "The ichrisbirch data CLI",
 		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
-			"projects, issues, books, articles, habits, recipes, countdowns, events,\n" +
-			"strains, and the shopping list.\n" +
+			"autotasks, projects, issues, books, articles, habits, patterns, recipes,\n" +
+			"cooking techniques, countdowns, events, strains, and the shopping list.\n" +
 			"\n" +
 			"Start with `icb overview` for what is outstanding in every app at once.\n" +
 			"Each section stops at ten rows, so the one that caught your eye continues\n" +

@@ -1,9 +1,9 @@
 # icb — the ichrisbirch data CLI
 
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
-programmatic front door to the personal-productivity apps (tasks, projects,
-countdowns, books, articles, habits, events, recipes, cooking-techniques,
-strains, shopping) and the
+programmatic front door to the personal-productivity apps (tasks, autotasks,
+projects, issues, countdowns, books, articles, habits, patterns, events,
+recipes, cooking-techniques, strains, shopping) and the
 **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
 
