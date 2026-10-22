@@ -36,7 +36,9 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
-	initiatives, err := client.ListInitiatives(ctx, "", "", nil)
+	// A someday initiative takes issues as an active one does, and the API's
+	// default list holds only the active ones.
+	listed, err := client.ListInitiatives(ctx, "all", "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +46,9 @@ func issueCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field,
 	if err != nil {
 		return nil, err
 	}
+	initiatives := slices.DeleteFunc(listed, func(i api.Initiative) bool {
+		return slices.Contains(api.InitiativeStatusesClosed, i.Status)
+	})
 	initiativeChoices := make([]string, 0, len(initiatives))
 	for _, initiative := range initiatives {
 		initiativeChoices = append(initiativeChoices, initiativeChoice(initiative))
@@ -119,7 +124,7 @@ func initiativeChoice(initiative api.Initiative) string {
 
 // initiativeRef accepts an initiative as N, #N, a UUID, a name or an offered
 // choice. A number or a UUID passes straight through for the API to resolve,
-// because the choices hold only the active initiatives.
+// because the choices hold only the initiatives that take issues.
 func initiativeRef(initiatives []api.Initiative) func(string) (string, error) {
 	choices := make([]string, 0, len(initiatives))
 	for _, initiative := range initiatives {

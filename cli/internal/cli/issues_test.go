@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
 )
 
 // Every refusal that needs no server state is decided before the client
@@ -335,6 +337,42 @@ func TestResolveIssueComment_ByPlaceOrById(t *testing.T) {
 	}
 	if _, err := resolveIssueComment(ctx, client, "412", "3"); err == nil || !strings.Contains(err.Error(), "no #3") {
 		t.Errorf("resolve 3 = %v, want it to say there is no #3", err)
+	}
+}
+
+func TestIssueCreateFields_OffersEveryInitiativeThatTakesIssues(t *testing.T) {
+	t.Setenv("ICB_REPOS_REGISTRY", filepath.Join(t.TempDir(), "repos.json"))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path != "/api/v1/issues/initiatives" {
+			_, _ = w.Write([]byte(`{}`))
+			return
+		}
+		if got := r.URL.Query().Get("status"); got != "all" {
+			t.Errorf("listed initiatives with status %q, want all", got)
+		}
+		_, _ = w.Write([]byte(`[
+			{"id":"a","number":1,"name":"Ship it","status":"active"},
+			{"id":"b","number":2,"name":"Parked idea","status":"someday"},
+			{"id":"d","number":4,"name":"Done work","status":"completed"},
+			{"id":"e","number":5,"name":"Abandoned","status":"dropped"}
+		]`))
+	}))
+	t.Cleanup(srv.Close)
+
+	fields, err := issueCreateFields(context.Background(), api.New(srv.URL, srv.Client()))
+	if err != nil {
+		t.Fatalf("issueCreateFields: %v", err)
+	}
+	field := fields[slices.IndexFunc(fields, func(f prompt.Field) bool { return f.Key == "initiative" })]
+	if want := []string{"1 Ship it", "2 Parked idea"}; !slices.Equal(field.Choices, want) {
+		t.Errorf("initiative choices = %v, want %v", field.Choices, want)
+	}
+	if got, err := field.Validate("parked idea"); err != nil || got != "Parked idea" {
+		t.Errorf("a someday initiative's name = %q, %v, want it accepted", got, err)
+	}
+	if _, err := field.Validate("Done work"); err == nil {
+		t.Error("a completed initiative's name was accepted, want it refused")
 	}
 }
 

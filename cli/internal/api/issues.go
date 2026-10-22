@@ -44,6 +44,10 @@ var InitiativeStatuses = []string{"active", "someday", "completed", "dropped", "
 // order to work them in, and the API's default.
 var InitiativeSorts = []string{"priority", "open", "newest"}
 
+// InitiativeStatusesClosed are the statuses whose initiative the API refuses
+// to file a new issue into until it is reopened.
+var InitiativeStatusesClosed = []string{"completed", "dropped"}
+
 // IssueSummary is enough of another issue to print it beside this one.
 type IssueSummary struct {
 	ID     string `json:"id"`
