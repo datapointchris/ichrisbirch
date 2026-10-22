@@ -21,7 +21,7 @@
   padding: var(--space-xs);
   border-radius: var(--border-radius);
   background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
 
   &__form {
     display: flex;
@@ -80,7 +80,7 @@
 .today-block {
   border-radius: var(--border-radius);
   background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
 
   &__header {
     display: flex;

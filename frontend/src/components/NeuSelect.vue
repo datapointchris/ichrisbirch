@@ -168,7 +168,7 @@ onBeforeUnmount(() => {
 .neu-select__chevron {
   font-size: var(--fs-300);
   color: var(--clr-gray-400);
-  transition: transform 0.2s;
+  transition: transform var(--transition-medium);
 }
 
 .neu-select__chevron--open {
@@ -219,11 +219,11 @@ onBeforeUnmount(() => {
 
 // Dropdown transition
 .neu-dropdown-enter-active {
-  transition: all 0.15s ease-out;
+  transition: all var(--transition-default) ease-out;
 }
 
 .neu-dropdown-leave-active {
-  transition: all 0.1s ease-in;
+  transition: all var(--transition-fast) ease-in;
 }
 
 .neu-dropdown-enter-from {

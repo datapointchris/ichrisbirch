@@ -31,7 +31,7 @@ defineProps<{ cards: StatsCard[] }>()
   flex: 1;
   min-width: 100px;
   padding: var(--space-s) var(--space-m);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   text-align: center;
 }

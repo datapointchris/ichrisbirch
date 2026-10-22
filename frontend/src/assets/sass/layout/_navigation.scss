@@ -52,7 +52,7 @@ nav {
 // Opaque, because the page scrolls under it.
 .phone-bar {
   background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
 }
 
 // Dims the page behind the sidebar where the sidebar covers it, on a phone.

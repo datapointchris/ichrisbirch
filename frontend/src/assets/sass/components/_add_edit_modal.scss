@@ -103,7 +103,7 @@
   // Inner form gets its own shadow layer for depth separation from the window
   // prettier-ignore
   box-shadow:
-    var(--floating-box),
+    var(--shadow-card),
     inset 0 2px 4px rgba(0, 0, 0, 0.3),
     0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -177,7 +177,7 @@
   border: 2px solid var(--clr-accent-light);
   background-color: var(--clr-primary);
   box-shadow: 0 3px 6px var(--clr-black-trans-600);
-  transition: 0.15s ease;
+  transition: var(--transition-default) ease;
   cursor: pointer;
   font-size: var(--fs-300);
 

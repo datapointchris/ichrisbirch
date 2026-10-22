@@ -11,23 +11,23 @@
 
 .book {
   &--read {
-    box-shadow: var(--book-read-box-shadow), var(--floating-box);
+    box-shadow: var(--book-read-box-shadow), var(--shadow-card);
   }
 
   &--reading {
-    box-shadow: var(--book-reading-box-shadow), var(--floating-box);
+    box-shadow: var(--book-reading-box-shadow), var(--shadow-card);
   }
 
   &--unread {
-    box-shadow: var(--book-unread-box-shadow), var(--floating-box);
+    box-shadow: var(--book-unread-box-shadow), var(--shadow-card);
   }
 
   &--abandoned {
-    box-shadow: var(--book-abandoned-box-shadow), var(--floating-box);
+    box-shadow: var(--book-abandoned-box-shadow), var(--shadow-card);
   }
 
   &--total {
-    box-shadow: var(--book-total-box-shadow), var(--floating-box);
+    box-shadow: var(--book-total-box-shadow), var(--shadow-card);
   }
 }
 
@@ -55,27 +55,27 @@
 
   &__row {
     &.book--read {
-      box-shadow: var(--book-read-box-shadow), var(--floating-box);
+      box-shadow: var(--book-read-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--book-read-box-shadow), var(--bubble-box);
+        box-shadow: var(--book-read-box-shadow), var(--shadow-card-hover);
       }
     }
     &.book--reading {
-      box-shadow: var(--book-reading-box-shadow), var(--floating-box);
+      box-shadow: var(--book-reading-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--book-reading-box-shadow), var(--bubble-box);
+        box-shadow: var(--book-reading-box-shadow), var(--shadow-card-hover);
       }
     }
     &.book--unread {
-      box-shadow: var(--book-unread-box-shadow), var(--floating-box);
+      box-shadow: var(--book-unread-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--book-unread-box-shadow), var(--bubble-box);
+        box-shadow: var(--book-unread-box-shadow), var(--shadow-card-hover);
       }
     }
     &.book--abandoned {
-      box-shadow: var(--book-abandoned-box-shadow), var(--floating-box);
+      box-shadow: var(--book-abandoned-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--book-abandoned-box-shadow), var(--bubble-box);
+        box-shadow: var(--book-abandoned-box-shadow), var(--shadow-card-hover);
       }
     }
   }

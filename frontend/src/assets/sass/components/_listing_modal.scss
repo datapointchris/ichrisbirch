@@ -65,7 +65,7 @@
 
   // prettier-ignore
   box-shadow:
-        var(--floating-box),
+        var(--shadow-card),
         inset 0 2px 4px rgba(0, 0, 0, 0.3),
         0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -81,7 +81,7 @@
   background-color: var(--clr-primary);
   border-radius: var(--button-border-radius);
   padding: var(--space-xs);
-  box-shadow: var(--neu-pressed);
+  box-shadow: var(--shadow-button-active);
 }
 
 .listing-modal__title {

@@ -5,15 +5,16 @@
     padding-block: var(--space-xs);
     padding-inline: var(--space-m);
     background-color: var(--clr-primary);
+    border: var(--border-card);
     border-radius: var(--button-border-radius);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
     align-items: center;
     text-align: left;
-    transition: transform 0.3s ease-in-out;
+    transition: transform var(--transition-slow) ease-in-out;
 
     &:hover {
       $movement: calc(var(--space-3xs) * -0.4);
-      box-shadow: var(--bubble-box);
+      box-shadow: var(--shadow-card-hover);
       transform: scale(1.01) translateY($movement);
     }
   }
@@ -44,7 +45,7 @@
 
   &__chevron {
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: transform var(--transition-medium) ease;
     &--open {
       transform: rotate(180deg);
     }

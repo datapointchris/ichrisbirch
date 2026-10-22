@@ -1017,16 +1017,16 @@ function clearSearch() {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     background-color: var(--clr-primary);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
     transition:
       box-shadow 0.15s ease,
       color 0.1s ease;
 
     &:hover {
-      box-shadow: var(--bubble-box);
+      box-shadow: var(--shadow-card-hover);
 
       .projects-page__project-name {
         color: var(--clr-accent-light);
@@ -1034,14 +1034,14 @@ function clearSearch() {
     }
 
     &--selected {
-      box-shadow: var(--floating-box-pressed);
+      box-shadow: var(--shadow-card-active);
 
       .projects-page__project-name {
         color: var(--clr-accent-light);
       }
 
       &:hover {
-        box-shadow: var(--floating-box-pressed);
+        box-shadow: var(--shadow-card-active);
       }
     }
   }
@@ -1056,7 +1056,7 @@ function clearSearch() {
     color: var(--clr-gray-400);
     font-size: 0.75rem;
     opacity: 0.5;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--transition-default) ease;
 
     .projects-page__project:hover &,
     .projects-page__item:hover & {
@@ -1109,7 +1109,7 @@ function clearSearch() {
     font-size: 0.8rem;
     color: var(--clr-subtle);
     flex-shrink: 0;
-    transition: color 0.1s ease;
+    transition: color var(--transition-fast) ease;
 
     .projects-page__project--selected & {
       color: var(--clr-accent-light);
@@ -1167,7 +1167,7 @@ function clearSearch() {
     font-size: 0.85rem;
     max-height: 1.5em;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height var(--transition-slow) ease;
     flex: 1;
 
     &--open {
@@ -1179,7 +1179,7 @@ function clearSearch() {
   &__item-list {
     border-radius: var(--button-border-radius);
     background-color: color-mix(in oklch, var(--clr-primary) 85%, black);
-    box-shadow: var(--floating-box-pressed);
+    box-shadow: var(--shadow-card-active);
     overflow: hidden; // clips border-radius on first/last items
   }
 
@@ -1212,7 +1212,7 @@ function clearSearch() {
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid var(--clr-gray-800);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--transition-default) ease;
 
     &:last-child {
       border-bottom: none;
@@ -1353,7 +1353,7 @@ function clearSearch() {
   }
 
   100% {
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
   }
 }
 </style>

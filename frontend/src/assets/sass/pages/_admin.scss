@@ -69,7 +69,7 @@
 
 .admin-status {
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: var(--fs-300);
   font-weight: 600;
 }
@@ -112,7 +112,7 @@
   color: var(--clr-red-400, #f87171);
   padding: var(--space-xs);
   border: 1px solid var(--clr-red-800, #991b1b);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-top: var(--space-m);
 }
 
@@ -120,15 +120,15 @@
   position: relative;
   height: 24px;
   background: var(--clr-gray-800);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-top: var(--space-2xs);
   overflow: hidden;
 }
 
 .admin-meter__fill {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
+  border-radius: var(--radius-sm);
+  transition: width var(--transition-slow) ease;
 }
 
 .admin-meter__fill--ok {

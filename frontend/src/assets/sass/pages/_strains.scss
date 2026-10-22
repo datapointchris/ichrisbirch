@@ -10,15 +10,15 @@
 
 .strain {
   &--tried {
-    box-shadow: var(--strain-tried-box-shadow), var(--floating-box);
+    box-shadow: var(--strain-tried-box-shadow), var(--shadow-card);
   }
 
   &--want_to_try {
-    box-shadow: var(--strain-want-to-try-box-shadow), var(--floating-box);
+    box-shadow: var(--strain-want-to-try-box-shadow), var(--shadow-card);
   }
 
   &--total {
-    box-shadow: var(--strain-total-box-shadow), var(--floating-box);
+    box-shadow: var(--strain-total-box-shadow), var(--shadow-card);
   }
 }
 
@@ -47,15 +47,15 @@
 
   &__row {
     &.strain--tried {
-      box-shadow: var(--strain-tried-box-shadow), var(--floating-box);
+      box-shadow: var(--strain-tried-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--strain-tried-box-shadow), var(--bubble-box);
+        box-shadow: var(--strain-tried-box-shadow), var(--shadow-card-hover);
       }
     }
     &.strain--want_to_try {
-      box-shadow: var(--strain-want-to-try-box-shadow), var(--floating-box);
+      box-shadow: var(--strain-want-to-try-box-shadow), var(--shadow-card);
       &:hover {
-        box-shadow: var(--strain-want-to-try-box-shadow), var(--bubble-box);
+        box-shadow: var(--strain-want-to-try-box-shadow), var(--shadow-card-hover);
       }
     }
   }
@@ -77,7 +77,7 @@
     padding-inline: var(--space-xs);
     border-radius: var(--button-border-radius);
     font-size: var(--fs-300);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
   }
 }
 

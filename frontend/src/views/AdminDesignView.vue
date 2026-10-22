@@ -181,7 +181,7 @@ const segmentExperiments = [
   font-weight: 500;
   color: var(--clr-gray-100);
   border: 2px solid transparent;
-  transition: all 0.1s ease;
+  transition: all var(--transition-fast) ease;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
@@ -292,17 +292,17 @@ const segmentExperiments = [
 }
 
 .seg-group--dark-shadow {
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   background-color: var(--clr-primary--darker);
 }
 
 /* Shared base for all segment button experiments */
 %seg-btn-base {
   background-color: var(--clr-primary);
-  box-shadow: var(--neu-hover);
+  box-shadow: var(--shadow-button-hover);
   color: var(--clr-gray-100);
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all var(--transition-fast) ease;
   padding: var(--space-xs) var(--space-s);
   font-size: var(--fs-400);
   border: none;
@@ -312,7 +312,7 @@ const segmentExperiments = [
 }
 
 %seg-btn-pressed {
-  box-shadow: var(--neu-pressed);
+  box-shadow: var(--shadow-button-active);
   background-color: var(--clr-primary--darker);
   color: var(--clr-accent);
   z-index: 0;
@@ -343,7 +343,7 @@ const segmentExperiments = [
   &:hover:not(.seg-btn--inner-glow--selected) {
     color: var(--clr-accent);
     box-shadow:
-      var(--neu-hover),
+      var(--shadow-button-hover),
       inset 0 0 16px var(--clr-accent-dark);
     font-size: calc(var(--fs-400) * 1.2);
   }

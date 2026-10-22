@@ -275,7 +275,7 @@ function isActive(link: NavLink): boolean {
 /* Tab fade transition */
 .tab-enter-active,
 .tab-leave-active {
-  transition: opacity 0.2s ease 0.15s;
+  transition: opacity var(--transition-medium) ease var(--transition-default);
 }
 
 .tab-enter-from,

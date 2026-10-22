@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-3xs);
-    transition: all 0.2s ease;
+    transition: all var(--transition-medium) ease;
 
     &:hover {
       color: var(--clr-error);
@@ -84,7 +84,7 @@
     cursor: pointer;
     flex-shrink: 0;
     padding: var(--space-3xs);
-    transition: color 0.2s ease;
+    transition: color var(--transition-medium) ease;
 
     &:hover {
       color: var(--clr-error);

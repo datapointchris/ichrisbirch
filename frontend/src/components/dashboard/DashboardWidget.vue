@@ -49,7 +49,7 @@ defineEmits<{
   background: var(--clr-primary);
   border-radius: var(--button-border-radius, 12px);
   overflow: hidden;
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   transition:
     box-shadow 0.2s ease,
     transform 0.2s ease;
@@ -57,7 +57,7 @@ defineEmits<{
 
 .dashboard-widget:hover {
   box-shadow:
-    var(--floating-box),
+    var(--shadow-card),
     0 0 20px var(--clr-black-trans-400),
     inset 0 0 8px var(--clr-shadow-highlight-sm);
   transform: translateY(-1px);
@@ -121,13 +121,13 @@ defineEmits<{
   padding: var(--space-3xs);
   font-size: var(--fs-300);
   line-height: 1;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   width: 1.5rem;
   height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all var(--transition-default) ease;
 }
 
 .dashboard-widget__remove:hover {
@@ -157,7 +157,7 @@ defineEmits<{
 
 .dashboard-widget__content::-webkit-scrollbar-thumb {
   background: var(--clr-gray-600);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .dashboard-widget__content::-webkit-scrollbar-thumb:hover {

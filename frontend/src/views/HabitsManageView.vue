@@ -371,7 +371,7 @@ async function handleDeleteCategory(id: number) {
   gap: var(--space-s);
   padding: var(--space-xs) var(--space-s);
   border-bottom: 1px solid var(--clr-gray-800);
-  transition: background-color 0.15s;
+  transition: background-color var(--transition-default);
 }
 
 .habits-manage__row:hover {
@@ -387,7 +387,7 @@ async function handleDeleteCategory(id: number) {
   color: var(--clr-gray-400);
   background-color: var(--clr-gray-800);
   padding: 2px var(--space-xs);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .habits-manage__actions {

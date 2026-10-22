@@ -22,7 +22,7 @@
     color: var(--clr-primary-400);
     font-size: var(--fs-500);
     cursor: pointer;
-    transition: color 0.15s;
+    transition: color var(--transition-default);
 
     &:hover:not(:disabled) {
       color: var(--clr-accent);
@@ -121,7 +121,7 @@
   margin: 20px;
   padding: 10px;
   border: 2px solid gray;
-  border-radius: 30px;
+  border-radius: var(--radius-3xl);
 
   &.completed {
     border-color: var(--clr-success);
@@ -136,7 +136,7 @@
 
 .habit-check {
   margin: var(--space-m);
-  @include buttons.double-bevel-button($button-size: 50px, $button-step-blend: 2px, $selected-color: var(--clr-tertiary));
+  @include buttons.action-button($button-size: 50px, $button-step-blend: 2px, $selected-color: var(--clr-tertiary));
 
   * button {
     color: inherit;

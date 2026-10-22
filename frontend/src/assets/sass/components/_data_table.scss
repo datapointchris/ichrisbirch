@@ -16,7 +16,7 @@
     padding: var(--space-s) var(--space-m);
     font-size: var(--fs-400);
     border-bottom: 1px solid var(--clr-gray-800);
-    transition: background-color 0.15s;
+    transition: background-color var(--transition-default);
 
     &:hover {
       background-color: var(--clr-primary--lighter);

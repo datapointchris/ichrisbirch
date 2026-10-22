@@ -38,13 +38,13 @@
   display: grid;
   align-items: start;
   border-radius: var(--button-border-radius);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   transition: transform $transition-time ease-in-out;
   position: relative;
 
   &:hover {
     $movement: calc(var(--space-3xs) * -0.4);
-    box-shadow: var(--bubble-box);
+    box-shadow: var(--shadow-card-hover);
     transform: scale(1.01) translateY($movement);
     transition: transform $transition-time ease-in-out;
   }
@@ -231,9 +231,9 @@
   }
 
   @mixin task-state-styles($state) {
-    box-shadow: var(--task-#{$state}-box-shadow), var(--floating-box);
+    box-shadow: var(--task-#{$state}-box-shadow), var(--shadow-card);
     &:hover:not(.task-layout__count) {
-      box-shadow: var(--task-#{$state}-box-shadow), var(--bubble-box);
+      box-shadow: var(--task-#{$state}-box-shadow), var(--shadow-card-hover);
     }
   }
 

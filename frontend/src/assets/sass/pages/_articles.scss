@@ -102,7 +102,7 @@
   // Star favorite toggle — class applied to ActionButton root, targets inner icon
   &__star .button-icon {
     color: var(--clr-gray-600);
-    transition: color 0.15s;
+    transition: color var(--transition-default);
 
     &:hover {
       color: var(--clr-primary-400);

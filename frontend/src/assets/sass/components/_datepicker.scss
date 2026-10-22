@@ -31,7 +31,7 @@
     color: var(--clr-gray-200);
     padding: 0.5em 0.65em;
     font-size: var(--fs-400);
-    transition: color 0.15s ease;
+    transition: color var(--transition-default) ease;
 
     // Match the textbox inset shadow feel
     box-shadow:
@@ -106,7 +106,7 @@
 
 .datepicker__nav {
   $button-size: 30px;
-  @include buttons.double-bevel-button($button-size);
+  @include buttons.action-button($button-size);
   border: none;
 }
 

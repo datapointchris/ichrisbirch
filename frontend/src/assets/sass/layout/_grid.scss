@@ -1,6 +1,6 @@
 :root {
   // prettier-ignore
-  --floating-box:
+  --shadow-card:
         0 -2px 2px var(--clr-black-trans-200),
         0px 4px 4px var(--clr-black-trans-400),
         0px 16px 16px var(--clr-black-trans-600),
@@ -12,7 +12,7 @@
         inset 6px 6px 10px var(--clr-shadow-highlight-md);
 
   // prettier-ignore
-  --floating-box-pressed:
+  --shadow-card-active:
         inset 2px 2px 5px var(--clr-black-trans-800),
         -2px -2px 5px var(--clr-black-trans-800),
 
@@ -30,13 +30,13 @@
         inset -8px -8px 32px var(--clr-shadow-highlight-md);
 
   // prettier-ignore
-  --bubble-box:
+  --shadow-card-hover:
         10px 10px 24px var(--clr-black-trans-800),
         -4px -4px 12px var(--clr-shadow-highlight-lg),
         inset 8px 8px 12px var(--clr-shadow-highlight-lg);
 
   // prettier-ignore
-  --bubble-box-pressed:
+  --shadow-card-hover-active:
         -8px -8px 20px var(--clr-black-trans-600),
         4px 4px 12px var(--clr-shadow-highlight-lg),
         inset 8px 8px 20px var(--clr-black-trans-1000),
@@ -143,11 +143,11 @@
     font-size: var(--fs-400);
     border-radius: var(--button-border-radius);
     background-color: var(--clr-primary);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
 
     &--highlighted {
       background-color: var(--clr-primary--darker);
-      box-shadow: var(--floating-box-pressed);
+      box-shadow: var(--shadow-card-active);
     }
 
     &--past {
@@ -161,7 +161,7 @@
 
   &--highlighted {
     background-color: var(--clr-primary--darker);
-    box-shadow: var(--floating-box-pressed);
+    box-shadow: var(--shadow-card-active);
   }
 }
 

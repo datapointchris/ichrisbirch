@@ -46,14 +46,14 @@ const emit = defineEmits<{
 .neu-toggle-group {
   display: inline-flex;
   border-radius: var(--button-border-radius);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   background-color: var(--clr-primary--darker);
   overflow: hidden;
 }
 
 .neu-toggle-group__option {
   background-color: var(--clr-primary);
-  box-shadow: var(--neu-hover);
+  box-shadow: var(--shadow-button-hover);
   color: var(--clr-gray-100);
   cursor: pointer;
   transition:
@@ -72,13 +72,13 @@ const emit = defineEmits<{
 .neu-toggle-group__option:hover:not(.neu-toggle-group__option--selected) {
   color: var(--clr-accent);
   box-shadow:
-    var(--neu-hover),
+    var(--shadow-button-hover),
     inset 0 0 16px var(--clr-accent-dark);
   font-size: calc(var(--fs-400) * 1.2);
 }
 
 .neu-toggle-group__option--selected {
-  box-shadow: var(--neu-pressed);
+  box-shadow: var(--shadow-button-active);
   background-color: var(--clr-primary--darker);
   color: var(--clr-accent);
   z-index: 0;

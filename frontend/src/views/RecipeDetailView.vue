@@ -327,7 +327,7 @@ async function handleAddToShopping(items: ShoppingItemCreate[]) {
   gap: var(--space-m);
   flex-wrap: wrap;
   padding: var(--space-s);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   font-size: var(--fs-300);
   text-transform: capitalize;
@@ -348,7 +348,7 @@ async function handleAddToShopping(items: ShoppingItemCreate[]) {
 .recipe-detail__ingredients-section,
 .recipe-detail__instructions-section {
   padding: var(--space-s);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
 }
 
@@ -432,7 +432,7 @@ async function handleAddToShopping(items: ShoppingItemCreate[]) {
 
 .recipe-detail__notes {
   padding: var(--space-s);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
 }
 

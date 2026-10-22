@@ -382,7 +382,7 @@ onUnmounted(() => {
 .vuedash__item {
   position: relative;
   z-index: 2;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-medium) ease;
   touch-action: none;
 }
 
@@ -398,9 +398,9 @@ onUnmounted(() => {
 
 .vuedash__item--dragging .dashboard-widget {
   box-shadow:
-    var(--floating-box),
+    var(--shadow-card),
     0 0 15px var(--clr-accent);
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow var(--transition-default) ease;
 }
 
 /* Drag handle — invisible overlay covering the entire header */
@@ -427,7 +427,7 @@ onUnmounted(() => {
   z-index: 10;
   touch-action: none;
   opacity: 0.3;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--transition-default) ease;
 }
 
 .vuedash__item:hover .vuedash__resize-handle {
@@ -452,7 +452,7 @@ onUnmounted(() => {
   color: var(--clr-gray-500);
   font-size: 1.25rem;
   line-height: 1;
-  transition: color 0.15s ease;
+  transition: color var(--transition-default) ease;
 }
 
 .vuedash__resize-handle:hover .vuedash__grip-dots {
@@ -475,7 +475,7 @@ onUnmounted(() => {
 .widget-picker {
   background: var(--clr-gray-900);
   border: 1px solid var(--clr-gray-700);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   padding: var(--space-m);
   min-width: 20rem;
   max-width: 90vw;
@@ -502,7 +502,7 @@ onUnmounted(() => {
   padding: var(--space-2xs) var(--space-xs);
   background: var(--clr-gray-800);
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-default);
   color: var(--clr-gray-200);
   cursor: pointer;
   text-align: left;

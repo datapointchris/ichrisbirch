@@ -11,10 +11,10 @@ input[type='checkbox'] {
   margin: var(--space-xs);
   padding: 0;
   border: 3px solid $checkbox-border-color;
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   appearance: none;
   background-color: transparent;
-  transition: all 0.1s;
+  transition: all var(--transition-fast);
   @include buttons.button-boxy;
 
   &:checked {
@@ -29,7 +29,7 @@ input[type='checkbox'] {
       left: 50%;
       transform: translate(-50%, -50%);
       background-color: $checkbox-checked-color;
-      border-radius: 3px;
+      border-radius: var(--radius-xs);
     }
   }
 

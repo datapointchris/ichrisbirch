@@ -27,7 +27,7 @@
   gap: 3rem;
 
   .item-push {
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     animation: push 3s ease-in-out infinite;
     font-size: var(--fs-1000);
     @include typography.deep-3d-text;
@@ -40,7 +40,7 @@
     }
   }
   .item-spin {
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     animation: spin 3s ease-in-out infinite;
     font-size: var(--fs-1000);
     @include typography.deep-3d-text;

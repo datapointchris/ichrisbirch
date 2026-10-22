@@ -120,7 +120,7 @@
 @mixin count-filter {
   cursor: pointer;
   user-select: none;
-  transition: transform 0.15s ease;
+  transition: transform var(--transition-default) ease;
 
   &:hover {
     transform: scale(1.05);

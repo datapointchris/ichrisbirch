@@ -159,7 +159,7 @@ async function deleteTask(taskId: string) {
     font-size: 0.85rem;
     color: var(--clr-secondary);
     flex-shrink: 0;
-    transition: color 0.1s ease;
+    transition: color var(--transition-fast) ease;
 
     &:hover {
       color: var(--clr-success);
@@ -212,7 +212,7 @@ async function deleteTask(taskId: string) {
     margin-top: 0.25rem;
     font-size: 0.75rem;
     color: var(--clr-subtle);
-    transition: color 0.1s ease;
+    transition: color var(--transition-fast) ease;
 
     &:hover {
       color: var(--clr-secondary);

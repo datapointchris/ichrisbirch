@@ -19,21 +19,21 @@
     font-family: inherit;
     font-size: var(--fs-300);
     cursor: pointer;
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
     transition:
       box-shadow 0.15s ease,
       color 0.15s ease;
 
     &:hover {
-      box-shadow: var(--bubble-box);
+      box-shadow: var(--shadow-card-hover);
     }
 
     &--on {
       color: var(--clr-accent-light);
-      box-shadow: var(--floating-box-pressed);
+      box-shadow: var(--shadow-card-active);
 
       &:hover {
-        box-shadow: var(--bubble-box-pressed);
+        box-shadow: var(--shadow-card-hover-active);
       }
     }
 

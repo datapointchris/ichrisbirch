@@ -8,10 +8,10 @@
   flex-shrink: 0;
   width: touch.$touch-target;
   height: touch.$touch-target;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   color: var(--clr-gray-600);
-  box-shadow: var(--floating-box-pressed);
-  transition: color 0.15s ease;
+  box-shadow: var(--shadow-card-active);
+  transition: color var(--transition-default) ease;
 
   &:hover {
     color: var(--clr-gray-400);

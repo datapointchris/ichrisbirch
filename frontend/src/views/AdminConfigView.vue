@@ -91,7 +91,7 @@ function formatValue(value: unknown): string {
 
 .config-section {
   border: 1px solid var(--clr-gray-800);
-  border-radius: 6px;
+  border-radius: var(--radius-default);
 }
 
 .config-section__header {

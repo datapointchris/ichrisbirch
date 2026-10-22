@@ -237,8 +237,8 @@ async function handleRemoveDep(depId: string) {
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 0.5rem;
-    border-radius: 6px;
-    box-shadow: var(--floating-box);
+    border-radius: var(--radius-default);
+    box-shadow: var(--shadow-card);
   }
 
   &__status-icon {
@@ -265,7 +265,7 @@ async function handleRemoveDep(depId: string) {
     border: none;
     cursor: pointer;
     padding: 0.25rem 0.4rem;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     flex-shrink: 0;
     font-size: 0.8rem;
 
@@ -298,7 +298,7 @@ async function handleRemoveDep(depId: string) {
     color: var(--clr-danger, #e74c3c);
     font-size: 0.9rem;
     padding: 0.5rem;
-    border-radius: 6px;
+    border-radius: var(--radius-default);
     background: rgba(231, 76, 60, 0.08);
   }
 

@@ -226,15 +226,17 @@ Cooking techniques are part of the Recipes domain and not a separate entity, so 
 
 **Global over scoped**: visual styling comes from the shared SCSS in `frontend/src/assets/sass/`; a scoped `<style>` block handles layout only (flexbox, grid, spacing).
 
-**Neumorphic shadow variables** (`layout/_grid.scss`): `--floating-box` is raised, `--floating-box-pressed` is sunken, and `--bubble-box` / `--bubble-box-pressed` are the hover states.
+**Neumorphic shadow variables** (`layout/_grid.scss`): `--shadow-card` is raised, `--shadow-card-active` is sunken, and `--shadow-card-hover` / `--shadow-card-hover-active` are the hover states. Buttons take `--shadow-button`, `--shadow-button-hover` and `--shadow-button-active` (`components/_buttons.scss`).
 
-**Shared mixins** (`components/`): `data-table`, `card-row` and `list-item` define the full visual pattern; a consumer includes one at entity level and sets only `grid-template-columns`. `double-bevel-button` takes `$button-size` and derives every other proportion, so never override proportions per caller.
+**Shape variables** (`abstracts/_shape.scss`): the `--radius-*` scale, the `--border-card`, `--border-input` and `--border-subnav` roles, and the `--transition-*` durations. A corner takes a step of the scale, never a literal.
+
+**Shared mixins** (`components/`): `data-table`, `card-row` and `list-item` define the full visual pattern; a consumer includes one at entity level and sets only `grid-template-columns`. `action-button` takes `$button-size` and derives every other proportion, so never override proportions per caller.
 
 **Empty states**: every `{block}__empty` is exactly `color: var(--clr-gray-500); font-style: italic`, with layout inherited from its container.
 
 **Design-style-switch readiness** (⚠️ MANDATORY): The site is being built toward a future design style switcher (neumorphic / jagged / bubbly / etc.) that changes shape, shadow, and border properties site-wide — the same way the color theme switcher changes all colors today. To keep this feasible:
 
-- **NEVER** hardcode `box-shadow`, `border-radius`, or button shapes in scoped `<style>` blocks. Always reference the CSS variable (`--floating-box`, `--border-radius`, etc.).
+- **NEVER** hardcode `box-shadow`, `border-radius`, or button shapes in scoped `<style>` blocks. Always reference the CSS variable (`--shadow-card`, `--border-radius`, etc.).
 - **NEVER** hardcode chart colors, grid colors, or text colors in Chart.js config. Use `getThemeColors()` / `paletteColors()` from `useStatsCharts` composable, which reads live CSS custom properties.
 - All visual effects must flow through CSS variables defined in the SCSS abstracts layer. Scoped styles handle **layout only** (flexbox, grid, gaps, padding).
 - When the switcher is built, it will toggle a `data-design` attribute on `<html>` and swap variable sets. Components that follow these rules will just work.

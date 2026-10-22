@@ -8,9 +8,9 @@ span[data-tooltip] {
     position: absolute;
     visibility: hidden;
     opacity: 0;
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
     z-index: 99;
-    transition: all 0.2s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+    transition: all var(--transition-medium) cubic-bezier(0.785, 0.135, 0.15, 0.86);
   }
 
   &:before {

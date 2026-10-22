@@ -86,7 +86,7 @@ defineEmits<{
 <style scoped>
 .recipe-candidate {
   padding: var(--space-m);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   display: flex;
   flex-direction: column;

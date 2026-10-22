@@ -26,7 +26,7 @@ const gridStyle = computed(() => ({
   gap: var(--space-m);
   align-items: center;
   padding: var(--space-2xs) var(--space-s);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
 }
 </style>

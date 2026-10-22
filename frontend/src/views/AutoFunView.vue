@@ -308,7 +308,7 @@ async function saveSchedulerSettings() {
   display: flex;
   align-items: center;
   gap: var(--space-2xs);
-  transition: color 0.2s;
+  transition: color var(--transition-medium);
 }
 
 .autofun-tabs__tab:hover {
@@ -333,7 +333,7 @@ async function saveSchedulerSettings() {
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--space-s) var(--space-m);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   gap: var(--space-m);
 }

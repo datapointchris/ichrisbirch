@@ -36,7 +36,7 @@
     font-family: var(--ff-mono, monospace);
     font-size: 0.9em;
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: var(--radius-xs);
     background: var(--clr-gray-200);
   }
 

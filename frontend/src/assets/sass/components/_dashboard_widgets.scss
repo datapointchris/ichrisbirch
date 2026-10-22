@@ -13,9 +13,9 @@
   justify-content: space-between;
   padding: var(--space-3xs) var(--space-2xs);
   background: var(--clr-primary--darker);
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   border-left: 3px solid transparent;
-  transition: all 0.15s ease;
+  transition: all var(--transition-default) ease;
 }
 
 .widget-list__item:hover {
@@ -56,7 +56,7 @@
   letter-spacing: 0.05em;
   background: var(--clr-gray-800);
   padding: 0.1em 0.4em;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .widget-list__days {
@@ -83,7 +83,7 @@
   border: 1px solid var(--clr-gray-600);
   color: var(--clr-gray-400);
   cursor: pointer;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   width: 1.75rem;
   height: 1.75rem;
   display: flex;
@@ -92,7 +92,7 @@
   font-size: 0.75rem;
   padding: 0;
   line-height: 1;
-  transition: all 0.15s ease;
+  transition: all var(--transition-default) ease;
 }
 
 .widget-action-btn:hover {
@@ -115,7 +115,7 @@
   padding: var(--space-3xs) var(--space-2xs);
   margin-bottom: var(--space-3xs);
   background: var(--clr-primary--darker);
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   border-left: 3px solid var(--clr-accent);
 }
 

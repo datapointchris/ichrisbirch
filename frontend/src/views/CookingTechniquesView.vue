@@ -291,7 +291,7 @@ async function handleClearSearch() {
 }
 
 .cooking-techniques__row {
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   margin-bottom: var(--space-xs);
 }

@@ -24,7 +24,7 @@
     padding: var(--space-xs);
     border-radius: var(--border-radius);
     background-color: var(--clr-primary);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
   }
 
   &__add-form {
@@ -127,14 +127,14 @@
 .shopping-section {
   border-radius: var(--border-radius);
   background-color: var(--clr-primary);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
 
   &--ghost {
     opacity: 0.4;
   }
 
   &--bought {
-    box-shadow: var(--floating-box-pressed);
+    box-shadow: var(--shadow-card-active);
   }
 
   &__header {

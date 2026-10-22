@@ -167,11 +167,11 @@ async function handleFilter() {
   align-items: center;
   gap: var(--space-3xs);
   padding: var(--space-3xs) var(--space-xs);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--fs-300);
   color: var(--clr-gray-400);
-  transition: all 0.15s;
+  transition: all var(--transition-default);
 }
 
 .habits-completed__radio:hover {

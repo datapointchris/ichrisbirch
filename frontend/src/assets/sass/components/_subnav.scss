@@ -3,7 +3,7 @@
   align-items: center;
   gap: var(--space-s);
   padding-bottom: var(--space-xs);
-  border-bottom: 2px solid var(--clr-gray-700);
+  border-bottom: var(--border-subnav);
 
   &__links {
     display: flex;
@@ -27,7 +27,7 @@
   text-decoration: none;
   padding: var(--space-3xs) var(--space-xs);
   font-size: var(--fs-400);
-  transition: color 0.2s;
+  transition: color var(--transition-medium);
 }
 
 .subnav__icon {

@@ -227,7 +227,7 @@ async function handleDelete(jobId: string, name: string) {
 
 .scheduler-job {
   border: 1px solid var(--clr-gray-800);
-  border-radius: 6px;
+  border-radius: var(--radius-default);
   padding: var(--space-s);
 }
 

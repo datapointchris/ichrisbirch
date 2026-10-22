@@ -435,7 +435,7 @@ onMounted(async () => {
   width: 16rem;
   height: 0.5rem;
   appearance: none;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   background: linear-gradient(
     to right,
     oklch(0.75 0.157 0),
@@ -453,7 +453,7 @@ onMounted(async () => {
   appearance: none;
   width: 1rem;
   height: 1rem;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background: white;
   border: 2px solid var(--clr-gray-600);
   cursor: grab;
@@ -468,14 +468,14 @@ onMounted(async () => {
 .hue-slider__swatch {
   width: 2rem;
   height: 2rem;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-default);
   border: 2px solid var(--clr-gray-600);
 }
 
 .hue-slider__swatch--companion {
   width: 1.25rem;
   height: 1.25rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   border-width: 1px;
 }
 
@@ -551,12 +551,12 @@ onMounted(async () => {
   align-items: center;
   gap: var(--space-s);
   padding: var(--space-2xs) var(--space-s);
-  border-radius: 0.375rem;
-  box-shadow: var(--floating-box);
-  transition: box-shadow 0.2s ease;
+  border-radius: var(--radius-default);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--transition-medium) ease;
 
   &:hover {
-    box-shadow: var(--bubble-box);
+    box-shadow: var(--shadow-card-hover);
   }
 }
 
@@ -570,7 +570,7 @@ onMounted(async () => {
   color: var(--clr-gray-500);
   font-size: 0.75rem;
   opacity: 0.4;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--transition-default) ease;
 
   .sidebar-order__item:hover & {
     opacity: 1;

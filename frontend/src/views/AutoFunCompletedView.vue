@@ -79,7 +79,7 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--space-s) var(--space-m);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
   gap: var(--space-m);
 }

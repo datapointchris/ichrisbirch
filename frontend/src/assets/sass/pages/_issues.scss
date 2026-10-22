@@ -23,10 +23,10 @@ $priority-accents: (
 @mixin priority-rows {
   @each $priority, $accent in $priority-accents {
     &.issue--p#{$priority} {
-      box-shadow: $accent, var(--floating-box);
+      box-shadow: $accent, var(--shadow-card);
 
       &:hover {
-        box-shadow: $accent, var(--bubble-box);
+        box-shadow: $accent, var(--shadow-card-hover);
       }
     }
   }
@@ -39,12 +39,12 @@ $priority-accents: (
 .issue-lens {
   @include sortable_table.count-filter;
 
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
 
   // The decisions lens, while any are open. The ready queue leaves decisions
   // out, so this accent is the only thing on the page pointing at them.
   &--attention {
-    box-shadow: var(--issue-high-box-shadow), var(--floating-box);
+    box-shadow: var(--issue-high-box-shadow), var(--shadow-card);
   }
 
   // After `&--attention` with equal specificity, so a selected decisions lens
@@ -112,7 +112,7 @@ $priority-accents: (
 
   &__label {
     color: var(--clr-accent-light);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
   }
 
   &__note {
@@ -142,7 +142,7 @@ $priority-accents: (
     padding-block: var(--space-3xs);
     padding-inline: var(--space-xs);
     border-radius: var(--button-border-radius);
-    box-shadow: var(--floating-box);
+    box-shadow: var(--shadow-card);
 
     &--closed {
       color: var(--clr-gray-500);

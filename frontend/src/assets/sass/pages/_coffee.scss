@@ -20,10 +20,10 @@
   display: inline-block;
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  border-radius: var(--radius-circle);
   background-color: var(--clr-gray-700);
   margin-inline: 2px;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--transition-default) ease;
 
   &--filled {
     background-color: var(--clr-accent-light);
@@ -36,14 +36,14 @@
   padding: var(--space-m);
   background-color: var(--clr-primary);
   border-radius: var(--button-border-radius);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   transition: all 0.25s ease-in-out;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
 
   &:hover {
-    box-shadow: var(--bubble-box), var(--coffee-card-hover-glow);
+    box-shadow: var(--shadow-card-hover), var(--coffee-card-hover-glow);
     transform: scale(1.02) translateY(-3px);
   }
 }
@@ -220,7 +220,7 @@
 
   &__flavor-pill {
     padding: 2px var(--space-xs);
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
     background-color: oklch(from var(--clr-accent-light) l c h / 0.1);
     border: 1px solid oklch(from var(--clr-accent-light) l c h / 0.3);
     font-size: var(--fs-200);

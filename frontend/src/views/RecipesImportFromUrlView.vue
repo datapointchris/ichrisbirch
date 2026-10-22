@@ -262,7 +262,7 @@ async function handleSave() {
 .url-import__kind-badge {
   padding: var(--space-xs) var(--space-s);
   border-radius: var(--border-radius);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   font-weight: bold;
 }
 
@@ -277,7 +277,7 @@ async function handleSave() {
 
 .url-import__technique-card {
   padding: var(--space-m);
-  box-shadow: var(--floating-box);
+  box-shadow: var(--shadow-card);
   border-radius: var(--border-radius);
 }
 
