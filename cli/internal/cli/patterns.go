@@ -32,18 +32,28 @@ func newPatternsListCommand() *cobra.Command {
 		asJSON bool
 	)
 	cmd := &cobra.Command{
-		Use:     "list [flags]",
-		Short:   "List patterns, newest first",
-		Example: "  icb patterns list\n  icb patterns list --search heartburn\n  icb patterns list --limit 20 --json",
-		Args:    cobra.NoArgs,
+		Use:   "list [flags]",
+		Short: "List patterns, newest first",
+		Long:  "--since/--until bound when a pattern was recorded, and either works without the other.",
+		Example: "  icb patterns list\n" +
+			"  icb patterns list --search heartburn\n" +
+			"  icb patterns list --since 2026-10-01 --until 2026-10-31\n" +
+			"  icb patterns list --since 2w\n" +
+			"  icb patterns list --limit 20 --json",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			window, err := readWindow(cmd)
+			if err != nil {
+				return err
+			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			patterns, err := client.ListPatterns(cmd.Context(), api.PatternListOptions{Search: search, Limit: limitFlag(cmd)})
+			opts := api.PatternListOptions{Search: search, Window: window, Limit: limitFlag(cmd)}
+			patterns, err := client.ListPatterns(cmd.Context(), opts)
 			if err != nil {
-				return handleAPIError(err)
+				return handleArgumentAPIError(err)
 			}
 			if asJSON {
 				return encodeJSON(cmd.OutOrStdout(), patterns)
@@ -53,6 +63,7 @@ func newPatternsListCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&search, "search", "", "Only patterns whose message contains this text")
+	addWindowFlags(cmd, "patterns recorded")
 	addLimitFlag(cmd, &limit)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output patterns as JSON to stdout")
 	return cmd

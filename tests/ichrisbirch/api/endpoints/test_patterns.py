@@ -85,6 +85,15 @@ def test_search_is_case_insensitive(pattern_crud_tester):
     assert len(response.json()) == 1
 
 
+def test_window_narrows_on_recorded_at(pattern_crud_tester):
+    """`since` is the second pattern's instant and `until` the third's, so only the second is inside."""
+    client, _ = pattern_crud_tester
+    window = {'since': '2026-01-06T19:30:00Z', 'until': '2026-01-07T21:15:00Z'}
+    response = client.get(ENDPOINT, params=window)
+    assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)
+    assert [entry['message'] for entry in response.json()] == ['Pattern 2, heartburn after soy sauce']
+
+
 def test_limit_caps_the_result_set(pattern_crud_tester):
     client, _ = pattern_crud_tester
     response = client.get(ENDPOINT, params={'limit': 2})

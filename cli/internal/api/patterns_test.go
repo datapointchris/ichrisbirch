@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestCreatePattern_OmitsRecordedAtWhenUnset(t *testing.T) {
@@ -52,7 +53,7 @@ func TestCreatePattern_SendsRecordedAtWhenSet(t *testing.T) {
 	}
 }
 
-func TestListPatterns_EncodesSearchAndLimit(t *testing.T) {
+func TestListPatterns_EncodesSearchWindowAndLimit(t *testing.T) {
 	var gotQuery string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
@@ -62,10 +63,11 @@ func TestListPatterns_EncodesSearchAndLimit(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	if _, err := client.ListPatterns(context.Background(), PatternListOptions{Search: "heart burn", Limit: intptr(5)}); err != nil {
+	window := Window{Since: time.Date(2026, 10, 1, 4, 0, 0, 0, time.UTC)}
+	if _, err := client.ListPatterns(context.Background(), PatternListOptions{Search: "heart burn", Window: window, Limit: intptr(5)}); err != nil {
 		t.Fatalf("ListPatterns: %v", err)
 	}
-	if gotQuery != "limit=5&search=heart+burn" {
+	if gotQuery != "limit=5&search=heart+burn&since=2026-10-01T04%3A00%3A00Z" {
 		t.Errorf("query = %q", gotQuery)
 	}
 }

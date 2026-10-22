@@ -8,18 +8,22 @@ from ichrisbirch import models
 from ichrisbirch import schemas
 from ichrisbirch.api.endpoints.auth import DbSession
 from ichrisbirch.api.exceptions import NotFoundException
+from ichrisbirch.api.time_window import TimeWindowQuery
 from ichrisbirch.services.row_limit import RowLimit
 from ichrisbirch.services.row_limit import apply_row_limit
+from ichrisbirch.services.time_window import apply_time_window
 
 logger = structlog.get_logger()
 router = APIRouter()
 
 
 @router.get('', response_model=list[schemas.Pattern], status_code=status.HTTP_200_OK)
-def read_many(session: DbSession, search: str | None = None, limit: RowLimit = None):
+def read_many(session: DbSession, window: TimeWindowQuery, search: str | None = None, limit: RowLimit = None):
+    """List patterns newest first, narrowed on `recorded_at`, the moment each was noticed."""
     query = select(models.Pattern).order_by(models.Pattern.recorded_at.desc())
     if search:
         query = query.where(models.Pattern.message.ilike(f'%{search}%'))
+    query = apply_time_window(query, models.Pattern.recorded_at, window, zone=None)
     return list(session.scalars(apply_row_limit(query, limit)).all())
 
 

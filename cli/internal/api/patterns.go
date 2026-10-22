@@ -28,12 +28,14 @@ type PatternUpdateInput struct {
 	RecordedAt *string `json:"recorded_at,omitempty"`
 }
 
-// PatternListOptions filters the list. An empty search is unfiltered, and a nil
-// limit is uncapped. Limit is a pointer for the reason every other list read
-// takes one: a zero row count is a thing a caller can ask for, and an int has
-// no room to hold both that and "no cap".
+// PatternListOptions filters the list. An empty search is unfiltered, an open
+// window is unbounded, and a nil limit is uncapped. Limit is a pointer for the
+// reason every other list read takes one: a zero row count is a thing a caller
+// can ask for, and an int has no room to hold both that and "no cap". Window
+// narrows on when each pattern was recorded.
 type PatternListOptions struct {
 	Search string
+	Window Window
 	Limit  *int
 }
 
@@ -43,6 +45,7 @@ func (c *Client) ListPatterns(ctx context.Context, opts PatternListOptions) ([]P
 	if opts.Search != "" {
 		query.Set("search", opts.Search)
 	}
+	applyWindow(query, opts.Window)
 	applyLimit(query, opts.Limit)
 
 	path := "/patterns"
