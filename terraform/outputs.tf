@@ -140,10 +140,6 @@ output "security_group_ichrisbirch_webserver_id" {
 
 # ---------- ROLES ---------- #
 
-output "iam_role_github_actions_arn" {
-  value = aws_iam_role.github_actions.arn
-}
-
 output "iam_role_ichrisbirch_webserver_arn" {
   value = aws_iam_role.ichrisbirch_webserver.arn
 }

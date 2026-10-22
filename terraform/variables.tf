@@ -17,27 +17,6 @@ variable "region" {
 }
 
 
-# ---------- GITHUB ---------- #
-
-variable "gh_org" {
-  description = "Name of the Github Organization."
-  type        = string
-  default     = "datapointchris"
-}
-
-variable "gh_repo" {
-  description = "Name of the ECR Repository- should match the Github repo name."
-  type        = string
-  default     = "ichrisbirch"
-}
-
-variable "gh_actions_token_url" {
-  description = "URL for the Github Actions API"
-  type        = string
-  default     = "https://token.actions.githubusercontent.com"
-}
-
-
 # ---------- RDS ---------- #
 
 # variable "db_username" {

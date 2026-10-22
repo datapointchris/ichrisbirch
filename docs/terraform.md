@@ -1,7 +1,7 @@
 # Terraform
 
 `terraform/` holds the AWS infrastructure the app ran on before it moved to the homelab: a VPC, the
-webserver's IAM role, the S3 buckets and a GitHub Actions role. None of it is deployed. The code
+webserver's IAM role and the S3 buckets. None of it is deployed. The code
 stays so the app could be rebuilt on AWS.
 
 The account's own users, groups, admin and Terraform roles, and GitHub OIDC provider are

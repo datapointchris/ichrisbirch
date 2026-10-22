@@ -1,11 +1,9 @@
 # --- ACCOUNT ESTATE, READ BY NAME ---------------------------------------- #
-# The account's users, groups, roles and OIDC provider are administered outside this repo.
+# The account's users, groups and roles are administered outside this repo. terraform-role, which
+# applies this root, may change only the IAM declared below, so a new role or policy here also needs
+# terraform-execution's allowance widened where that policy is declared.
 
 data "aws_caller_identity" "current" {}
-
-data "aws_iam_openid_connect_provider" "github" {
-  url = var.gh_actions_token_url
-}
 
 data "aws_iam_role" "admin" {
   name = "AdminRole"
@@ -15,42 +13,8 @@ data "aws_iam_group" "developer" {
   group_name = "developer"
 }
 
-data "aws_iam_policy" "terraform_execution" {
-  name = "terraform-execution"
-}
-
-data "aws_iam_policy" "assume_terraform_role" {
-  name = "assume-terraform"
-}
-
-data "aws_iam_policy" "deny_dynamodb_autoscaling" {
-  name = "deny-dynamodb-autoscaling"
-}
-
 
 # --- ROLES ---------------------------------------- #
-
-resource "aws_iam_role" "github_actions" {
-  name = "github-actions-${var.gh_repo}-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github.arn
-        }
-        Action = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.gh_org}/${var.gh_repo}:*"
-          }
-        }
-      }
-    ]
-  })
-}
 
 resource "aws_iam_role" "ichrisbirch_webserver" {
   name = "webserver-role"
@@ -138,21 +102,6 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
 
 
 # --- ROLE POLICY ATTACHMENTS ---------------------------------------- #
-
-resource "aws_iam_role_policy_attachment" "github_actions_terraform_execution" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = data.aws_iam_policy.terraform_execution.arn
-}
-
-resource "aws_iam_role_policy_attachment" "github_actions_assume_terraform_role" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = data.aws_iam_policy.assume_terraform_role.arn
-}
-
-resource "aws_iam_role_policy_attachment" "github_actions_deny_dynamodb_autoscaling" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = data.aws_iam_policy.deny_dynamodb_autoscaling.arn
-}
 
 resource "aws_iam_role_policy_attachment" "webserver_access_webserver_keys" {
   role       = aws_iam_role.ichrisbirch_webserver.name
