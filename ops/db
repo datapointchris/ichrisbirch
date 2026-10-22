@@ -57,8 +57,6 @@ function db-seed() {
   fi
 
   db-env-vars "$env" || return 1
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   echo "${blue}Seeding ${env} database...${reset}"
   uv run python -m scripts.seed --env "$env" "$@"
 }
@@ -91,16 +89,17 @@ function db-reset() {
   fi
 
   db-env-vars "$env" || return 1
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   echo "${blue}Resetting ${env} database...${reset}"
   ENVIRONMENT="$env" uv run python -m ichrisbirch.database.reset_database
 }
 
 function env-db() {
   local env="$1"
-  local subcmd="$2"
-  shift 2
+  local subcmd="${2:-}"
+  shift
+  if [[ $# -gt 0 ]]; then
+    shift
+  fi
 
   case "$subcmd" in
     seed)

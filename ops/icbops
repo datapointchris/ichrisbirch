@@ -2,12 +2,14 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 
+set -euo pipefail
+
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 
 # The installed icbops links into the checkout that ran `icbops install`. Run
 # through that link inside a checkout, it hands over to that checkout's own script.
 if [[ -L "${BASH_SOURCE[0]}" ]]; then
-  checkout_here="$(git rev-parse --show-toplevel 2>/dev/null)"
+  checkout_here="$(git rev-parse --show-toplevel 2>/dev/null)" || checkout_here=""
   if [[ -n "$checkout_here" && -x "$checkout_here/ops/icbops" && "$(readlink -f "$checkout_here/ops/icbops")" != "$SCRIPT_PATH" ]]; then
     exec "$checkout_here/ops/icbops" "$@"
   fi
@@ -96,6 +98,9 @@ SSL_MANAGER_SCRIPT="$ICHRISBIRCH_HOME/deploy-containers/traefik/scripts/ssl-mana
 
 # Colors. A CI runner sets no TERM, and tput then writes an error for every
 # call, so there every color is empty.
+red='' green='' yellow='' blue='' magenta='' cyan='' white='' gray=''
+bright_red='' bright_green='' bright_yellow='' bright_blue='' bright_magenta='' bright_cyan=''
+orange='' reset=''
 if tput sgr0 >/dev/null 2>&1; then
   red=$(tput setaf 1)
   green=$(tput setaf 2)
@@ -119,14 +124,19 @@ fi
 source "$ICHRISBIRCH_HOME/ops/stats"
 source "$ICHRISBIRCH_HOME/ops/db"
 
+# The value of one key in a dotenv file, or nothing where the file lacks it.
+function dotenv-value() {
+  grep -E "^$1=" "$2" | cut -d= -f2 | tr -d '"' || true
+}
+
 function dev-credentials() {
   local env_file="$ICHRISBIRCH_HOME/.env"
   if [ -f "$env_file" ]; then
     local admin_email admin_pass regular_email regular_pass
-    admin_email=$(grep -E '^USERS_DEFAULT_ADMIN_USER_EMAIL=' "$env_file" | cut -d= -f2 | tr -d '"')
-    admin_pass=$(grep -E '^USERS_DEFAULT_ADMIN_USER_PASSWORD=' "$env_file" | cut -d= -f2 | tr -d '"')
-    regular_email=$(grep -E '^USERS_DEFAULT_REGULAR_USER_EMAIL=' "$env_file" | cut -d= -f2 | tr -d '"')
-    regular_pass=$(grep -E '^USERS_DEFAULT_REGULAR_USER_PASSWORD=' "$env_file" | cut -d= -f2 | tr -d '"')
+    admin_email=$(dotenv-value USERS_DEFAULT_ADMIN_USER_EMAIL "$env_file")
+    admin_pass=$(dotenv-value USERS_DEFAULT_ADMIN_USER_PASSWORD "$env_file")
+    regular_email=$(dotenv-value USERS_DEFAULT_REGULAR_USER_EMAIL "$env_file")
+    regular_pass=$(dotenv-value USERS_DEFAULT_REGULAR_USER_PASSWORD "$env_file")
 
     echo ""
     echo "${yellow}Dev Credentials:${reset}"
@@ -249,7 +259,7 @@ function env-initialize() {
 function env-docker-config() {
   local env="$1"
   shift
-  local service="$1"
+  local service="${1:-}"
   local compose_cmd
 
   case "$env" in
@@ -431,11 +441,10 @@ function dev-usage() {
 function dev-smoke() {
   echo "Running smoke tests on ${blue}DEV${reset} environment"
   local response
-  response=$(curl --silent -X POST "$DEV_API_URL/api/v1/admin/smoke-tests" \
+  if ! response=$(curl --silent -X POST "$DEV_API_URL/api/v1/admin/smoke-tests" \
     -H "Remote-User: user@icb.com" \
     -H "Remote-Email: user@icb.com" \
-    -k 2>/dev/null)
-  if [[ -z "$response" ]]; then
+    -k 2>/dev/null) || [[ -z "$response" ]]; then
     echo "${red}Error: Could not connect to $DEV_API_URL${reset}"
     return 1
   fi
@@ -485,7 +494,8 @@ function testing-remove-orphans() {
     docker ps -aq --filter "label=com.docker.compose.project=${project}" | xargs -r docker rm -f -v >/dev/null
     docker volume ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker volume rm >/dev/null
     docker network ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker network rm >/dev/null
-    docker image rm "ichrisbirch:${project}" >/dev/null 2>&1
+    # Its image may already be gone, and that leaves nothing to remove
+    docker image rm "ichrisbirch:${project}" >/dev/null 2>&1 || true
   done < <(docker ps -a --filter label=com.docker.compose.project \
     --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
     | grep '^icb-test-' | sort -u)
@@ -517,8 +527,6 @@ function test-run() {
       ;;
   esac
   cd "$ICHRISBIRCH_HOME" || exit
-  # shellcheck disable=1091
-  source "$ICHRISBIRCH_HOME/.venv/bin/activate"
   export ENVIRONMENT=testing
   mkdir -p "$TEST_REPORTS_DIR"
 
@@ -526,8 +534,8 @@ function test-run() {
   echo "${green}Running tests...${reset}"
   echo ""
   local -a json_report_flags=(--json-report --json-report-file="$TEST_REPORTS_DIR/pytest-report.json" --json-report-indent=2)
+  # Under pipefail the pipeline's status is pytest's, not tee's
   uv run pytest "${json_report_flags[@]}" "$@" 2>&1 | tee "$TEST_REPORTS_DIR/pytest-output.log"
-  return "${PIPESTATUS[0]}"
 }
 
 # The browser runs in the stack's vue container, as this user, so traces and
@@ -718,10 +726,12 @@ function load-prod-env() {
     return 1
   fi
   echo "${yellow}Loading production secrets via SOPS...${reset}"
-  set -a
+  # The decrypted file is dotenv data rather than script, so a `$` in one of
+  # its values is no reason to abort a production verb.
+  set -a +u
   # shellcheck disable=SC1090
   source <(sops decrypt secrets/secrets.prod.enc.env)
-  set +a
+  set +a -u
   export DOMAIN="${DOMAIN:-ichrisbirch.com}"
 }
 
@@ -846,8 +856,9 @@ function prod-deploy-status() {
   # Check if the other color has any containers (shouldn't normally)
   local other_color
   if [[ "$color" == "blue" ]]; then other_color="green"; else other_color="blue"; fi
+  # A report runs to its end, so an unreachable daemon reads as nothing running
   local other_containers
-  other_containers=$(docker ps --format '{{.Names}}' --filter "name=icb-${other_color}" 2>/dev/null)
+  other_containers=$(docker ps --format '{{.Names}}' --filter "name=icb-${other_color}" 2>/dev/null) || other_containers=""
   if [[ -n "$other_containers" ]]; then
     echo "  ${yellow}Standby (${other_color}) — still running:${reset}"
     docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=icb-${other_color}" 2>/dev/null
@@ -858,7 +869,7 @@ function prod-deploy-status() {
   local services_file="$ICHRISBIRCH_HOME/deploy-containers/traefik/dynamic/prod/services.yml"
   if [[ -f "$services_file" ]]; then
     local routing_color
-    routing_color=$(grep -o 'icb-\(blue\|green\)-api' "$services_file" | head -1 | sed 's/icb-\(.*\)-api/\1/')
+    routing_color=$(grep -o 'icb-\(blue\|green\)-api' "$services_file" | head -1 | sed 's/icb-\(.*\)-api/\1/') || routing_color=""
     echo "    Traefik routing → ${cyan}${routing_color}${reset}"
     if [[ "$routing_color" != "$color" ]]; then
       echo "    ${red}WARNING: services.yml points to ${routing_color} but state says ${color}!${reset}"
@@ -886,9 +897,10 @@ function prod-rollback() {
   echo "${yellow}Rolling back:${reset} ${current_color} → ${previous_color}"
   echo ""
 
-  # Check if previous color containers are still running
+  # Check if previous color containers are still running. An unreachable
+  # daemon stops the rollback here, before routing or state changes.
   local prev_running
-  prev_running=$(docker ps --format '{{.Names}}' --filter "name=icb-${previous_color}-api" 2>/dev/null)
+  prev_running=$(docker ps --format '{{.Names}}' --filter "name=icb-${previous_color}-api")
 
   if [[ -z "$prev_running" ]]; then
     echo "Previous containers (${previous_color}) not running. Starting them..."
@@ -919,9 +931,9 @@ function prod-rollback() {
 
 function prod-logs() {
   cd "$ICHRISBIRCH_HOME" || exit
-  local log_dir="/srv/ichrisbirch/logs"
+  local log_dir="$PROD_INSTALL_DIR/logs"
 
-  case "$1" in
+  case "${1:-}" in
     deploy)
       echo "${magenta}PRODUCTION${reset} deployment logs:"
       echo ""
@@ -943,7 +955,7 @@ function prod-logs() {
       echo ""
       local latest_log
       # shellcheck disable=SC2012
-      latest_log=$(ls -t "$log_dir"/build-*.log 2>/dev/null | head -1)
+      latest_log=$(ls -t "$log_dir"/build-*.log 2>/dev/null | head -1) || latest_log=""
       if [ -n "$latest_log" ]; then
         echo "${yellow}=== Most recent build log: $(basename "$latest_log") ===${reset}"
         tail -100 "$latest_log"
@@ -1145,7 +1157,7 @@ function usage() {
   echo "  ${blue}icbops prod deploy-status${reset}     # which color is live"
 }
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
   usage
   exit 0
 fi
@@ -1182,7 +1194,7 @@ case $1 in
     install
     ;;
   test)
-    case "$2" in
+    case "${2:-}" in
       "" | -h | --help | help) test-usage ;;
       run)
         shift 2
@@ -1200,7 +1212,7 @@ case $1 in
     esac
     ;;
   testing)
-    case "$2" in
+    case "${2:-}" in
       "" | -h | --help | help) testing-usage ;;
       start) testing-start ;;
       stop) testing-stop ;;
@@ -1236,7 +1248,7 @@ case $1 in
     esac
     ;;
   dev)
-    case "$2" in
+    case "${2:-}" in
       "" | -h | --help | help) dev-usage ;;
       start) dev-start ;;
       stop) dev-stop ;;
@@ -1270,7 +1282,7 @@ case $1 in
     esac
     ;;
   prod)
-    case "$2" in
+    case "${2:-}" in
       "" | -h | --help | help) prod-usage ;;
       start) require_prod_host start && prod-start ;;
       stop) require_prod_host stop && prod-stop ;;
@@ -1307,10 +1319,10 @@ case $1 in
     esac
     ;;
   ssl-manager)
-    ssl-manager "$2" "$3"
+    ssl-manager "${2:-}" "${3:-}"
     ;;
   routing)
-    case "$2" in
+    case "${2:-}" in
       generate)
         bash "$ICHRISBIRCH_HOME/deploy-containers/traefik/generate-routing.sh"
         echo ""
@@ -1325,16 +1337,16 @@ case $1 in
     esac
     ;;
   stats)
-    case "$2" in
+    case "${2:-}" in
       "") stats-usage ;;
       summary) stats-summary ;;
       code) stats-code ;;
       tests) stats-tests ;;
       quality) stats-quality ;;
-      activity) stats-activity "$3" ;;
-      events) stats-events "$3" ;;
+      activity) stats-activity "${3:-}" ;;
+      events) stats-events "${3:-}" ;;
       trends) stats-trends ;;
-      churn) stats-churn "$3" ;;
+      churn) stats-churn "${3:-}" ;;
       snapshot) stats-snapshot ;;
       *)
         echo "${red}Unknown stats command: $2${reset}" >&2
