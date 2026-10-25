@@ -60,8 +60,8 @@ fallback, so a deep link renders rather than 404ing.
 Every path that answers with `index.html` is sent with `Cache-Control:
 no-store`. A browser holding an old copy would keep loading the old bundle after
 a deploy. The hashed files under `/assets/` are cached for a year.
-`tests/vue-cache-headers.bats` runs the Caddyfile in the same Caddy image and
-checks both.
+CI's production image build starts the built frontend image and checks both,
+because the test stack serves the frontend from Vite and never runs the Caddyfile.
 
 `VITE_API_URL` is a build argument, not a runtime variable. Vite substitutes it
 into the bundle at build time, so changing it means rebuilding the image.
