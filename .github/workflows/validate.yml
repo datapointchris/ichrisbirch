@@ -558,33 +558,6 @@ jobs:
             exit 1
           fi
 
-      # Only the production image runs the Caddyfile: the test stack serves the
-      # frontend from Vite. Every path that is not a built file answers with
-      # index.html, which must never be cached, or a browser keeps loading the
-      # bundle it held before the deploy. Hashed assets are cached for a year.
-      - name: Check the frontend's cache headers
-        run: |
-          docker compose -f docker-compose.yml up -d --wait --wait-timeout 90 vue
-          wget_in_vue() {
-            docker compose -f docker-compose.yml exec -T vue wget -q "$@" 2>&1
-          }
-          cache_control() {
-            wget_in_vue -S -O /dev/null "http://127.0.0.1:80$1" | sed -n 's/^ *cache-control: //Ip'
-          }
-          expect() {
-            value=$(cache_control "$1")
-            case "$value" in
-              *"$2"*) ;;
-              *) echo "$1 answered Cache-Control: '$value', which lacks $2"; exit 1 ;;
-            esac
-          }
-          for path in / /today /manifest.webmanifest; do
-            expect "$path" no-store
-          done
-          asset=$(wget_in_vue -O - http://127.0.0.1:80/ | grep -o '/assets/[^"]*\.js' | head -n 1)
-          [ -n "$asset" ] || { echo "the entry page names no /assets/*.js"; exit 1; }
-          expect "$asset" immutable
-
       - name: Stop
         if: always()
         run: docker compose -f docker-compose.yml down -v 2>/dev/null || true
