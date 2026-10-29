@@ -24,11 +24,12 @@ func newIssueInitiativesCommand() *cobra.Command {
 		Use:   "initiatives",
 		Short: "Group the issues that ship one outcome",
 		Long: "An initiative is an outcome that finishes. Most issues belong to none. An\n" +
-			"issue with no priority of its own takes its active initiative's. A finished\n" +
+			"issue sorts no lower than its active initiative's priority. A finished\n" +
 			"initiative takes no new issues and leaves the ones it holds as they are. A\n" +
-			"someday initiative is an idea not yet taken on, and none of its issues is\n" +
-			"ready until it is reopened. One worked as a single design sets\n" +
-			"--autofix=false, so an unattended fix never lands one of its steps alone.",
+			"someday initiative is an idea not yet taken on, and its issues wait until it\n" +
+			"is reopened, except one that work outside someday depends on. One worked as\n" +
+			"a single design sets --autofix=false, so an unattended fix never lands one of\n" +
+			"its steps alone.",
 	})
 	goclikit.WithRecoveryHints(cmd, initiativeHints...)
 	splitReadingFromChanging(cmd)
@@ -320,7 +321,8 @@ func newInitiativesShelveCommand() *cobra.Command {
 		Short: "Set an initiative aside for someday, so none of its issues is ready",
 		Long: "For an idea captured in full but not taken on. It moves to --status someday,\n" +
 			"out of the active list, and no close is recorded. Its issues keep their\n" +
-			"state, but `icb issues next` leaves every one out, so no agent takes them.\n" +
+			"state, but `icb issues next` leaves them out, so no agent takes them. One\n" +
+			"that work outside someday depends on stays in, at that work's priority.\n" +
 			"It lends no priority, and gives up its name, so a new initiative may take\n" +
 			"it. `icb issues initiatives reopen` makes its issues ready again.",
 		Example: "  icb issues initiatives shelve \"Measure everything\"",

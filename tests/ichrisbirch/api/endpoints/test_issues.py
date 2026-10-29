@@ -202,11 +202,15 @@ class TestReadyQueue:
         assert queue[0]['priority'] == 4
         assert queue[0]['effective_priority'] == 2
 
-    def test_an_issue_without_priority_takes_its_initiative(self, client):
+    def test_an_initiative_raises_its_issues_and_an_own_low_priority_does_not_sink_one(self, client):
         task = issue(client, 'Ready task without priority')
         updated = ok(patch(client, task['number'], initiative='Ship the issue tracker'))
         assert updated['effective_priority'] == 2
         assert updated['initiative']['name'] == 'Ship the issue tracker'
+
+        chore = issue(client, 'Ready chore with low priority')
+        updated = ok(patch(client, chore['number'], initiative='Ship the issue tracker'))
+        assert (updated['priority'], updated['effective_priority']) == (4, 2)
 
     def test_a_someday_initiatives_issues_wait_until_it_is_reopened(self, client):
         task = issue(client, 'Ready task without priority')
@@ -218,6 +222,20 @@ class TestReadyQueue:
 
         ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'status': 'active'}))
         assert task['title'] in titles(ok(client.get(f'{ISSUES}/ready')))
+
+    def test_active_work_depending_on_a_someday_issue_brings_it_into_the_queue(self, client):
+        task = issue(client, 'Ready task without priority')
+        bug = issue(client, 'Ready bug with high priority')
+        ok(patch(client, task['number'], initiative='Ship the issue tracker'))
+        ok(client.patch(f'{ISSUES}/initiatives/Ship the issue tracker', json={'status': 'someday'}))
+        ok(client.post(f'{ISSUES}/{bug["number"]}/dependencies', json={'depends_on': task['number']}), status.HTTP_201_CREATED)
+
+        queue = ok(client.get(f'{ISSUES}/ready'))
+        assert queue[0]['title'] == task['title']
+        assert queue[0]['effective_priority'] == 2
+
+        ok(patch(client, bug['number'], status='completed'))
+        assert task['title'] not in titles(ok(client.get(f'{ISSUES}/ready')))
 
     def test_autofix_false_on_an_issue_its_parent_or_its_initiative_keeps_it_from_the_autofixable_queue(self, client):
         bug = issue(client, 'Ready bug with high priority')

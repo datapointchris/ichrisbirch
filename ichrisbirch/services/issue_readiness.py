@@ -10,18 +10,19 @@ An issue is ready when all of these hold:
 - its deferral day, if any, has arrived in the reader's calendar
 - every issue it depends on is closed
 - it has no open children, since a parent is finished by its children
-- its initiative, if it has one, is not `someday`, which holds ideas not yet
-  taken on
+- it is not shelved: in a `someday` initiative, which holds ideas not yet
+  taken on, with no unclosed issue outside one depending on it at any depth
 
 An issue is autofixable when none of it, its initiative and its unclosed parent
 says `autofix` is false, and the parent is read the same way up the tree. That
 is a person's veto on an unattended fix, and says nothing about whether anyone
 may take the issue now, which `ready` answers.
 
-Order is effective priority, then rank, then number. An issue's own priority wins.
-With none, it takes its open parent's effective priority, else its active
-initiative's. Then it is raised to the most urgent effective priority of any
-open issue it blocks. That last step is priority inheritance from scheduling:
+Order is effective priority, then rank, then number. Effective priority is the
+most urgent of the issue's own, its open parent's effective priority, its active
+initiative's, and the effective priority of any open issue it blocks. Nothing in
+that set lowers it, so an own priority can raise an issue above its initiative
+and never sink it below. The blocking step is priority inheritance from scheduling:
 without it a blocker ranked near the bottom keeps waiting while the work it
 gates sits at the top of the queue, hidden because it is blocked.
 """
@@ -56,6 +57,7 @@ class IssueReadiness:
     effective_priority: dict[UUID, int]
     blocked: frozenset[UUID]
     deferred: frozenset[UUID]
+    shelved: frozenset[UUID]
     ready: frozenset[UUID]
     autofixable: frozenset[UUID]
     child_count: dict[UUID, int]
@@ -123,12 +125,9 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
             return NO_PRIORITY_URGENCY
         walking.add(issue_id)
         row = rows[issue_id]
-        if row.priority:
-            best = row.priority
-        elif row.parent_id in unclosed:
-            best = effective_urgency(row.parent_id)
-        else:
-            best = initiative_urgency.get(row.initiative_id, NO_PRIORITY_URGENCY)
+        best = min(urgency(row.priority), initiative_urgency.get(row.initiative_id, NO_PRIORITY_URGENCY))
+        if row.parent_id in unclosed:
+            best = min(best, effective_urgency(row.parent_id))
         for dependent_id in dependents.get(issue_id, []):
             if dependent_id in unclosed:
                 best = min(best, effective_urgency(dependent_id))
@@ -144,6 +143,21 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         issue_id for issue_id in unclosed if rows[issue_id].deferred_until_date is not None and rows[issue_id].deferred_until_date > today
     }
 
+    shelved_memo: dict[UUID, bool] = {}
+
+    def is_shelved(issue_id: UUID) -> bool:
+        if issue_id in shelved_memo:
+            return shelved_memo[issue_id]
+        # Seeded before the walk, so a dependency loop written around the write check ends.
+        shelved_memo[issue_id] = True
+        result = rows[issue_id].initiative_id in someday_initiatives and not any(
+            dependent_id in unclosed and not is_shelved(dependent_id) for dependent_id in dependents.get(issue_id, [])
+        )
+        shelved_memo[issue_id] = result
+        return result
+
+    shelved = {issue_id for issue_id in unclosed if is_shelved(issue_id)}
+
     ready = set()
     for issue_id in unclosed:
         row = rows[issue_id]
@@ -155,7 +169,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
             and issue_id not in deferred
             and issue_id not in blocked
             and not open_child_count.get(issue_id)
-            and row.initiative_id not in someday_initiatives
+            and issue_id not in shelved
         ):
             ready.add(issue_id)
 
@@ -177,6 +191,7 @@ def measure_readiness(session: Session, today: dt.date, now: dt.datetime) -> Iss
         effective_priority=effective_priority,
         blocked=frozenset(blocked),
         deferred=frozenset(deferred),
+        shelved=frozenset(shelved),
         ready=frozenset(ready),
         autofixable=frozenset(autofixable),
         child_count=child_count,

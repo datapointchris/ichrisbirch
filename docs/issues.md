@@ -24,7 +24,8 @@ An issue is ready when all of these hold:
 - its not-before day, `deferred_until_date`, has arrived in the reader's calendar
 - every issue it depends on is closed
 - it has no open children
-- its initiative, if it has one, is not `someday`
+- it is not shelved: in a `someday` initiative with nothing outside someday
+  depending on it
 
 Every input to that test changes somewhere else. A blocker closes, a claim
 expires, a day arrives, a child closes. A stored flag would be wrong the
@@ -46,12 +47,17 @@ lens.
 The other types are `bug`, `feature`, `task` and `chore`. They differ only in
 what they say about the work, and `task` is the default.
 
-## A someday initiative holds ideas, so none of its issues is ready
+## A someday initiative holds ideas until active work needs one
 
 An initiative is `someday` when it is an idea not yet taken on. Its issues are
-captured in full, but the ready queue leaves every one of them out, so no agent
-takes work nobody chose. Reopening the initiative makes them ready. Moving one
-issue into an active initiative takes that one alone.
+captured in full, but the ready queue leaves them out, so no agent takes work
+nobody chose. Reopening the initiative makes them ready. Moving one issue into
+an active initiative takes that one alone.
+
+An issue outside someday that depends on a someday issue, directly or through a
+chain, has chosen it. That someday issue enters the queue at the dependent's
+priority and stays in its initiative, because it belongs with that idea while
+something urgent needs it first. Closing the dependent shelves it again.
 
 `someday` is neither active nor terminal, as it is for projects. It lends no
 priority, and like a closed initiative it gives up its name, so an active one
@@ -110,14 +116,18 @@ Priority uses Linear's scale:
 
 `0` is the absence of a priority and sorts after every level.
 
-The priority an issue sorts by is its effective priority:
+The priority an issue sorts by is its effective priority, the most urgent of:
 
-1. its own priority, when it has one
-2. otherwise its open parent's effective priority
-3. otherwise its active initiative's priority
-4. then raised to the most urgent effective priority of any open issue it blocks
+- its own priority
+- its open parent's effective priority
+- its active initiative's priority
+- the effective priority of any open issue it blocks, at any depth
 
-The last step is priority inheritance, from scheduling. Without it a blocker
+Nothing in that set lowers it. An own priority raises an issue above its
+initiative and never sinks it below, so an issue less urgent than its
+initiative belongs outside it.
+
+Raising a blocker is priority inheritance, from scheduling. Without it a blocker
 filed at low priority waits at the bottom while the urgent work it gates sits
 at the top of the list, hidden because it is blocked.
 

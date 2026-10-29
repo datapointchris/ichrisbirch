@@ -33,8 +33,8 @@ CLOSED_ISSUE_STATUSES = ['completed', 'canceled']
 # a person, so the ready queue an agent reads leaves it out.
 ISSUE_TYPES = ['bug', 'feature', 'task', 'chore', 'decision']
 
-# `someday` holds ideas not yet taken on: none of its issues is ready until the
-# initiative is active, and it lends no priority.
+# `someday` holds ideas not yet taken on: its issues wait until the initiative is
+# active, except one that work outside someday depends on, and it lends no priority.
 INITIATIVE_STATUSES = ['active', 'someday', 'completed', 'dropped']
 TERMINAL_INITIATIVE_STATUSES = ['completed', 'dropped']
 

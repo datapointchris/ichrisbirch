@@ -98,9 +98,9 @@ class IssueUpdate(IssueConfig):
 class Issue(IssueConfig):
     """An issue travels with everything a list row needs, so no client fans out.
 
-    `effective_priority` is the priority the ready queue sorts by: the issue's
-    own, else its open parent's or its active initiative's, raised to the most
-    urgent of anything it blocks. `is_ready` says whether an agent could take it
+    `effective_priority` is the priority the ready queue sorts by: the most
+    urgent of the issue's own, its open parent's, its active initiative's, and
+    anything it blocks. `is_ready` says whether an agent could take it
     now, whatever its type; the ready queue leaves decisions out separately.
     `autofix` is the issue's own setting, and `is_autofixable` is false when it,
     its initiative's or an unclosed parent's is false.
