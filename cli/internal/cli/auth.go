@@ -147,6 +147,9 @@ func newAuthLogoutCommand() *cobra.Command {
 			if err != nil && !errors.Is(err, goclilogin.ErrNotConfigured) {
 				return err
 			}
+			if deployment.HandsTokens() {
+				return fmt.Errorf("%s sets token_command, so icb is handed its tokens and stores none to remove", deployment.Path)
+			}
 			if deployment.ClientID.Value == "" {
 				deployment.ClientID.Value = config.DefaultClientID()
 			}
@@ -172,7 +175,8 @@ func newAuthTokenCommand() *cobra.Command {
 			"expired. Intended for scripting. Pass it to curl on stdin, as the example\n" +
 			"does, so the token never appears in another process's arguments. Exits\n" +
 			"non-zero if not logged in. With ICB_CLIENT_SECRET set, it requests a new\n" +
-			"service token instead.",
+			"service token instead, and with token_command in the config file it prints\n" +
+			"the token that command hands.",
 		Example: "  icb auth token\n" +
 			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/v1/tasks",
 		Args: cobra.NoArgs,
@@ -190,6 +194,9 @@ func newAuthTokenCommand() *cobra.Command {
 				return err
 			}
 			token, err := source.Token()
+			if err != nil && deployment.HandsTokens() {
+				return fmt.Errorf("token_command in %s handed no token: %w", deployment.Path, err)
+			}
 			if err != nil && config.IsService() {
 				return fmt.Errorf("obtain a token for service client %s: %w", deployment.ClientID.Value, err)
 			}
@@ -211,6 +218,9 @@ const (
 	authorizedUser credentialType = "authorized_user"
 	// serviceAccount is the client-credentials grant ICB_CLIENT_SECRET selects.
 	serviceAccount credentialType = "service_account"
+	// externalAccount is a token the config file's token_command hands, as
+	// Google names a credential an executable supplies.
+	externalAccount credentialType = "external_account"
 )
 
 // statusReport is the stable JSON schema for `auth status --json`. It reports
@@ -267,13 +277,20 @@ func newAuthStatusCommand() *cobra.Command {
 				ClientID:   deployment.ClientID.Value,
 				Issuer:     deployment.Issuer.Value,
 			}
-			if config.IsService() {
+			switch {
+			case deployment.HandsTokens():
+				report.Type = externalAccount
+			case config.IsService():
 				report.Type = serviceAccount
 			}
 			switch {
 			case !report.Configured:
-			case config.IsService():
-				serviceStatus(cmd.Context(), deployment, &report)
+			case report.Type == externalAccount:
+				source, err := goclilogin.CommandTokenSource(cmd.Context(), deployment.TokenCommand.Argv())
+				grantedStatus(source, err, &report)
+			case report.Type == serviceAccount:
+				source, err := goclilogin.ClientCredentialsTokenSource(cmd.Context(), config.Service(deployment), config.ClientSecret())
+				grantedStatus(source, err, &report)
 			default:
 				if err := loginStatus(cmd.Context(), deployment, &report); err != nil {
 					return err
@@ -293,8 +310,8 @@ func newAuthStatusCommand() *cobra.Command {
 			// A rejected session exits non-zero for the same reason being logged
 			// out does: nothing the caller runs next will work until they log in.
 			// An unverified login exits zero, because its stored token may still
-			// work. An unverified service exits 1 through logged_in, which
-			// serviceStatus sets only for a live session.
+			// work. An unverified service or handed token exits 1 through
+			// logged_in, which grantedStatus sets only for a live session.
 			if !report.Configured || !report.LoggedIn || report.Session == goclilogin.SessionRejected {
 				return exitCode(1)
 			}
@@ -345,10 +362,9 @@ func loginStatus(ctx context.Context, d goclilogin.Deployment, report *statusRep
 	return nil
 }
 
-// serviceStatus requests a token, because a service stores none that could say
-// whether its credentials still work.
-func serviceStatus(ctx context.Context, d goclilogin.Deployment, report *statusReport) {
-	source, err := goclilogin.ClientCredentialsTokenSource(ctx, config.Service(d), config.ClientSecret())
+// grantedStatus asks source for a token, because a service or a handed token
+// stores none that could say whether the next command will get one.
+func grantedStatus(source oauth2.TokenSource, err error, report *statusReport) {
 	var token *oauth2.Token
 	if err == nil {
 		token, err = source.Token()
@@ -369,6 +385,10 @@ func printStatus(out io.Writer, r statusReport, d goclilogin.Deployment, loadErr
 	switch {
 	case !r.Configured:
 		_, _ = fmt.Fprintf(out, "%v\n", loadErr)
+	case r.Type == externalAccount && r.LoggedIn:
+		_, _ = fmt.Fprintln(out, "Handed a token by token_command")
+	case r.Type == externalAccount:
+		_, _ = fmt.Fprintf(out, "token_command handed no token. Check what %q asks.\n", d.TokenCommand)
 	case r.Type == serviceAccount && r.Session == goclilogin.SessionRejected:
 		_, _ = fmt.Fprintf(out, "Service client refused by %s. Check client_id in the config file, and %s.\n", r.Issuer, config.ClientSecretEnv)
 	case r.Type == serviceAccount && r.Session == goclilogin.SessionUnverified:
@@ -389,7 +409,7 @@ func printStatus(out io.Writer, r statusReport, d goclilogin.Deployment, loadErr
 	if r.ExpiresAt != "" {
 		state := "valid"
 		switch {
-		case r.Type == serviceAccount:
+		case r.Type == serviceAccount, r.Type == externalAccount:
 			state = "granted"
 		case r.Expired:
 			state = "expired — will refresh on next use"

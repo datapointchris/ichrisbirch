@@ -37,9 +37,13 @@ func newAPIClient(ctx context.Context) (*api.Client, error) {
 	return api.New(deployment.API.Value, oauth2.NewClient(ctx, source)), nil
 }
 
-// tokenSource is the client-credentials grant when ICB_CLIENT_SECRET is set,
-// and otherwise the token this machine logged in for.
+// tokenSource is the config file's token_command where it names one, the
+// client-credentials grant when ICB_CLIENT_SECRET is set, and otherwise the
+// token this machine logged in for.
 func tokenSource(ctx context.Context, d goclilogin.Deployment) (oauth2.TokenSource, error) {
+	if d.HandsTokens() {
+		return goclilogin.CommandTokenSource(ctx, d.TokenCommand.Argv())
+	}
 	if config.IsService() {
 		return goclilogin.ClientCredentialsTokenSource(ctx, config.Service(d), config.ClientSecret())
 	}
@@ -61,8 +65,20 @@ func handleAPIError(err error) error {
 		return fmt.Errorf("not logged in — run `icb auth login`")
 	}
 	var apiErr *api.APIError
-	// A service has no login to renew, so it is pointed at its id and secret.
+	// A handed token's remedy is whatever handed it, so it names the command.
 	// The file is read without --api, so reporting an error sends nothing.
+	if d, _ := config.Load(context.Background(), ""); d.HandsTokens() {
+		var failed *goclilogin.TokenCommandError
+		switch {
+		case errors.As(err, &failed):
+			return fmt.Errorf("token_command in %s handed no token: %w", d.Path, failed)
+		case errors.As(err, &apiErr) && apiErr.Unauthorized():
+			return fmt.Errorf("the API rejected the token %q handed", d.TokenCommand)
+		case errors.As(err, &apiErr) && apiErr.Forbidden() && apiErr.Message != "":
+			return fmt.Errorf("the token %q handed: %s", d.TokenCommand, apiErr.Message)
+		}
+	}
+	// A service has no login to renew, so it is pointed at its id and secret.
 	if config.IsService() {
 		d, _ := config.Load(context.Background(), "")
 		switch {

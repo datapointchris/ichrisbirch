@@ -675,8 +675,9 @@ func newIssuesClaimCommand() *cobra.Command {
 			"\n" +
 			"A claim sets the issue in progress for --minutes. One that runs out returns\n" +
 			"the issue to the queue. `complete` lets go of it, and `release` hands it back\n" +
-			"unfinished. --claimant defaults to the service client's id when\n" +
-			"ICB_CLIENT_SECRET is set, since the API takes no other claimant from one.\n" +
+			"unfinished. --claimant defaults to the config file's client_id when\n" +
+			"ICB_CLIENT_SECRET is set or token_command hands the token, since the API\n" +
+			"takes no other claimant from a service.\n" +
 			"Otherwise it is the Claude Code session when run inside one, else user@host.\n" +
 			"\n" +
 			"An empty queue prints nothing to claim, or null under --json, and exits 0.",
@@ -689,12 +690,13 @@ func newIssuesClaimCommand() *cobra.Command {
 			if minutes < 1 || minutes > 10080 {
 				return goclikit.UsageError(fmt.Errorf("--minutes %d: a claim lasts 1 to 10080 minutes", minutes))
 			}
-			if config.IsService() && !f.Changed("claimant") {
-				deployment, err := config.Load(cmd.Context(), apiOverride)
-				if err != nil {
-					return handleAPIError(err)
+			if !f.Changed("claimant") {
+				if deployment, err := config.Load(cmd.Context(), apiOverride); config.IsService() || deployment.HandsTokens() {
+					if err != nil {
+						return handleAPIError(err)
+					}
+					claimant = deployment.ClientID.Value
 				}
-				claimant = deployment.ClientID.Value
 			}
 			if strings.TrimSpace(claimant) == "" {
 				return goclikit.UsageError(errors.New("--claimant cannot be empty — a claim names who holds it"))

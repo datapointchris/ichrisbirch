@@ -61,6 +61,10 @@ func Load(ctx context.Context, api string) (goclilogin.Deployment, error) {
 	if stale := refuseRetiredAPIPath(d.API); stale != nil {
 		return d, stale
 	}
+	if d.HandsTokens() && IsService() {
+		return d, fmt.Errorf("%s sets token_command and %s is set, so icb has two credentials; keep one",
+			d.Path, ClientSecretEnv)
+	}
 	if !IsService() || !errors.Is(err, goclilogin.ErrNotConfigured) {
 		return d, err
 	}

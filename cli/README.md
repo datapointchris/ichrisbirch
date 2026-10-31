@@ -148,6 +148,16 @@ release frees only a claim that id holds. An update either closes an open issue
 or sets only its priority and initiative, so a service cannot retitle or rewrite
 one. A filing goes into triage, under no parent.
 
+A workload whose broker hands it short-lived tokens holds no secret instead. Its
+config file names the broker's command as `token_command`, an argv such as
+`["broker", "token", "icb"]`, and needs only `api` beside it. icb runs the
+command whenever its last token has expired, and sends the `access_token` it
+prints (RFC 6749 § 5.1). The token speaks for the service client that minted it,
+so `client_id` names that client where a claim is to default to it. `auth
+status` reports the credential as `external_account`. `auth login` and `auth
+logout` refuse, and a 401 names the command rather than a login. A file setting
+`token_command` while `ICB_CLIENT_SECRET` is set is refused.
+
 Authelia refuses the whole token request when it names a scope the client does
 not hold. So a scope is granted to the client in Authelia before a release of
 icb requests it.

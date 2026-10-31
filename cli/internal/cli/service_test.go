@@ -3,9 +3,11 @@ package cli
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
@@ -282,5 +284,40 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 				}
 			}
 		})
+	}
+}
+
+func TestHandedToken_SearchCarriesTheTokenTheCommandHands(t *testing.T) {
+	var authorization string
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authorization = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(api.Close)
+	root := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", root)
+	command := filepath.Join(root, "hand-token")
+	script := "#!/bin/sh\necho '{\"access_token\": \"handed-access-token\", \"expires_in\": 300}'\n"
+	if err := os.WriteFile(command, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "icb"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	content := fmt.Sprintf("api = %q\nclient_id = %q\ntoken_command = [%q]\n", api.URL, serviceClientID, command)
+	if err := os.WriteFile(filepath.Join(root, "icb", "config.toml"), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
+		t.Fatalf("search on a handed token: %v", err)
+	}
+	if authorization != "Bearer handed-access-token" {
+		t.Errorf("the API saw Authorization %q, want the handed token", authorization)
+	}
+	t.Setenv(config.ClientSecretEnv, serviceSecret)
+	if _, err := runService(t, "projects", "items", "search", "sync"); err == nil || !strings.Contains(err.Error(), "two credentials") {
+		t.Errorf("a token_command beside %s: err = %v", config.ClientSecretEnv, err)
 	}
 }
