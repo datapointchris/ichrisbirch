@@ -90,14 +90,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create non-root user for security
-RUN groupadd --gid 1000 app && \
-    useradd --uid 1000 --gid app --shell /bin/bash --create-home app
+# A uid no other app uses, so files it writes on a host or a k3s volume read as
+# ichrisbirch's, never as a person's. Its host declares the same account.
+RUN groupadd --system --gid 10300 ichrisbirch && \
+    useradd --system --uid 10300 --gid ichrisbirch --shell /usr/sbin/nologin --create-home ichrisbirch
 
 # Copy the application and virtual environment from builder
-COPY --from=production-builder --chown=app:app /app /app
+COPY --from=production-builder --chown=ichrisbirch:ichrisbirch /app /app
 
-USER 1000:1000
+USER 10300:10300
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \

@@ -22,7 +22,7 @@ The root `Dockerfile` builds at `/app` in every stage, and `production` copies
 `/app` wholesale out of `production-builder`:
 
 ```dockerfile
-COPY --from=production-builder --chown=app:app /app /app
+COPY --from=production-builder --chown=ichrisbirch:ichrisbirch /app /app
 ```
 
 Both sides are `/app`, so the paths inside `.venv` stay correct. Changing
