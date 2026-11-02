@@ -353,7 +353,7 @@ REINDEX DATABASE ichrisbirch;
 #### 1. Environment Variable Differences
 
 Development and production each load a `.env`, and `.env.example` lists every
-key. Tests load the committed `tests/testing.env`. A key present in one file and
+required key. Tests load the committed `tests/testing.env`. A key present in one file and
 absent from another is the usual cause.
 
 Production's `.env` comes from the SOPS-encrypted source, so compare against

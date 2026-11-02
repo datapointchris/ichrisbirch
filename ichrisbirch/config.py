@@ -166,7 +166,6 @@ class Settings:
 
 
 ENV_FILE = find_project_root() / '.env'
-TESTING_CONFIG = find_project_root() / 'tests' / 'testing.env'
 
 
 def detect_environment() -> str:
@@ -198,14 +197,15 @@ def get_settings():
     env = detect_environment()
     os.environ['ENVIRONMENT'] = env
 
-    # A test run reads the suite's own configuration and never a checkout's .env, which on a
-    # workstation is the development one. Each file is named by path, because python-dotenv's
-    # own search climbs past the project to any parent's .env. The environment still wins.
+    # A test run is configured by whatever starts it, never by a checkout's .env, which on a
+    # workstation is the development one. The test suite loads its own configuration as it is
+    # imported, and the test stack's compose file passes it to each container.
     if env == 'testing':
-        if not TESTING_CONFIG.exists():
-            raise FileNotFoundError(f'{TESTING_CONFIG} not found: every test run is configured from it.')
-        dotenv.load_dotenv(TESTING_CONFIG)
-        logger.info('config_loaded_from_testing_config', environment=env, path=str(TESTING_CONFIG))
+        if not os.environ.get('POSTGRES_HOST'):
+            raise RuntimeError('environment=testing reads only the process environment, and it has no POSTGRES_HOST.')
+        logger.info('config_loaded_from_environment', environment=env)
+    # The .env is named by path, because python-dotenv's own search climbs past the project
+    # to any parent directory's .env.
     elif dotenv.load_dotenv(ENV_FILE):
         logger.info('config_loaded_from_dotenv', environment=env)
     elif os.environ.get('POSTGRES_HOST'):

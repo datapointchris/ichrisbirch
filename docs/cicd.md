@@ -48,8 +48,7 @@ the last, such a block swallows that header and forge emits it twice.
 ### pytest starts its own services, in CI as on a workstation
 
 The python job runs the generated `uv run --with pytest pytest`, configured
-from the committed `tests/testing.env`, so it decrypts nothing and needs no
-secret. Each session starts its own Postgres
+from the committed `tests/testing.env`. Each session starts its own Postgres
 and Redis on the runner's Docker through testcontainers, so no compose stack
 runs for that job. [Test Environment](testing/environment.md) covers how.
 

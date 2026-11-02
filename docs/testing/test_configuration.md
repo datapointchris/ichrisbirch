@@ -1,10 +1,12 @@
 # Testing Configuration
 
 Tests are configured from `tests/testing.env`, which is committed because
-every value in it was made for the tests. `get_settings()` loads it whenever
-the environment is `testing`, and never a checkout's `.env`, which on a
-workstation is the development one. The process environment overrides any
-value in it. No test run decrypts anything.
+every value in it was made for the tests. Importing the `tests` package loads
+it, so it reaches every pytest run before any fixture reads a setting. The test
+stack's compose file passes the same file to each app container. Under
+`testing`, `get_settings()` reads only the process environment and never a
+checkout's `.env`, which on a workstation is the development one. The process
+environment overrides any value in the file.
 
 ## `test_settings` is the whole configuration
 
@@ -44,7 +46,8 @@ session starts its own container, and the values are where Docker published it:
 | `postgres.port`, `sqlalchemy.port` | the URL's port, or the port Docker picked for 5432    |
 | `postgres.username`, `.password`   | the URL's, or `postgres` / `postgres`                 |
 | `redis.host`, `redis.port`         | the same, for 6379                                    |
-| `redis.password`, `redis.db`       | the URL's, or empty and 0                             |
+| `redis.password`                   | the URL's, or none                                    |
+| `redis.db`                         | the URL's, or `REDIS_DB` from `tests/testing.env`     |
 
 A container's port is never fixed, so no two sessions collide and nothing has
 to agree with a compose file. Nothing builds an engine or a Redis client at import time, so

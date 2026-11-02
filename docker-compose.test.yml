@@ -19,13 +19,17 @@
 # reads healthy within a second of being ready. Its interval, which governs
 # afterwards, is what a service that is already up is checked at.
 
-# Each project builds its own image, so a stack's venv comes from its own
-# checkout's lockfile whatever another checkout last built.
-x-app-build: &app-build
+# The app as every test service runs it. Each project builds its own image, so
+# a stack's venv comes from its own checkout's lockfile whatever another
+# checkout last built. Its configuration is the suite's committed one, in place
+# of the checkout's .env.
+x-test-app: &test-app
   image: ichrisbirch:${COMPOSE_PROJECT_NAME}
   build:
     context: .
     target: testing
+  env_file: !override
+    - tests/testing.env
 
 services:
   # Traefik reads its routers and services from files alone. A Docker provider
@@ -132,7 +136,7 @@ services:
         tag: "redis-test"
 
   api:
-    <<: *app-build
+    <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-api
     command: >
       uvicorn ichrisbirch.wsgi_api:api
@@ -140,9 +144,6 @@ services:
       --port 8000
       --log-level debug
       --no-access-log
-    # The suite's committed configuration, in place of the checkout's .env.
-    env_file: !override
-      - tests/testing.env
     environment: !override
       - ENVIRONMENT=testing
       - FASTAPI_DEBUG=False
@@ -171,11 +172,9 @@ services:
         tag: "api-test"
 
   scheduler:
-    <<: *app-build
+    <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-scheduler
     command: python -m ichrisbirch.wsgi_scheduler
-    env_file: !override
-      - tests/testing.env
     environment: !override
       - ENVIRONMENT=testing
       - LOG_FORMAT=${LOG_FORMAT:-json}

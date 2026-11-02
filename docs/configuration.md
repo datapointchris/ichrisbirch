@@ -1,22 +1,29 @@
 # Configuration
 
-## `ichrisbirch/config.py` reads the process environment, after its environment's file
+## `ichrisbirch/config.py` reads the process environment, after a development or production `.env`
 
 `get_settings()` builds one `Settings` and caches it. Each settings class reads
 its keys from `os.environ`, so a required key that is missing fails at startup
-with a `KeyError` naming it. `.env.example` lists every key.
+with a `KeyError` naming it. `.env.example` lists every required key. An
+optional key carries its default in `config.py`.
 
-Before building it, `get_settings()` loads the file for the environment
-`detect_environment()` picks. That is an explicit `ENVIRONMENT` first, then
-`testing` under pytest, then the `ENVIRONMENT` a `.env` sets, then
-`development`.
+Before building it, `get_settings()` checks where the environment
+`detect_environment()` picks is configured from. That is an explicit
+`ENVIRONMENT` first, then `testing` under pytest, then the `ENVIRONMENT` a
+`.env` sets, then `development`.
 
-| Environment                 | File it loads                  | Without the file                                                                         |
-| --------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------- |
-| `development`, `production` | the checkout's `.env`          | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
-| `testing`                   | `tests/testing.env`, committed | it refuses to start                                                                      |
+| Environment                 | Configured from                                       | Without it                                                                               |
+| --------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `development`, `production` | the checkout's `.env`                                 | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
+| `testing`                   | the process environment, which whatever starts it set | it refuses to start without `POSTGRES_HOST`                                              |
 
-Each file is named by path from the project root, the directory holding
+A test run is configured from the committed `tests/testing.env`. Importing the
+`tests` package loads it into a pytest run, and the test stack's compose file
+passes it to each container as its `env_file`. So `ichrisbirch/` names no path
+under `tests/`, and a container needs no source tree to read its configuration.
+[Testing Configuration](testing/test_configuration.md) covers the file.
+
+The `.env` is named by path from the project root, the directory holding
 `pyproject.toml`. python-dotenv's own search climbs from `ichrisbirch/` to the
 first `.env` in any parent directory, so a checkout without one would read a
 home directory's instead. A file never overrides a variable the process already
