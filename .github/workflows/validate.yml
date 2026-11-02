@@ -21,21 +21,6 @@ jobs:
 
       - uses: actions/checkout@v7
 
-      # > custom:before:python - Testing secrets
-      #
-      # tests/conftest.py reads its settings from a .env for the testing
-      # environment, so collection fails without one. pytest starts its own
-      # Postgres and Redis, so no compose stack runs for this job.
-      - name: Install SOPS
-        uses: mdgreenwald/mozilla-sops-action@v2.1.2
-        with:
-          version: "3.12.2"
-
-      - name: Decrypt testing secrets
-        env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-        run: sops decrypt secrets/secrets.test.enc.env > .env
-
       # generated:python
       # enable-cache is left at setup-uv's `auto`, which caches on a hosted
       # runner only. Every repo's self-hosted runner shares one ~/.cache/uv
@@ -493,16 +478,6 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install SOPS
-        uses: mdgreenwald/mozilla-sops-action@v2.1.2
-        with:
-          version: "3.12.2"
-
-      - name: Decrypt testing secrets
-        env:
-          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
-        run: sops decrypt secrets/secrets.test.enc.env > .env
 
       - uses: docker/setup-compose-action@54042514f505b273907334ae2b9cdbb9a0213c1a # v2.4.0
         with:

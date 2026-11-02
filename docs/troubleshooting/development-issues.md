@@ -135,9 +135,8 @@ docker compose exec api env | grep -i postgres
 1. **Create environment files:**
 
 ```bash
-# Copy example files
+# Copy the example file; the tests carry their own in tests/testing.env
 cp .env.example .env
-cp .env.test.example .env.test
 
 # Edit with your values
 vim .env

@@ -1,7 +1,6 @@
 import functools
 import os
 import sys
-from pathlib import Path
 
 import dotenv
 import structlog
@@ -166,6 +165,9 @@ class Settings:
         return f'{self.protocol}://{self.fastapi.host}{port}'
 
 
+ENV_FILE = find_project_root() / '.env'
+
+
 def detect_environment() -> str:
     """Detect environment with sensible defaults for development.
 
@@ -181,8 +183,8 @@ def detect_environment() -> str:
     if 'pytest' in sys.modules:
         return 'testing'
 
-    if Path('.env').exists():
-        dotenv.load_dotenv()
+    if ENV_FILE.exists():
+        dotenv.load_dotenv(ENV_FILE)
         if env := os.environ.get('ENVIRONMENT'):
             return env
 
@@ -195,7 +197,16 @@ def get_settings():
     env = detect_environment()
     os.environ['ENVIRONMENT'] = env
 
-    if dotenv.load_dotenv():
+    # A test run is configured by whatever starts it, never by a checkout's .env, which on a
+    # workstation is the development one. The test suite loads its own configuration as it is
+    # imported, and the test stack's compose file passes it to each container.
+    if env == 'testing':
+        if not os.environ.get('POSTGRES_HOST'):
+            raise RuntimeError('environment=testing reads only the process environment, and it has no POSTGRES_HOST.')
+        logger.info('config_loaded_from_environment', environment=env)
+    # The .env is named by path, because python-dotenv's own search climbs past the project
+    # to any parent directory's .env.
+    elif dotenv.load_dotenv(ENV_FILE):
         logger.info('config_loaded_from_dotenv', environment=env)
     elif os.environ.get('POSTGRES_HOST'):
         logger.info('config_loaded_from_environment', environment=env)

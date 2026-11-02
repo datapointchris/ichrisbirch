@@ -62,8 +62,8 @@ repos:
     hooks:
       - id: docker-compose-validate
         name: validate docker compose files
-        description: "Validate compose files using the actual Docker Compose parser"
-        entry: bash -c 'docker compose -f docker-compose.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet && docker compose -f docker-compose.yml -f docker-compose.test.yml config --quiet'
+        description: "Validate compose files using the actual Docker Compose parser. Interpolation reads the committed test configuration and no service's env_file is opened, so a checkout without a .env validates."
+        entry: bash -c 'for overlay in "" docker-compose.dev.yml docker-compose.test.yml; do docker compose --env-file tests/testing.env -f docker-compose.yml ${overlay:+-f "$overlay"} config --quiet --no-env-resolution || exit 1; done'
         language: system
         files: ^docker-compose.*\.yml$
         pass_filenames: false

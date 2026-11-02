@@ -19,13 +19,17 @@
 # reads healthy within a second of being ready. Its interval, which governs
 # afterwards, is what a service that is already up is checked at.
 
-# Each project builds its own image, so a stack's venv comes from its own
-# checkout's lockfile whatever another checkout last built.
-x-app-build: &app-build
+# The app as every test service runs it. Each project builds its own image, so
+# a stack's venv comes from its own checkout's lockfile whatever another
+# checkout last built. Its configuration is the suite's committed one, in place
+# of the checkout's .env.
+x-test-app: &test-app
   image: ichrisbirch:${COMPOSE_PROJECT_NAME}
   build:
     context: .
     target: testing
+  env_file: !override
+    - tests/testing.env
 
 services:
   # Traefik reads its routers and services from files alone. A Docker provider
@@ -104,7 +108,7 @@ services:
         max-file: "3"
         tag: "postgres-test"
 
-  # Test Redis — no persistence and no password. secrets.test.enc.env leaves
+  # Test Redis — no persistence and no password. tests/testing.env leaves
   # REDIS_PASSWORD empty to match: redis-py retries a refused AUTH with
   # backoff, so a password here turns every Redis call into seconds of waiting.
   redis:
@@ -132,7 +136,7 @@ services:
         tag: "redis-test"
 
   api:
-    <<: *app-build
+    <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-api
     command: >
       uvicorn ichrisbirch.wsgi_api:api
@@ -168,7 +172,7 @@ services:
         tag: "api-test"
 
   scheduler:
-    <<: *app-build
+    <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-scheduler
     command: python -m ichrisbirch.wsgi_scheduler
     environment: !override

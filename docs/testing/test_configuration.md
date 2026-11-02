@@ -1,7 +1,12 @@
 # Testing Configuration
 
-Tests build their settings in code rather than reading a test `.env`. There is
-one `.env` per environment, and the test suite does not use one.
+Tests are configured from `tests/testing.env`, which is committed because
+every value in it was made for the tests. Importing the `tests` package loads
+it, so it reaches every pytest run before any fixture reads a setting. The test
+stack's compose file passes the same file to each app container. Under
+`testing`, `get_settings()` reads only the process environment and never a
+checkout's `.env`, which on a workstation is the development one. The process
+environment overrides any value in the file.
 
 ## `test_settings` is the whole configuration
 
@@ -30,19 +35,22 @@ test that changes a setting, so the change reaches no other test.
 
 ## The session's services decide the hosts and ports
 
-`PrivateServices` in `tests/environment.py` starts this session's Postgres and
-Redis, then writes where Docker published them into `test_settings`:
+`PrivateServices` in `tests/environment.py` writes this session's Postgres and
+Redis into `test_settings`. Each is the server `TEST_DATABASE_URL` or
+`TEST_REDIS_URL` names, where the environment provides one. Otherwise the
+session starts its own container, and the values are where Docker published it:
 
-| Setting                            | Value                             |
-| ---------------------------------- | --------------------------------- |
-| `postgres.host`, `sqlalchemy.host` | the container host Docker reports |
-| `postgres.port`, `sqlalchemy.port` | the port Docker picked for 5432   |
-| `postgres.username`, `.password`   | `postgres` / `postgres`           |
-| `redis.host`, `redis.port`         | the same, for 6379                |
-| `redis.password`                   | empty                             |
+| Setting                            | Value                                                 |
+| ---------------------------------- | ----------------------------------------------------- |
+| `postgres.host`, `sqlalchemy.host` | the URL's host, or the container host Docker reports  |
+| `postgres.port`, `sqlalchemy.port` | the URL's port, or the port Docker picked for 5432    |
+| `postgres.username`, `.password`   | the URL's, or `postgres` / `postgres`                 |
+| `redis.host`, `redis.port`         | the same, for 6379                                    |
+| `redis.password`                   | the URL's, or none                                    |
+| `redis.db`                         | the URL's, or `REDIS_DB` from `tests/testing.env`     |
 
-No port is fixed, so no two sessions collide and nothing has to agree with a
-compose file. Nothing builds an engine or a Redis client at import time, so
+A container's port is never fixed, so no two sessions collide and nothing has
+to agree with a compose file. Nothing builds an engine or a Redis client at import time, so
 writing the settings in the session fixture reaches every later connection.
 
 `protocol` is `http` because the suite calls the API in-process through
@@ -69,12 +77,13 @@ checked first and wins.
 copy. A test calling `get_settings()` directly gets the cached object instead,
 which carries whatever the shell said.
 
-## The values are in version control, not in a `.env`
+## The values are in version control, not in a checkout's `.env`
 
-Anything reading `test_settings` does not depend on a `.env` that may or may not
-be current, or on which environment was last brought up. The values sit next to
-the fixtures that use them, and the services they point at exist only for the
-session.
+A test run does not depend on a `.env` that may or may not be current, or on
+which environment was last brought up. Its values sit next to the fixtures that
+use them, and the services they point at exist only for the session. The e2e
+stack reads the same file, as its containers' `env_file` and as the compose
+project's interpolation source.
 
 ## Related
 

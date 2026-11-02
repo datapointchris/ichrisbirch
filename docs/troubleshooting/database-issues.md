@@ -352,8 +352,9 @@ REINDEX DATABASE ichrisbirch;
 
 #### 1. Environment Variable Differences
 
-Each environment loads its own `.env`, and `.env.example` lists every key. A
-key present in one file and absent from another is the usual cause.
+Development and production each load a `.env`, and `.env.example` lists every
+required key. Tests load the committed `tests/testing.env`. A key present in one file and
+absent from another is the usual cause.
 
 Production's `.env` comes from the SOPS-encrypted source, so compare against
 that rather than reading it off the host:
