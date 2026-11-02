@@ -214,13 +214,25 @@ CLAIMS = SlateTable(
 )
 
 # Every row keeps icb's table name, record id, actor and changes as written, in icb's order, under ids
-# that follow the rows slate's own history already holds.
+# that follow the rows slate's own history already holds. icb recorded no trace, so each row's is null.
 AUDIT_TRAIL = SlateTable(
     'audit_trail',
-    ('id', 'changed_ts', 'table_name', 'record_id', 'operation', 'changes', 'actor', 'request_id', 'job_run_id'),
+    (
+        'id',
+        'changed_ts',
+        'table_name',
+        'record_id',
+        'operation',
+        'changes',
+        'actor',
+        'request_id',
+        'job_run_id',
+        'traceparent',
+        'baggage',
+    ),
     source="""
         SELECT %(audit_baseline)s::bigint + row_number() OVER (ORDER BY changed_at, id), changed_at, table_name, record_id,
-            operation, changes, actor, request_id, job_run_id
+            operation, changes, actor, request_id, job_run_id, NULL::text, NULL::text
         FROM dumped_icb_audit_trail
     """,
     carries='SELECT count(*) FROM dumped_icb_audit_trail',
