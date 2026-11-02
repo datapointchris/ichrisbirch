@@ -1,4 +1,13 @@
 {
+  "icb.articles.read": [
+    "GET /api/v1/articles"
+  ],
+  "icb.books.read": [
+    "GET /api/v1/books"
+  ],
+  "icb.habits.read": [
+    "GET /api/v1/habits/completed"
+  ],
   "icb.issues.claim": [
     "DELETE /api/v1/issues/{id}/claim",
     "POST /api/v1/issues/{id}/claim"
@@ -22,6 +31,18 @@
     "GET /api/v1/issues/ready",
     "GET /api/v1/issues/{id}"
   ],
+  "icb.overview.read": [
+    "GET /api/v1/articles",
+    "GET /api/v1/articles/current",
+    "GET /api/v1/books",
+    "GET /api/v1/countdowns",
+    "GET /api/v1/events",
+    "GET /api/v1/habits/day",
+    "GET /api/v1/issues",
+    "GET /api/v1/project-items",
+    "GET /api/v1/project-items/blocked",
+    "GET /api/v1/tasks"
+  ],
   "icb.project-items.read": [
     "GET /api/v1/project-items",
     "GET /api/v1/project-items/blocked",
@@ -30,5 +51,8 @@
     "GET /api/v1/project-items/{id}/blockers",
     "GET /api/v1/project-items/{item_id}/tasks",
     "GET /api/v1/projects/{id:path}/items"
+  ],
+  "icb.tasks.read": [
+    "GET /api/v1/tasks"
   ]
 }

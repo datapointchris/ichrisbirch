@@ -27,14 +27,29 @@ ISSUES = 'icb.issues.read'
 CLAIM = 'icb.issues.claim'
 CLOSE = 'icb.issues.close'
 PLAN = 'icb.issues.plan'
+OVERVIEW = 'icb.overview.read'
+HABITS = 'icb.habits.read'
+TASKS = 'icb.tasks.read'
+ARTICLES = 'icb.articles.read'
+BOOKS = 'icb.books.read'
+SINCE = 'since=2026-01-01T00:00:00Z&until=2026-02-01T00:00:00Z'
 CLOSER = 'worker/close-job@service-box'
 SERVICE = 'icb-svc-worker'
 FORGED_HEADERS = {'Remote-User': 'testloginadmin', 'Remote-Email': 'testloginadmin@testadmin.com'}
 SCOPES_DOCUMENT = Path(__file__).parent / 'testdata' / 'client-scopes.json'
 
 # One request per route any scope lists, keyed by its template. The issue reads are the ones the
-# CLI sends: search widens the status to all, and show names the issue by number.
+# CLI sends: search widens the status to all, and show names the issue by number. The windowed
+# lists carry the `--since` and `--until` a day's or a week's history is read with.
 SCOPED_URLS = {
+    f'{API_PREFIX}/articles': f'/articles?{SINCE}',
+    f'{API_PREFIX}/articles/current': '/articles/current',
+    f'{API_PREFIX}/books': f'/books?{SINCE}',
+    f'{API_PREFIX}/countdowns': '/countdowns',
+    f'{API_PREFIX}/events': '/events?when=upcoming',
+    f'{API_PREFIX}/habits/completed': f'/habits/completed?{SINCE}',
+    f'{API_PREFIX}/habits/day': '/habits/day',
+    f'{API_PREFIX}/tasks': f'/tasks?status=completed&{SINCE}',
     f'{API_PREFIX}/issues': '/issues?search=scheduler&status=all',
     f'{API_PREFIX}/issues/ready': '/issues/ready',
     f'{API_PREFIX}/issues/vocabulary': '/issues/vocabulary',
@@ -145,7 +160,7 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         (PROJECT_ITEMS, 'POST', '/project-items'),
         (PROJECT_ITEMS, 'GET', '/projects'),
         (PROJECT_ITEMS, 'GET', '/issues'),
-        (PROJECT_ITEMS, 'GET', '/tasks'),
+        (PROJECT_ITEMS, 'GET', '/recipes'),
         (PROJECT_ITEMS, 'GET', '/users/me'),
         (PROJECT_ITEMS, 'GET', '/users/1'),
         (ISSUES, 'POST', '/issues'),
@@ -170,6 +185,12 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         (CLAIM, 'PATCH', '/issues/{issue}'),
         (PLAN, 'DELETE', '/issues/{issue}'),
         (PLAN, 'DELETE', '/issues/initiatives/{initiative}'),
+        (OVERVIEW, 'POST', '/tasks'),
+        (OVERVIEW, 'GET', '/habits'),
+        (HABITS, 'GET', '/habits/day'),
+        (TASKS, 'GET', '/tasks/completed'),
+        (ARTICLES, 'GET', '/articles/current'),
+        (BOOKS, 'GET', '/articles'),
     ],
     ids=[
         'project-items-write-on-a-scoped-router',
@@ -200,6 +221,12 @@ def test_a_scoped_client_reaches_every_route_its_scope_lists(as_caller, scope, m
         'claim-update',
         'plan-delete',
         'plan-initiative-delete',
+        'overview-write-on-a-scoped-router',
+        'overview-unlisted-read-on-a-scoped-router',
+        'habits-a-read-only-overview-lists',
+        'tasks-unlisted-read-on-a-scoped-router',
+        'articles-a-read-only-overview-lists',
+        'books-another-scopes-route',
     ],
 )
 def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url):
@@ -213,7 +240,7 @@ def test_a_scoped_client_is_refused_off_its_scopes(as_caller, scope, method, url
 @pytest.mark.parametrize(
     ('scope', 'method', 'url'),
     [
-        (PROJECT_ITEMS, 'GET', '/tasks'),
+        (PROJECT_ITEMS, 'GET', '/recipes'),
         (PROJECT_ITEMS, 'PATCH', '/project-items/{item}'),
         (ISSUES, 'PATCH', '/issues/{issue}'),
         (ISSUES, 'PATCH', '/issues/initiatives/{initiative}'),

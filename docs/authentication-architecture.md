@@ -8,7 +8,7 @@ dependencies that decide which are in `ichrisbirch/api/endpoints/auth.py`.
 | Caller | Credential | How it reaches the API |
 | --- | --- | --- |
 | A person running `icb` | Authelia access token from the device grant | `Authorization: Bearer` to `ichrisbirch.com/api/v1`, which the `ichrisbirch-bearer` router carries past ForwardAuth |
-| A service running `icb` | Authelia access token from the client-credentials grant | The same bearer route, with no person present |
+| A service, running `icb` or calling the API itself | Authelia access token from the client-credentials grant | The same bearer route, with no person present |
 | The Vue app in a browser | Authelia session | ForwardAuth on `ichrisbirch.com` injects `Remote-User` and `Remote-Email`; Vue calls `/api/v1/...` on the same origin |
 | This app's own services | `X-Service-Key`, with `X-Internal-Service` or with `X-Application-ID` and `X-User-ID` | Internal network |
 
@@ -79,9 +79,9 @@ second rule, the request would then run as the account the headers named.
 `icb-cli-<machine>` is a person. The token must carry a non-empty `sub`, and it
 resolves to the user `OIDC_CLI_USER_EMAIL` names.
 
-`icb-svc-<machine>` is a service running the CLI. The token must carry a
-non-empty `scp` list, and it becomes a `ScopedClient` that never resolves to
-any user.
+`icb-svc-<name>` is a service, running the CLI or calling the API itself. The
+token must carry a non-empty `scp` list, and it becomes a `ScopedClient` that
+never resolves to any user.
 
 A missing `sub` cannot decide this. Authelia 4.39 leaves `sub` off a
 client-credentials token, but RFC 9068 requires one. A release that adds it
@@ -106,6 +106,12 @@ account.
 A handler that resolves the user through its own dependency refuses a scoped
 client too. `RequestZone` takes `get_current_user_or_scoped_client` for that
 reason, and a scoped client that names no `timezone` gets UTC.
+
+**A read scope lists the routes one CLI command reads.** A service computing
+the same view over HTTP holds the scope named for that command, so its comment
+in `SCOPE_ROUTES` names the command. `icb overview` has no route of its own. It
+fans out to every list a lane draws from, so `icb.overview.read` lists each of
+them, the issue and project-item lists included, and renders every lane alone.
 
 **`icb.issues.close` writes, and the handler narrows it to a close.** It lists
 the comment route and the issue update, which is what a scheduled job sends to

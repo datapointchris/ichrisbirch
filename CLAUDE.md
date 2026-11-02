@@ -54,7 +54,7 @@ Every `is_*` flag on an issue, and its effective priority, are derived on every 
 
 **RFC 9728 metadata:** `/.well-known/oauth-protected-resource` is served without authentication, only where `PUBLIC_URL` is set. `docs/authentication-architecture.md` says why the address is configured rather than derived.
 
-**OIDC bearer (a service running the CLI):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
+**OIDC bearer (a service, running the CLI or calling the API itself):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
 **Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Login`, so do not reintroduce an `internal/auth` here.
 
