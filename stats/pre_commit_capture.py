@@ -91,7 +91,11 @@ def main() -> int:
 
         for future in as_completed(futures):
             hook_name, start = futures[future]
-            result = future.result()
+            try:
+                result = future.result()
+            except FileNotFoundError as e:
+                print(f"Warning: hook '{hook_name}' could not run {e.filename}: {e.strerror}, skipping")
+                continue
             duration = time.perf_counter() - start
             results.append((hook_name, duration, result))
 
