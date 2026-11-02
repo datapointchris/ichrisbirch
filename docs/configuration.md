@@ -1,10 +1,23 @@
 # Configuration
 
-## `ichrisbirch/ichrisbirch/config.py`
+## `ichrisbirch/config.py` reads the process environment, after its environment's file
 
-In the Config class, we're setting the env_file based on the ENVIRONMENT variable. If ENVIRONMENT is not recognized, env_file will be None. When env_file is set, pydantic will automatically try to load the variables from the specified file.
+`get_settings()` builds one `Settings` and caches it. Each settings class reads
+its keys from `os.environ`, so a required key that is missing fails at startup
+with a `KeyError` naming it. `.env.example` lists every key.
 
-Also note that since pydantic automatically converts environment variables to their corresponding data types, we don't need to use Optional or Union in our field definitions anymore.
+Before building it, `get_settings()` loads the file for the environment
+`detect_environment()` picks. That is an explicit `ENVIRONMENT` first, then
+`testing` under pytest, then the `ENVIRONMENT` a `.env` sets, then
+`development`.
+
+| Environment                 | File it loads                  | Without the file                                                                         |
+| --------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------- |
+| `development`, `production` | the checkout's `.env`          | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
+| `testing`                   | `tests/testing.env`, committed | it refuses to start                                                                      |
+
+A file never overrides a variable the process already holds, so any key can be
+set for one run without editing a file.
 
 ### Flake 8
 

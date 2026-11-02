@@ -70,7 +70,7 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 
 ### Configuration & Secrets
 
-- Every environment loads a `.env` file via `python-dotenv` and sets `ENVIRONMENT=development|testing|production`
+- Development and production load a `.env` file via `python-dotenv` and set `ENVIRONMENT=development|production`. `testing` loads the committed `tests/testing.env` instead and never a `.env`, so no test run needs a SOPS key. The process environment overrides either file.
 - Secrets are SOPS + age, encrypted at `secrets/secrets.prod.enc.env`; edit with `sops secrets/secrets.prod.enc.env`
 
 ### Outbound HTTP Goes Through One Function

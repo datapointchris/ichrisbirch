@@ -125,7 +125,7 @@ The migrations create every schema they write into, so a database needs nothing 
 
 ## CI Environment Behavior
 
-The Python job runs pytest on the runner, which starts its own Postgres and Redis exactly as a workstation does. It needs nothing but Docker and the decrypted `.env`.
+The Python job runs pytest on the runner, which starts its own Postgres and Redis exactly as a workstation does. It needs nothing but Docker: its configuration is the committed `tests/testing.env`.
 
 The e2e job runs `./ops/icbops testing start` and then `./ops/icbops test e2e`, the same commands as a workstation. Under `CI=true`, `icbops` adds `docker-compose.ci.yml`, which drops the API's Docker socket mount, and passes `CI` into the vue container, where the Playwright config turns on retries and forbids `.only`. On a runner the checkout directory is the repository's name, so the project is `icb-test-ichrisbirch`.
 

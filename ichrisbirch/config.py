@@ -189,13 +189,23 @@ def detect_environment() -> str:
     return 'development'
 
 
+TESTING_CONFIG = find_project_root() / 'tests' / 'testing.env'
+
+
 # @log_caller
 @functools.cache
 def get_settings():
     env = detect_environment()
     os.environ['ENVIRONMENT'] = env
 
-    if dotenv.load_dotenv():
+    # A test run reads the suite's own configuration and never a checkout's .env, which on a
+    # workstation is the development one. The process environment still overrides it.
+    if env == 'testing':
+        if not TESTING_CONFIG.exists():
+            raise FileNotFoundError(f'{TESTING_CONFIG} not found: every test run is configured from it.')
+        dotenv.load_dotenv(TESTING_CONFIG)
+        logger.info('config_loaded_from_testing_config', environment=env, path=str(TESTING_CONFIG))
+    elif dotenv.load_dotenv():
         logger.info('config_loaded_from_dotenv', environment=env)
     elif os.environ.get('POSTGRES_HOST'):
         logger.info('config_loaded_from_environment', environment=env)

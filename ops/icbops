@@ -44,8 +44,10 @@ export ICB_TEST_PROJECT
 # Docker compose commands. Every dev and test `up` passes --renew-anon-volumes,
 # because compose otherwise hands a recreated container the anonymous
 # /app/.venv of the one it replaces, and a rebuilt image's venv never runs.
+# The test stack interpolates from the suite's committed configuration rather
+# than the checkout's .env, which on a workstation is the development one.
 COMPOSE_DEV="docker compose --project-name icb-dev -f docker-compose.yml -f docker-compose.dev.yml"
-COMPOSE_TEST="docker compose --project-name $ICB_TEST_PROJECT -f docker-compose.yml -f docker-compose.test.yml"
+COMPOSE_TEST="docker compose --project-name $ICB_TEST_PROJECT --env-file tests/testing.env -f docker-compose.yml -f docker-compose.test.yml"
 if [[ "${CI:-}" == true ]]; then
   COMPOSE_TEST+=" -f docker-compose.ci.yml"
 fi
