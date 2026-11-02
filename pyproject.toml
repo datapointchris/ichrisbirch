@@ -229,6 +229,7 @@ exclude = [
   " build",
   "dist",
 ]
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = [
@@ -329,6 +330,7 @@ default-groups = ["dev", "test"]
 # from this list belongs to the project and is never touched. Do not hand-edit.
 managed = [
     ["ruff", "line-length"],
+    ["ruff", "extend-exclude"],
     ["ruff", "format", "quote-style"],
     ["ruff", "format", "indent-style"],
     ["ruff", "format", "skip-magic-trailing-comma"],
