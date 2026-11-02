@@ -81,8 +81,7 @@ INITIATIVES = SlateTable(
     carries='SELECT count(*) FROM dumped_initiatives',
 )
 
-# slate has no in_progress: a claim says who works an issue, and the issue stays open. issues.rank is
-# filled from records.rank by slate's own trigger, so the copy names only records.rank.
+# slate has no in_progress: a claim says who works an issue, and the issue stays open.
 ISSUES = SlateTable(
     'issues',
     (
