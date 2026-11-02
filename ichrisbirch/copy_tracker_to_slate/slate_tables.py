@@ -4,8 +4,13 @@
 compares it with `target`, the same columns read back from slate's table. `carries` counts the dumped
 rows the source must carry one for one, so a join or a filter cannot drop a row unnoticed.
 
-Tables are listed in the order their foreign keys need. Every column slate holds that icb has no source
-for is written out as its empty value, so the proof reads it too.
+That proof shares `source` with the insert, so it cannot see a column the source puts in the wrong
+place. A second proof reads each column slate keeps from its `counterpart` straight from both tables,
+matched by name, and leaves only the `reshaped` columns to the first.
+
+`columns` lists every column of slate's table, and the copy refuses a slate whose catalog says
+otherwise. A column icb has no source for is written as its empty value, so the proof reads it too.
+Tables are listed in the order their foreign keys need.
 """
 
 from __future__ import annotations
@@ -21,6 +26,21 @@ class SlateTable:
     carries: str
     # Narrows the target read to the copied rows, where the table already holds slate's own.
     target_filter: str = ''
+    # The dumped icb table whose columns slate keeps by name, and the rows of it the table carries.
+    counterpart: str | None = None
+    counterpart_filter: str = ''
+    # slate's name for a column icb named otherwise.
+    renamed: dict[str, str] = dc.field(default_factory=dict)
+    # Columns the source computes rather than keeps, which only the source proof can read.
+    reshaped: frozenset[str] = frozenset()
+
+    def kept_by_name(self, counterpart_columns: tuple[str, ...]) -> tuple[tuple[str, str], ...]:
+        """Each (slate column, icb column) pair the table keeps from its counterpart as it was."""
+        return tuple(
+            (column, self.renamed.get(column, column))
+            for column in self.columns
+            if column not in self.reshaped and self.renamed.get(column, column) in counterpart_columns
+        )
 
     @property
     def column_list(self) -> str:
@@ -79,6 +99,7 @@ INITIATIVES = SlateTable(
         FROM dumped_initiatives
     """,
     carries='SELECT count(*) FROM dumped_initiatives',
+    counterpart='initiatives',
 )
 
 # slate has no in_progress: a claim says who works an issue, and the issue stays open.
@@ -116,6 +137,8 @@ ISSUES = SlateTable(
         FROM dumped_issues
     """,
     carries='SELECT count(*) FROM dumped_issues',
+    counterpart='issues',
+    reshaped=frozenset({'status'}),
 )
 
 ISSUE_DEPENDENCIES = SlateTable(
@@ -123,6 +146,7 @@ ISSUE_DEPENDENCIES = SlateTable(
     ('issue_id', 'depends_on_id'),
     source='SELECT issue_id, depends_on_id FROM dumped_issue_dependencies',
     carries='SELECT count(*) FROM dumped_issue_dependencies',
+    counterpart='issue_dependencies',
 )
 
 ISSUE_LABELS = SlateTable(
@@ -130,6 +154,7 @@ ISSUE_LABELS = SlateTable(
     ('id', 'slug', 'group_slug', 'description'),
     source='SELECT id, slug, group_slug, description FROM dumped_issue_labels',
     carries='SELECT count(*) FROM dumped_issue_labels',
+    counterpart='issue_labels',
 )
 
 ISSUE_LABEL_ASSIGNMENTS = SlateTable(
@@ -137,6 +162,7 @@ ISSUE_LABEL_ASSIGNMENTS = SlateTable(
     ('issue_id', 'label_id'),
     source='SELECT issue_id, label_id FROM dumped_issue_label_assignments',
     carries='SELECT count(*) FROM dumped_issue_label_assignments',
+    counterpart='issue_label_assignments',
 )
 
 # slate numbers comments 1 to N in the order they were written. icb's UUID stays only as the
@@ -151,6 +177,9 @@ COMMENTS = SlateTable(
         JOIN dumped_issues AS issue ON issue.id = comment.issue_id
     """,
     carries='SELECT count(*) FROM dumped_issue_comments',
+    counterpart='issue_comments',
+    renamed={'written_by': 'author', 'written_ts': 'created_ts'},
+    reshaped=frozenset({'id'}),
 )
 
 # icb keeps only the claim each issue holds now, so each becomes one unended claim. A claim whose lease
@@ -178,6 +207,10 @@ CLAIMS = SlateTable(
         ) AS held
     """,
     carries='SELECT count(*) FROM dumped_issues WHERE claimed_by IS NOT NULL',
+    counterpart='issues',
+    counterpart_filter='WHERE claimed_by IS NOT NULL',
+    renamed={'record_number': 'number', 'holder': 'claimed_by', 'expires_ts': 'claim_expires_ts'},
+    reshaped=frozenset({'id', 'started_ts'}),
 )
 
 # Every row keeps icb's table name, record id, actor and changes as written, in icb's order, under ids
@@ -192,6 +225,8 @@ AUDIT_TRAIL = SlateTable(
     """,
     carries='SELECT count(*) FROM dumped_icb_audit_trail',
     target_filter='WHERE id > %(audit_baseline)s::bigint',
+    counterpart='icb_audit_trail',
+    reshaped=frozenset({'id'}),
 )
 
 SLATE_TABLES = (RECORDS, INITIATIVES, ISSUES, ISSUE_DEPENDENCIES, ISSUE_LABELS, ISSUE_LABEL_ASSIGNMENTS, COMMENTS, CLAIMS, AUDIT_TRAIL)

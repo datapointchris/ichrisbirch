@@ -147,6 +147,8 @@ def load_dumped_tracker(cursor: psycopg.Cursor, dump: PlainDump) -> dict[str, Lo
                     copy.write(row)
                     kept += 1
         loaded[dumped.name] = LoadedRows(dumped.name, block.rows_read, kept)
+    if not dump.complete:
+        raise CopyRefused("the dump ends before pg_dump's closing line, so it was cut short, perhaps while still being written")
     missing = [table.name for table in DUMPED_TABLES if table.name not in loaded]
     if missing:
         raise CopyRefused(f'the dump holds no COPY block for icb {", ".join(missing)}')

@@ -11,6 +11,7 @@ import gzip
 import hashlib
 import io
 import re
+import zlib
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -20,7 +21,11 @@ COPY_START = re.compile(rb'^COPY public\.(?P<table>\w+) \((?P<columns>.*)\) FROM
 COPY_END = b'\\.\n'
 SEQUENCE_SET = re.compile(rb"^SELECT pg_catalog\.setval\('public\.(?P<sequence>\w+)', (?P<value>\d+), (?P<is_called>true|false)\);\n$")
 VERSION_LINE = re.compile(rb'^-- (?P<line>Dumped (from database|by pg_dump) version .*)\n$')
+# pg_dump writes this after everything else, so a dump without it was cut short.
+DUMP_COMPLETE = b'-- PostgreSQL database dump complete\n'
 GZIP_MAGIC = b'\x1f\x8b'
+# A directory of backups holds other databases' dumps beside icb's, each named for its database and then dated.
+DUMP_NAME_PREFIX = 'ichrisbirch-'
 
 
 @dc.dataclass(frozen=True)
@@ -31,18 +36,22 @@ class DumpFile:
 
     @classmethod
     def find(cls, path: Path) -> DumpFile:
-        """The dump at `path`, or the newest by name of the `*.sql.gz` and `*.sql` files in a directory."""
+        """The dump at `path`, or in a directory the last by name of its `ichrisbirch-*.sql.gz` and `ichrisbirch-*.sql` files."""
         if path.is_dir():
-            candidates = sorted([*path.glob('*.sql.gz'), *path.glob('*.sql')], key=lambda found: found.name)
+            patterns = (f'{DUMP_NAME_PREFIX}*.sql.gz', f'{DUMP_NAME_PREFIX}*.sql')
+            candidates = sorted([found for pattern in patterns for found in path.glob(pattern)], key=lambda found: found.name)
             if not candidates:
-                raise CopyRefused(f'{path} holds no *.sql.gz or *.sql dump')
+                raise CopyRefused(f'{path} holds no {" or ".join(patterns)} dump')
             path = candidates[-1]
         if not path.is_file():
             raise CopyRefused(f'{path} is not a file')
         content_hash = hashlib.sha256()
-        with path.open('rb') as dump:
-            while chunk := dump.read(1 << 20):
-                content_hash.update(chunk)
+        try:
+            with path.open('rb') as dump:
+                while chunk := dump.read(1 << 20):
+                    content_hash.update(chunk)
+        except OSError as unreadable:
+            raise CopyRefused(f'{path} could not be read: {unreadable}') from unreadable
         return cls(path=path, size_bytes=path.stat().st_size, sha256=content_hash.hexdigest())
 
     def open(self) -> io.BufferedIOBase:
@@ -91,12 +100,15 @@ class PlainDump:
     versions: list[str] = dc.field(default_factory=list)
     # Filled as the pass reaches them, and pg_dump writes them after every COPY block.
     sequences: dict[str, SequenceValue] = dc.field(default_factory=dict)
+    complete: bool = False
 
     def copy_blocks(self) -> Iterator[CopyBlock]:
         """Every COPY block in order. Rows a caller leaves unread are skipped before the next block."""
-        lines = iter(self.stream)
+        lines = read_lines(self.stream)
         for line in lines:
-            if start := COPY_START.match(line):
+            if line == DUMP_COMPLETE:
+                self.complete = True
+            elif start := COPY_START.match(line):
                 block = CopyBlock(start['table'].decode(), column_names(start['columns'].decode()), lines)
                 yield block
                 block.skip()
@@ -104,6 +116,13 @@ class PlainDump:
                 self.sequences[setting['sequence'].decode()] = SequenceValue(int(setting['value']), setting['is_called'] == b'true')
             elif version := VERSION_LINE.match(line):
                 self.versions.append(version['line'].decode())
+
+
+def read_lines(stream: io.BufferedIOBase) -> Iterator[bytes]:
+    try:
+        yield from stream
+    except (OSError, EOFError, zlib.error) as unreadable:
+        raise CopyRefused(f'the dump could not be read to its end: {type(unreadable).__name__}: {unreadable}') from unreadable
 
 
 def column_names(listed: str) -> tuple[str, ...]:
