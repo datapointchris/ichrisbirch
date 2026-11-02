@@ -217,7 +217,7 @@ CLAIMS = SlateTable(
 # that follow the rows slate's own history already holds.
 AUDIT_TRAIL = SlateTable(
     'audit_trail',
-    ('id', 'changed_at', 'table_name', 'record_id', 'operation', 'changes', 'actor', 'request_id', 'job_run_id'),
+    ('id', 'changed_ts', 'table_name', 'record_id', 'operation', 'changes', 'actor', 'request_id', 'job_run_id'),
     source="""
         SELECT %(audit_baseline)s::bigint + row_number() OVER (ORDER BY changed_at, id), changed_at, table_name, record_id,
             operation, changes, actor, request_id, job_run_id
@@ -226,6 +226,7 @@ AUDIT_TRAIL = SlateTable(
     carries='SELECT count(*) FROM dumped_icb_audit_trail',
     target_filter='WHERE id > %(audit_baseline)s::bigint',
     counterpart='icb_audit_trail',
+    renamed={'changed_ts': 'changed_at'},
     reshaped=frozenset({'id'}),
 )
 
