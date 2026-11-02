@@ -42,7 +42,8 @@ Swagger docs at `https://api.docker.localhost/`.
 cd frontend && npm test      # TypeScript build check plus unit tests
 ```
 
-Each pytest session starts and discards its own Postgres and Redis. The e2e
+Each pytest session starts and discards its own Postgres and Redis, unless
+`TEST_DATABASE_URL` or `TEST_REDIS_URL` names a server to use instead. The e2e
 suite runs inside a compose project named after the checkout, which publishes
 no ports. So two checkouts run either suite at once without touching each
 other or the dev stack.

@@ -22,7 +22,7 @@ Session fixtures run once per test session and are available throughout the test
 ```python file=tests/conftest.py element=setup_test_environment label="setup_test_environment"
 @pytest.fixture(scope='session', autouse=True)
 def setup_test_environment():
-    """Start this session's own Postgres and Redis, and bring the schema to head."""
+    """Point this session at its Postgres and Redis, and bring the schema to head."""
     logger.warning('')
     logger.warning(f'{"=" * 30}>  STARTING TESTING  <{"=" * 30}')
     logger.warning('')

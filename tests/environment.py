@@ -1,12 +1,17 @@
 """The Postgres and Redis a pytest session runs against.
 
-Every session starts its own pair on ports Docker picks, so two checkouts run
-pytest at once and neither can truncate the other's tables. testcontainers'
-reaper removes both when the session ends, however it ends.
+Each is the server TEST_DATABASE_URL or TEST_REDIS_URL names, where the
+environment provides one. Otherwise the session starts its own on a port Docker
+picks, so two checkouts run pytest at once and neither can truncate the other's
+tables. testcontainers' reaper removes those when the session ends, however it
+ends.
 """
 
 import logging
+import os
 from pathlib import Path
+from urllib.parse import unquote
+from urllib.parse import urlsplit
 
 import pytest
 import yaml
@@ -38,19 +43,10 @@ def production_image(service: str) -> str:
 
 
 class PrivateServices:
-    """Starts this session's Postgres and Redis and points `settings` at them."""
+    """Points `settings` at this session's Postgres and Redis, starting each the environment does not name."""
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        # Durability is off and the data lives in memory: nothing outlives the session.
-        self.postgres = (
-            PostgresContainer(
-                production_image('postgres'), username=POSTGRES_USER, password=POSTGRES_PASSWORD, dbname=POSTGRES_DB, driver=None
-            )
-            .with_tmpfs_mount(POSTGRES_DATA)
-            .with_command(['postgres', '-c', 'fsync=off', '-c', 'synchronous_commit=off', '-c', 'full_page_writes=off'])
-        )
-        self.redis = RedisContainer(production_image('redis')).with_command(['redis-server', '--save', '', '--appendonly', 'no'])
         self.started: list[DockerContainer] = []
 
     def __enter__(self):
@@ -66,24 +62,43 @@ class PrivateServices:
         return False
 
     def start(self) -> None:
-        for container in (self.redis, self.postgres):
-            container.start()
-            self.started.append(container)
-        postgres_host = self.postgres.get_container_host_ip()
-        postgres_port = self.postgres.get_exposed_port(5432)
+        redis = urlsplit(os.environ.get('TEST_REDIS_URL') or self.start_redis())
+        postgres = urlsplit(os.environ.get('TEST_DATABASE_URL') or self.start_postgres())
         for database in (self.settings.postgres, self.settings.sqlalchemy):
-            database.host = postgres_host
-            database.port = postgres_port
-            database.username = POSTGRES_USER
-            database.password = POSTGRES_PASSWORD
-            database.database = POSTGRES_DB
-        self.settings.redis.host = self.redis.get_container_host_ip()
-        self.settings.redis.port = self.redis.get_exposed_port(6379)
-        self.settings.redis.password = ''
-        logger.info(
-            f'session services: postgres {postgres_host}:{postgres_port}, redis {self.settings.redis.host}:{self.settings.redis.port}'
-        )
+            database.host = postgres.hostname
+            database.port = postgres.port
+            database.username = unquote(postgres.username or '')
+            database.password = unquote(postgres.password or '')
+            database.database = postgres.path.lstrip('/')
+        self.settings.redis.host = redis.hostname
+        self.settings.redis.port = redis.port
+        self.settings.redis.password = unquote(redis.password or '')
+        if redis.path.strip('/'):
+            self.settings.redis.db = int(redis.path.strip('/'))
+        logger.info(f'session services: postgres {postgres.hostname}:{postgres.port}, redis {redis.hostname}:{redis.port}')
         full_initialization(self.settings)
+
+    def start_postgres(self) -> str:
+        """Start this session's own Postgres and answer its URL."""
+        # Durability is off and the data lives in memory: nothing outlives the session.
+        container = (
+            PostgresContainer(
+                production_image('postgres'), username=POSTGRES_USER, password=POSTGRES_PASSWORD, dbname=POSTGRES_DB, driver=None
+            )
+            .with_tmpfs_mount(POSTGRES_DATA)
+            .with_command(['postgres', '-c', 'fsync=off', '-c', 'synchronous_commit=off', '-c', 'full_page_writes=off'])
+        )
+        container.start()
+        self.started.append(container)
+        host, port = container.get_container_host_ip(), container.get_exposed_port(5432)
+        return f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{host}:{port}/{POSTGRES_DB}'
+
+    def start_redis(self) -> str:
+        """Start this session's own Redis and answer its URL."""
+        container = RedisContainer(production_image('redis')).with_command(['redis-server', '--save', '', '--appendonly', 'no'])
+        container.start()
+        self.started.append(container)
+        return f'redis://{container.get_container_host_ip()}:{container.get_exposed_port(6379)}'
 
     def stop(self) -> None:
         while self.started:

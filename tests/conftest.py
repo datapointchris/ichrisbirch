@@ -1,7 +1,7 @@
 """Pytest configuration and fixtures.
 
 This module provides pytest fixtures for all test modules, centralizing test setup and teardown.
-Each session runs against its own Postgres and Redis, started by `tests.environment.PrivateServices`.
+Each session runs against the Postgres and Redis `tests.environment.PrivateServices` provides.
 """
 
 import contextlib
@@ -102,7 +102,7 @@ def prewarm_caches():
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_test_environment():
-    """Start this session's own Postgres and Redis, and bring the schema to head."""
+    """Point this session at its Postgres and Redis, and bring the schema to head."""
     logger.warning('')
     logger.warning(f'{"=" * 30}>  STARTING TESTING  <{"=" * 30}')
     logger.warning('')
