@@ -16,8 +16,11 @@ Before building it, `get_settings()` loads the file for the environment
 | `development`, `production` | the checkout's `.env`          | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
 | `testing`                   | `tests/testing.env`, committed | it refuses to start                                                                      |
 
-A file never overrides a variable the process already holds, so any key can be
-set for one run without editing a file.
+Each file is named by path from the project root, the directory holding
+`pyproject.toml`. python-dotenv's own search climbs from `ichrisbirch/` to the
+first `.env` in any parent directory, so a checkout without one would read a
+home directory's instead. A file never overrides a variable the process already
+holds, so any key can be set for one run without editing a file.
 
 ### Flake 8
 

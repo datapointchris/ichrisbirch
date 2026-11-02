@@ -1,7 +1,6 @@
 import functools
 import os
 import sys
-from pathlib import Path
 
 import dotenv
 import structlog
@@ -166,6 +165,10 @@ class Settings:
         return f'{self.protocol}://{self.fastapi.host}{port}'
 
 
+ENV_FILE = find_project_root() / '.env'
+TESTING_CONFIG = find_project_root() / 'tests' / 'testing.env'
+
+
 def detect_environment() -> str:
     """Detect environment with sensible defaults for development.
 
@@ -181,15 +184,12 @@ def detect_environment() -> str:
     if 'pytest' in sys.modules:
         return 'testing'
 
-    if Path('.env').exists():
-        dotenv.load_dotenv()
+    if ENV_FILE.exists():
+        dotenv.load_dotenv(ENV_FILE)
         if env := os.environ.get('ENVIRONMENT'):
             return env
 
     return 'development'
-
-
-TESTING_CONFIG = find_project_root() / 'tests' / 'testing.env'
 
 
 # @log_caller
@@ -199,13 +199,14 @@ def get_settings():
     os.environ['ENVIRONMENT'] = env
 
     # A test run reads the suite's own configuration and never a checkout's .env, which on a
-    # workstation is the development one. The process environment still overrides it.
+    # workstation is the development one. Each file is named by path, because python-dotenv's
+    # own search climbs past the project to any parent's .env. The environment still wins.
     if env == 'testing':
         if not TESTING_CONFIG.exists():
             raise FileNotFoundError(f'{TESTING_CONFIG} not found: every test run is configured from it.')
         dotenv.load_dotenv(TESTING_CONFIG)
         logger.info('config_loaded_from_testing_config', environment=env, path=str(TESTING_CONFIG))
-    elif dotenv.load_dotenv():
+    elif dotenv.load_dotenv(ENV_FILE):
         logger.info('config_loaded_from_dotenv', environment=env)
     elif os.environ.get('POSTGRES_HOST'):
         logger.info('config_loaded_from_environment', environment=env)
