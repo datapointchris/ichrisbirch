@@ -202,14 +202,32 @@ problem rather than a dead database.
 
 ### Restore
 
-`scripts/bootstrap-homelab.sh` has the restore path, as part of standing a host
-up. It takes a dump file and runs `pg_restore` against the infrastructure
-Postgres:
+A restore replaces the whole database, so every write since the dump is gone.
+Stop the active color's app services and recreate the database first:
+
+```bash
+docker stop icb-<color>-api icb-<color>-vue icb-<color>-scheduler
+docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE ichrisbirch WITH (FORCE);"
+docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
+```
+
+A gzipped plain SQL dump restores through `psql`. `pg_restore` refuses one with
+`input file appears to be a text format dump`:
+
+```bash
+gunzip -c <dump-file> | docker exec -i icb-infra-postgres \
+  psql -U postgres -d ichrisbirch --set ON_ERROR_STOP=1
+```
+
+A custom-format dump restores through `pg_restore`:
 
 ```bash
 docker exec -i icb-infra-postgres \
-  pg_restore -U icb_app -d ichrisbirch --no-owner < <dump-file>
+  pg_restore -U icb_app -d ichrisbirch --no-owner --exit-on-error < <dump-file>
 ```
+
+Then start the services with `docker start`. The bootstrap script takes the same
+two formats when it stands a host up.
 
 Backups go to S3, which is the only thing this project uses AWS for. The AWS
 CLI is installed by the bootstrap script for that purpose, and

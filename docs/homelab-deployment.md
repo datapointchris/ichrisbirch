@@ -259,11 +259,11 @@ docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch O
 
 ### Database Restore from Backup
 
-If you need to restore from a `.dump` file:
+If you need to restore from a `.dump` or `.sql.gz` file:
 
 ```bash
 # Stop app services first
-docker stop icb-prod-api icb-prod-app icb-prod-scheduler
+docker stop icb-<color>-api icb-<color>-vue icb-<color>-scheduler
 
 # Terminate existing connections and recreate database
 docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
@@ -271,10 +271,13 @@ docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
 docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
 
 # Restore from dump
-cat /path/to/backup.dump | docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner
+cat /path/to/backup.dump | docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner --exit-on-error
+
+# A gzipped plain SQL dump restores through psql instead
+gunzip -c /path/to/backup.sql.gz | docker exec -i icb-infra-postgres psql -U postgres -d ichrisbirch --set ON_ERROR_STOP=1
 
 # Start services
-docker start icb-prod-api icb-prod-app icb-prod-scheduler
+docker start icb-<color>-api icb-<color>-vue icb-<color>-scheduler
 ```
 
 ### SSL/Protocol Errors
