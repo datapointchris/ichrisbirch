@@ -69,9 +69,6 @@
           </a>
         </template>
       </nav>
-      <div class="sidebar__issue">
-        <SubmitIssueButton @click="$emit('open-issue')" />
-      </div>
       <div class="sidebar__footer">
         <template
           v-for="link in footerLinks"
@@ -107,7 +104,6 @@ import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
-import SubmitIssueButton from '@/components/SubmitIssueButton.vue'
 import { usePhoneViewport } from '@/composables/usePhoneViewport'
 
 defineProps<{
@@ -116,7 +112,6 @@ defineProps<{
 
 defineEmits<{
   toggle: []
-  'open-issue': []
 }>()
 
 const route = useRoute()
@@ -222,12 +217,6 @@ function isActive(link: NavLink): boolean {
   > * {
     pointer-events: auto;
   }
-}
-
-.sidebar__issue {
-  padding: var(--space-m) 0;
-  display: flex;
-  justify-content: center;
 }
 
 .sidebar__footer {

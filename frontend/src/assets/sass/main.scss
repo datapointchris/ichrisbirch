@@ -26,7 +26,6 @@
 @use 'components/errors';
 @use 'components/loading';
 @use 'components/search_results';
-@use 'components/submit_issue';
 @use 'components/add_edit_modal';
 @use 'components/listing_modal';
 @use 'components/markdown';
@@ -45,7 +44,6 @@
 @use 'pages/events';
 @use 'pages/habits';
 @use 'pages/home';
-@use 'pages/issues';
 @use 'pages/money_wasted';
 @use 'pages/logs';
 @use 'pages/recipes';

@@ -21,7 +21,6 @@
 /habits
 /box-packing
 /projects
-/issues
 /recipes
 /shopping
 /strains
