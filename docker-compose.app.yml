@@ -32,6 +32,7 @@ services:
       - ENVIRONMENT=production
       - DEPLOY_COLOR=${DEPLOY_COLOR}
       - FASTAPI_DEBUG=False
+      - TRACKER_READ_ONLY=true
       # The address the edge serves this API at. Its RFC 9728 metadata names it,
       # and a CLI logging in refuses that document unless it matches exactly.
       - PUBLIC_URL=https://ichrisbirch.com
