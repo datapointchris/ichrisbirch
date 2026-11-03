@@ -267,7 +267,7 @@ post_start_database() {
     sleep 10
 
     # Stop app services during restore
-    docker stop icb-prod-api icb-prod-app icb-prod-scheduler 2>/dev/null || true
+    docker stop icb-prod-api icb-prod-vue icb-prod-scheduler 2>/dev/null || true
 
     # Create role if needed
     local pg_password
@@ -281,11 +281,15 @@ post_start_database() {
     docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
     docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
 
-    # Restore
-    docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner <"$backup_path" || true
+    # Restore. A gzipped dump is plain SQL, which pg_restore refuses.
+    if [[ "$backup_path" == *.gz ]]; then
+      gunzip -c "$backup_path" | docker exec -i icb-infra-postgres psql -U postgres -d ichrisbirch --set ON_ERROR_STOP=1
+    else
+      docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner --exit-on-error <"$backup_path"
+    fi
 
     # Start services back up
-    docker start icb-prod-api icb-prod-app icb-prod-scheduler
+    docker start icb-prod-api icb-prod-vue icb-prod-scheduler
 
     log_success "Database restored"
     rm /tmp/ichrisbirch_db_restore

@@ -11,6 +11,7 @@ from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import Index
 from sqlalchemy import Integer
+from sqlalchemy import Sequence
 from sqlalchemy import Text
 from sqlalchemy import Uuid
 from sqlalchemy import text
@@ -19,7 +20,9 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
-from ichrisbirch.models.item_number_sequence import ITEM_NUMBER_SEQUENCE
+
+# Starts above every number slate held when it took over the issue tracker's records.
+ITEM_NUMBER_SEQUENCE = Sequence('item_numbers', start=100000, metadata=Base.metadata)
 
 PROJECT_KINDS = ['build', 'chore', 'life']
 # 'completed' rather than 'done' so one word covers the concept on a project and
@@ -62,10 +65,9 @@ class Project(Base):
 
     `kind` separates making something new from the work that merely has to
     happen, so a consumer asking "what should I build next" is not handed the
-    next errand. It defaults to `life`, because development work is an issue
-    and a project is personal unless it says otherwise. It is not required,
-    because a required field breaks every existing caller of the create
-    endpoint.
+    next errand. It defaults to `life`, because a project is personal unless it
+    says otherwise. It is not required, because a required field breaks every
+    existing caller of the create endpoint.
 
     `status` is a field rather than the `archived` boolean items carry, because
     for a project completion and hiding are the same event: a project is a
