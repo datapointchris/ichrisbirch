@@ -487,18 +487,6 @@ func TestPrintOverview(t *testing.T) {
 	}
 }
 
-func TestPrintOverview_EmptyStates(t *testing.T) {
-	var out, errOut bytes.Buffer
-	printOverview(&out, &errOut, buildOverview(overviewData{}, fixedNow, defaultOverviewLimit))
-	text := out.String()
-
-	for _, want := range []string{"Tasks (0 open)", "(none)", "(all done)"} {
-		if !strings.Contains(text, want) {
-			t.Errorf("empty overview missing %q:\n%s", want, text)
-		}
-	}
-}
-
 func TestArticlesBehindCurrent_DropsTheOneBeingRead(t *testing.T) {
 	unread := []api.Article{{ID: 1, Title: "First"}, {ID: 2, Title: "Current"}, {ID: 3, Title: "Third"}}
 

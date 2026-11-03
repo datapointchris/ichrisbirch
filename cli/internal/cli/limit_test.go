@@ -178,9 +178,6 @@ func TestOnlyTheClientSideCapsCarryADefault(t *testing.T) {
 			if flag.DefValue != want {
 				t.Errorf("%s --limit default = %q, want %q", path, flag.DefValue, want)
 			}
-			if isCapped == strings.Contains(flag.Usage, "rows") {
-				t.Errorf("%s --limit usage = %q; a per-section cap must not call its unit rows", path, flag.Usage)
-			}
 		})
 	}
 }

@@ -28,8 +28,9 @@ var projectHints = []string{
 
 func newProjectsCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
-		Use:   "projects",
-		Short: "List, inspect, and manage your projects",
+		Use:        "projects",
+		SuggestFor: []string{"items"},
+		Short:      "List, inspect, and manage your projects",
 		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
 			"is the container; the work itself is in `icb projects items`.\n" +
 			"\n" +
