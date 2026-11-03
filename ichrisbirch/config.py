@@ -70,8 +70,6 @@ class FastAPISettings:
         # A CLI compares the document's resource with its own URL stripped of a trailing
         # slash, so the slash is stripped here, once, for the path and the document alike.
         self.public_url: str | None = (os.environ.get('PUBLIC_URL') or '').rstrip('/') or None
-        # On while the issue tracker's rows move to slate, so no write lands after the dump the copy reads.
-        self.tracker_read_only: bool = os.environ.get('TRACKER_READ_ONLY') == 'true'
         self.title: str = 'iChrisBirch API'
         self.description: str = """## Backend API for iChrisBirch.com"""
         _protocol = os.environ['PROTOCOL']

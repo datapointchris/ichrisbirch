@@ -111,46 +111,7 @@ reason, and a scoped client that names no `timezone` gets UTC.
 the same view over HTTP holds the scope named for that command, so its comment
 in `SCOPE_ROUTES` names the command. `icb overview` has no route of its own. It
 fans out to every list a lane draws from, so `icb.overview.read` lists each of
-them, the issue and project-item lists included, and renders every lane alone.
-
-**`icb.issues.close` writes, and the handler narrows it to a close.** It lists
-the comment route and the issue update, which is what a scheduled job sends to
-complete an issue once its fix merged. A route permits by method and template,
-never by body, so the update handler narrows a scoped client's body naming
-`status` or `closed_by` to those two fields, a closing status, and an issue
-still open. A close naming no closer is stamped with the client's id.
-*Rejected:* `icb.issues.write`, which reads as every write route, and a
-dedicated close route, which would be a second way to close beside the update.
-
-**`icb.issues.claim` holds an issue, and the handlers narrow it to the client's
-own claim.** It lists the claim and release of a named issue, which a scheduled
-job sends to keep an issue out of the ready queue while its fix agent carries it.
-Release frees whoever holds an issue, so a scoped client's claim must name its
-own client id, and its release is refused on an issue another claimant holds or
-a person set in progress. The queue's own claim, which takes the head of the
-queue, is not listed, because the job names the issue it files. *Rejected:*
-stamping the client id over whatever claimant the body names, which would print
-one claimant to the caller and store another.
-
-**`icb.issues.plan` orders the queue, and the handlers narrow its edit to
-priority and initiative.** It lists the issue update, the rank move, filing an
-issue, and creating and updating an initiative. That is what a scheduled
-planning job sends to re-tier the queue, regroup it and re-rank it. Filing reads
-the vocabulary first, so that read is listed too. Nothing under it deletes, and
-it lists no comment, because the job writes none.
-
-The issue update is listed under both scopes, so the handler picks the narrowing
-from the body. A body naming `status` or `closed_by` is a close, and meets the
-close's narrowing when the client holds `icb.issues.close`. Every other body, and
-a close from a client holding only `icb.issues.plan`, may set only `priority`
-and `initiative`. So a client holding both is refused an update that sets a
-title. An initiative's update is not narrowed: the scope that completes and
-drops one also renames it and reopens it.
-
-A scoped client files only into triage, and under no parent. Triage holds the
-issue until a person accepts it, so a job's filing never reaches the ready queue
-on its own. A parent waits on each of its open children, so a filing naming one
-would take an issue already in the queue out of it.
+them, the project-item lists included, and renders every lane alone.
 
 `permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
 requests every listed route as a scoped client and requires its success status,
@@ -162,4 +123,4 @@ The CLI's suite runs each call a scheduled job makes as a service, in
 `TestService_EachScheduledCallSendsARouteTheRequestedScopesReach`, and requires
 every request it sends to match a route listed there for a scope the CLI
 requests. A `{name:path}` template matches any segments, as FastAPI's path
-converter does, because a job names an initiative by its name.
+converter does, because a project is named by its name.

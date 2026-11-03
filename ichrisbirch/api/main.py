@@ -11,7 +11,6 @@ import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import FastAPI
-from fastapi import Request
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -38,7 +37,6 @@ from ichrisbirch.api.protected_resource import add_protected_resource_route
 from ichrisbirch.api.redis_client import REQUEST_READ_TIMEOUT_SECONDS
 from ichrisbirch.api.redis_client import get_redis_client
 from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
 from ichrisbirch.util import log_caller
 
 logger = structlog.get_logger()
@@ -159,15 +157,6 @@ async def api_exception_handler(request, exc):
     return error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, f'Internal server error: {type(exc).__name__}')
 
 
-TRACKER_READ_METHODS = frozenset({'GET', 'HEAD', 'OPTIONS'})
-
-
-def refuse_tracker_writes(request: Request, settings: Settings = Depends(get_settings)) -> None:
-    """Refuse every write to the issue tracker while `TRACKER_READ_ONLY` holds it for the move to slate."""
-    if settings.fastapi.tracker_read_only and request.method not in TRACKER_READ_METHODS:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, 'The issue tracker is read-only while its issues move to slate.')
-
-
 @log_caller
 def create_api(settings: Settings) -> FastAPI:
     @asynccontextmanager
@@ -228,11 +217,6 @@ def create_api(settings: Settings) -> FastAPI:
     v1.include_router(endpoints.patterns.router, prefix='/patterns', dependencies=deps)
     v1.include_router(endpoints.events.router, prefix='/events', dependencies=scoped_deps)
     v1.include_router(endpoints.habits.router, prefix='/habits', dependencies=scoped_deps)
-    # Ahead of /issues, whose /{id}/ would otherwise read "initiatives" as an issue.
-    tracker_guard = Depends(refuse_tracker_writes)
-    v1.include_router(endpoints.issue_initiatives.router, prefix='/issues/initiatives', dependencies=[*scoped_deps, tracker_guard])
-    v1.include_router(endpoints.issue_labels.router, prefix='/issues/labels', dependencies=[*deps, tracker_guard])
-    v1.include_router(endpoints.issues.router, prefix='/issues', dependencies=[*scoped_deps, tracker_guard])
     v1.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
     v1.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)
     v1.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=scoped_deps)
