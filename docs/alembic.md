@@ -92,6 +92,7 @@ Production's `alembic_version` table contains `e010f859f025`. The new baseline m
 - **Deleting migrations before stamping production**: Same failure — production references a revision that no longer exists
 - **Forgetting INSERT statements**: Autogenerate only creates tables, not data. Lookup tables need their rows inserted in the migration
 - **Forgetting CREATE SCHEMA**: Autogenerate never creates a schema. A replay from an empty database then fails on the first table in a non-`public` schema
+- **Forgetting a sequence's start**: `alembic check` does not compare it. A baseline's `CREATE SEQUENCE item_numbers` needs the `START WITH` its model declares, or a fresh database numbers items from 1
 - **Using `alembic stamp --purge` as a deployment strategy**: This is a recovery tool, not a workflow. If you need `--purge`, something already went wrong
 
 ## Lookup Tables (Replacing PostgreSQL ENUMs)
@@ -131,7 +132,7 @@ category: str
 | `alembic revision --autogenerate -m "msg"` | Generate migration from model changes |
 | `alembic revision -m "msg"` | Create empty migration (for hand-written) |
 | `alembic upgrade head` | Apply all pending migrations |
-| `alembic downgrade -1` | Roll back one migration |
+| `alembic downgrade -1` | Roll back one migration. An irreversible revision refuses, and its message names the recovery |
 | `alembic current` | Show current database revision |
 | `alembic history` | Show migration chain |
 | `alembic check` | Verify models match database (no pending changes) |
@@ -140,7 +141,7 @@ category: str
 
 ## Troubleshooting
 
-**"Can't locate revision"**: Production's `alembic_version` points to a revision that doesn't exist in the current migration files. Usually means migrations were squashed without matching the revision ID. Fix with `alembic stamp --purge head`, but understand why it happened first.
+**"Can't locate revision"**: Production's `alembic_version` points to a revision that doesn't exist in the current migration files. Usually means migrations were squashed without matching the revision ID. Fix with `alembic stamp --purge head`, but understand why it happened first. If the missing revision was applied and then reverted, do not stamp. A stamp records a revision over a database it does not describe, and the next upgrade then fails on what that database already lost. Restore the dump the revision's refusal names.
 
 **"Target database is not up to date"**: Run `alembic upgrade head`. If that fails, check `SELECT version_num FROM alembic_version` and compare against `alembic history`.
 

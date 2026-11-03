@@ -21,7 +21,8 @@ from sqlalchemy.orm import relationship
 
 from ichrisbirch.database.base import Base
 
-ITEM_NUMBER_SEQUENCE = Sequence('item_numbers', metadata=Base.metadata)
+# Starts above every number slate held when it took over the issue tracker's records.
+ITEM_NUMBER_SEQUENCE = Sequence('item_numbers', start=100000, metadata=Base.metadata)
 
 PROJECT_KINDS = ['build', 'chore', 'life']
 # 'completed' rather than 'done' so one word covers the concept on a project and
