@@ -28,6 +28,20 @@ export const DEFAULT_SIDEBAR_ORDER = [
   '/tasks',
 ]
 
+// A saved path with no link is skipped, and a link the order does not name goes last.
+export function orderedMainLinks(savedOrder: string[] | undefined): NavLink[] {
+  const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
+  const sorted: NavLink[] = []
+  for (const path of savedOrder ?? DEFAULT_SIDEBAR_ORDER) {
+    const link = linkMap.get(path)
+    if (link) {
+      sorted.push(link)
+      linkMap.delete(path)
+    }
+  }
+  return [...sorted, ...linkMap.values()]
+}
+
 export const allMainLinks: NavLink[] = [
   { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: true },
   { to: '/today', label: 'Today', icon: 'fa-solid fa-sun', migrated: true },

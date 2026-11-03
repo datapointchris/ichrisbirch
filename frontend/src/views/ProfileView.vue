@@ -204,7 +204,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
 import { applyTheme, applyFont, applyAccentHue, fonts, themes } from '@/composables/useTheme'
 import { ApiError } from '@/api/errors'
-import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
+import { allMainLinks, orderedMainLinks, type NavLink } from '@/components/sidebarLinks'
 import draggable from 'vuedraggable'
 import { formatDate } from '@/composables/formatDate'
 import { displayZone } from '@/composables/displayZone'
@@ -328,20 +328,7 @@ onMounted(async () => {
     if (auth.preferences.custom_accent_hue) {
       accentHue.value = Number(auth.preferences.custom_accent_hue)
     }
-    const order = (auth.preferences.sidebar_order as string[] | undefined) ?? DEFAULT_SIDEBAR_ORDER
-    const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
-    const sorted: NavLink[] = []
-    for (const path of order) {
-      const link = linkMap.get(path)
-      if (link) {
-        sorted.push(link)
-        linkMap.delete(path)
-      }
-    }
-    for (const link of linkMap.values()) {
-      sorted.push(link)
-    }
-    sidebarLinks.value = sorted
+    sidebarLinks.value = orderedMainLinks(auth.preferences.sidebar_order as string[] | undefined)
   } else {
     sidebarLinks.value = [...allMainLinks]
   }

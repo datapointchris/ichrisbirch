@@ -103,7 +103,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { allMainLinks, DEFAULT_SIDEBAR_ORDER, type NavLink } from '@/components/sidebarLinks'
+import { orderedMainLinks, type NavLink } from '@/components/sidebarLinks'
 import { usePhoneViewport } from '@/composables/usePhoneViewport'
 
 defineProps<{
@@ -118,22 +118,7 @@ const route = useRoute()
 const auth = useAuthStore()
 const isPhone = usePhoneViewport()
 
-const mainLinks = computed(() => {
-  const order = (auth.preferences?.sidebar_order as string[] | undefined) ?? DEFAULT_SIDEBAR_ORDER
-  const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
-  const sorted: NavLink[] = []
-  for (const path of order) {
-    const link = linkMap.get(path)
-    if (link) {
-      sorted.push(link)
-      linkMap.delete(path)
-    }
-  }
-  for (const link of linkMap.values()) {
-    sorted.push(link)
-  }
-  return sorted
-})
+const mainLinks = computed(() => orderedMainLinks(auth.preferences?.sidebar_order as string[] | undefined))
 
 const footerLinks = computed(() => {
   const links: NavLink[] = [
