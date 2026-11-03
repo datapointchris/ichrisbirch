@@ -15,6 +15,9 @@ foreign-key action changes rows the ORM never loaded.
 A table's trigger is created in its migration. `test_every_table_is_audited_but_what_opts_out`
 fails on a mapped table without one, and gives the statement to add.
 
+A dropped table's entries stay. A drop fires no row trigger, so the trail records nothing for it,
+and `record-changes` still reads the table's history by name.
+
 The logs do not replace the trail. They are kept for a fixed retention period, and a log line or
 span records that a request ran, never which values it changed. Each entry carries the
 `request_id` or `job_run_id` of the write, which joins it to the logs while they last.
