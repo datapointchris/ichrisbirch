@@ -153,7 +153,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 **Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik, which `icbops test e2e` runs inside the test stack). E2E tests ALWAYS run against test containers, never dev.
 
 **Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`).
-`stubActions: true` stubs every function a setup store returns, pure helpers included, so a helper a view calls while rendering lives at module level and is imported (`compareQueueOrder` in `stores/tasks.ts`).
+`stubActions: true` stubs every function a setup store returns, pure helpers included, so a helper a view calls while rendering lives at module level and is imported.
 
 **E2E smoke-only pattern**: E2E tests are trimmed to smoke-level — each page keeps: CORS/API check, page load, sidebar nav, one CRUD roundtrip. Interaction-heavy tests (edit modals, toggles, filters, search) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 

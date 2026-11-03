@@ -1,10 +1,8 @@
 # icb — the ichrisbirch data CLI
 
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
-programmatic front door to the personal-productivity apps (tasks, autotasks,
-projects, countdowns, books, articles, habits, patterns, events,
-recipes, cooking-techniques, strains, shopping) and the
-**replacement for the retired MCP server** — the agent and power-user surface,
+programmatic front door to the personal-productivity apps, which `icb --help`
+lists by group, and the **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
 
 It is a per-machine developer tool, not one of the deployed containers. The bash
@@ -105,7 +103,7 @@ names its confidential client, `icb-svc-<machine>`, as `client_id`, and
 `ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
 is told which one to write. icb then requests a token
 through the client-credentials grant on each run, asking for
-`icb.project-items.read`, and stores nothing. `auth login` and
+the scopes `config.Service` names, and stores nothing. `auth login` and
 `auth logout` refuse in that mode. The API never resolves that token to a user.
 It answers 403 on every route its scopes do not list.
 `ichrisbirch/api/client_scopes.py` holds that table, and a refused call's message
@@ -151,10 +149,9 @@ Client id is per (machine × app): `icb-cli-<shorthostname>`.
 ## `icb overview` — the cross-cutting snapshot
 
 Every other command is `icb <resource> <verb>`. `overview` is the composition
-that crosses every app: open tasks, habits still due today, current and next
-reading, the project in focus with its next and blocked items, and approaching
-countdowns and events — fetched concurrently and returned as one payload, so a dashboard needs a single call
-instead of one per app.
+that crosses every app, fetched concurrently and returned as one payload, so a
+dashboard needs a single call instead of one per app. `icb overview --help` names
+its sections.
 
 Projects are worked one at a time. The focus is the highest-ranked active project
 holding an open item, and it is the only project `overview` and `projects next`

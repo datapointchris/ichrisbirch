@@ -64,8 +64,8 @@ const (
 )
 
 // overviewReport is the stable JSON schema for `overview --json`: the "what is
-// outstanding right now" snapshot composed from the task, habit, book, article,
-// project-item, countdown, and event endpoints.
+// outstanding right now" snapshot composed from the endpoints `overviewFetches`
+// names.
 type overviewReport struct {
 	SchemaVersion int                `json:"schema_version"`
 	GeneratedAt   time.Time          `json:"generated_at"`

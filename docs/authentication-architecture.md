@@ -123,4 +123,4 @@ The CLI's suite runs each call a scheduled job makes as a service, in
 `TestService_EachScheduledCallSendsARouteTheRequestedScopesReach`, and requires
 every request it sends to match a route listed there for a scope the CLI
 requests. A `{name:path}` template matches any segments, as FastAPI's path
-converter does, because a project is named by its name.
+converter does, because a project name may hold a slash.
