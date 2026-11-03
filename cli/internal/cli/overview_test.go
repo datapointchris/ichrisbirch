@@ -311,38 +311,6 @@ func TestBooksByProgress_PreservesServerOrder(t *testing.T) {
 	}
 }
 
-// An expired claim sorts as ready, not in progress. A decision in triage
-// counts as triage.
-func TestSortIssueQueue_KeepsDecisionsOutOfTheAgentQueue(t *testing.T) {
-	queue := sortIssueQueue([]api.Issue{
-		{Number: 1, Type: "bug", Status: api.IssueStatusOpen, IsReady: true},
-		{Number: 2, Type: api.IssueTypeDecision, Status: api.IssueStatusOpen, IsReady: true},
-		{Number: 3, Type: "task", Status: api.IssueStatusInProgress, IsReady: true},
-		{Number: 4, Type: "task", Status: api.IssueStatusInProgress},
-		{Number: 5, Type: api.IssueTypeDecision, Status: api.IssueStatusTriage},
-		{Number: 6, Type: "chore", Status: api.IssueStatusOpen, IsBlocked: true},
-	})
-	numbers := func(issues []api.Issue) []int {
-		out := []int{}
-		for _, issue := range issues {
-			out = append(out, issue.Number)
-		}
-		return out
-	}
-	if got := numbers(queue.ready); !slices.Equal(got, []int{1, 3}) {
-		t.Errorf("ready = %v, want 1 then the expired claim 3", got)
-	}
-	if got := numbers(queue.inProgress); !slices.Equal(got, []int{4}) {
-		t.Errorf("in progress = %v, want the live claim 4", got)
-	}
-	if got := numbers(queue.decisions); !slices.Equal(got, []int{2}) {
-		t.Errorf("decisions = %v, want 2 alone", got)
-	}
-	if queue.triage != 1 {
-		t.Errorf("triage = %d, want the triaged decision counted there", queue.triage)
-	}
-}
-
 func TestUpcomingCountdownsDropThePast(t *testing.T) {
 	countdowns := upcomingCountdowns([]api.Countdown{
 		{ID: 1, Name: "Past", DueDate: "2026-07-01"},

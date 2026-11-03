@@ -31,17 +31,11 @@ const product = "icb"
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
-// The scopes a service client requests. Authelia grants only the scopes a
+// The scope a service client requests. Authelia grants only the scopes a
 // request names, so a request naming none gets a token the API refuses. It
 // refuses the whole request when one names a scope the client does not hold.
-// ichrisbirch/api/client_scopes.py lists the routes each one reaches.
-const (
-	projectItemsScope = "icb.project-items.read"
-	issuesScope       = "icb.issues.read"
-	issuesClaimScope  = "icb.issues.claim"
-	issuesCloseScope  = "icb.issues.close"
-	issuesPlanScope   = "icb.issues.plan"
-)
+// ichrisbirch/api/client_scopes.py lists the routes it reaches.
+const projectItemsScope = "icb.project-items.read"
 
 // ClientSecretEnv selects the client-credentials grant, for the client the
 // config file names. It is read from the environment alone, so it is never
@@ -169,5 +163,5 @@ func IsService() bool { return ClientSecret() != "" }
 // grant. Nothing it obtains is stored, so it names no keyring or state
 // directory.
 func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope, issuesScope, issuesClaimScope, issuesCloseScope, issuesPlanScope}}
+	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope}}
 }

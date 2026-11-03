@@ -76,10 +76,6 @@ func withRegistry(t *testing.T, body string) {
 func TestAReadRefusesAnUnregisteredRepo(t *testing.T) {
 	withRegistry(t, `{"repos":[{"name":"dotfiles"}]}`)
 	for _, args := range [][]string{
-		{"issues", "list", "--repo", "dotfile"},
-		{"issues", "search", "backup", "--repo", "dotfile"},
-		{"issues", "next", "--repo", "dotfile"},
-		{"issues", "tree", "--repo", "dotfile"},
 		{"projects", "list", "--repo", "dotfile"},
 		{"projects", "next", "--repo", "dotfile"},
 		{"projects", "items", "list", "--repo", "dotfile"},

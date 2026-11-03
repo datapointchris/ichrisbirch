@@ -186,11 +186,10 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 		t.Fatalf("decode the API's scope table: %v", err)
 	}
 
-	// A {name} in these templates is a UUID, or for an issue its number. Matched
-	// as any segment, /project-items/{id} would also take /project-items/search
-	// and /issues/{id} would take /issues/vocabulary, both of which FastAPI
+	// A {name} in these templates is a UUID or a number. Matched as any segment,
+	// /project-items/{id} would also take /project-items/search, which FastAPI
 	// routes to another handler. A {name:path} is FastAPI's path converter, which
-	// takes any segments, and an initiative is named by its name.
+	// takes any segments.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)
 	scopes := config.Service(goclilogin.Deployment{}).Scopes
@@ -213,77 +212,24 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 		}
 	}
 
-	idp := serviceIDP(t)
-	openIssue := `{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"open"}`
-	heldIssue := `{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b","number":412,"title":"t","status":"in_progress","claimed_by":"` +
-		serviceClientID + `","claim_expires_ts":"2026-10-20T00:00:00Z"}`
-	for _, call := range []struct {
-		args []string
-		body string
-		// byPath answers a call that makes a second request of another shape.
-		byPath map[string]string
-	}{
-		{[]string{"projects", "items", "search", "sync"}, `[]`, nil},
-		{[]string{"issues", "search", "sync", "--json"}, `[]`, nil},
-		{[]string{"issues", "list", "--json"}, `[]`, nil},
-		{[]string{"issues", "list", "--blocked", "--json"}, `[]`, nil},
-		{[]string{"issues", "next", "--json"}, `[]`, nil},
-		{[]string{"issues", "show", "412", "--json"}, `{}`, nil},
-		{[]string{"issues", "show", "019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5b", "--json"}, `{}`, nil},
-		{[]string{"issues", "initiatives", "list", "--json"}, `[]`, nil},
-		{
-			[]string{"issues", "initiatives", "show", "Practical help guides", "--json"},
-			`[]`,
-			map[string]string{"/api/v1/issues/initiatives/Practical help guides": `{}`},
-		},
-		{[]string{"issues", "claim", "412", "--minutes", "2880"}, heldIssue, nil},
-		{[]string{"issues", "release", "412"}, openIssue, nil},
-		{[]string{"issues", "add-comment", "412", "--body", "Landed: a merged fix"}, `{}`, nil},
-		{[]string{"issues", "complete", "412"}, openIssue, nil},
-		{[]string{"issues", "edit", "412", "--priority", "none", "--initiative", "Practical help guides"}, openIssue, nil},
-		{[]string{"issues", "reorder", "412", "--after", "398"}, openIssue, nil},
-		{
-			[]string{"issues", "create", "--title", "Left of the guides", "--initiative", "Practical help guides", "--status", "triage"},
-			`{}`,
-			map[string]string{"/api/v1/issues/initiatives": `[{"id":"019a2b3c-4d5e-7f60-8a9b-0c1d2e3f4a5c","name":"Practical help guides"}]`},
-		},
-		{[]string{"issues", "initiatives", "create", "--name", "Practical help guides", "--priority", "high"}, `{}`, nil},
-		{[]string{"issues", "initiatives", "drop", "Practical help guides", "--reason", "Merged into the help initiative"}, `{}`, nil},
-	} {
-		t.Run(strings.Join(call.args, " "), func(t *testing.T) {
-			var sent []string
-			api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				sent = append(sent, r.Method+" "+r.URL.Path)
-				// The API refuses a scoped client any claimant but its own id.
-				if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/claim") {
-					var claim struct {
-						Claimant string `json:"claimant"`
-					}
-					if err := json.NewDecoder(r.Body).Decode(&claim); err != nil || claim.Claimant != serviceClientID {
-						t.Errorf("a service claimed as %q (%v), want its client id %s", claim.Claimant, err, serviceClientID)
-					}
-				}
-				w.Header().Set("Content-Type", "application/json")
-				body, ok := call.byPath[r.URL.Path]
-				if !ok {
-					body = call.body
-				}
-				_, _ = w.Write([]byte(body))
-			}))
-			t.Cleanup(api.Close)
-			asService(t, idp.URL, api.URL, serviceSecret)
-			if _, err := runService(t, call.args...); err != nil {
-				t.Fatalf("run as a service: %v", err)
-			}
-			if len(sent) == 0 {
-				t.Fatal("sent nothing to hold against the scopes")
-			}
-			for _, request := range sent {
-				if !slices.ContainsFunc(listed, func(re *regexp.Regexp) bool { return re.MatchString(request) }) {
-					t.Errorf("sent %s, which the API lists for none of %v", request, scopes)
-				}
-			}
-		})
+	var sent []string
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sent = append(sent, r.Method+" "+r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(api.Close)
+	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
+	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
+		t.Fatalf("run as a service: %v", err)
+	}
+	if len(sent) == 0 {
+		t.Fatal("sent nothing to hold against the scopes")
+	}
+	for _, request := range sent {
+		if !slices.ContainsFunc(listed, func(re *regexp.Regexp) bool { return re.MatchString(request) }) {
+			t.Errorf("sent %s, which the API lists for none of %v", request, scopes)
+		}
 	}
 }
 

@@ -2,7 +2,7 @@
 
 `icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
 programmatic front door to the personal-productivity apps (tasks, autotasks,
-projects, issues, countdowns, books, articles, habits, patterns, events,
+projects, countdowns, books, articles, habits, patterns, events,
 recipes, cooking-techniques, strains, shopping) and the
 **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
@@ -23,39 +23,6 @@ it, because an item is only meaningful inside a project: item CRUD,
 complete/reopen, archive/unarchive, reorder, multi-project membership,
 dependencies and blockers, sub-task verbs, and `tree` for the dependency graph as
 a drawing or as nodes and edges under `--json`.
-
-`icb issues` is development work. It is kept apart from projects so a personal
-project never has to take the shape of a ticket. An issue needs no project:
-`--repo`, labels and dependencies place it, and an optional initiative groups
-issues toward one outcome. Issue numbers come from the sequence project items
-use, so a bare `#812` names one row in either store.
-
-`icb issues next` is the ready queue. An issue is ready when it is open or its
-claim has expired, its deferral day has arrived, every dependency and child
-is closed, and its initiative is not someday. The queue leaves decisions out,
-because they wait on a person rather than an agent. `next --type decision`
-lists them. `next --autofixable` leaves out an issue when it, its initiative or
-an unclosed parent sets `autofix` false. The queue orders by effective priority, then rank. A blocker inherits the most urgent priority of what it
-blocks, so a `none` issue gating an urgent bug prints as `urgent*`. The star
-marks a priority the issue did not set.
-
-`icb issues claim` takes the head of that queue, and `claim <issue>` takes one
-named issue. The server takes each with a compare-and-set, so two sessions
-asking at once never hold the same issue. A claim expires after `--minutes`,
-which leaves a dead session's issue claimable rather than held. The claimant
-defaults to the Claude Code session when there is one, else `user@host`. Two
-sessions on one host sharing `user@host` would otherwise extend each other's
-claims. Taking work is a verb rather than a `next --claim` flag, because a flag
-never decides whether a command writes.
-
-The lifecycle verbs refuse an issue in the wrong state rather than writing a
-no-op. `accept` takes an issue out of triage. `complete` and `cancel` (with
-`--reason` or `--duplicate-of`) close it, and `reopen` returns it to the queue.
-`reorder --before|--after` moves an issue's rank. `add-dependency` refuses a
-cycle and prints its path. `tree` draws the dependency graph the way `projects
-items tree` does. `initiatives` and `labels` manage the two groupings, and
-`vocabulary` prints every closed value. An issue carries at most one label from
-each group, such as one `area-*`. Nothing closes an issue for its age.
 
 The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
@@ -138,23 +105,18 @@ names its confidential client, `icb-svc-<machine>`, as `client_id`, and
 `ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
 is told which one to write. icb then requests a token
 through the client-credentials grant on each run, asking for
-`icb.project-items.read`, `icb.issues.read`, `icb.issues.claim`,
-`icb.issues.close` and `icb.issues.plan`, and stores nothing. `auth login` and
+`icb.project-items.read`, and stores nothing. `auth login` and
 `auth logout` refuse in that mode. The API never resolves that token to a user.
 It answers 403 on every route its scopes do not list.
 `ichrisbirch/api/client_scopes.py` holds that table, and a refused call's message
-names the routes its scopes reach. A claim is signed with the client's id, and a
-release frees only a claim that id holds. An update either closes an open issue
-or sets only its priority and initiative, so a service cannot retitle or rewrite
-one. A filing goes into triage, under no parent.
+names the routes its scopes reach.
 
 A workload whose broker hands it short-lived tokens holds no secret instead. Its
 config file names the broker's command as `token_command`, an argv such as
 `["broker", "token", "icb"]`, and needs only `api` beside it. icb runs the
 command whenever its last token has expired, and sends the `access_token` it
-prints (RFC 6749 § 5.1). The token speaks for the service client that minted it,
-so `client_id` names that client where a claim is to default to it. `auth
-status` reports the credential as `external_account`. `auth login` and `auth
+prints (RFC 6749 § 5.1). The token speaks for the service client that minted it.
+`auth status` reports the credential as `external_account`. `auth login` and `auth
 logout` refuse, and a 401 names the command rather than a login. A file setting
 `token_command` while `ICB_CLIENT_SECRET` is set is refused.
 
@@ -190,9 +152,8 @@ Client id is per (machine × app): `icb-cli-<shorthostname>`.
 
 Every other command is `icb <resource> <verb>`. `overview` is the composition
 that crosses every app: open tasks, habits still due today, current and next
-reading, the project in focus with its next and blocked items, the issues ready,
-claimed and awaiting a decision, and approaching countdowns and events — fetched
-concurrently and returned as one payload, so a dashboard needs a single call
+reading, the project in focus with its next and blocked items, and approaching
+countdowns and events — fetched concurrently and returned as one payload, so a dashboard needs a single call
 instead of one per app.
 
 Projects are worked one at a time. The focus is the highest-ranked active project
@@ -216,8 +177,8 @@ icb overview --limit 3       # a tighter per-section cap
 error. What it counts differs by command: a list read caps rows and omitting the
 flag returns every one of them, except `shopping history`, whose purchase log
 only grows and so comes back capped at its newest rows. `overview` caps each
-section separately, and `projects next` and `issues next` cap what they
-print and say on stderr how many rows the cap left out. Each `--help` names its
+section separately, and `projects next` caps what it prints and says on
+stderr how many rows the cap left out. Each `--help` names its
 own unit and default.
 
 Contract notes for consumers (a terminal dashboard is the first):
@@ -402,7 +363,6 @@ path alone, whether or not the file exists.
 | --- | --- | --- |
 | `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant for the file's `client_id` |
 | `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
-| `ICB_ACTOR` | unset | names the worker a scheduler is running; `docs/issues.md` gives the identity it signs claims, comments and closes with |
 
 The registry is the one file icb reads that other tools also read, so it resolves
 through three rungs rather than two: `$ICB_REPOS_REGISTRY`, then `repos_registry`
@@ -431,7 +391,7 @@ internal/config/           → OIDC + API settings, and the machine config file
 internal/cli/              → cobra command tree
 internal/api/              → REST client + wire-contract DTOs
 internal/prompt/           → the guided-create form (§ Guided create)
-internal/graph/            → dependency-graph layout for `projects items tree` and `issues tree`
+internal/graph/            → dependency-graph layout for `projects items tree`
 internal/repos/            → the machine's repo registry, for --repo validation
 ```
 
