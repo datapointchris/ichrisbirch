@@ -36,15 +36,13 @@ func withAPIFlag(cmd *cobra.Command) *cobra.Command {
 }
 
 // The root's help sections. Overview comes first because it is where the root's
-// own help says to start, and development work has a section of its own since
-// it is the one app agents file into.
+// own help says to start.
 const (
-	groupOverview    = "overview"
-	groupDevelopment = "development"
-	groupPlanning    = "planning"
-	groupTracking    = "tracking"
-	groupLibrary     = "library"
-	groupSetup       = "setup"
+	groupOverview = "overview"
+	groupPlanning = "planning"
+	groupTracking = "tracking"
+	groupLibrary  = "library"
+	groupSetup    = "setup"
 )
 
 // Within a namespace whose verbs both read and change something, the verbs
@@ -110,24 +108,19 @@ func NewRootCommand() *cobra.Command {
 	root := goclikit.AsNamespace(&cobra.Command{
 		Use:   "icb",
 		Short: "The ichrisbirch data CLI",
-		Long: "icb reads and edits the ichrisbirch personal-productivity apps — tasks,\n" +
-			"autotasks, projects, issues, books, articles, habits, patterns, recipes,\n" +
-			"cooking techniques, countdowns, events, strains, and the shopping list.\n" +
+		Long: "icb reads and edits the ichrisbirch personal-productivity apps, grouped below.\n" +
 			"\n" +
 			"Start with `icb overview` for what is outstanding in every app at once.\n" +
 			"Each section stops at ten rows, so the one that caught your eye continues\n" +
-			"under its own noun: `icb tasks list`, `icb issues next`.\n" +
-			"\n" +
-			"Development work is `icb issues`, and `icb issues next` is the order to\n" +
-			"take it in. `icb projects` holds personal projects, never development work.\n" +
+			"under its own noun: `icb tasks list`, `icb projects next`.\n" +
 			"\n" +
 			"The noun comes first and the verb last: `icb books list` becomes\n" +
 			"`icb books edit`. Every read verb takes --json. Run any partial command\n" +
 			"bare to see what comes next. Authenticate once with `icb auth login <url>`;\n" +
 			"`icb auth status` shows where icb is pointed.",
 		Example: "  icb overview\n" +
-			"  icb issues next --repo ichrisbirch --limit 1\n" +
-			"  icb issues show 42\n" +
+			"  icb projects next --limit 1\n" +
+			"  icb projects items show 42\n" +
 			"  icb habits complete 5\n" +
 			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Version:       version,
@@ -162,7 +155,6 @@ func NewRootCommand() *cobra.Command {
 
 	root.AddGroup(
 		&cobra.Group{ID: groupOverview, Title: "Overview commands:"},
-		&cobra.Group{ID: groupDevelopment, Title: "Development commands:"},
 		&cobra.Group{ID: groupPlanning, Title: "Planning commands:"},
 		&cobra.Group{ID: groupTracking, Title: "Tracking commands:"},
 		&cobra.Group{ID: groupLibrary, Title: "Library commands:"},
@@ -170,7 +162,6 @@ func NewRootCommand() *cobra.Command {
 	)
 	root.SetCompletionCommandGroupID(groupSetup)
 	root.AddCommand(inGroup(groupOverview, withAPIFlag(newOverviewCommand()))...)
-	root.AddCommand(inGroup(groupDevelopment, withAPIFlag(newIssuesCommand()))...)
 	root.AddCommand(inGroup(groupPlanning,
 		withAPIFlag(newProjectsCommand()),
 		withAPIFlag(newTasksCommand()),

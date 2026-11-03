@@ -106,8 +106,6 @@ class Issue(FractionallyRanked, Base):
     is never ambiguous between the two.
 
     Order is effective priority, then `rank`, then `number`.
-    `services/issue_readiness.py` derives the effective priority, and
-    `services/issue_rank.py` places `rank`.
 
     A claim is how an agent takes an issue: one compare-and-set writes
     `claimed_by`, `claim_expires_ts` and `in_progress` together. An agent that

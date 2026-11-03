@@ -52,10 +52,8 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 		meant string
 	}{
 		{[]string{"tasjs"}, "tasks"},
+		{[]string{"items", "show", "848"}, "projects"},
 		{[]string{"tasks", "lisy"}, "list"},
-		{[]string{"items", "show", "848"}, "issues"},
-		{[]string{"show", "848", "--json"}, "issues"},
-		{[]string{"search", "golang"}, "issues"},
 		{[]string{"projects", "itms", "--json"}, "items"},
 		{[]string{"projects", "items", "lisz", "--json"}, "list"},
 	} {

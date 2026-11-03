@@ -40,9 +40,6 @@ LIMITED_READS = [
     ('/habits', 'habitcategories'),
     ('/habits/categories', 'habitcategories'),
     ('/habits/completed', 'habitcategories'),
-    ('/issues', 'issues'),
-    ('/issues/ready', 'issues'),
-    ('/issues/initiatives', 'issue_initiatives'),
     ('/patterns', 'patterns'),
     ('/projects', 'projects'),
     ('/recipes', 'recipes'),
@@ -65,13 +62,9 @@ READ_IDS = [endpoint for endpoint, _ in LIMITED_READS]
 #   /admin/system/health  one status report
 #   /strains/vocabulary   the whole declared vocabulary, which a client reads to
 #                         build its dropdowns — a short one offers fewer values
-#   /issues/vocabulary    every value an issue's closed fields accept, for the
-#                         same reason
 #   /recipes/vocabulary   every value a recipe's closed fields accept, for the
 #                         same reason
-#   /issues/labels        the closed label vocabulary, which a picker must
-#                         offer whole
-#   /tasks/categories     every task category with its window, for the same reason
+#   /tasks/categories    every task category with its window, for the same reason
 #   /habits/day           one day's board, bounded by the habits you track. A cap
 #                         hides a habit you still owe, and `current_total` would
 #                         then disagree with the list beside it
@@ -92,8 +85,6 @@ UNCAPPED_READS = {
     '/coffee/shops',
     '/durations',
     '/habits/day',
-    '/issues/labels',
-    '/issues/vocabulary',
     '/money-wasted',
     '/project-items/blocked',
     '/project-items/search',

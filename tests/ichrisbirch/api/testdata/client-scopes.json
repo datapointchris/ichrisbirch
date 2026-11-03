@@ -8,29 +8,6 @@
   "icb.habits.read": [
     "GET /api/v1/habits/completed"
   ],
-  "icb.issues.claim": [
-    "DELETE /api/v1/issues/{id}/claim",
-    "POST /api/v1/issues/{id}/claim"
-  ],
-  "icb.issues.close": [
-    "PATCH /api/v1/issues/{id}",
-    "POST /api/v1/issues/{id}/comments"
-  ],
-  "icb.issues.plan": [
-    "GET /api/v1/issues/vocabulary",
-    "PATCH /api/v1/issues/initiatives/{id:path}",
-    "PATCH /api/v1/issues/{id}",
-    "POST /api/v1/issues",
-    "POST /api/v1/issues/initiatives",
-    "POST /api/v1/issues/{id}/rank"
-  ],
-  "icb.issues.read": [
-    "GET /api/v1/issues",
-    "GET /api/v1/issues/initiatives",
-    "GET /api/v1/issues/initiatives/{id:path}",
-    "GET /api/v1/issues/ready",
-    "GET /api/v1/issues/{id}"
-  ],
   "icb.overview.read": [
     "GET /api/v1/articles",
     "GET /api/v1/articles/current",
@@ -38,7 +15,6 @@
     "GET /api/v1/countdowns",
     "GET /api/v1/events",
     "GET /api/v1/habits/day",
-    "GET /api/v1/issues",
     "GET /api/v1/project-items",
     "GET /api/v1/project-items/blocked",
     "GET /api/v1/tasks"

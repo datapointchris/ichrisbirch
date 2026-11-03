@@ -24,16 +24,15 @@ import (
 // projects near the miss on the line above these.
 var projectHints = []string{
 	"A project is named in full or by its id; every project: icb projects list --status all",
-	"A development project is an issue initiative: icb issues list --initiative <name>",
 }
 
 func newProjectsCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
-		Use:   "projects",
-		Short: "List, inspect, and manage your projects",
+		Use:        "projects",
+		SuggestFor: []string{"items"},
+		Short:      "List, inspect, and manage your projects",
 		Long: "Personal projects, each holding an ordered list of work items. The project\n" +
-			"is the container; the work itself is in `icb projects items`. Development\n" +
-			"work is `icb issues`.\n" +
+			"is the container; the work itself is in `icb projects items`.\n" +
 			"\n" +
 			"<project> and --project take a project's full name or its id, whatever its\n" +
 			"status. A name that misses is answered with the names near it.",

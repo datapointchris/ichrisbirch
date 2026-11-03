@@ -417,12 +417,6 @@
   }
 }
 
-.button-submit-issue {
-  $button-size: 75px;
-  margin: var(--space-s) auto;
-  @include action-button($button-size);
-}
-
 .button-sidebar-toggle {
   $button-size: 50px;
   margin: var(--space-xs) auto;

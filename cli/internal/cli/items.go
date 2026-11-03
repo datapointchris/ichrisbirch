@@ -27,17 +27,9 @@ var (
 		"Completed and archived items are hidden: icb projects items list --status all",
 	}
 
-	// itemNumberHints go on every verb taking an item number. On a verb taking
-	// only a project name, `icb issues show <number>` asks for a number the
-	// reader never typed.
-	itemNumberHints = append(slices.Clone(itemHints),
-		"Issues share item numbers, so the number may name an issue: icb issues show <number>")
-
 	itemAndProjectHints = append(slices.Clone(itemHints), projectHints...)
 
-	itemNumberAndProjectHints = append(slices.Clone(itemNumberHints), projectHints...)
-
-	itemNumberAndTaskHints = append(slices.Clone(itemNumberHints),
+	itemAndTaskHints = append(slices.Clone(itemHints),
 		"List an item's tasks: icb projects items tasks <item>")
 )
 
@@ -55,30 +47,30 @@ func newItemsCommand() *cobra.Command {
 		goclikit.WithRecoveryHints(newItemsListCommand(), itemAndProjectHints...),
 		newItemsBlockedCommand(),
 		newItemsSearchCommand(),
-		goclikit.WithRecoveryHints(newItemsShowCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsBlockersCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsTreeCommand(), itemNumberAndProjectHints...),
-		goclikit.WithRecoveryHints(newItemsTasksCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsShowCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsBlockersCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsTreeCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsTasksCommand(), itemHints...),
 	)...)
 	cmd.AddCommand(inGroup(groupChanging,
 		goclikit.WithRecoveryHints(newItemsCreateCommand(), itemAndProjectHints...),
-		goclikit.WithRecoveryHints(newItemsEditCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsCompletionCommand("reopen", "Reopen a completed item", false), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsArchiveCommand("archive", "Archive an item", true), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsArchiveCommand("unarchive", "Restore an archived item", false), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsDeleteCommand(), itemNumberHints...),
+		goclikit.WithRecoveryHints(newItemsEditCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsCompletionCommand("complete", "Mark an item completed", true), itemHints...),
+		goclikit.WithRecoveryHints(newItemsCompletionCommand("reopen", "Reopen a completed item", false), itemHints...),
+		goclikit.WithRecoveryHints(newItemsArchiveCommand("archive", "Archive an item", true), itemHints...),
+		goclikit.WithRecoveryHints(newItemsArchiveCommand("unarchive", "Restore an archived item", false), itemHints...),
+		goclikit.WithRecoveryHints(newItemsDeleteCommand(), itemHints...),
 		// A verb taking a second kind of id names the way to find that one too:
 		// --project on the membership verbs, a task id on the task verbs.
-		goclikit.WithRecoveryHints(newItemsReorderCommand(), itemNumberAndProjectHints...),
-		goclikit.WithRecoveryHints(newItemsAddProjectCommand(), itemNumberAndProjectHints...),
-		goclikit.WithRecoveryHints(newItemsRemoveProjectCommand(), itemNumberAndProjectHints...),
-		goclikit.WithRecoveryHints(newItemsAddDependencyCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsRemoveDependencyCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsAddTaskCommand(), itemNumberHints...),
-		goclikit.WithRecoveryHints(newItemsCompleteTaskCommand(), itemNumberAndTaskHints...),
-		goclikit.WithRecoveryHints(newItemsEditTaskCommand(), itemNumberAndTaskHints...),
-		goclikit.WithRecoveryHints(newItemsRemoveTaskCommand(), itemNumberAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsReorderCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsAddProjectCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveProjectCommand(), itemAndProjectHints...),
+		goclikit.WithRecoveryHints(newItemsAddDependencyCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveDependencyCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsAddTaskCommand(), itemHints...),
+		goclikit.WithRecoveryHints(newItemsCompleteTaskCommand(), itemAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsEditTaskCommand(), itemAndTaskHints...),
+		goclikit.WithRecoveryHints(newItemsRemoveTaskCommand(), itemAndTaskHints...),
 	)...)
 	return cmd
 }
@@ -430,7 +422,7 @@ func itemCreateFields(ctx context.Context, client *api.Client, made *createdProj
 		{
 			Key:      "project",
 			Label:    "Project",
-			Hint:     "The initiative this belongs to. A repo is the Repo tag below, not a project.",
+			Hint:     "The project this belongs to. A repo is the Repo tag below, not a project.",
 			Choices:  names,
 			Repeat:   true,
 			Validate: projectRef(names),

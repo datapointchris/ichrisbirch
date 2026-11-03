@@ -33,8 +33,7 @@ routing, so a one-segment reference would never match that name.
 An item's position is a `rank` float, and so is a section's. Moving a row writes
 one value, the midpoint of its new neighbors' ranks. When the gap between two
 neighbors falls under `MIN_GAP`, the table is renumbered to whole numbers and
-the move is retried. `services/fractional_rank.py` holds this, and issues use
-the same service.
+the move is retried. `services/fractional_rank.py` holds this.
 
 An integer position would not work here. The ordered set includes the items off
 the list, which no client sees. A client dropping "eggs" between two visible

@@ -20,7 +20,6 @@ export const DEFAULT_SIDEBAR_ORDER = [
   '/durations',
   '/events',
   '/habits',
-  '/issues',
   '/money-wasted',
   '/projects',
   '/recipes',
@@ -28,6 +27,20 @@ export const DEFAULT_SIDEBAR_ORDER = [
   '/strains',
   '/tasks',
 ]
+
+// A saved path with no link is skipped, and a link the order does not name goes last.
+export function orderedMainLinks(savedOrder: string[] | undefined): NavLink[] {
+  const linkMap = new Map(allMainLinks.map((link) => [link.to, link]))
+  const sorted: NavLink[] = []
+  for (const path of savedOrder ?? DEFAULT_SIDEBAR_ORDER) {
+    const link = linkMap.get(path)
+    if (link) {
+      sorted.push(link)
+      linkMap.delete(path)
+    }
+  }
+  return [...sorted, ...linkMap.values()]
+}
 
 export const allMainLinks: NavLink[] = [
   { to: '/', label: 'Home', icon: 'fa-solid fa-house', migrated: true },
@@ -60,13 +73,6 @@ export const allMainLinks: NavLink[] = [
     icon: 'fa-solid fa-repeat',
     migrated: true,
     activeNames: ['habits', 'habits-completed', 'habits-manage'],
-  },
-  {
-    to: '/issues',
-    label: 'Issues',
-    icon: 'fa-solid fa-circle-dot',
-    migrated: true,
-    activeNames: ['issues', 'issue-initiatives', 'issue-labels'],
   },
   { to: '/money-wasted', label: 'Money Wasted', icon: 'fa-solid fa-money-bill-wave', migrated: true },
   { to: '/projects', label: 'Projects', icon: 'fa-solid fa-diagram-project', migrated: true },

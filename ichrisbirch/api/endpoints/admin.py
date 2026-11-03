@@ -132,7 +132,7 @@ def get_scheduler_history(
 def read_record_changes(
     session: DbSession,
     window: TimeWindowQuery,
-    table_name: str | None = Query(None, description="A table's full name, schema included where it has one: issues, coffee.coffee_shops"),
+    table_name: str | None = Query(None, description="A table's full name, schema included where it has one: tasks, coffee.coffee_shops"),
     record_id: str | None = Query(None, description="The row's primary key as text"),
     actor: str | None = Query(None, description="Who made the write: a user's email, a service client's id, or scheduler/<job_name>"),
     limit: CappedRowLimit = 100,

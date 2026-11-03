@@ -29,7 +29,9 @@ const (
 	//
 	// v3 removed `priority` from task rows. A task row's position in its list
 	// is its rank.
-	overviewSchemaVersion = 3
+	//
+	// v4 removed the `issues` section.
+	overviewSchemaVersion = 4
 
 	// defaultOverviewLimit caps each section so the payload stays a glance. Every
 	// section reports its pre-cap total, so a capped list never lies about size.
@@ -57,14 +59,13 @@ const (
 	sectionBooks        = "books"
 	sectionArticles     = "articles"
 	sectionProjectItems = "project_items"
-	sectionIssues       = "issues"
 	sectionCountdowns   = "countdowns"
 	sectionEvents       = "events"
 )
 
 // overviewReport is the stable JSON schema for `overview --json`: the "what is
-// outstanding right now" snapshot composed from the task, habit, book, article,
-// project-item, issue, countdown, and event endpoints.
+// outstanding right now" snapshot composed from the endpoints `overviewFetches`
+// names.
 type overviewReport struct {
 	SchemaVersion int                `json:"schema_version"`
 	GeneratedAt   time.Time          `json:"generated_at"`
@@ -73,7 +74,6 @@ type overviewReport struct {
 	Books         bookSection        `json:"books"`
 	Articles      articleSection     `json:"articles"`
 	ProjectItems  projectItemSection `json:"project_items"`
-	Issues        issueSection       `json:"issues"`
 	Countdowns    countdownSection   `json:"countdowns"`
 	Events        eventSection       `json:"events"`
 	Warnings      []overviewWarning  `json:"warnings"`
@@ -122,18 +122,6 @@ type projectItemSection struct {
 	BlockedTotal int               `json:"blocked_total"`
 }
 
-// issueSection is the development queue at a glance. Ready is the head of what
-// an agent takes next. Decisions are listed apart, because they wait on a person.
-type issueSection struct {
-	Ready           []api.Issue `json:"ready"`
-	ReadyTotal      int         `json:"ready_total"`
-	InProgress      []api.Issue `json:"in_progress"`
-	InProgressTotal int         `json:"in_progress_total"`
-	Decisions       []api.Issue `json:"decisions"`
-	DecisionsTotal  int         `json:"decisions_total"`
-	TriageTotal     int         `json:"triage_total"`
-}
-
 type countdownSection struct {
 	Items []api.Countdown `json:"items"`
 	Total int             `json:"total"`
@@ -162,7 +150,6 @@ type overviewData struct {
 	ReadArticles   []api.Article
 	Items          []api.ProjectItem
 	BlockedItems   []api.ProjectItem
-	Issues         []api.Issue
 	Countdowns     []api.Countdown
 	Events         []api.Event
 	Failures       []sectionFailure
@@ -192,8 +179,7 @@ func newOverviewCommand() *cobra.Command {
 		Short: "Show everything outstanding right now across the apps",
 		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
 			"articles you are reading and what is next in each, the project in focus with\n" +
-			"its next and blocked items, the issues ready, claimed and awaiting a\n" +
-			"decision, and approaching countdowns and events. Composed\n" +
+			"its next and blocked items, and approaching countdowns and events. Composed\n" +
 			"from those endpoints in one command so a dashboard needs a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    cobra.NoArgs,
@@ -274,13 +260,6 @@ func overviewFetches() []overviewFetch {
 			d.BlockedItems = blocked
 			return err
 		}},
-		// One read of every unclosed issue fills the whole section, already in
-		// the ready queue's order.
-		{sectionIssues, "issues", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			issues, err := c.ListIssues(ctx, api.IssueFilter{}, api.Window{}, api.DayZone(LocalZoneName()), nil)
-			d.Issues = issues
-			return err
-		}},
 		{sectionCountdowns, "countdowns", func(ctx context.Context, c *api.Client, d *overviewData) error {
 			countdowns, err := c.ListCountdowns(ctx, nil)
 			d.Countdowns = countdowns
@@ -347,7 +326,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
 	countdowns := upcomingCountdowns(data.Countdowns, now)
-	queue := sortIssueQueue(data.Issues)
 
 	report := overviewReport{
 		SchemaVersion: overviewSchemaVersion,
@@ -380,15 +358,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			Blocked:      capItems(focus.Blocked, limit),
 			BlockedTotal: len(focus.Blocked),
 		},
-		Issues: issueSection{
-			Ready:           capItems(queue.ready, limit),
-			ReadyTotal:      len(queue.ready),
-			InProgress:      capItems(queue.inProgress, limit),
-			InProgressTotal: len(queue.inProgress),
-			Decisions:       capItems(queue.decisions, limit),
-			DecisionsTotal:  len(queue.decisions),
-			TriageTotal:     queue.triage,
-		},
 		Countdowns: countdownSection{
 			Items: capItems(countdowns, limit),
 			Total: len(countdowns),
@@ -408,32 +377,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 		})
 	}
 	return report
-}
-
-// issueQueue is the unclosed issues sorted into what the overview reports.
-type issueQueue struct {
-	ready, inProgress, decisions []api.Issue
-	triage                       int
-}
-
-// sortIssueQueue keeps the API's order, which for unclosed issues is the ready
-// queue's. In progress counts only a live claim, because an expired one is
-// ready again.
-func sortIssueQueue(issues []api.Issue) issueQueue {
-	queue := issueQueue{ready: []api.Issue{}, inProgress: []api.Issue{}, decisions: []api.Issue{}}
-	for _, issue := range issues {
-		switch {
-		case issue.Status == api.IssueStatusTriage:
-			queue.triage++
-		case issue.Type == api.IssueTypeDecision:
-			queue.decisions = append(queue.decisions, issue)
-		case issue.IsReady:
-			queue.ready = append(queue.ready, issue)
-		case issue.Status == api.IssueStatusInProgress:
-			queue.inProgress = append(queue.inProgress, issue)
-		}
-	}
-	return queue
 }
 
 // projectFocus is the one project being worked through and its open items.
@@ -656,7 +599,6 @@ func printOverview(out, errOut io.Writer, r overviewReport) {
 	printBookSection(out, r.Books)
 	printArticleSection(out, r.Articles)
 	printProjectItemSection(out, r.ProjectItems)
-	printIssueSection(out, r.Issues)
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
 	for _, warning := range r.Warnings {
@@ -761,29 +703,6 @@ func printProjectItemSection(out io.Writer, section projectItemSection) {
 		}
 		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\n", truncateTitle(item.Title))
 	}
-	_ = tw.Flush()
-}
-
-func printIssueSection(out io.Writer, section issueSection) {
-	_, _ = fmt.Fprintf(out, "\nIssues (%d ready, %d in progress, %d %s, %d in triage)\n",
-		section.ReadyTotal, section.InProgressTotal, section.DecisionsTotal,
-		plural(section.DecisionsTotal, "decision", "decisions"), section.TriageTotal)
-	if section.ReadyTotal+section.InProgressTotal+section.DecisionsTotal == 0 {
-		_, _ = fmt.Fprintln(out, "  (none)")
-		return
-	}
-	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	rows := func(label string, issues []api.Issue) {
-		for i, issue := range issues {
-			if i >= printListCap {
-				break
-			}
-			_, _ = fmt.Fprintf(tw, "  %s\t%d\t%s\t%s\n", label, issue.Number, truncateTitle(issue.Title), orDash(strValue(issue.Repo)))
-		}
-	}
-	rows("decide:", section.Decisions)
-	rows("next:", section.Ready)
-	rows("claimed:", section.InProgress)
 	_ = tw.Flush()
 }
 

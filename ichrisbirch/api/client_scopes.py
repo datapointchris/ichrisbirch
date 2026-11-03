@@ -11,55 +11,7 @@ from starlette.routing import BaseRoute
 
 from ichrisbirch.api import API_PREFIX
 
-# The issue update reads these two to decide how far it narrows a scoped client's body.
-ISSUES_CLOSE = 'icb.issues.close'
-ISSUES_PLAN = 'icb.issues.plan'
-
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
-    # The reads `icb issues list`, `search`, `next`, `show`, and `initiatives list` and `show`
-    # make. `--blocked` filters `/issues`. An issue in a series often has no description of its
-    # own, so a reader judging it needs its initiative's.
-    'icb.issues.read': frozenset(
-        {
-            ('GET', f'{API_PREFIX}/issues'),
-            ('GET', f'{API_PREFIX}/issues/initiatives'),
-            ('GET', f'{API_PREFIX}/issues/initiatives/{{id:path}}'),
-            ('GET', f'{API_PREFIX}/issues/ready'),
-            ('GET', f'{API_PREFIX}/issues/{{id}}'),
-        }
-    ),
-    # What `icb issues claim <issue>` and `release` send, for a job holding an issue while the fix
-    # agent carries it. The handlers let a scoped client claim only under its own client id and
-    # release only a claim that id holds.
-    'icb.issues.claim': frozenset(
-        {
-            ('POST', f'{API_PREFIX}/issues/{{id}}/claim'),
-            ('DELETE', f'{API_PREFIX}/issues/{{id}}/claim'),
-        }
-    ),
-    # What `icb issues add-comment` and `complete` send, for a job closing an issue whose fix
-    # merged. The update handler narrows a body naming `status` or `closed_by` to the close of an
-    # open issue.
-    ISSUES_CLOSE: frozenset(
-        {
-            ('POST', f'{API_PREFIX}/issues/{{id}}/comments'),
-            ('PATCH', f'{API_PREFIX}/issues/{{id}}'),
-        }
-    ),
-    # What `icb issues edit --priority` and `--initiative`, `reorder`, `create`, and `initiatives
-    # create`, `edit`, `complete` and `drop` send, for a job ordering the queue. `create` reads the
-    # vocabulary before it files. The handlers narrow any other update to an issue's priority and
-    # initiative, and a filing to triage under no parent. Nothing here deletes.
-    ISSUES_PLAN: frozenset(
-        {
-            ('GET', f'{API_PREFIX}/issues/vocabulary'),
-            ('POST', f'{API_PREFIX}/issues'),
-            ('PATCH', f'{API_PREFIX}/issues/{{id}}'),
-            ('POST', f'{API_PREFIX}/issues/{{id}}/rank'),
-            ('POST', f'{API_PREFIX}/issues/initiatives'),
-            ('PATCH', f'{API_PREFIX}/issues/initiatives/{{id:path}}'),
-        }
-    ),
     # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
         {
@@ -72,8 +24,8 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
             ('GET', f'{API_PREFIX}/projects/{{id:path}}/items'),
         }
     ),
-    # Every read `icb overview` fans out to, for a service computing the same lanes. Its issues
-    # and project-items reads are listed here too, so this scope alone renders every lane.
+    # Every read `icb overview` fans out to, for a service computing the same lanes. Its
+    # project-items reads are listed here too, so this scope alone renders every lane.
     'icb.overview.read': frozenset(
         {
             ('GET', f'{API_PREFIX}/articles'),
@@ -82,7 +34,6 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
             ('GET', f'{API_PREFIX}/countdowns'),
             ('GET', f'{API_PREFIX}/events'),
             ('GET', f'{API_PREFIX}/habits/day'),
-            ('GET', f'{API_PREFIX}/issues'),
             ('GET', f'{API_PREFIX}/project-items'),
             ('GET', f'{API_PREFIX}/project-items/blocked'),
             ('GET', f'{API_PREFIX}/tasks'),

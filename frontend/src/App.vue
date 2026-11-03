@@ -6,7 +6,6 @@
     <AppSidebar
       :open="sidebarOpen"
       @toggle="sidebarOpen = !sidebarOpen"
-      @open-issue="issueModalOpen = true"
     />
     <div
       v-if="isPhone && sidebarOpen"
@@ -41,10 +40,6 @@
         <RouterView v-if="ready" />
       </main>
     </div>
-    <SubmitIssueModal
-      :visible="issueModalOpen"
-      @close="issueModalOpen = false"
-    />
     <NotificationToast />
   </div>
 </template>
@@ -53,7 +48,6 @@
 import { onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
-import SubmitIssueModal from '@/components/SubmitIssueModal.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
 import { useTheme } from '@/composables/useTheme'
 import { useDisplayZone } from '@/composables/displayZone'
@@ -69,7 +63,6 @@ const route = useRoute()
 // once a link in it has been followed.
 const isPhone = usePhoneViewport()
 const sidebarOpen = ref(!isPhone.value)
-const issueModalOpen = ref(false)
 const ready = ref(false)
 
 watch(isPhone, (phone) => {
