@@ -37,6 +37,8 @@ Swagger docs at `https://api.docker.localhost/`.
 ## Tests
 
 ```bash
+task test                    # every suite but e2e: Python, the CLI and the frontend
+task lint                    # every read-only check; task format rewrites
 ./ops/icbops test run        # Python suite, against its own Postgres and Redis
 ./ops/icbops test e2e        # Playwright, inside this checkout's test stack
 cd frontend && npm test      # TypeScript build check plus unit tests

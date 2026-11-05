@@ -1,7 +1,9 @@
 version: '3'
 
-# Scope: the Go CLI in cli/ only. Everything else — dev/test containers, docker,
-# routing, ssl, db, logs — belongs to ops/icbops and is not duplicated here.
+# The jobs every repo shares (test, lint, format, build, install) run each
+# component under its prefix: python: for the app, cli: for the Go CLI and web:
+# for the Vue frontend. Dev and test containers, docker, routing, ssl, db and
+# logs belong to ops/icbops and are not duplicated here.
 
 vars:
   # Match only the CLI's own tags and strip the prefix, so a local build reports
@@ -51,6 +53,86 @@ tasks:
       - cp -n {{.PRIMARY}}/.env .env
       - mkdir -p deploy-containers/traefik/certs
       - cp -n {{.PRIMARY}}/deploy-containers/traefik/certs/*.crt {{.PRIMARY}}/deploy-containers/traefik/certs/*.key deploy-containers/traefik/certs/
+
+  test:
+    desc: Run every suite but e2e — Python, the CLI and the frontend
+    cmds:
+      - task: python:test
+      - task: cli:test
+      - task: web:test
+
+  lint:
+    desc: Run every read-only check, format checks and type checks included
+    cmds:
+      - task: python:lint
+      - task: cli:lint
+      - task: web:lint
+
+  format:
+    desc: Format every component and apply its linter's autofixes
+    cmds:
+      - task: python:format
+      - task: cli:format
+      - task: web:format
+
+  build:
+    desc: Build the CLI to bin/icb and the frontend to frontend/dist
+    cmds:
+      - task: cli:build
+      - task: web:build
+
+  install:
+    desc: Install the icb CLI to ~/.local/bin (over the released binary)
+    cmds:
+      - task: cli:install
+
+  # The same entry point the pytest hook calls, so its reports land in
+  # .test-reports/ as they do on a commit.
+  python:test:
+    desc: Run the Python suite against its own throwaway Postgres and Redis
+    cmds:
+      - ./ops/icbops test run
+
+  # mypy runs with the arguments the mypy hook passes.
+  python:lint:
+    desc: Run ruff's lint and format check, then mypy, writing no file
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run --all-extras mypy . --install-types --non-interactive
+
+  python:format:
+    desc: Format Python and apply ruff's autofixes
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  web:test:
+    desc: Run the frontend's TypeScript build check and unit tests
+    dir: frontend
+    cmds:
+      - npm test
+
+  web:lint:
+    desc: Run eslint, the prettier check and vue-tsc on the frontend, writing no file
+    dir: frontend
+    cmds:
+      - npm run lint
+      - npx prettier --check .
+      - npm run typecheck
+
+  web:format:
+    desc: Format the frontend and apply eslint's autofixes
+    dir: frontend
+    cmds:
+      - npx prettier --write .
+      - npm run lint:fix
+
+  web:build:
+    desc: Build the frontend to frontend/dist
+    dir: frontend
+    cmds:
+      - npm run build
 
   cli:build:
     desc: Build the icb CLI to bin/icb
