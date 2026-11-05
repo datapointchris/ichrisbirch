@@ -55,6 +55,12 @@ func tokenSource(ctx context.Context, d goclilogin.Deployment) (oauth2.TokenSour
 	return source, err
 }
 
+// errTokenCommandFailed names what token_command owes icb and how to see what it
+// printed instead, since the command is the operator's and icb cannot fix it.
+func errTokenCommandFailed(d goclilogin.Deployment, err error) error {
+	return fmt.Errorf("token_command in %s printed no access_token; it must print an RFC 6749 § 5.1 JSON token response on stdout, so run %q yourself to see what it prints: %w", d.Path, d.TokenCommand, err)
+}
+
 // handleAPIError maps an error from a resource command to a message and exit
 // code: not-logged-in, a token endpoint that refused the refresh, and 401 all
 // point at `icb auth login` (exit 1); everything else is a runtime error (exit 1
@@ -71,11 +77,11 @@ func handleAPIError(err error) error {
 		var failed *goclilogin.TokenCommandError
 		switch {
 		case errors.As(err, &failed):
-			return fmt.Errorf("token_command in %s handed no token: %w", d.Path, failed)
+			return errTokenCommandFailed(d, failed)
 		case errors.As(err, &apiErr) && apiErr.Unauthorized():
-			return fmt.Errorf("the API rejected the token %q handed", d.TokenCommand)
+			return fmt.Errorf("the API rejected the token %q handed; it expects an unexpired access token from the issuer it trusts, so run %q yourself and check the access_token it prints", d.TokenCommand, d.TokenCommand)
 		case errors.As(err, &apiErr) && apiErr.Forbidden() && apiErr.Message != "":
-			return fmt.Errorf("the token %q handed: %s", d.TokenCommand, apiErr.Message)
+			return fmt.Errorf("the token %q handed was refused: %s; grant the client that minted it a scope listing this route", d.TokenCommand, apiErr.Message)
 		}
 	}
 	// A service has no login to renew, so it is pointed at its id and secret.

@@ -195,7 +195,7 @@ func newAuthTokenCommand() *cobra.Command {
 			}
 			token, err := source.Token()
 			if err != nil && deployment.HandsTokens() {
-				return fmt.Errorf("token_command in %s handed no token: %w", deployment.Path, err)
+				return errTokenCommandFailed(deployment, err)
 			}
 			if err != nil && config.IsService() {
 				return fmt.Errorf("obtain a token for service client %s: %w", deployment.ClientID.Value, err)
@@ -388,7 +388,7 @@ func printStatus(out io.Writer, r statusReport, d goclilogin.Deployment, loadErr
 	case r.Type == externalAccount && r.LoggedIn:
 		_, _ = fmt.Fprintln(out, "Handed a token by token_command")
 	case r.Type == externalAccount:
-		_, _ = fmt.Fprintf(out, "token_command handed no token. Check what %q asks.\n", d.TokenCommand)
+		_, _ = fmt.Fprintf(out, "token_command printed no access_token. Run %q yourself to see what it prints.\n", d.TokenCommand)
 	case r.Type == serviceAccount && r.Session == goclilogin.SessionRejected:
 		_, _ = fmt.Fprintf(out, "Service client refused by %s. Check client_id in the config file, and %s.\n", r.Issuer, config.ClientSecretEnv)
 	case r.Type == serviceAccount && r.Session == goclilogin.SessionUnverified:
