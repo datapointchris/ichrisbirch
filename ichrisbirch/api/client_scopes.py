@@ -11,6 +11,13 @@ from starlette.routing import BaseRoute
 
 from ichrisbirch.api import API_PREFIX
 
+# The read `icb tasks list` makes, `--status completed`, `--since` and `--until` included.
+TASKS_READ = frozenset({('GET', f'{API_PREFIX}/tasks')})
+# The read `icb articles list` makes, `--since` and `--until` included.
+ARTICLES_READ = frozenset({('GET', f'{API_PREFIX}/articles')})
+# The read `icb books list` makes, `--since` and `--until` included.
+BOOKS_READ = frozenset({('GET', f'{API_PREFIX}/books')})
+
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
     # The reads the `icb projects items` commands make.
     'icb.project-items.read': frozenset(
@@ -24,29 +31,27 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
             ('GET', f'{API_PREFIX}/projects/{{id:path}}/items'),
         }
     ),
-    # Every read `icb overview` fans out to, for a service computing the same lanes. Its
-    # project-items reads are listed here too, so this scope alone renders every lane.
-    'icb.overview.read': frozenset(
+    # Every read `icb overview` fans out to, for a service computing the same lanes: the tasks,
+    # articles and books lists, and the reads only the overview makes. Its project-items reads are
+    # listed here too, so this scope alone renders every lane.
+    'icb.overview.read': TASKS_READ
+    | ARTICLES_READ
+    | BOOKS_READ
+    | frozenset(
         {
-            ('GET', f'{API_PREFIX}/articles'),
             ('GET', f'{API_PREFIX}/articles/current'),
-            ('GET', f'{API_PREFIX}/books'),
             ('GET', f'{API_PREFIX}/countdowns'),
             ('GET', f'{API_PREFIX}/events'),
             ('GET', f'{API_PREFIX}/habits/day'),
             ('GET', f'{API_PREFIX}/project-items'),
             ('GET', f'{API_PREFIX}/project-items/blocked'),
-            ('GET', f'{API_PREFIX}/tasks'),
         }
     ),
     # The read `icb habits completed` makes, `--since` and `--until` included.
     'icb.habits.read': frozenset({('GET', f'{API_PREFIX}/habits/completed')}),
-    # The read `icb tasks list` makes, `--status completed`, `--since` and `--until` included.
-    'icb.tasks.read': frozenset({('GET', f'{API_PREFIX}/tasks')}),
-    # The read `icb articles list` makes, `--since` and `--until` included.
-    'icb.articles.read': frozenset({('GET', f'{API_PREFIX}/articles')}),
-    # The read `icb books list` makes, `--since` and `--until` included.
-    'icb.books.read': frozenset({('GET', f'{API_PREFIX}/books')}),
+    'icb.tasks.read': TASKS_READ,
+    'icb.articles.read': ARTICLES_READ,
+    'icb.books.read': BOOKS_READ,
 }
 
 
