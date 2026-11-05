@@ -439,8 +439,8 @@ func writeChoiceCount(s Session, field Field) {
 //
 // The column count is measured rather than fixed because the two kinds of
 // vocabulary are nothing alike: a dozen one-word categories waste most of a
-// screen under a fixed count, and a project called "Convert theme and font
-// from bash to Go" wraps under the same one.
+// screen under a fixed count, and a project called "Rewrite the backup scripts
+// in Go" wraps under the same one.
 //
 // The last cell on a row carries no trailing tab. tabwriter pads every celled
 // column to its widest entry, so a trailing one spends real columns on the

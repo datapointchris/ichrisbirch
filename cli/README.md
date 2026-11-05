@@ -76,7 +76,7 @@ so `go install` would name the binary after the path's last segment (`cli`).
 
 These build from your working tree, version-stamped with `git describe`. Released
 binaries are built by CI on a `cli/v*` tag and published to GitHub Releases; that
-is what dotfiles installs on each machine.
+is what a machine installs.
 
 ## Auth
 
@@ -219,7 +219,7 @@ The rejected answer comes back on the line for editing, so a typo in the fifth
 field never costs the four already typed. Tab walks the choices matching what has
 been typed; on an empty line it walks the whole list. A match is a substring
 with prefixes ranked first, so `ho` reaches `Home` before `Chore`, and a project
-called `Convert theme and font from bash to Go` is reached by typing `theme`. A
+called `Rewrite the backup scripts in Go` is reached by typing `backup`. A
 value is matched case-insensitively and stored the way its source spells it.
 
 A list is laid out in as many columns as its longest entry fits into the
@@ -240,13 +240,13 @@ Project — 54 to choose from. Tab lists them; type part of one to narrow.
   + makes a new project.
 Project: ⇥
   Adjust the wooden dingo run              Blue green hardening
-  Convert theme and font from bash to Go   fleet facts — the measurement layer
+  Rewrite the backup scripts in Go         Garden sensors — the watering layer
   ⋮
-Project: theme⇥
-Project: Convert theme and font from bash to Go
+Project: backup⇥
+Project: Rewrite the backup scripts in Go
 Project (another, or Enter to move on):
 Repo — 82 to choose from. Tab lists them; type part of one to narrow.
-Repo (optional): dotfiles
+Repo (optional): photo-sorter
 Notes — one or more lines, blank line ends it:
   > the reasoning that has to outlive the commit
   >

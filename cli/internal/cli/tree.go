@@ -56,7 +56,7 @@ func newItemsTreeCommand() *cobra.Command {
 		Example: "  icb projects items tree\n" +
 			"  icb projects items tree 179\n" +
 			"  icb projects items tree 179 --invert\n" +
-			"  icb projects items tree --repo dotfiles\n" +
+			"  icb projects items tree --repo photo-sorter\n" +
 			"  icb projects items tree --status all --json",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -186,8 +186,8 @@ func (c *cycler) list(matches []string) {
 // ones it is a prefix of ranked first.
 //
 // Substring rather than prefix alone, because a choice is often a phrase: a
-// project called "Convert theme and font from bash to Go" is found by typing
-// "theme", which is how anyone would go looking for it. Prefixes still rank
+// project called "Rewrite the backup scripts in Go" is found by typing
+// "backup", which is how anyone would go looking for it. Prefixes still rank
 // ahead, so a vocabulary of single words behaves the way a shell taught
 // everyone to expect — "ho" reaches "Home" before it reaches "Chore".
 func matching(choices []string, typed string) []string {

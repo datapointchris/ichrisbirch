@@ -41,8 +41,8 @@ func newUpdateCommand() *cobra.Command {
 	return goclikit.UpdateCommand(updateConfig())
 }
 
-// githubToken resolves a GitHub credential the way the dotfiles installer does:
-// the environment first, then the gh CLI's stored token.
+// githubToken resolves a GitHub credential the way a release installer usually
+// does: the environment first, then the gh CLI's stored token.
 //
 // goselfupdate reads $GITHUB_TOKEN and $GH_TOKEN on its own, so this only adds
 // the third source. It is needed rather than optional — the releases live in a

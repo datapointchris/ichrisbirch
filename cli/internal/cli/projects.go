@@ -75,7 +75,7 @@ func newProjectsListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the first projects in\n" +
 			"position order rather than filtering a capped slice.",
-		Example: "  icb projects list\n  icb projects list --repo dotfiles\n" +
+		Example: "  icb projects list\n  icb projects list --repo photo-sorter\n" +
 			"  icb projects list --limit 5\n" +
 			"  icb projects list --status completed\n  icb projects list --status all --json",
 		Args: cobra.NoArgs,
@@ -386,8 +386,9 @@ func newProjectsShowCommand() *cobra.Command {
 // papercut falls into: it starts as the finite effort of building the thing,
 // that effort finishes, and the name outlives it. The repo association is the
 // item's `--repo` tag, which already crosses project boundaries and outlives
-// any single project, so "what is the dotfiles work" is
-// `projects items list --repo dotfiles` rather than a project called dotfiles.
+// any single project, so "what is the photo-sorter work" is
+// `projects items list --repo photo-sorter` rather than a project called
+// photo-sorter.
 //
 // A missing registry bans nothing, matching validateRepoFlag: refusing to file
 // work on a machine without a registry is worse than the wrong name.

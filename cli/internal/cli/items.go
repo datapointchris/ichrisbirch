@@ -110,8 +110,8 @@ func newItemsListCommand() *cobra.Command {
 			"  icb projects items list --status completed\n" +
 			"  icb projects items list --status completed --since 2026-08-17\n" +
 			"  icb projects items list --status all --json\n" +
-			"  icb projects items list --repo dotfiles --limit 10\n" +
-			"  icb projects items list --repo dotfiles --json\n" +
+			"  icb projects items list --repo photo-sorter --limit 10\n" +
+			"  icb projects items list --repo photo-sorter --json\n" +
 			"  icb projects items list --project \"Kitchen remodel\"\n" +
 			"  icb projects items list --project \"Reading backlog\" --json\n" +
 			"  icb projects items list --project \"Kitchen remodel\" --status all",
@@ -270,7 +270,7 @@ func newItemsBlockedCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "blocked",
 		Short:   "List items with at least one incomplete dependency",
-		Example: "  icb projects items blocked\n  icb projects items blocked --repo homelab",
+		Example: "  icb projects items blocked\n  icb projects items blocked --repo photo-sorter",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			filter, err := repoFlagValue(cmd, repo)
@@ -295,7 +295,7 @@ func newItemsSearchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "search <query>",
 		Short:   "Search items by title or notes",
-		Example: "  icb projects items search kitchen\n  icb projects items search backup --repo dotfiles",
+		Example: "  icb projects items search kitchen\n  icb projects items search backup --repo photo-sorter",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter, err := repoFlagValue(cmd, repo)
@@ -730,7 +730,7 @@ func newItemsEditCommand() *cobra.Command {
 		// from a file rather than typed between quotes.
 		Example: "  icb projects items edit 118 --notes \"$(cat notes.md)\"\n" +
 			"  icb projects items edit 118 --title \"New title\"\n" +
-			"  icb projects items edit 118 --repo dotfiles --json",
+			"  icb projects items edit 118 --repo photo-sorter --json",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
