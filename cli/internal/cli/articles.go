@@ -20,6 +20,9 @@ func newArticlesCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage your saved articles",
 		Long: "Your saved-article reading list: what is unread, what is archived, and the\n" +
 			"favorites due for a re-read.",
+		Example: "  icb articles list --unread  what is still waiting to be read\n" +
+			"  icb articles show 42        one article in full\n" +
+			"  icb articles current        the article being read now",
 	})
 	// Search matches tags only, so it cannot stand alone as the way to find an
 	// article whose tags you do not know.

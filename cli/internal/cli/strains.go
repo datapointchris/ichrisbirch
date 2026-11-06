@@ -45,6 +45,9 @@ func newStrainsCommand() *cobra.Command {
 		Long: "A catalog of cannabis strains: which have been tried, which are queued, and\n" +
 			"what each one is like. `list --status want_to_try` is the queue;\n" +
 			"`list --effect sleepy` narrows to a recorded effect.",
+		Example: "  icb strains list --status want_to_try  the queue of strains to try\n" +
+			"  icb strains search kush                find one by name, breeder or lineage\n" +
+			"  icb strains show 12                    one strain in full",
 	})
 	goclikit.WithRecoveryHints(cmd,
 		"Search strains by name, breeder, or lineage: icb strains search <query>",

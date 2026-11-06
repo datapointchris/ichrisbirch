@@ -17,6 +17,8 @@ func newAutotasksCommand() *cobra.Command {
 		Short: "Inspect your recurring task templates",
 		Long: "The templates behind your recurring tasks: what respawns, how often, and when\n" +
 			"each last ran. Read-only — the scheduler is what creates and completes them.",
+		Example: "  icb autotasks list     every template, most recently run first\n" +
+			"  icb autotasks show 2   one template and its schedule",
 	})
 	goclikit.WithRecoveryHints(cmd, "List every autotask: icb autotasks list")
 	cmd.AddCommand(

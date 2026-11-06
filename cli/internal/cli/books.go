@@ -30,6 +30,9 @@ func newBooksCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage your books",
 		Long: "Your book catalog: what you own, where each book is in the reading cycle,\n" +
 			"and what is queued next. `list --progress reading` is the reading-now view.",
+		Example: "  icb books list --progress reading  what you are reading right now\n" +
+			"  icb books list --limit 10          the ten to read next\n" +
+			"  icb books search dune              find a book by title, author or tag",
 	})
 	goclikit.WithRecoveryHints(cmd, "Search books by title, author, or tags: icb books search <query>")
 	splitReadingFromChanging(cmd)

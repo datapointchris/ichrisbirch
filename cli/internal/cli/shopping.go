@@ -31,6 +31,9 @@ func newShoppingCommand() *cobra.Command {
 			"off the list, and adding the same name later puts it back where it was.\n" +
 			"\n" +
 			"An item or a section is named by its name, in any case, or by its id.",
+		Example: "  icb shopping list            what is on the list, by section\n" +
+			"  icb shopping add milk eggs   put both on the list\n" +
+			"  icb shopping check milk      bought it: log the purchase, take it off the list",
 	})
 	goclikit.WithRecoveryHints(cmd,
 		"List what is on the list: icb shopping list",
@@ -442,6 +445,9 @@ func newShoppingSectionsCommand() *cobra.Command {
 		Short: "List, create, rename, reorder, and delete sections",
 		Long: "A section is a part of the list such as a store or an aisle. Deleting one\n" +
 			"moves its items to Unsorted.",
+		Example: "  icb shopping sections list                          every section in list order\n" +
+			"  icb shopping sections create Costco                 add a section at the end\n" +
+			"  icb shopping sections move hardware --after costco  walk the list in store order",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newShoppingSectionsListCommand())...)

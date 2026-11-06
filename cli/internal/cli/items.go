@@ -40,6 +40,9 @@ func newItemsCommand() *cobra.Command {
 		Long: "The ordered work units inside a project, each with sub-tasks, dependencies,\n" +
 			"and membership in one or more projects. Unstructured chores go in\n" +
 			"`icb tasks` instead.",
+		Example: "  icb projects items list                                every open item, newest first\n" +
+			"  icb projects items list --project \"Kitchen remodel\"    one project's items in order\n" +
+			"  icb projects items show 42                             one item with its tasks and blockers",
 	})
 	goclikit.WithRecoveryHints(cmd, itemHints...)
 	splitReadingFromChanging(cmd)

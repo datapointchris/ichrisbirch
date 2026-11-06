@@ -31,6 +31,9 @@ func newHabitsCommand() *cobra.Command {
 		Use:   "habits",
 		Short: "List, inspect, complete, and manage your habits",
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
+		Example: "  icb habits today       which habits are done today and which are still due\n" +
+			"  icb habits complete 5  record that you did habit 5\n" +
+			"  icb habits list        every habit you are tracking",
 	})
 	goclikit.WithRecoveryHints(cmd, habitHints...)
 	splitReadingFromChanging(cmd)

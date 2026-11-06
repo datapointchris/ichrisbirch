@@ -18,6 +18,9 @@ func newCookingTechniquesCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage cooking techniques",
 		Long: "The how-and-why writeups behind the recipes — searing, emulsifying, laminating\n" +
 			"— kept separately from any one recipe that uses them.",
+		Example: "  icb cooking-techniques list              every technique, by name\n" +
+			"  icb cooking-techniques search emulsion  find one by name, summary, body or tag\n" +
+			"  icb cooking-techniques categories       the categories and how many each holds",
 	})
 	goclikit.WithRecoveryHints(cmd,
 		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")

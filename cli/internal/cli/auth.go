@@ -37,6 +37,9 @@ func newAuthCommand() *cobra.Command {
 			"With ICB_CLIENT_SECRET set, icb authenticates as the service client the\n" +
 			"config file's client_id names, through the client-credentials grant. It\n" +
 			"requests a token per run and stores nothing, so login and logout refuse.",
+		Example: "  icb auth status                         who you are, and where icb points\n" +
+			"  icb auth login                          log in to the config file's api\n" +
+			"  icb auth login https://ichrisbirch.com  log in there, filling in the config file",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupChanging, withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand())...)

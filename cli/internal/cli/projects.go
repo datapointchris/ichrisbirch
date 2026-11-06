@@ -36,6 +36,9 @@ func newProjectsCommand() *cobra.Command {
 			"\n" +
 			"<project> and --project take a project's full name or its id, whatever its\n" +
 			"status. A name that misses is answered with the names near it.",
+		Example: "  icb projects list                     the active projects\n" +
+			"  icb projects next --limit 1           the one item to work on next\n" +
+			"  icb projects show \"Kitchen remodel\"    one project and its open items",
 	})
 	goclikit.WithRecoveryHints(cmd, projectHints...)
 	splitReadingFromChanging(cmd)

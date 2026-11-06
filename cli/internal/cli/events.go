@@ -18,6 +18,9 @@ func newEventsCommand() *cobra.Command {
 		Use:   "events",
 		Short: "List, inspect, and manage your events",
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
+		Example: "  icb events list                        what is coming up, soonest first\n" +
+			"  icb events list --when past --limit 3  the three most recent past events\n" +
+			"  icb events show 3                      one event in full",
 	})
 	goclikit.WithRecoveryHints(cmd, "List every event: icb events list")
 	splitReadingFromChanging(cmd)

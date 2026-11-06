@@ -29,6 +29,9 @@ func newTasksCommand() *cobra.Command {
 			"shown. `snooze` restarts a task's window, `pin` holds it at the top,\n" +
 			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
 			"completed or dropped one.",
+		Example: "  icb tasks list --limit 5  the five to do next\n" +
+			"  icb tasks complete 42     mark task 42 done\n" +
+			"  icb tasks search gutters  find a task by name or notes",
 	})
 	goclikit.WithRecoveryHints(cmd,
 		"Search tasks by name or notes: icb tasks search <query>",
@@ -487,6 +490,8 @@ func newTaskCategoriesCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "categories",
 		Short: "List and tune the categories --category accepts, with each one's window",
+		Example: "  icb tasks categories list                        each category and its window\n" +
+			"  icb tasks categories edit Home --window-days 45  give new Home tasks 45 days",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newTaskCategoriesListCommand())...)
