@@ -33,7 +33,7 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
     ),
     # Every read `icb overview` fans out to, for a service computing the same lanes: the tasks,
     # articles and books lists, and the reads only the overview makes. Its project-items reads are
-    # listed here too, so this scope alone renders every lane.
+    # listed here too, so a service holding only this scope can render every lane.
     'icb.overview.read': TASKS_READ
     | ARTICLES_READ
     | BOOKS_READ

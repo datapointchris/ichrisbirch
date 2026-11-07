@@ -10,8 +10,8 @@ vars:
   # the same shape as a release (v0.2.0-3-gabc1234) instead of the app's tags.
   VERSION:
     sh: git describe --tags --match 'cli/v*' --always --dirty 2>/dev/null | sed 's|^cli/||' || echo dev
-  # ~/.local/bin, not $GOBIN: that is where the dotfiles release installer puts
-  # icb, and it precedes ~/go/bin on PATH — a $GOBIN install would sit there
+  # ~/.local/bin, not $GOBIN: that is where the released binary installs, and
+  # it precedes ~/go/bin on PATH — a $GOBIN install would sit there
   # shadowed by the released binary and look like the build never took effect.
   INSTALL_DIR: '{{.HOME}}/.local/bin'
 

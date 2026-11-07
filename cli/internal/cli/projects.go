@@ -124,9 +124,7 @@ func newProjectsListCommand() *cobra.Command {
 	return cmd
 }
 
-// defaultNextItemLimit caps the items `projects next` prints. The ordering is
-// the point of the verb, so the head of the list is the answer and the tail is
-// context; a caller who wants more names a larger number.
+// defaultNextItemLimit caps the items `projects next` prints; --limit raises it.
 const defaultNextItemLimit = 10
 
 // newProjectsNextCommand prints the focus project, as focusQueue picks it, and
@@ -135,9 +133,8 @@ const defaultNextItemLimit = 10
 // same project and items, and --json answers with the overview's section.
 //
 // --kind narrows the focus to projects of one kind, so a question about making
-// things never resolves to an errand filed as a project. The filter runs
-// client-side because every item already carries its projects, so kind rides
-// along and the alternative would be a query parameter that saves no round trip.
+// things never resolves to an errand filed as a project. Every item already
+// carries its projects, so the filter runs here at no extra round trip.
 func newProjectsNextCommand() *cobra.Command {
 	var (
 		asJSON bool
@@ -196,10 +193,9 @@ func newProjectsNextCommand() *cobra.Command {
 				})
 			}
 			out := cmd.OutOrStdout()
-			// The sentences describe the data, so they read the uncapped set. A
-			// --limit the caller chose is not a fact about what is outstanding, and
-			// gating on the capped slice reported an empty subject for --limit 0
-			// against every open item there is.
+			// The sentences describe the data, so they read the uncapped set. Gated
+			// on the capped slice, --limit 0 would report no focus project while
+			// open items exist.
 			if focus.Project == nil {
 				switch {
 				case kind != "":

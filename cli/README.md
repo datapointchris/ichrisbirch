@@ -109,7 +109,7 @@ It answers 403 on every route its scopes do not list.
 `ichrisbirch/api/client_scopes.py` holds that table, and a refused call's message
 names the routes its scopes reach.
 
-A workload whose broker hands it short-lived tokens holds no secret instead. Its
+A workload that gets short-lived tokens from a broker needs no client secret. Its
 config file names the broker's command as `token_command`, an argv such as
 `["broker", "token", "icb"]`, and needs only `api` beside it. icb runs the
 command whenever its last token has expired, and sends the `access_token` it

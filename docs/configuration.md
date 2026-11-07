@@ -12,10 +12,10 @@ Before building it, `get_settings()` checks where the environment
 `ENVIRONMENT` first, then `testing` under pytest, then the `ENVIRONMENT` a
 `.env` sets, then `development`.
 
-| Environment                 | Configured from                                       | Without it                                                                               |
-| --------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `development`, `production` | the checkout's `.env`                                 | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
-| `testing`                   | the process environment, which whatever starts it set | it refuses to start without `POSTGRES_HOST`                                              |
+| Environment                 | Configured from                                             | Without it                                                                               |
+| --------------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `development`, `production` | the checkout's `.env`                                       | the process environment, where it carries `POSTGRES_HOST`; otherwise it refuses to start |
+| `testing`                   | the process environment, as set by whatever started the run | it refuses to start without `POSTGRES_HOST`                                              |
 
 A test run is configured from the committed `tests/testing.env`. Importing the
 `tests` package loads it into a pytest run, and the test stack's compose file

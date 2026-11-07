@@ -71,19 +71,16 @@ class TestCountdownsNotFound:
     """Test 404 responses for non-existent countdowns."""
 
     def test_read_one_not_found(self, countdown_crud_tester):
-        """GET /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
         response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, countdown_crud_tester):
-        """DELETE /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
         response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, countdown_crud_tester):
-        """PATCH /{id} returns 404 for non-existent countdown."""
         client, _ = countdown_crud_tester
         response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

@@ -43,7 +43,10 @@ def production_image(service: str) -> str:
 
 
 class PrivateServices:
-    """Points `settings` at this session's Postgres and Redis, starting each the environment does not name."""
+    """Points `settings` at this session's Postgres and Redis.
+
+    A container is started for whichever one TEST_DATABASE_URL or TEST_REDIS_URL does not name.
+    """
 
     def __init__(self, settings: Settings):
         self.settings = settings
@@ -79,7 +82,7 @@ class PrivateServices:
         full_initialization(self.settings)
 
     def start_postgres(self) -> str:
-        """Start this session's own Postgres and answer its URL."""
+        """Start this session's own Postgres and return its URL."""
         # Durability is off and the data lives in memory: nothing outlives the session.
         container = (
             PostgresContainer(
@@ -94,7 +97,7 @@ class PrivateServices:
         return f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{host}:{port}/{POSTGRES_DB}'
 
     def start_redis(self) -> str:
-        """Start this session's own Redis and answer its URL."""
+        """Start this session's own Redis and return its URL."""
         container = RedisContainer(production_image('redis')).with_command(['redis-server', '--save', '', '--appendonly', 'no'])
         container.start()
         self.started.append(container)

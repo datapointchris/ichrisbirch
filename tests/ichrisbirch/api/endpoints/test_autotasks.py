@@ -163,25 +163,21 @@ class TestAutoTasksNotFound:
     """Test 404 responses for non-existent autotasks."""
 
     def test_read_one_not_found(self, autotask_crud_tester):
-        """GET /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
         response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, autotask_crud_tester):
-        """DELETE /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
         response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, autotask_crud_tester):
-        """PATCH /{id} returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
         response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Nope'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_run_not_found(self, autotask_crud_tester):
-        """PATCH /{id}/run returns 404 for non-existent autotask."""
         client, _ = autotask_crud_tester
         response = client.patch(f'{ENDPOINT}/99999/run')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

@@ -157,19 +157,16 @@ class TestBoxItemsNotFound:
     """Test 404 responses for non-existent box items."""
 
     def test_read_one_not_found(self, boxitem_test_data):
-        """GET /items/{id} returns 404 for non-existent item."""
         client = boxitem_test_data
         response = client.get(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_delete_not_found(self, boxitem_test_data):
-        """DELETE /items/{id} returns 404 for non-existent item."""
         client = boxitem_test_data
         response = client.delete(f'{ENDPOINT}/99999')
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)
 
     def test_update_not_found(self, boxitem_test_data):
-        """PATCH /items/{id} returns 404 for non-existent item."""
         client = boxitem_test_data
         response = client.patch(f'{ENDPOINT}/99999', json={'name': 'Does Not Exist'})
         assert response.status_code == status.HTTP_404_NOT_FOUND, show_status_and_response(response)

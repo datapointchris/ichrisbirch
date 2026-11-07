@@ -79,9 +79,9 @@ func handleAPIError(err error) error {
 		case errors.As(err, &failed):
 			return errTokenCommandFailed(d, failed)
 		case errors.As(err, &apiErr) && apiErr.Unauthorized():
-			return fmt.Errorf("the API rejected the token %q handed; it expects an unexpired access token from the issuer it trusts, so run %q yourself and check the access_token it prints", d.TokenCommand, d.TokenCommand)
+			return fmt.Errorf("the API rejected the token that %q printed; it expects an unexpired access token from the issuer it trusts, so run %q yourself and check the access_token it prints", d.TokenCommand, d.TokenCommand)
 		case errors.As(err, &apiErr) && apiErr.Forbidden() && apiErr.Message != "":
-			return fmt.Errorf("the token %q handed was refused: %s; grant the client that minted it a scope listing this route", d.TokenCommand, apiErr.Message)
+			return fmt.Errorf("the token that %q printed was refused: %s; grant the client that minted it a scope listing this route", d.TokenCommand, apiErr.Message)
 		}
 	}
 	// A service has no login to renew, so it is pointed at its id and secret.

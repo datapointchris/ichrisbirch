@@ -28,11 +28,9 @@ func updateConfig() goselfupdate.Config {
 		Binary:    "icb",
 		Version:   version,
 		TagPrefix: "cli/",
-		// TokenFunc, not Token: Execute builds this config on every invocation
-		// to run the daily update check's gate, and that gate is designed to
-		// cost nothing. Calling githubToken() here would put a `gh auth token`
-		// subprocess in front of every `icb` command, including the ~364 out of
-		// 365 that decline to check at all.
+		// Lazy: Execute builds this config on every invocation, and an eager
+		// githubToken() would run `gh auth token` before every command, even
+		// when the daily update check is skipped.
 		TokenFunc: githubToken,
 	}
 }
@@ -41,14 +39,9 @@ func newUpdateCommand() *cobra.Command {
 	return goclikit.UpdateCommand(updateConfig())
 }
 
-// githubToken resolves a GitHub credential the way a release installer usually
-// does: the environment first, then the gh CLI's stored token.
-//
-// goselfupdate reads $GITHUB_TOKEN and $GH_TOKEN on its own, so this only adds
-// the third source. It is needed rather than optional — the releases live in a
-// private repository, and the API answers an unauthenticated request with a 404
-// that reads as "no release" rather than "no permission". On a public
-// repository it still earns its place by lifting the 60-requests-per-hour
+// githubToken resolves a GitHub credential: the environment first, then the gh
+// CLI's stored token. goselfupdate reads $GITHUB_TOKEN and $GH_TOKEN itself, so
+// this adds the gh fallback, which lifts the 60-requests-per-hour
 // unauthenticated rate limit.
 func githubToken() string {
 	for _, name := range []string{"GITHUB_TOKEN", "GH_TOKEN"} {

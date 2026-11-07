@@ -151,7 +151,7 @@ func newAuthLogoutCommand() *cobra.Command {
 				return err
 			}
 			if deployment.HandsTokens() {
-				return fmt.Errorf("%s sets token_command, so icb is handed its tokens and stores none to remove", deployment.Path)
+				return fmt.Errorf("%s sets token_command, so icb stores no token and there is nothing to log out of", deployment.Path)
 			}
 			if deployment.ClientID.Value == "" {
 				deployment.ClientID.Value = config.DefaultClientID()

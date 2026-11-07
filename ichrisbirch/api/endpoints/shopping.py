@@ -151,9 +151,6 @@ def item_view(session: Session, item: models.ShoppingItem) -> schemas.ShoppingIt
     return item_views(session, [item])[0]
 
 
-# --- Sections ---------------------------------------------------------------
-
-
 @router.get('/sections', response_model=list[schemas.ShoppingSection], status_code=status.HTTP_200_OK)
 def read_sections(session: DbSession, limit: RowLimit = None):
     """Every section in list order. Unsorted is not a row, so it is not listed."""
@@ -204,9 +201,6 @@ def rank_section(section: SectionFromPath, move: schemas.ShoppingSectionRankMove
     session.commit()
     session.refresh(section)
     return section
-
-
-# --- Items ------------------------------------------------------------------
 
 
 @router.get('/items', response_model=list[schemas.ShoppingItem], status_code=status.HTTP_200_OK)
@@ -367,9 +361,6 @@ def check_off(item: ItemFromPath, session: DbSession):
     session.refresh(purchase)
     logger.info('shopping_item_purchased', name=purchase.item_name)
     return purchase
-
-
-# --- Purchases --------------------------------------------------------------
 
 
 @router.get('/purchases', response_model=list[schemas.ShoppingPurchase], status_code=status.HTTP_200_OK)

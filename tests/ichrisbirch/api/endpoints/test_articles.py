@@ -387,7 +387,6 @@ class TestArticleQueryParameters:
 
 
 def test_read_current_returns_null_when_no_articles(txn_api_logged_in):
-    """Verify /current returns null (not error) when no articles exist."""
     client, _ = txn_api_logged_in
     response = client.get(f'{ENDPOINT}/current')
     assert response.status_code == status.HTTP_200_OK, show_status_and_response(response)

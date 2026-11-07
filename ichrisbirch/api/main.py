@@ -61,7 +61,7 @@ register_url_convertor('retired', RetiredPathConvertor())
 
 
 def retired_path(rest: str):
-    """An installed client still calling the unversioned routes reads a 404 as an answer about a row."""
+    """Answer 410 rather than 404, which an installed client calling the unversioned routes would read as a missing row."""
     raise HTTPException(status.HTTP_410_GONE, f'this API serves {API_PREFIX}; update the client calling it')
 
 
