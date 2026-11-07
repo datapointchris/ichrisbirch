@@ -28,7 +28,3 @@ The `.env` is named by path from the project root, the directory holding
 first `.env` in any parent directory, so a checkout without one would read a
 home directory's instead. A file never overrides a variable the process already
 holds, so any key can be set for one run without editing a file.
-
-### Flake 8
-
-`.flake8` cannot be loaded from `pyproject.toml`
