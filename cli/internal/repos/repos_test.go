@@ -16,14 +16,14 @@ func writeRegistry(t *testing.T, body string) string {
 	return path
 }
 
-const sample = `{"repos":[{"name":"dotfiles"},{"name":"todoui"},{"name":"doit"},{"name":"doit-content"}]}`
+const sample = `{"repos":[{"name":"dotfiles"},{"name":"projects"},{"name":"doit"},{"name":"doit-content"}]}`
 
 func TestKnownNamePasses(t *testing.T) {
 	registry, err := Load(writeRegistry(t, sample))
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if err := registry.Validate("todoui"); err != nil {
+	if err := registry.Validate("projects"); err != nil {
 		t.Errorf("registered name must validate, got %v", err)
 	}
 }
@@ -192,18 +192,18 @@ func TestUnknownNameNamesTheRegistryItRead(t *testing.T) {
 }
 
 func TestKnowsIdentifiesARepoName(t *testing.T) {
-	path := writeRegistry(t, `{"repos":[{"name":"todoui"},{"name":"dotfiles"}]}`)
+	path := writeRegistry(t, `{"repos":[{"name":"projects"},{"name":"dotfiles"}]}`)
 	registry, err := Load(path)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 
-	for _, name := range []string{"todoui", "Todoui", "  dotfiles  ", "DOTFILES"} {
+	for _, name := range []string{"projects", "Projects", "  dotfiles  ", "DOTFILES"} {
 		if !registry.Knows(name) {
 			t.Errorf("Knows(%q) = false; a ban a capital letter walks around is decoration", name)
 		}
 	}
-	for _, name := range []string{"", "todoui sync improvements", "Extract xx from dotfiles"} {
+	for _, name := range []string{"", "projects sync improvements", "Extract xx from dotfiles"} {
 		if registry.Knows(name) {
 			t.Errorf("Knows(%q) = true; bounded work named after a repo is still bounded work", name)
 		}
@@ -217,7 +217,7 @@ func TestKnowsIsFalseWithoutARegistry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if registry.Knows("todoui") {
+	if registry.Knows("projects") {
 		t.Error("a missing registry must not ban anything")
 	}
 }

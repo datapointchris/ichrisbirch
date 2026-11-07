@@ -249,7 +249,7 @@ def create(item: schemas.ProjectItemCreate, session: DbSession):
     session.commit()
     # The number comes from the database, not from the client, so the row has to
     # be read back before the response can carry it. It is the handle the caller
-    # will use for every subsequent command, and todoui writes it into the local
+    # will use for every subsequent command, and the projects TUI writes it into the local
     # row it just created, so leaving it to the next pull is not good enough.
     session.refresh(db_item)
 

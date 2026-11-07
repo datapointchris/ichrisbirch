@@ -27,7 +27,7 @@ class ProjectConfig(BaseModel):
 
 class ProjectCreate(ProjectConfig):
     """`status` is accepted on create so a client holding a finished project can
-    push it as it stands — todoui creates offline and syncs later, and a project
+    push it as it stands — the projects TUI creates offline and syncs later, and a project
     it completed while disconnected must not come back as active."""
 
     id: UUID | None = None

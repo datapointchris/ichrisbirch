@@ -2,7 +2,7 @@
 
 Project items and projects were the only resources keyed by UUID; tasks, books,
 articles, events and countdowns all carry a short integer. The UUID is the right
-primary key — items are created offline in todoui's SQLite and pushed, so the id
+primary key — items are created offline in the projects TUI's SQLite and pushed, so the id
 has to be collision-free without a round trip — but using that key as the human
 handle put 36 characters of hex in every list row and every command a person or
 an agent had to retype.

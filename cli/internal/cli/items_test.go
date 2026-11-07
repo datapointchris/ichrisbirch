@@ -180,7 +180,7 @@ func TestItemsList_HasNoArchivedAliasBesideStatus(t *testing.T) {
 // --status rather than refusing it.
 func TestItemsList_ProjectAcceptsStatus(t *testing.T) {
 	cmd := newItemsListCommand()
-	if err := cmd.Flags().Parse([]string{"--project", "todoui", "--status", "completed"}); err != nil {
+	if err := cmd.Flags().Parse([]string{"--project", "projects", "--status", "completed"}); err != nil {
 		t.Fatalf("--status alongside --project: %v", err)
 	}
 }
@@ -189,7 +189,7 @@ func TestHintHiddenItems_NamesTheCommandThatRan(t *testing.T) {
 	cmd := newItemsListCommand()
 	root := &cobra.Command{Use: "icb"}
 	root.AddCommand(cmd)
-	if err := cmd.Flags().Parse([]string{"--project", "todoui"}); err != nil {
+	if err := cmd.Flags().Parse([]string{"--project", "projects"}); err != nil {
 		t.Fatalf("parse: %v", err)
 	}
 	var stderr bytes.Buffer
@@ -200,8 +200,8 @@ func TestHintHiddenItems_NamesTheCommandThatRan(t *testing.T) {
 	got := stderr.String()
 	// The scoped read quotes itself back; dropping --project would hand over a
 	// command that answers a different question from the one just asked.
-	if !strings.Contains(got, "icb list --project todoui --status all") {
-		t.Errorf("hint = %q, want it to carry --project todoui and --status all", got)
+	if !strings.Contains(got, "icb list --project projects --status all") {
+		t.Errorf("hint = %q, want it to carry --project projects and --status all", got)
 	}
 }
 
@@ -232,7 +232,7 @@ func TestProjectsShow_TakesStatusNotArchived(t *testing.T) {
 
 func TestShellQuote_LeavesAPlainWordAloneAndQuotesTheRest(t *testing.T) {
 	for input, want := range map[string]string{
-		"todoui":                  "todoui",
+		"projects":                "projects",
 		"Forge toolchain rollout": "'Forge toolchain rollout'",
 		"it's":                    `'it'\''s'`,
 		"":                        "''",

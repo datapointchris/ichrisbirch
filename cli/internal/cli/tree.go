@@ -13,7 +13,7 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/graph"
 )
 
-// The marks a tree row carries for an item's state. The same three todoui draws,
+// The marks a tree row carries for an item's state. The same three the projects TUI draws,
 // because both front doors render the same rows and a reader should not have to
 // learn two vocabularies for one fact.
 const (

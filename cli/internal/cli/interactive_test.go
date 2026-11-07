@@ -145,13 +145,13 @@ func TestTasksCreate_RejectsABadCategoryBeforeReachingTheAPI(t *testing.T) {
 func TestFlagAnswers_ARepeatableFlagContributesEveryValue(t *testing.T) {
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().StringArray("project", nil, "")
-	if err := cmd.ParseFlags([]string{"--project", "todoui", "--project", "fleet facts"}); err != nil {
+	if err := cmd.ParseFlags([]string{"--project", "projects", "--project", "fleet facts"}); err != nil {
 		t.Fatalf("ParseFlags: %v", err)
 	}
 
 	got := strings.Join(flagAnswers(cmd, "project").All("project"), "|")
 
-	if got != "todoui|fleet facts" {
+	if got != "projects|fleet facts" {
 		t.Errorf("project = %q, want both values in order", got)
 	}
 }
@@ -178,7 +178,7 @@ func TestProjectRef_AcceptsANameCaseInsensitivelyAndAUUIDUntouched(t *testing.T)
 }
 
 func TestProjectRef_RejectsAnUnknownName(t *testing.T) {
-	if _, err := projectRef([]string{"todoui sync"})("nope"); err == nil {
+	if _, err := projectRef([]string{"projects sync"})("nope"); err == nil {
 		t.Error("an unknown project name was accepted")
 	}
 }
@@ -190,7 +190,7 @@ func TestLooksLikeUUID(t *testing.T) {
 		"3f2504e0-4f89-11d3-9a0c-0305e82c330":  false, // too short
 		"3f2504e04f8911d39a0c0305e82c3301":     false, // no dashes
 		"zf2504e0-4f89-11d3-9a0c-0305e82c3301": false, // not hex
-		"todoui":                               false,
+		"projects":                             false,
 	}
 	for value, want := range cases {
 		if got := looksLikeUUID(value); got != want {

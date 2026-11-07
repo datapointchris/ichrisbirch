@@ -126,7 +126,7 @@ func (r *Registry) Validate(name string) error {
 // The inverse question to Validate, and a separate method because the two want
 // opposite answers: Validate wants a repo tag to BE a registry name, and this
 // exists to refuse a PROJECT name that is one. Case- and space-insensitive,
-// because "Todoui " names the same thing "todoui" does and a ban a capital
+// because "Projects " names the same thing "projects" does and a ban a capital
 // letter walks around is decoration.
 func (r *Registry) Knows(name string) bool {
 	if !r.Available() {

@@ -283,7 +283,7 @@ class TestProjectStatus:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
     def test_status_round_trips_through_create(self, client_with_projects):
-        """todoui creates offline and pushes later; a project it finished must not come back active."""
+        """The projects TUI creates offline and pushes later; a project it finished must not come back active."""
         created = self.create(client_with_projects, name='Finished elsewhere', status='completed')
 
         assert created['status'] == 'completed'
@@ -1124,7 +1124,7 @@ class TestProjectItemReorder:
 class TestProjectItemNumber:
     """The short handle: `number` is what gets printed and typed, `id` is the key.
 
-    Items are created offline in todoui and pushed, so the primary key has to be
+    Items are created offline in the projects TUI and pushed, so the primary key has to be
     collision-free without a round trip — which is what the UUID buys and why it
     stays. It is a bad handle for the same reason it is a good key: 36 characters
     nobody can retype. The number is server-assigned and every endpoint that
@@ -1279,7 +1279,7 @@ class TestProjectNameAsReference:
         assert added.json()['id'] == other['id']
 
     def test_create_accepts_a_project_name(self, project_and_client):
-        """`--project todoui` is the commonest write there is; demanding a UUID
+        """`--project projects` is the commonest write there is; demanding a UUID
         there while every read prints a name made the CLI unusable by hand."""
         client, project = project_and_client
 
