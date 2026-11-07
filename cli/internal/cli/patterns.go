@@ -17,7 +17,7 @@ func newPatternsCommand() *cobra.Command {
 		Use:   "patterns",
 		Short: "Capture and review the observations you want to correlate",
 		Long:  "Fragments noticed in passing — what you ate, how you slept, when the\nheadache started. Not tasks and not journal entries: the point is having\nenough of them, over enough time, to see what goes with what.",
-		Example: "  icb patterns list --since 2w           what you noted in the last two weeks\n" +
+		Example: "  icb patterns list --since 2w          what you noted in the last two weeks\n" +
 			"  icb patterns list --search heartburn  every note that mentions it\n" +
 			"  icb patterns show 12                  one pattern in full",
 	})

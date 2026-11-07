@@ -22,7 +22,7 @@ func newRecipesCommand() *cobra.Command {
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
 		Example: "  icb recipes search oatmeal                      find a recipe by name, instructions or tag\n" +
-			"  icb recipes search-ingredients \"chicken,lemon\"    what you could make from what is on hand\n" +
+			"  icb recipes search-ingredients \"chicken,lemon\"  what you could make from what is on hand\n" +
 			"  icb recipes made 2                              record that you cooked recipe 2",
 	})
 	goclikit.WithRecoveryHints(cmd,

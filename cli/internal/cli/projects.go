@@ -38,7 +38,7 @@ func newProjectsCommand() *cobra.Command {
 			"status. A name that misses is answered with the names near it.",
 		Example: "  icb projects list                     the active projects\n" +
 			"  icb projects next --limit 1           the one item to work on next\n" +
-			"  icb projects show \"Kitchen remodel\"    one project and its open items",
+			"  icb projects show \"Kitchen remodel\"   one project and its open items",
 	})
 	goclikit.WithRecoveryHints(cmd, projectHints...)
 	splitReadingFromChanging(cmd)
