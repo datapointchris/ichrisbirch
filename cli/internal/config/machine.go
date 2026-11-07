@@ -24,8 +24,7 @@ func MachineConfigPath() string {
 // config.toml beside it, which says which deployment to talk to.
 //
 // YAML rather than JSON because every key in here wants the reason it is set
-// written next to it, and JSON has nowhere to put one. It is the same format and
-// the same filename the fleet's other Go tools read their machine config from.
+// written next to it, and JSON has nowhere to put one.
 type MachineConfig struct {
 	// ReposRegistry names a registry maintained outside icb's own data
 	// directory, which is how a machine that shares one registry between tools
