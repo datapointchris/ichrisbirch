@@ -200,6 +200,8 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 		{"articles show with non-int id is usage error", []string{"articles", "show", "abc"}, 2},
 		{"articles create without --url is usage error", []string{"articles", "create", "--notes", "x"}, 2},
 		{"articles edit with no fields is usage error", []string{"articles", "edit", "1"}, 2},
+		{"recipes search with neither a query nor --ingredients is usage error", []string{"recipes", "search"}, 2},
+		{"recipes search with a query and --ingredients is usage error", []string{"recipes", "search", "soup", "--ingredients", "leek"}, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

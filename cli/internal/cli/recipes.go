@@ -21,9 +21,9 @@ func newRecipesCommand() *cobra.Command {
 		Long: "Your recipe catalog: what you can cook, what you have cooked, and what you\n" +
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
-		Example: "  icb recipes search oatmeal                      find a recipe by name, instructions or tag\n" +
-			"  icb recipes search-ingredients \"chicken,lemon\"  what you could make from what is on hand\n" +
-			"  icb recipes made 2                              record that you cooked recipe 2",
+		Example: "  icb recipes search oatmeal                        find a recipe by name, instructions or tag\n" +
+			"  icb recipes search --ingredients \"chicken,lemon\"  what you could make from what is on hand\n" +
+			"  icb recipes made 2                                record that you cooked recipe 2",
 	})
 	goclikit.WithRecoveryHints(cmd,
 		"Search recipes by name, instructions, or tags: icb recipes search <query>",
@@ -34,7 +34,6 @@ func newRecipesCommand() *cobra.Command {
 		newRecipesListCommand(),
 		newRecipesShowCommand(),
 		newRecipesSearchCommand(),
-		newRecipesSearchIngredientsCommand(),
 		newRecipesVocabularyCommand(),
 		newRecipesAISuggestCommand(),
 		newRecipesAIImportCommand(),
@@ -127,45 +126,56 @@ func newRecipesShowCommand() *cobra.Command {
 }
 
 func newRecipesSearchCommand() *cobra.Command {
-	var asJSON bool
-	cmd := &cobra.Command{
-		Use:     "search <query>",
-		Short:   "Search recipes by name, instructions, or tags",
-		Long:    "Comma- or whitespace-separated terms are matched independently (OR).",
-		Example: "  icb recipes search oatmeal\n  icb recipes search \"chicken,lemon\"",
-		Args:    cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
-				return c.SearchRecipes(cmd.Context(), args[0])
-			})
-		},
-	}
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Output recipes as JSON to stdout")
-	return cmd
-}
-
-func newRecipesSearchIngredientsCommand() *cobra.Command {
 	var (
-		match  string
-		asJSON bool
+		ingredients string
+		match       string
+		asJSON      bool
 	)
 	cmd := &cobra.Command{
-		Use:   "search-ingredients <ingredients>",
-		Short: "Find recipes by ingredients you have",
-		Long: "Rank recipes by how many of the comma-separated ingredients they contain.\n" +
-			"--match any (default) ranks by coverage; --match all requires every ingredient.",
-		Example: "  icb recipes search-ingredients \"chicken,lemon,garlic\"\n" +
-			"  icb recipes search-ingredients \"oats,milk\" --match all",
-		Args: cobra.ExactArgs(1),
+		Use:   "search [<query>] [--ingredients <list>]",
+		Short: "Find recipes by name, instructions or tags, or by the ingredients you have",
+		Long: "A query matches a recipe's name, instructions and tags. Comma- or\n" +
+			"whitespace-separated terms are matched independently (OR).\n" +
+			"\n" +
+			"--ingredients takes a comma-separated list of what you have and ranks recipes\n" +
+			"by how many of those ingredients they contain, showing the count matched.\n" +
+			"--match any (the default) ranks by that count; --match all keeps only the\n" +
+			"recipes containing every one.\n" +
+			"\n" +
+			"Pass a query or --ingredients, not both: the two are separate searches.",
+		Example: "  # a recipe by name, instructions or tag\n  icb recipes search oatmeal\n\n" +
+			"  # what you could make from what is on hand, best match first\n" +
+			"  icb recipes search --ingredients \"chicken,lemon\"\n\n" +
+			"  # only the recipes that use every one\n" +
+			"  icb recipes search --ingredients \"oats,milk\" --match all",
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if match != "any" && match != "all" {
+			f := cmd.Flags()
+			byIngredients := f.Changed("ingredients")
+			switch {
+			case len(args) == 0 && !byIngredients:
+				return goclikit.UsageError(fmt.Errorf(
+					"nothing to search for — pass a query, as in icb recipes search oatmeal, " +
+						"or what you have, as in icb recipes search --ingredients \"chicken,lemon\""))
+			case len(args) == 1 && byIngredients:
+				return goclikit.UsageError(fmt.Errorf(
+					"a query and --ingredients are separate searches — pass one: " +
+						"icb recipes search <query>, or icb recipes search --ingredients <list>"))
+			case f.Changed("match") && !byIngredients:
+				return goclikit.UsageError(fmt.Errorf("--match ranks an --ingredients search — pass --ingredients with it"))
+			case match != "any" && match != "all":
 				return goclikit.UsageError(fmt.Errorf("--match must be 'any' or 'all'"))
+			}
+			if !byIngredients {
+				return runRecipeList(cmd, asJSON, func(c *api.Client) ([]api.Recipe, error) {
+					return c.SearchRecipes(cmd.Context(), args[0])
+				})
 			}
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
 				return handleAPIError(err)
 			}
-			results, err := client.SearchRecipesByIngredients(cmd.Context(), args[0], match)
+			results, err := client.SearchRecipesByIngredients(cmd.Context(), ingredients, match)
 			if err != nil {
 				return handleAPIError(err)
 			}
@@ -176,7 +186,8 @@ func newRecipesSearchIngredientsCommand() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&match, "match", "any", "Match mode: any (rank by coverage) or all (require every ingredient)")
+	cmd.Flags().StringVar(&ingredients, "ingredients", "", "Comma-separated ingredients you have; ranks recipes by how many they contain")
+	cmd.Flags().StringVar(&match, "match", "any", "With --ingredients: any (rank by how many match) or all (require every one)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output results as JSON to stdout")
 	return cmd
 }

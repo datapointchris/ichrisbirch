@@ -59,6 +59,7 @@ const (
 	groupTaskCategories   = "task-categories"
 	groupProjectItems     = "project-items"
 	groupShoppingSections = "shopping-sections"
+	groupArticleImports   = "article-imports"
 )
 
 // splitReadingFromChanging gives cmd the two sections its verbs go under.

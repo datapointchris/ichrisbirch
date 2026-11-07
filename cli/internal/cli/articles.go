@@ -31,17 +31,12 @@ func newArticlesCommand() *cobra.Command {
 		"Search articles by tag: icb articles search <tag>",
 	)
 	splitReadingFromChanging(cmd)
+	cmd.AddGroup(&cobra.Group{ID: groupArticleImports, Title: "Import commands:"})
 	cmd.AddCommand(inGroup(groupReading,
 		newArticlesListCommand(),
 		newArticlesShowCommand(),
 		newArticlesCurrentCommand(),
 		newArticlesSearchCommand(),
-		// A batch id is Redis-backed and expires 24 hours after its import, so
-		// a 404 here is usually age rather than a wrong id — and nothing in the
-		// tool lists batches, which is all the group's hints could offer.
-		goclikit.WithRecoveryHints(newArticlesImportStatusCommand(),
-			"A batch is kept for 24 hours — see what the import saved: icb articles list",
-		),
 	)...)
 	cmd.AddCommand(inGroup(groupChanging,
 		newArticlesCreateCommand(),
@@ -50,6 +45,27 @@ func newArticlesCommand() *cobra.Command {
 		newArticlesDeleteCommand(),
 		newArticlesImportCommand(),
 	)...)
+	cmd.AddCommand(inGroup(groupArticleImports, newArticleImportsCommand())...)
+	return cmd
+}
+
+func newArticleImportsCommand() *cobra.Command {
+	cmd := goclikit.AsNamespace(&cobra.Command{
+		Use:   "imports",
+		Short: "Follow a bulk-import batch by the id `import` printed",
+		Long: "`icb articles import` queues its URLs as one batch and returns at once.\n" +
+			"The articles are fetched and summarized in the background, and the batch\n" +
+			"id it printed is how you follow them here.",
+		Example: "  # how far that batch got, and which URLs failed\n" +
+			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
+	})
+	// A batch id is Redis-backed and expires 24 hours after its import, so a
+	// 404 here is usually age rather than a wrong id. No command lists batches,
+	// so the hint points at what the import saved.
+	goclikit.WithRecoveryHints(cmd,
+		"A batch is kept for 24 hours — see what the import saved: icb articles list",
+	)
+	cmd.AddCommand(newArticleImportsStatusCommand())
 	return cmd
 }
 
@@ -59,7 +75,7 @@ func newArticlesImportCommand() *cobra.Command {
 		Use:   "import <url> [url...]",
 		Short: "Bulk-import articles from URLs (async)",
 		Long: "Enqueue one or more URLs for background fetch and AI-summarize. Returns a\n" +
-			"batch id — poll it with `icb articles import-status <batch-id>`.",
+			"batch id — poll it with `icb articles imports status <batch-id>`.",
 		Example: "  icb articles import https://a.com/post https://b.com/post\n" +
 			"  icb articles import https://a.com/post --json",
 		Args: cobra.MinimumNArgs(1),
@@ -76,7 +92,7 @@ func newArticlesImportCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), batch)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Poll with: icb articles import-status %s\n", batch.BatchID)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Poll with: icb articles imports status %s\n", batch.BatchID)
 			return nil
 		},
 	}
@@ -84,13 +100,18 @@ func newArticlesImportCommand() *cobra.Command {
 	return cmd
 }
 
-func newArticlesImportStatusCommand() *cobra.Command {
+func newArticleImportsStatusCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:     "import-status <batch-id>",
-		Short:   "Check the progress of a bulk import batch",
-		Example: "  icb articles import-status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
-		Args:    cobra.ExactArgs(1),
+		Use:   "status <batch-id>",
+		Short: "Check the progress of a bulk import batch",
+		Long: "Prints how many of the batch's URLs are processed, each article saved, and\n" +
+			"each URL that failed with its error.",
+		Example: "  # is that batch done yet\n" +
+			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7\n\n" +
+			"  # the same, for a script polling it\n" +
+			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7 --json",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
 			if err != nil {
