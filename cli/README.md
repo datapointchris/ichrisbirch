@@ -88,7 +88,7 @@ that can reach a listener on this machine, and there is none.
 The resulting access token is an **RFC 9068 JWT** (`typ: at+jwt`, RS256, `kid:
 main`) that the FastAPI verifies itself against Authelia's JWKS. It is not
 authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
-scope alongside the device grant, so the CLI targets `https://ichrisbirch.com`. The
+scope alongside the device grant, so the CLI targets the app's public host. The
 `ichrisbirch-bearer` Traefik router carries a request holding an `Authorization`
 header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
 authorizing the token. That address is the config file's `api` key, and every
@@ -141,7 +141,7 @@ grants it.
 header from stdin, so the token never appears in another process's arguments:
 
 ```bash
-printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://ichrisbirch.com/api/v1/tasks
+printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://icb.example.com/api/v1/tasks
 ```
 
 Client id is per (machine × app): `icb-cli-<shorthostname>`.
@@ -342,8 +342,8 @@ goclilogin's config-file contract. It holds three keys, and none has a compiled-
 default:
 
 ```toml
-api = "https://ichrisbirch.com"
-issuer = "https://auth.ichrisbirch.com"
+api = "https://icb.example.com"
+issuer = "https://auth.example.com"
 client_id = "icb-cli-laptop"
 ```
 

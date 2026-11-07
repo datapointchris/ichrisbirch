@@ -59,31 +59,31 @@ func TestListItems_SendsAnEmptyRepoForUntaggedWork(t *testing.T) {
 
 func TestSearchItems_KeepsBothTheQueryAndTheRepo(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.SearchItems(context.Background(), "sync", strptr("todoui")); err != nil {
+	if _, err := client.SearchItems(context.Background(), "sync", strptr("garden-planner")); err != nil {
 		t.Fatalf("SearchItems: %v", err)
 	}
-	if *query != "q=sync&repo=todoui" {
+	if *query != "q=sync&repo=garden-planner" {
 		t.Errorf("query = %q, want both parameters", *query)
 	}
 }
 
 func TestListBlockedItems_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListBlockedItems(context.Background(), strptr("homelab")); err != nil {
+	if _, err := client.ListBlockedItems(context.Background(), strptr("photo-archive")); err != nil {
 		t.Fatalf("ListBlockedItems: %v", err)
 	}
-	if *query != "repo=homelab" {
-		t.Errorf("query = %q, want repo=homelab", *query)
+	if *query != "repo=photo-archive" {
+		t.Errorf("query = %q, want repo=photo-archive", *query)
 	}
 }
 
 func TestListProjects_SendsTheRepoParam(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
-	if _, err := client.ListProjects(context.Background(), strptr("indy"), "", nil); err != nil {
+	if _, err := client.ListProjects(context.Background(), strptr("recipe-site"), "", nil); err != nil {
 		t.Fatalf("ListProjects: %v", err)
 	}
-	if *query != "repo=indy" {
-		t.Errorf("query = %q, want repo=indy", *query)
+	if *query != "repo=recipe-site" {
+		t.Errorf("query = %q, want repo=recipe-site", *query)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestListProjects_DecodesTheDerivedRepos(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`[
-			{"id":"018f-a","name":"Spans three","description":null,"kind":"build","position":0,"created_at":"2026-07-24T00:00:00Z","item_count":3,"open_count":3,"completed_count":0,"repos":["icb","ichrisbirch","todoui"]}
+			{"id":"018f-a","name":"Spans three","description":null,"kind":"build","position":0,"created_at":"2026-07-24T00:00:00Z","item_count":3,"open_count":3,"completed_count":0,"repos":["icb","ichrisbirch","garden-planner"]}
 		]`))
 	}))
 	defer srv.Close()

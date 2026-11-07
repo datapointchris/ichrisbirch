@@ -39,7 +39,7 @@ func newAuthCommand() *cobra.Command {
 			"requests a token per run and stores nothing, so login and logout refuse.",
 		Example: "  icb auth status                         who you are, and where icb points\n" +
 			"  icb auth login                          log in to the config file's api\n" +
-			"  icb auth login https://ichrisbirch.com  log in there, filling in the config file",
+			"  icb auth login https://icb.example.com  log in there, filling in the config file",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupChanging, withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand())...)
@@ -59,7 +59,7 @@ func newAuthLoginCommand() *cobra.Command {
 			"the login starts, and written to the file once it succeeds. A value already\n" +
 			"in the file is never rewritten.",
 		Example: "  icb auth login\n" +
-			"  icb auth login https://ichrisbirch.com",
+			"  icb auth login https://icb.example.com",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config.IsService() {
@@ -181,7 +181,7 @@ func newAuthTokenCommand() *cobra.Command {
 			"service token instead, and with token_command in the config file it prints\n" +
 			"the token that command hands.",
 		Example: "  icb auth token\n" +
-			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://ichrisbirch.com/api/v1/tasks",
+			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://icb.example.com/api/v1/tasks",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, err := config.Load(cmd.Context(), apiOverride)
