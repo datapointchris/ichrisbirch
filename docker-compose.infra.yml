@@ -36,6 +36,8 @@ services:
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
+      start_period: 60s
+      start_interval: 2s
       timeout: 10s
       retries: 3
     logging:
@@ -73,6 +75,8 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 30s
+      start_period: 60s
+      start_interval: 2s
       timeout: 10s
       retries: 3
     restart: always
@@ -110,6 +114,8 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
+      start_period: 60s
+      start_interval: 2s
       timeout: 10s
       retries: 3
     logging:

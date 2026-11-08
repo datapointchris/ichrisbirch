@@ -45,6 +45,7 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 30s
+      start_interval: 2s
       retries: 3
     working_dir: /app
     logging:
@@ -70,6 +71,7 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 10s
+      start_interval: 2s
       retries: 3
     logging:
       <<: *logging
