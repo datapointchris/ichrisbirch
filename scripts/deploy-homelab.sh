@@ -26,6 +26,13 @@
 
 set -euo pipefail
 
+# MIGRATION: a host still on the ichrisbirch layout moves to life's first, and
+# the cutover runs this script again from its new path. This check comes before
+# anything creates /srv/life, because a move into an existing directory nests.
+if [[ -d /srv/ichrisbirch/.git && ! -e /srv/life ]]; then
+  exec "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/cutover-to-life.sh"
+fi
+
 INSTALL_DIR="/srv/life"
 LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
@@ -53,6 +60,8 @@ FAILURE_STEP=""
 FAILURE_OUTPUT=""
 LIVE_COLOR=""
 DEPLOY_COLOR=""
+TRAFFIC_SWITCHED=false
+LOCK_HELD=false
 
 # --remove-orphans on every up and down, because removing a service from
 # docker-compose.app.yml otherwise leaves its container running forever: neither
@@ -77,9 +86,6 @@ compose_app_down() {
 
 cleanup() {
   local exit_code=$?
-
-  # Always release the lock
-  rmdir "$LOCK_FILE" 2>/dev/null || true
 
   if [[ "$DEPLOY_STARTED" == "true" && "$DEPLOY_SUCCESS" != "true" ]]; then
     local commit_msg
@@ -112,18 +118,37 @@ cleanup() {
     fi
     context+="\n\n*Logs:* \`/srv/life/logs/\`"
 
+    # MIGRATION: the deploy the cutover handed to failed before its switch, so
+    # the old stack goes back up and the next release runs the cutover again.
+    if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" && "$TRAFFIC_SWITCHED" != "true" ]]; then
+      "${SCRIPT_DIR}/cutover-to-life.sh" --roll-back || log_error "cutover_roll_back_failed" | tee -a "$LOG_FILE"
+    fi
+
     notify_slack "failure" "$message" "$context"
+  fi
+
+  # Released last, so no other deploy starts while this one is still undoing
+  # itself, and only by the deploy that holds it.
+  if [[ "$LOCK_HELD" == "true" ]]; then
+    rmdir "$LOCK_FILE" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
 
 acquire_lock() {
+  # MIGRATION: the cutover took the lock before it stopped the site, and hands it here.
+  if [[ "${CUTOVER_HOLDS_LOCK:-}" == 1 ]]; then
+    log_info "lock_held_by_cutover" | tee -a "$LOG_FILE"
+    LOCK_HELD=true
+    return 0
+  fi
   if ! mkdir "$LOCK_FILE" 2>/dev/null; then
     log_warn "deploy_already_running" "lock" "$LOCK_FILE" | tee -a "$LOG_FILE"
     # Not a failure — another deploy is handling it
     DEPLOY_STARTED=false
     exit 0
   fi
+  LOCK_HELD=true
   log_info "lock_acquired" | tee -a "$LOG_FILE"
 }
 
@@ -488,6 +513,10 @@ main() {
   # === POINT OF NO RETURN ===
   # Everything above verified successfully. Now switch traffic.
   switch_traffic
+  TRAFFIC_SWITCHED=true
+  if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" ]]; then
+    log_info "site_restored" "cutover_downtime_seconds" "$(($(date +%s) - CUTOVER_SITE_STOPPED_AT))" | tee -a "$LOG_FILE"
+  fi
   update_state
   stop_old_containers
   cleanup_docker
