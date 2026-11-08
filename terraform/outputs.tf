@@ -84,7 +84,7 @@ output "prod_vpc_id" {
   value = aws_vpc.prod.id
 }
 
-output "security_group_ichrisbirch_webserver_id" {
+output "security_group_life_webserver_id" {
   value = aws_security_group.life_webserver.id
 }
 
@@ -140,7 +140,7 @@ output "security_group_ichrisbirch_webserver_id" {
 
 # ---------- ROLES ---------- #
 
-output "iam_role_ichrisbirch_webserver_arn" {
+output "iam_role_life_webserver_arn" {
   value = aws_iam_role.life_webserver.arn
 }
 
@@ -156,7 +156,7 @@ output "iam_policy_allow_pass_webserver_role_arn" {
 
 # ---------- IAM INSTANCE PROFILES ---------- #
 
-output "iam_instance_profile_ichrisbirch_webserver_arn" {
+output "iam_instance_profile_life_webserver_arn" {
   value = aws_iam_instance_profile.life_webserver.arn
 }
 
