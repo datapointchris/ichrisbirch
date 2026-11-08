@@ -7,43 +7,8 @@ from sqlalchemy import pool
 from ichrisbirch.config import get_settings
 from ichrisbirch.database.base import Base
 
-# Need the models imported for Base to find the tables
-from ichrisbirch.models import Article  # noqa
-from ichrisbirch.models import AutoTask  # noqa
-from ichrisbirch.models import AutoTaskFrequency  # noqa
-from ichrisbirch.models import Book  # noqa
-from ichrisbirch.models import BookOwnership  # noqa
-from ichrisbirch.models import BookProgress  # noqa
-from ichrisbirch.models import Box  # noqa
-from ichrisbirch.models import BoxItem  # noqa
-from ichrisbirch.models import BoxSize  # noqa
-from ichrisbirch.models import Countdown  # noqa
-from ichrisbirch.models import Duration  # noqa
-from ichrisbirch.models import DurationNote  # noqa
-from ichrisbirch.models import Event  # noqa
-from ichrisbirch.models import Habit  # noqa
-from ichrisbirch.models import HabitCategory  # noqa
-from ichrisbirch.models import HabitCompleted  # noqa
-from ichrisbirch.models import MoneyWasted  # noqa
-from ichrisbirch.models import Project  # noqa
-from ichrisbirch.models import ProjectItem  # noqa
-from ichrisbirch.models import ProjectItemDependency  # noqa
-from ichrisbirch.models import ProjectItemMembership  # noqa
-from ichrisbirch.models import SchedulerJobRun  # noqa
-from ichrisbirch.models import ShoppingItem
-from ichrisbirch.models import ShoppingPurchase
-from ichrisbirch.models import ShoppingSection
-from ichrisbirch.models import Strain
-from ichrisbirch.models import StrainEffect
-from ichrisbirch.models import StrainFlavor
-from ichrisbirch.models import StrainStatus
-from ichrisbirch.models import StrainTerpene
-from ichrisbirch.models import StrainType
-from ichrisbirch.models import Task  # noqa
-from ichrisbirch.models import TaskCategory  # noqa
-from ichrisbirch.models import User  # noqa
-
-# settings from ichrisbirch/config.py
+# Importing the package registers every model on Base.metadata.
+import ichrisbirch.models
 
 
 # this is the Alembic Config object, which provides

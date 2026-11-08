@@ -92,7 +92,7 @@ Production's `alembic_version` table contains `e010f859f025`. The new baseline m
 - **Deleting migrations before stamping production**: Same failure — production references a revision that no longer exists
 - **Forgetting INSERT statements**: Autogenerate only creates tables, not data. Lookup tables need their rows inserted in the migration
 - **Forgetting CREATE SCHEMA**: Autogenerate never creates a schema. A replay from an empty database then fails on the first table in a non-`public` schema
-- **Forgetting a sequence's start**: `alembic check` does not compare it. A baseline's `CREATE SEQUENCE item_numbers` needs the `START WITH` its model declares, or a fresh database numbers items from 1
+- **Forgetting a sequence's start**: `alembic check` does not compare it. A baseline's `CREATE SEQUENCE` needs the `START WITH` its model declares, or a fresh database numbers from 1
 - **Using `alembic stamp --purge` as a deployment strategy**: This is a recovery tool, not a workflow. If you need `--purge`, something already went wrong
 
 ## Lookup Tables (Replacing PostgreSQL ENUMs)
