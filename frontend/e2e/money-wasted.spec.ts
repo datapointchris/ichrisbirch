@@ -35,7 +35,6 @@ test.describe('Money Wasted Page', () => {
 
   test('loads the page and displays the total', async ({ page }) => {
     await page.goto('/money-wasted')
-    await expect(page).toHaveTitle('Money Wasted | iChrisBirch')
     await expect(page.locator('.money-wasted--total')).toBeVisible()
   })
 
@@ -63,7 +62,7 @@ test.describe('Money Wasted Page', () => {
 
   test('sidebar navigation to money wasted works', async ({ page }) => {
     await page.goto('/money-wasted')
-    await expect(page).toHaveTitle('Money Wasted | iChrisBirch')
+    await expect(page).toHaveTitle('Money Wasted | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Money Wasted' })
     await expect(sidebarLink).toBeVisible()

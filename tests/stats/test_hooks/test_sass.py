@@ -19,7 +19,7 @@ class TestSassSchema:
         """Test SassHookEvent with compilation errors."""
         event = SassHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -36,7 +36,7 @@ class TestSassSchema:
         """Test SassHookEvent with no issues."""
         event = SassHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -53,7 +53,7 @@ class TestSassSchema:
         """Test SassHookEvent can be serialized to JSON."""
         event = SassHookEvent(
             timestamp=dt.datetime(2025, 12, 31, 7, 36, 12, tzinfo=dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -72,14 +72,14 @@ class TestSassRunner:
 
     def test_skips_non_scss_files(self) -> None:
         """Test runner skips when no SCSS files are staged."""
-        event = run(['config.yaml', 'README.md'], 'master', 'ichrisbirch')
+        event = run(['config.yaml', 'README.md'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
 
     def test_skips_when_source_missing(self) -> None:
         """Test runner returns passed when SASS_SOURCE doesn't exist (Flask removed)."""
-        event = run(['main.scss'], 'master', 'ichrisbirch')
+        event = run(['main.scss'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -97,7 +97,7 @@ class TestSassRunner:
             '3 \u2502 .invalid-syntax\n'
             '  \u2502               ^\n'
             '  \u2575\n'
-            '  ichrisbirch/app/static/sass/main.scss 3:15  root stylesheet\n'
+            '  life/app/static/sass/main.scss 3:15  root stylesheet\n'
         )
 
         with patch('subprocess.run') as mock_run:
@@ -107,7 +107,7 @@ class TestSassRunner:
                 stderr=error_output,
             )
 
-            event = run(['main.scss'], 'master', 'ichrisbirch')
+            event = run(['main.scss'], 'master', 'life')
 
             assert event.status == 'failed'
             assert event.exit_code == 1
@@ -133,7 +133,7 @@ class TestSassRunner:
                 mock_tmp.return_value.__enter__ = MagicMock(return_value=MagicMock(name='/tmp/test.css'))
                 mock_tmp.return_value.__exit__ = MagicMock(return_value=False)
 
-                event = run(['main.scss'], 'master', 'ichrisbirch')
+                event = run(['main.scss'], 'master', 'life')
 
                 assert event.status == 'passed'
 
@@ -155,7 +155,7 @@ class TestSassRunner:
             mock_path_instance.exists.return_value = True
             mock_path_cls.return_value = mock_path_instance
 
-            event = run(['main.scss'], 'master', 'ichrisbirch')
+            event = run(['main.scss'], 'master', 'life')
 
             assert event.status == 'failed'
             assert event.exit_code == 1
@@ -173,7 +173,7 @@ class TestSassRunner:
             mock_path_instance.exists.return_value = True
             mock_path_cls.return_value = mock_path_instance
 
-            event = run(['main.scss'], 'master', 'ichrisbirch')
+            event = run(['main.scss'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
@@ -189,13 +189,13 @@ class TestSassErrorParser:
             '3 \u2502 .invalid-syntax\n'
             '  \u2502               ^\n'
             '  \u2575\n'
-            '  ichrisbirch/app/static/sass/main.scss 3:15  root stylesheet\n'
+            '  life/app/static/sass/main.scss 3:15  root stylesheet\n'
         )
 
         issues = parse_sass_errors(output)
 
         assert len(issues) == 1
-        assert issues[0].file == 'ichrisbirch/app/static/sass/main.scss'
+        assert issues[0].file == 'life/app/static/sass/main.scss'
         assert issues[0].line == 3
         assert issues[0].column == 15
 

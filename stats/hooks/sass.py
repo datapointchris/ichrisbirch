@@ -14,9 +14,9 @@ from stats.schemas.hooks.sass import SassError
 from stats.schemas.hooks.sass import SassHookEvent
 
 # Paths matching .pre-commit-config.yaml:
-#   sass ichrisbirch/app/static/sass/main.scss:ichrisbirch/app/static/css/main.css
-SASS_SOURCE = 'ichrisbirch/app/static/sass/main.scss'
-CSS_OUTPUT = 'ichrisbirch/app/static/css/main.css'
+#   sass life/app/static/sass/main.scss:life/app/static/css/main.css
+SASS_SOURCE = 'life/app/static/sass/main.scss'
+CSS_OUTPUT = 'life/app/static/css/main.css'
 
 # Pattern to extract file location from SASS error output
 # Format: "  path/to/file.scss 3:15  root stylesheet"
@@ -105,7 +105,7 @@ def parse_sass_errors(output: str) -> list[SassError]:
          3 │ .invalid-syntax
            │               ^
            ╵
-          ichrisbirch/app/static/sass/main.scss 3:15  root stylesheet
+          life/app/static/sass/main.scss 3:15  root stylesheet
     """
     issues: list[SassError] = []
 

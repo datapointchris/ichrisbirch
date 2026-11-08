@@ -8,9 +8,9 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.autofun import AutoFun
-from ichrisbirch.models.autofun import AutoFunActiveTask
-from ichrisbirch.models.task import Task
+from life.models.autofun import AutoFun
+from life.models.autofun import AutoFunActiveTask
+from life.models.task import Task
 from scripts.seed.base import SeedResult
 
 AUTOFUN_ITEMS = [

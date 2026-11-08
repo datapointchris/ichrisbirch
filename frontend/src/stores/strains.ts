@@ -14,7 +14,7 @@ const logger = createLogger('StrainsStore')
  * read from the server. Each value needs a counter, a filter, a row color and a
  * label, and a lookup table carrying only a name supplies none of them. Adding
  * a third is a code change here, in `_strains.scss` and in the model — see
- * `ichrisbirch/models/strain.py` for the trade. The other four vocabularies are
+ * `life/models/strain.py` for the trade. The other four vocabularies are
  * open sets and are fetched.
  */
 export type StrainStatus = 'tried' | 'want_to_try'

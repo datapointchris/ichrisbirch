@@ -1,6 +1,6 @@
 # Alembic Migrations
 
-Run from `ichrisbirch/ichrisbirch` (where `alembic.ini` is located).
+Run from `life/life` (where `alembic.ini` is located).
 
 ## Creating a Migration
 
@@ -15,9 +15,9 @@ alembic upgrade head
 
 For data migrations (INSERT, UPDATE, type conversions), use `alembic revision -m '...'` without `--autogenerate` and write the migration by hand.
 
-The revision ID is the one `alembic revision` picks at random. Never write one by hand, and never continue the sliding sequence many files here carry (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`, ...). Two branches cut from the same head continue it to the same ID. A database already at that ID then reads the second migration as applied and skips it. `tests/ichrisbirch/database/test_migration_revision_ids.py` fails when two files share an ID.
+The revision ID is the one `alembic revision` picks at random. Never write one by hand, and never continue the sliding sequence many files here carry (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`, ...). Two branches cut from the same head continue it to the same ID. A database already at that ID then reads the second migration as applied and skips it. `tests/life/database/test_migration_revision_ids.py` fails when two files share an ID.
 
-Name every constraint with `op.f()`, as in `name=op.f('ck_tasks_window_days_positive')`. Alembic passes a bare name through the naming convention in `ichrisbirch/database/base.py` when the migration runs, not when it was written. A bare name therefore moves whenever the convention does, and a replay builds names production never held. The check constraints created before `464a363261aa` are pinned to the backticked names an earlier convention gave them. Production held those names until that revision renamed them. `tests/ichrisbirch/database/test_check_constraint_names.py` fails when a table's check constraints differ from the names its model renders, which `alembic check` never compares.
+Name every constraint with `op.f()`, as in `name=op.f('ck_tasks_window_days_positive')`. Alembic passes a bare name through the naming convention in `life/database/base.py` when the migration runs, not when it was written. A bare name therefore moves whenever the convention does, and a replay builds names production never held. The check constraints created before `464a363261aa` are pinned to the backticked names an earlier convention gave them. Production held those names until that revision renamed them. `tests/life/database/test_check_constraint_names.py` fails when a table's check constraints differ from the names its model renders, which `alembic check` never compares.
 
 ## Squashing Migrations
 
@@ -29,10 +29,10 @@ When migration history gets too long or messy, squash into a single baseline.
 
 ```bash
 # 1. Check what revision production is on
-ssh "$ICB_PROD_HOST" "docker exec icb-prod-api python -c \"
+ssh "$LIFE_PROD_HOST" "docker exec life-prod-api python -c \"
 from sqlalchemy import text
-from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import get_db_engine
+from life.config import get_settings
+from life.database.session import get_db_engine
 engine = get_db_engine(get_settings())
 with engine.connect() as c:
     print(c.execute(text('SELECT version_num FROM alembic_version')).scalar())
@@ -40,23 +40,23 @@ with engine.connect() as c:
 # Example output: e010f859f025
 
 # 2. Delete all migration files
-rm ichrisbirch/alembic/versions/*.py
+rm life/alembic/versions/*.py
 
 # 3. Drop every schema in this checkout's test-stack database
 #    drop_all_tables issues `DROP SCHEMA ... CASCADE` for every non-system
 #    schema via live introspection and recreates `public`. The stack publishes
 #    no ports, so both steps run inside its api container, which mounts the
 #    checkout at /app.
-./ops/icbops testing start
-api=icb-test-<checkout>-api
+./ops/lifeops testing start
+api=life-test-<checkout>-api
 docker exec "$api" python -c "
-from ichrisbirch.config import get_settings
-from ichrisbirch.database.initialization import drop_all_tables
+from life.config import get_settings
+from life.database.initialization import drop_all_tables
 drop_all_tables(get_settings())
 "
 
 # 4. Generate new baseline, as yourself so the new file is yours
-docker exec --user "$(id -u):$(id -g)" --env HOME=/tmp -w /app/ichrisbirch "$api" \
+docker exec --user "$(id -u):$(id -g)" --env HOME=/tmp -w /app/life "$api" \
   python -m alembic revision --autogenerate -m "baseline schema"
 
 # 5. CRITICAL: Change the revision ID to match production's current head
@@ -113,7 +113,7 @@ alembic revision -m "add Gaming task category"
 ### Creating a new lookup table for a new feature
 
 ```python
-# Model (in ichrisbirch/models/)
+# Model (in life/models/)
 class MyLookup(Base):
     __tablename__ = 'my_lookups'
     name: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -121,7 +121,7 @@ class MyLookup(Base):
 # Column that references it
 category: Mapped[str] = mapped_column(Text, ForeignKey('my_lookups.name'), nullable=False)
 
-# Schema (in ichrisbirch/schemas/) — just use str, not an enum
+# Schema (in life/schemas/) — just use str, not an enum
 category: str
 ```
 

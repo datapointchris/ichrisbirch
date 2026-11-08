@@ -15,4 +15,4 @@ Location: `/scripts/sql/pg_cron_setup.sql`
 4. Check that the job details show it has run successfully
 
 !!! note "Note"
-    `pg_cron` is not being used anymore, in favor of `APScheduler` in the `ichrisbirch/scheduler` directory.
+    `pg_cron` is not being used anymore, in favor of `APScheduler` in the `life/scheduler` directory.

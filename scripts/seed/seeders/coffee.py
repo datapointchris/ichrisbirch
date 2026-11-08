@@ -11,8 +11,8 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.coffee import CoffeeBean
-from ichrisbirch.models.coffee import CoffeeShop
+from life.models.coffee import CoffeeBean
+from life.models.coffee import CoffeeShop
 from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_date
 from scripts.seed.base import random_past_datetime

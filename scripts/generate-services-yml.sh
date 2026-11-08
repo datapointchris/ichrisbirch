@@ -35,11 +35,11 @@ http:
     api:
       loadBalancer:
         servers:
-          - url: "http://icb-${color}-api:8000"
+          - url: "http://life-${color}-api:8000"
     vue:
       loadBalancer:
         servers:
-          - url: "http://icb-${color}-vue:80"
+          - url: "http://life-${color}-vue:80"
 EOF
 
 # Atomic swap — Traefik watches the directory and reloads within 1-2 seconds

@@ -1,3 +1,3 @@
-Rewriting ichrisbirch/api/main.py
-Rewriting ichrisbirch/models/user.py
+Rewriting life/api/main.py
+Rewriting life/models/user.py
 Rewriting stats/collectors/radon.py

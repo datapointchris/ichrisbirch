@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.autotask import AutoTask
+from life.models.autotask import AutoTask
 from scripts.seed.base import SeedResult
 
 # (name, category, frequency)

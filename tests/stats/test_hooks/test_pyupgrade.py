@@ -20,30 +20,30 @@ class TestPyupgradeSchema:
         """Test PyupgradeHookEvent with rewritten files."""
         event = PyupgradeHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
-            rewritten_files=['ichrisbirch/api/main.py', 'ichrisbirch/models/user.py'],
-            files_checked=['ichrisbirch/api/main.py', 'ichrisbirch/models/user.py', 'ichrisbirch/app/routes.py'],
+            rewritten_files=['life/api/main.py', 'life/models/user.py'],
+            files_checked=['life/api/main.py', 'life/models/user.py', 'life/app/routes.py'],
             duration_seconds=0.5,
         )
 
         assert event.type == 'hook.pyupgrade'
         assert event.status == 'failed'
         assert len(event.rewritten_files) == 2
-        assert 'ichrisbirch/api/main.py' in event.rewritten_files
+        assert 'life/api/main.py' in event.rewritten_files
 
     def test_pyupgrade_hook_event_clean(self) -> None:
         """Test PyupgradeHookEvent with no rewrites."""
         event = PyupgradeHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
             rewritten_files=[],
-            files_checked=['ichrisbirch/api/main.py'],
+            files_checked=['life/api/main.py'],
             duration_seconds=0.5,
         )
 
@@ -66,7 +66,7 @@ class TestPyupgradeRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, PyupgradeHookEvent)
             assert event.status == 'passed'
@@ -84,13 +84,13 @@ class TestPyupgradeRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, PyupgradeHookEvent)
             assert event.status == 'failed'
             assert len(event.rewritten_files) == 3
-            assert 'ichrisbirch/api/main.py' in event.rewritten_files
-            assert 'ichrisbirch/models/user.py' in event.rewritten_files
+            assert 'life/api/main.py' in event.rewritten_files
+            assert 'life/models/user.py' in event.rewritten_files
             assert 'stats/collectors/radon.py' in event.rewritten_files
 
     def test_pyupgrade_runner_measures_duration(self) -> None:
@@ -102,13 +102,13 @@ class TestPyupgradeRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
     def test_pyupgrade_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, PyupgradeHookEvent)
         assert event.status == 'passed'
@@ -125,7 +125,7 @@ class TestPyupgradeRunner:
                 stderr='',
             )
 
-            event = run(['test.py', 'README.md', 'main.py', 'config.yaml'], 'master', 'ichrisbirch')
+            event = run(['test.py', 'README.md', 'main.py', 'config.yaml'], 'master', 'life')
 
             # Should only check .py files
             assert event.files_checked == ['test.py', 'main.py']

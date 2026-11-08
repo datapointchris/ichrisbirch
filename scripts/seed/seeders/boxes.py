@@ -7,8 +7,8 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.box import Box
-from ichrisbirch.models.boxitem import BoxItem
+from life.models.box import Box
+from life.models.boxitem import BoxItem
 from scripts.seed.base import SeedResult
 
 # One box per size to ensure all 9 sizes are represented

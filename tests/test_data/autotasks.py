@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import AutoTask
+from life.models import AutoTask
 
 BASE_DATA: list[AutoTask] = [
     AutoTask(

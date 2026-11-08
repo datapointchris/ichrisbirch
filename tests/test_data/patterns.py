@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import Pattern
+from life.models import Pattern
 
 BASE_DATA: list[Pattern] = [
     Pattern(

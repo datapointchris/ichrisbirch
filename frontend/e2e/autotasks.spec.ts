@@ -36,11 +36,6 @@ test.describe('AutoTasks Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
-    await page.goto('/autotasks')
-    await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
-  })
-
   test('creates a new autotask', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })
@@ -67,7 +62,7 @@ test.describe('AutoTasks Page', () => {
 
   test('sidebar navigation to autotasks works', async ({ page }) => {
     await page.goto('/autotasks')
-    await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
+    await expect(page).toHaveTitle('AutoTasks | Life')
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'AutoTasks' })
     await expect(sidebarLink).toBeVisible()
   })

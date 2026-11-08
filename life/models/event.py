@@ -1,0 +1,32 @@
+import datetime as dt
+
+from sqlalchemy import Boolean
+from sqlalchemy import DateTime
+from sqlalchemy import Float
+from sqlalchemy import Identity
+from sqlalchemy import Integer
+from sqlalchemy import Text
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
+from life.database.base import Base
+
+
+class Event(Base):
+    __tablename__ = 'events'
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    # An event is a wall clock at a place, not an instant. Doors at 19:00 stay 19:00
+    # whoever is reading and whatever a government later does to the offset, so the
+    # local reading is stored and the zone is stored beside it to resolve one.
+    date: Mapped[dt.datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, server_default='UTC')
+    venue: Mapped[str] = mapped_column(Text, nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=True)
+    cost: Mapped[float] = mapped_column(Float, nullable=False)
+    attending: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+
+    def __repr__(self):
+        return f"""Event(name={self.name}, date={self.date}, timezone={self.timezone}, url={self.url},
+            venue={self.venue}, cost={self.cost}, attending={self.attending}, notes={self.notes}"""

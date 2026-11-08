@@ -40,9 +40,9 @@ a host-owned mount.
 `docker-compose.yml` declares an `x-app-build` anchor and both `api` and
 `scheduler` merge it. They differ only in their `command`:
 
-- `api` — `uvicorn ichrisbirch.wsgi_api:api`, four workers in production,
+- `api` — `uvicorn life.wsgi_api:api`, four workers in production,
   `--reload` in dev.
-- `scheduler` — `python -m ichrisbirch.wsgi_scheduler`.
+- `scheduler` — `python -m life.wsgi_scheduler`.
 
 The two services share a dependency set and a runtime. A second image would
 duplicate every layer and change nothing, so they share one.
@@ -75,12 +75,12 @@ against. So a fault in the SPA fallback, or anywhere else in
 
 ## Dev and test build locally; production pulls
 
-| Environment | Python target | Image                                | Source |
-| ----------- | ------------- | ------------------------------------ | ------ |
-| Development | `development` | `ichrisbirch:development`            | Built  |
-| Testing     | `testing`     | `ichrisbirch:icb-test-<checkout>`    | Built  |
-| CI          | `testing`     | `ichrisbirch:icb-test-ichrisbirch`   | Built  |
-| Production  | `production`  | `ghcr.io/datapointchris/ichrisbirch` | Pulled |
+| Environment | Python target | Image                         | Source |
+| ----------- | ------------- | ----------------------------- | ------ |
+| Development | `development` | `life:development`            | Built  |
+| Testing     | `testing`     | `life:life-test-<checkout>`   | Built  |
+| CI          | `testing`     | `life:life-test-<repository>` | Built  |
+| Production  | `production`  | `ghcr.io/datapointchris/life` | Pulled |
 
 Production never builds on the server. `.github/workflows/release.yml` builds
 both images on a matrix: the root `Dockerfile` at `--target production`, and
@@ -94,7 +94,7 @@ the code on disk. Both also mount `/app/.venv` as an anonymous volume, which
 shadows the bind mount at that one path and keeps the image's virtualenv rather
 than the host's. Docker seeds a new anonymous volume from the image layer.
 Compose would hand a recreated container the volume of the one it replaces, so
-every `icbops` `up` passes `--renew-anon-volumes`, and a rebuild picks up
+every `lifeops` `up` passes `--renew-anon-volumes`, and a rebuild picks up
 dependency changes.
 
 Do not replace that anonymous volume with a named one. A named volume survives
@@ -103,16 +103,16 @@ and the API sits in `health: starting` while `uv` resyncs at runtime.
 
 ## Building
 
-`icbops` builds through Compose, which is what selects the target and applies
+`lifeops` builds through Compose, which is what selects the target and applies
 the overrides:
 
 ```bash
-./ops/icbops dev rebuild
-./ops/icbops testing rebuild
-./ops/icbops prod build-test
+./ops/lifeops dev rebuild
+./ops/lifeops testing rebuild
+./ops/lifeops prod build-test
 ```
 
-`icbops --help` lists the flags each one takes.
+`lifeops --help` lists the flags each one takes.
 
 Production is the only target that copies source into the image, so a
 `.dockerignore` mistake or an uncommitted file passes dev and test and then

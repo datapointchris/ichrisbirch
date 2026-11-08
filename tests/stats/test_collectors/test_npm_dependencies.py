@@ -30,7 +30,7 @@ class TestNpmDependenciesSchema:
         """Test NpmDependenciesCollectEvent schema."""
         event = NpmDependenciesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             production_count=2,
             dev_count=1,
@@ -65,14 +65,14 @@ class TestNpmDependenciesRunner:
             fake_file.touch()
 
             with patch('stats.collectors.npm_dependencies.__file__', str(fake_file)):
-                event = run('master', 'ichrisbirch')
+                event = run('master', 'life')
 
         assert event is None
 
     def test_npm_runner_parses_package_json(self) -> None:
         """Test runner correctly parses a package.json file."""
         package_data = {
-            'name': 'ichrisbirch-frontend',
+            'name': 'life-frontend',
             'dependencies': {
                 'vue': '^3.4.0',
                 'pinia': '~2.1.7',
@@ -100,7 +100,7 @@ class TestNpmDependenciesRunner:
             package_json.write_text(json.dumps(package_data))
 
             with patch('stats.collectors.npm_dependencies.__file__', str(fake_file)):
-                event = run('master', 'ichrisbirch')
+                event = run('master', 'life')
 
         assert event is not None
         assert isinstance(event, NpmDependenciesCollectEvent)

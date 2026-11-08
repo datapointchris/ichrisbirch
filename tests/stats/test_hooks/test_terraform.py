@@ -27,7 +27,7 @@ class TestTerraformValidateSchema:
     def test_terraform_validate_hook_event(self) -> None:
         event = TerraformValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -42,7 +42,7 @@ class TestTerraformValidateSchema:
         """Test TerraformValidateHookEvent with failing validation."""
         event = TerraformValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -59,7 +59,7 @@ class TestTerraformValidateRunner:
     """Tests for terraform_validate hook runner."""
 
     def test_terraform_validate_runner_skips_non_tf(self) -> None:
-        event = terraform_validate.run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_validate.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -73,7 +73,7 @@ class TestTerraformValidateRunner:
                 stderr='',
             )
 
-            event = terraform_validate.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_validate.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformValidateHookEvent)
             assert event.status == 'passed'
@@ -88,7 +88,7 @@ class TestTerraformValidateRunner:
                 stderr='',
             )
 
-            event = terraform_validate.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_validate.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformValidateHookEvent)
             assert event.status == 'failed'
@@ -101,7 +101,7 @@ class TestTerraformTflintSchema:
     def test_terraform_tflint_hook_event_with_issues(self) -> None:
         event = TerraformTflintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -141,7 +141,7 @@ class TestTerraformTflintSchema:
 
         event = TerraformTflintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -160,7 +160,7 @@ class TestTerraformTflintSchema:
         """Test TerraformTflintHookEvent with no issues."""
         event = TerraformTflintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -178,7 +178,7 @@ class TestTerraformTflintRunner:
     """Tests for terraform_tflint hook runner."""
 
     def test_terraform_tflint_runner_skips_non_tf(self) -> None:
-        event = terraform_tflint.run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_tflint.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.issues
@@ -194,7 +194,7 @@ class TestTerraformTflintRunner:
                 stderr='',
             )
 
-            event = terraform_tflint.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_tflint.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformTflintHookEvent)
             assert event.status == 'passed'
@@ -211,7 +211,7 @@ class TestTerraformTflintRunner:
                 stderr='',
             )
 
-            event = terraform_tflint.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_tflint.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformTflintHookEvent)
             assert event.status == 'failed'
@@ -228,7 +228,7 @@ class TestTerraformFmtSchema:
     def test_terraform_fmt_hook_event(self) -> None:
         event = TerraformFmtHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -244,7 +244,7 @@ class TestTerraformFmtSchema:
         """Test TerraformFmtHookEvent with no files needing reformatting."""
         event = TerraformFmtHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -262,7 +262,7 @@ class TestTerraformFmtRunner:
     """Tests for terraform_fmt hook runner."""
 
     def test_terraform_fmt_runner_skips_non_tf(self) -> None:
-        event = terraform_fmt.run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_fmt.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_reformatted
@@ -276,7 +276,7 @@ class TestTerraformFmtRunner:
                 stderr='',
             )
 
-            event = terraform_fmt.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_fmt.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformFmtHookEvent)
             assert event.status == 'passed'
@@ -291,7 +291,7 @@ class TestTerraformFmtRunner:
                 stderr='',
             )
 
-            event = terraform_fmt.run(['infra/main.tf', 'infra/variables.tf'], 'master', 'ichrisbirch')
+            event = terraform_fmt.run(['infra/main.tf', 'infra/variables.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformFmtHookEvent)
             assert event.status == 'failed'
@@ -304,7 +304,7 @@ class TestTerraformDocsSchema:
     def test_terraform_docs_hook_event(self) -> None:
         event = TerraformDocsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -319,7 +319,7 @@ class TestTerraformDocsSchema:
         """Test TerraformDocsHookEvent with failing check."""
         event = TerraformDocsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -335,7 +335,7 @@ class TestTerraformDocsRunner:
     """Tests for terraform_docs hook runner."""
 
     def test_terraform_docs_runner_skips_non_tf(self) -> None:
-        event = terraform_docs.run(['main.py'], 'master', 'ichrisbirch')
+        event = terraform_docs.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -349,7 +349,7 @@ class TestTerraformDocsRunner:
                 stderr='',
             )
 
-            event = terraform_docs.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_docs.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformDocsHookEvent)
             assert event.status == 'passed'
@@ -364,7 +364,7 @@ class TestTerraformDocsRunner:
                 stderr='',
             )
 
-            event = terraform_docs.run(['infra/main.tf'], 'master', 'ichrisbirch')
+            event = terraform_docs.run(['infra/main.tf'], 'master', 'life')
 
             assert isinstance(event, TerraformDocsHookEvent)
             assert event.status == 'failed'

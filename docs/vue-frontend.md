@@ -1,6 +1,6 @@
 # Vue 3 Frontend
 
-The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.docker.localhost` via Traefik path-based routing.
+The life frontend is a Vue 3 SPA with TypeScript, served behind `app.docker.localhost` via Traefik path-based routing.
 
 ## Architecture
 
@@ -31,7 +31,7 @@ The ichrisbirch frontend is a Vue 3 SPA with TypeScript, served behind `app.dock
 
 ### Running the Vue Frontend
 
-The Vue service starts automatically with `./ops/icbops dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
+The Vue service starts automatically with `./ops/lifeops dev start`. It runs as a Vite dev server on port 5173, proxied through Traefik at `app.docker.localhost`.
 
 ### Auth in Development
 
@@ -39,7 +39,7 @@ Traefik's `dev-authelia-sim` middleware injects `Remote-User` and `Remote-Email`
 
 ### Auth in Production
 
-Authelia ForwardAuth protects all app routes. The `icb` CLI targets the same `ichrisbirch.com/api/v1` with an Authelia bearer token, which the edge carries past ForwardAuth.
+Authelia ForwardAuth protects all app routes. The `life` CLI targets the same `ichrisbirch.com/api/v1` with an Authelia bearer token, which the edge carries past ForwardAuth.
 
 ## Testing
 
@@ -66,7 +66,7 @@ Catches: Store logic errors, error handling paths, API response parsing.
 ### E2E Tests
 
 ```bash
-./ops/icbops test e2e   # From the repo root: Playwright, inside this checkout's test stack
+./ops/lifeops test e2e   # From the repo root: Playwright, inside this checkout's test stack
 npm run test:e2e:ui     # Interactive UI, against the dev stack
 ```
 
@@ -88,10 +88,10 @@ npm test             # Build check + unit tests
 2. Create Vue view in `frontend/src/views/`
 3. Add route in `frontend/src/router.ts`
 4. Add sidebar link in `frontend/src/components/sidebarLinks.ts`, to `allMainLinks` and `DEFAULT_SIDEBAR_ORDER`
-5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`
+5. Add path to `deploy-containers/traefik/vue-paths.txt` and run `lifeops routing generate`
 6. Write unit tests in `frontend/src/stores/__tests__/`
 7. Write E2E tests in `frontend/e2e/`
-8. Run `npm test` and `./ops/icbops test e2e` before considering the page done
+8. Run `npm test` and `./ops/lifeops test e2e` before considering the page done
 
 ## Phone Layout
 

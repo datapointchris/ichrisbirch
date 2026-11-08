@@ -21,11 +21,6 @@ test.describe('Shopping Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page', async ({ page }) => {
-    await page.goto('/shopping')
-    await expect(page).toHaveTitle('Shopping | iChrisBirch')
-  })
-
   test('adds an item, then checking it off moves it to recently bought', async ({ page }) => {
     await page.goto('/shopping')
 

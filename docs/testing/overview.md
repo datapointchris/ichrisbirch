@@ -1,6 +1,6 @@
 # Testing Infrastructure Overview
 
-This document provides a comprehensive overview of the testing infrastructure in the ichrisbirch project. The testing infrastructure supports the FastAPI backend API and Vue 3 SPA frontend.
+This document provides a comprehensive overview of the testing infrastructure in the life project. The testing infrastructure supports the FastAPI backend API and Vue 3 SPA frontend.
 
 ## Table of Contents
 
@@ -31,13 +31,13 @@ The architecture ensures that:
 pytest and Playwright each get an environment no other checkout shares.
 
 - **pytest** starts its own Postgres and Redis for every session, on ports Docker picks, and removes them when the session ends. The API runs in-process.
-- **Playwright** runs inside the checkout's own test stack, a compose project named `icb-test-<checkout directory>` that publishes no ports. Its Postgres is on tmpfs, so `testing stop` empties it.
+- **Playwright** runs inside the checkout's own test stack, a compose project named `life-test-<checkout directory>` that publishes no ports. Its Postgres is on tmpfs, so `testing stop` empties it.
 
 [Test Environment](environment.md) covers both.
 
 ## Test Data Management
 
-Test data comes from the `tests.test_data` package, which fixtures insert and delete around each module. pytest never runs the seeders. `scripts/seed/seeders/` fills the dev stack, and the test stack on request through `./ops/icbops testing db seed`.
+Test data comes from the `tests.test_data` package, which fixtures insert and delete around each module. pytest never runs the seeders. `scripts/seed/seeders/` fills the dev stack, and the test stack on request through `./ops/lifeops testing db seed`.
 
 ## Test Clients
 
@@ -96,7 +96,7 @@ Vitest with `@pinia/testing`. Mounts real Vue view components with controlled st
 - Verify: rendering states, conditional CSS classes, store action calls on user interaction, modal prop wiring
 - Every view page has a corresponding test file
 
-### E2E Tests (`./ops/icbops test e2e`)
+### E2E Tests (`./ops/lifeops test e2e`)
 
 Playwright tests running inside the checkout's test stack, through its Traefik at `https://app.test.localhost:8443`. Trimmed to smoke-only — each page keeps:
 
@@ -108,7 +108,7 @@ Playwright tests running inside the checkout's test stack, through its Traefik a
 Interaction-heavy tests (edit modals, toggles, filters, search, sort) live in component tests. Every E2E file has a comment pointing to its component test counterpart.
 
 - Located in `frontend/e2e/`
-- `./ops/icbops test e2e` starts the stack if it is down, then runs Playwright in its vue container
+- `./ops/lifeops test e2e` starts the stack if it is down, then runs Playwright in its vue container
 - Sequential execution (`workers: 1`) to maintain consistent database state
 
 ### Running Vue Tests
@@ -118,8 +118,8 @@ Interaction-heavy tests (edit modals, toggles, filters, search, sort) live in co
 npm --prefix frontend test
 
 # E2E tests, inside this checkout's test stack
-./ops/icbops test e2e
-./ops/icbops test e2e e2e/tasks.spec.ts --trace on
+./ops/lifeops test e2e
+./ops/lifeops test e2e e2e/tasks.spec.ts --trace on
 
 # E2E with interactive UI, against the dev stack
 npm --prefix frontend run test:e2e:ui
@@ -133,7 +133,7 @@ Five pre-commit hooks gate Vue code quality on every commit:
 - **vue-prettier**: Code formatting
 - **vue-typecheck**: TypeScript type checking
 - **vue-test-results**: Vitest unit + component tests
-- **vue-e2e-results**: Playwright E2E smoke tests, through `./ops/icbops test e2e`
+- **vue-e2e-results**: Playwright E2E smoke tests, through `./ops/lifeops test e2e`
 
 ## Related Documentation
 

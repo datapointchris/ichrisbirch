@@ -7,7 +7,7 @@
 # Every compose set this repo runs is resolved through compose's own loader,
 # which applies anchors, !reset, !override and the order the files stack in.
 
-# Each set as its runner passes it: icbops for prod, dev, test and infra, and
+# Each set as its runner passes it: lifeops for prod, dev, test and infra, and
 # for ci when CI=true, and the blue/green deploy for app.
 COMPOSE_SETS=(
   "docker-compose.yml"
@@ -30,14 +30,14 @@ setup() {
 foreign_builds() {
   local args=() file resolved
   for file in "$@"; do args+=(-f "$file"); done
-  resolved=$(DEPLOY_COLOR=blue docker compose --project-name icb-build-tags "${args[@]}" \
+  resolved=$(DEPLOY_COLOR=blue docker compose --project-name life-build-tags "${args[@]}" \
     config --no-env-resolution --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
     cat "$BATS_TEST_TMPDIR/compose.err"
     return 1
   }
   jq -r '.services | to_entries[]
     | select(.value.build != null and .value.image != null)
-    | select(.value.image | test("^ichrisbirch(-[a-z]+)?:") | not)
+    | select(.value.image | test("^life(-[a-z]+)?:") | not)
     | "\(.key) builds as \(.value.image)"' <<<"$resolved"
 }
 
@@ -54,7 +54,7 @@ foreign_builds() {
 
 @test "a lockfile change rebuilt in one checkout never reaches another's stack, because each project builds its own app image" {
   local project resolved images
-  for project in icb-test-one icb-test-two; do
+  for project in life-test-one life-test-two; do
     resolved=$(docker compose --project-name "$project" -f docker-compose.yml -f docker-compose.test.yml \
       config --no-env-resolution --format json 2>"$BATS_TEST_TMPDIR/compose.err") || {
       cat "$BATS_TEST_TMPDIR/compose.err"
@@ -62,7 +62,7 @@ foreign_builds() {
     }
     images=$(jq -r '.services.api.image, .services.scheduler.image' <<<"$resolved" | sort -u)
     echo "$project: $images"
-    [ "$images" = "ichrisbirch:$project" ]
+    [ "$images" = "life:$project" ]
   done
 }
 
@@ -81,7 +81,7 @@ foreign_builds() {
 services:
   vue:
     build: .
-    image: ichrisbirch-vue:production
+    image: life-vue:production
 EOF
   cat >swaps-image.yml <<'EOF'
 services:

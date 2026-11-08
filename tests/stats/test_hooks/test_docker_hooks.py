@@ -24,7 +24,7 @@ class TestDockerComposeValidateSchema:
         """Test DockerComposeValidateHookEvent with passing validation."""
         event = DockerComposeValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -41,7 +41,7 @@ class TestDockerComposeValidateSchema:
         """Test DockerComposeValidateHookEvent with failing validation."""
         event = DockerComposeValidateHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -62,7 +62,7 @@ class TestDockerComposeValidateRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'ichrisbirch')
+            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'life')
 
             assert isinstance(event, DockerComposeValidateHookEvent)
             assert event.status == 'passed'
@@ -78,7 +78,7 @@ class TestDockerComposeValidateRunner:
                 stderr='services.api.image must be a string',
             )
 
-            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'ichrisbirch')
+            event = docker_compose_validate.run(['docker-compose.yml'], 'master', 'life')
 
             assert isinstance(event, DockerComposeValidateHookEvent)
             assert event.status == 'failed'
@@ -86,7 +86,7 @@ class TestDockerComposeValidateRunner:
 
     def test_docker_compose_validate_runner_skips_non_compose_files(self) -> None:
         """Test runner skips non-compose files."""
-        event = docker_compose_validate.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = docker_compose_validate.run(['main.py', 'config.yaml'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -102,7 +102,7 @@ class TestHadolintSchema:
 
         event = HadolintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -121,7 +121,7 @@ class TestHadolintSchema:
         """Test HadolintHookEvent with no issues."""
         event = HadolintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -149,7 +149,7 @@ class TestHadolintRunner:
                 stderr='',
             )
 
-            event = hadolint.run(['Dockerfile'], 'master', 'ichrisbirch')
+            event = hadolint.run(['Dockerfile'], 'master', 'life')
 
             assert isinstance(event, HadolintHookEvent)
             assert event.status == 'passed'
@@ -167,7 +167,7 @@ class TestHadolintRunner:
                 stderr='',
             )
 
-            event = hadolint.run(['Dockerfile'], 'master', 'ichrisbirch')
+            event = hadolint.run(['Dockerfile'], 'master', 'life')
 
             assert isinstance(event, HadolintHookEvent)
             assert event.status == 'failed'
@@ -178,7 +178,7 @@ class TestHadolintRunner:
 
     def test_hadolint_runner_skips_non_dockerfiles(self) -> None:
         """Test runner skips non-Dockerfile files."""
-        event = hadolint.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = hadolint.run(['main.py', 'config.yaml'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

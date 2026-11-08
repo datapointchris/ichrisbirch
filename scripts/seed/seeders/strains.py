@@ -13,11 +13,11 @@ from typing import Any
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.strain import STRAIN_EFFECTS
-from ichrisbirch.models.strain import STRAIN_FLAVORS
-from ichrisbirch.models.strain import STRAIN_TERPENES
-from ichrisbirch.models.strain import STRAIN_TYPES
-from ichrisbirch.models.strain import Strain
+from life.models.strain import STRAIN_EFFECTS
+from life.models.strain import STRAIN_FLAVORS
+from life.models.strain import STRAIN_TERPENES
+from life.models.strain import STRAIN_TYPES
+from life.models.strain import Strain
 from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_date
 from scripts.seed.base import random_past_datetime

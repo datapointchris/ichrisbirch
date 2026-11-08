@@ -37,11 +37,6 @@ test.describe('Articles Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page with correct title', async ({ page }) => {
-    await page.goto('/articles')
-    await expect(page).toHaveTitle('Articles | iChrisBirch')
-  })
-
   test('creates a new article and verifies it appears', async ({ page }) => {
     await page.goto('/articles')
 
@@ -75,7 +70,7 @@ test.describe('Articles Page', () => {
 
   test('sidebar navigation to articles works', async ({ page }) => {
     await page.goto('/articles')
-    await expect(page).toHaveTitle('Articles | iChrisBirch')
+    await expect(page).toHaveTitle('Articles | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Articles' })
     await expect(sidebarLink).toBeVisible()

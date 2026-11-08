@@ -2,8 +2,8 @@
 
 import factory
 
-from ichrisbirch.models.box import Box
-from ichrisbirch.models.boxitem import BoxItem
+from life.models.box import Box
+from life.models.boxitem import BoxItem
 
 from .base import get_factory_session
 

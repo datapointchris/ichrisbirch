@@ -368,7 +368,7 @@ repos:
       - id: vue-e2e-results
         name: vue e2e (results capture)
         description: "Run Playwright E2E tests and capture results for stats"
-        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./ops/icbops test e2e; rc=$?; uv run python -m stats.collect_report playwright; exit $rc'
+        entry: bash -c '[ ! -f frontend/package.json ] && exit 0; ./ops/lifeops test e2e; rc=$?; uv run python -m stats.collect_report playwright; exit $rc'
         language: system
         pass_filenames: false
         files: '^frontend/.*\.(vue|ts|tsx)$'
@@ -506,7 +506,7 @@ repos:
         description: "Run full pytest suite and capture results for stats"
         stages: [pre-commit]
         language: system
-        entry: bash -c './ops/icbops test run --tb=short --cov=ichrisbirch --cov-report=json:.coverage.json; rc=$?; uv run python -m stats.collect_report pytest; exit $rc'
+        entry: bash -c './ops/lifeops test run --tb=short --cov=life --cov-report=json:.coverage.json; rc=$?; uv run python -m stats.collect_report pytest; exit $rc'
         types: [python]
         pass_filenames: false
         always_run: false

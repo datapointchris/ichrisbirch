@@ -18,8 +18,8 @@ Examples:
 
 import factory
 
-from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
-from ichrisbirch.models.user import User
+from life.models.user import DEFAULT_USER_PREFERENCES
+from life.models.user import User
 
 from .base import get_factory_session
 

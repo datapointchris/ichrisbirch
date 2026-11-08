@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.money_wasted import MoneyWasted
+from life.models.money_wasted import MoneyWasted
 from scripts.seed.base import SeedResult
 
 ITEMS = [

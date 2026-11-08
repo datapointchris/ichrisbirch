@@ -1,0 +1,157 @@
+import structlog
+from bs4 import BeautifulSoup
+from fastapi import APIRouter
+from fastapi import Query
+from fastapi import Response
+from fastapi import status
+from sqlalchemy import cast
+from sqlalchemy import or_
+from sqlalchemy import select
+from sqlalchemy.dialects import postgresql
+
+from life import models
+from life import schemas
+from life.api.endpoints.auth import DbSession
+from life.api.exceptions import NotFoundException
+from life.api.request_zone import RequestZone
+from life.api.time_window import TimeWindowQuery
+from life.services.outbound_http import get_page
+from life.services.row_limit import RowLimit
+from life.services.row_limit import apply_row_limit
+from life.services.time_window import apply_time_window
+
+logger = structlog.get_logger()
+router = APIRouter()
+
+
+@router.get('', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
+def read_many(
+    session: DbSession,
+    window: TimeWindowQuery,
+    zone: RequestZone,
+    ownership: str | None = Query(None),
+    progress: str | None = Query(None),
+    limit: RowLimit = None,
+):
+    """List the catalog in reading-priority order, narrowed by the filters and a window on the finish.
+
+    The window narrows on `read_finish_date`, so anything unread, in progress, or
+    abandoned is outside every window — a book with no finish date was not
+    finished in any week. That column is a calendar day, read in the request's zone.
+
+    `limit` caps last, so it takes the highest-priority books of whatever the
+    filters left rather than filtering a capped slice.
+    """
+    query = select(models.Book).order_by(models.Book.priority.asc())
+    if ownership:
+        query = query.filter(models.Book.ownership == ownership)
+    if progress:
+        query = query.filter(models.Book.progress == progress)
+    query = apply_time_window(query, models.Book.read_finish_date, window, zone=zone)
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.post('', response_model=schemas.Book, status_code=status.HTTP_201_CREATED)
+def create(book: schemas.BookCreate, session: DbSession):
+    obj = models.Book(**book.model_dump())
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+@router.get('/search', response_model=list[schemas.Book], status_code=status.HTTP_200_OK)
+def search(q: str, session: DbSession):
+    """Search books by title, author, or tags.
+
+    Accepts comma-separated terms (for multi-word phrases) or space-separated
+    keywords.  When the query contains commas, splits on commas to preserve
+    phrases like ``shadow work,Jung``.  Otherwise splits on whitespace so that
+    natural-language queries like ``Edinger ego archetype`` match any word.
+
+    `tags` column must be converted from array to string to perform the like comparison for each search term.
+    Use the OR to search for any of the specified search terms.
+    NOTE: Converting the tags array to text cannot use the GIN index that is set in postgres on the tags column.
+    This is a limitation of the array type in that it can't match partial results and use the index.
+    """
+    logger.debug('book_search', query=q)
+    raw_terms = q.split(',') if ',' in q else q.split()
+    search_terms = [f'%{term.strip()}%' for term in raw_terms if term.strip()]
+    logger.debug('book_search_terms', terms=search_terms)
+    title_matches = [models.Book.title.ilike(term) for term in search_terms]
+    author_matches = [models.Book.author.ilike(term) for term in search_terms]
+    tag_matches = [cast((models.Book.tags), postgresql.TEXT).ilike(term) for term in search_terms]
+    all_matches = title_matches + author_matches + tag_matches
+    books = select(models.Book).filter(or_(*all_matches)).order_by(models.Book.title.asc())
+    results = session.scalars(books).all()
+    logger.debug('book_search_results', count=len(results))
+    return list(results)
+
+
+@router.post('/goodreads', response_model=schemas.BookGoodreadsInfo, status_code=status.HTTP_201_CREATED)
+def goodreads(lookup: schemas.BookGoodreadsLookup):
+    """Get book information from Goodreads using the ISBN."""
+    isbn = lookup.isbn
+    logger.debug('goodreads_request', isbn=isbn)
+    url = f'https://www.goodreads.com/search?q={isbn}'
+    response = get_page(url).raise_for_status()
+    logger.debug('goodreads_retrieved', isbn=isbn)
+    # TODO: Fix the typing errors for this POS
+    soup = BeautifulSoup(response.content, 'html.parser')
+    if title_tag := soup.find('h1', class_='Text Text__title1'):
+        title = title_tag.text.strip()
+    else:
+        title = 'Not found'
+        logger.error('goodreads_title_not_found')
+    if author_tag := soup.find('span', class_='ContributorLink__name'):
+        author = author_tag.text.strip()
+    else:
+        author = 'Not found'
+        logger.error('goodreads_author_not_found')
+    if genre_section := soup.find('div', class_='BookPageMetadataSection__genres'):
+        genres = [g.text for g in genre_section.find_all('span', class_='Button__labelItem')][:-1]  # type: ignore
+        tags = ', '.join(genres)
+    else:
+        tags = 'None found'
+        logger.error('goodreads_genres_not_found')
+
+    return schemas.BookGoodreadsInfo(title=title, author=author, tags=tags, goodreads_url=str(response.url))
+
+
+@router.get('/{id}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+def read_one(id: int, session: DbSession):
+    if book := session.get(models.Book, id):
+        return book
+    raise NotFoundException('book', id, logger)
+
+
+@router.get('/isbn/{isbn}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+def get_book_by_isbn(isbn: str, session: DbSession):
+    if book := session.scalar(select(models.Book).where(models.Book.isbn == isbn)):
+        return book
+    raise NotFoundException('book', f'isbn={isbn}', logger)
+
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete(id: int, session: DbSession):
+    if book := session.get(models.Book, id):
+        session.delete(book)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    raise NotFoundException('book', id, logger)
+
+
+@router.patch('/{id}', response_model=schemas.Book, status_code=status.HTTP_200_OK)
+def update(id: int, book_update: schemas.BookUpdate, session: DbSession):
+    update_data = book_update.model_dump(exclude_unset=True)
+    logger.debug('book_update', book_id=id, update_data=update_data)
+
+    if book := session.get(models.Book, id):
+        for attr, value in update_data.items():
+            setattr(book, attr, value)
+        session.commit()
+        session.refresh(book)
+        return book
+
+    raise NotFoundException('book', id, logger)

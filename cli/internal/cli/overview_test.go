@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // fixedNow is the reference clock for every composition test: a mid-afternoon

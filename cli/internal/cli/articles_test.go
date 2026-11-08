@@ -9,7 +9,7 @@ import (
 
 	"github.com/datapointchris/goclikit"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // The worker writes the instant in UTC. 03:00 UTC on the 18th is 23:00 on the

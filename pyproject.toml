@@ -1,5 +1,5 @@
 [project]
-name = "ichrisbirch"
+name = "life"
 # Not a released version. The deployed artifact is identified by its image
 # tag — release.yml publishes sha-<short> alongside latest — and nothing
 # reads this field at runtime. hatchling requires project.version to be
@@ -37,7 +37,7 @@ dependencies = [
   "pyarrow>=16.1.0",
   "pydantic>=2.7.1",
   # [crypto] pulls `cryptography`, which PyJWT needs to verify the RS256 access
-  # tokens Authelia issues to the icb CLI.
+  # tokens Authelia issues to the life CLI.
   "pyjwt[crypto]>=2.8.0",
   # Reads the text of a saved link that is a PDF rather than a web page.
   "pypdf>=6.19.0",
@@ -167,11 +167,11 @@ uri-ignore-words-list = "*"
 [tool.coverage.run]
 parallel = true
 branch = true
-source = ["ichrisbirch"]
-omit = ["ichrisbirch/alembic"]
+source = ["life"]
+omit = ["life/alembic"]
 
 [tool.coverage.paths]
-source = ["ichrisbirch"]
+source = ["life"]
 
 [tool.coverage.report]
 show_missing = true
@@ -288,7 +288,7 @@ line-ending = "auto"
 docstring-code-format = true
 
 [tool.devstats]
-project = "ichrisbirch"
+project = "life"
 events_path = "stats/data/events/events.jsonl"
 
 [tool.devstats.capture]

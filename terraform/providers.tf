@@ -6,7 +6,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project   = "ichrisbirch"
+      Project   = "life"
       ManagedBy = "Terraform"
     }
   }

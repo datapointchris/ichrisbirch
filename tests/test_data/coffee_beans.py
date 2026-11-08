@@ -1,4 +1,4 @@
-from ichrisbirch.models.coffee import CoffeeBean
+from life.models.coffee import CoffeeBean
 
 BASE_DATA: list[CoffeeBean] = [
     CoffeeBean(

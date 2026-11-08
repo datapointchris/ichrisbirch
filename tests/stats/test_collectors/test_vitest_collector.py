@@ -48,7 +48,7 @@ class TestVitestSchema:
         """Test VitestCollectEvent schema."""
         event = VitestCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             summary=VitestSummary(passed=4, failed=1, total=5),
             tests=[],
@@ -67,14 +67,14 @@ class TestVitestRunner:
 
     def test_vitest_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None if file doesn't exist."""
-        event = run('master', 'ichrisbirch', '/nonexistent/path.json')
+        event = run('master', 'life', '/nonexistent/path.json')
 
         assert event is None
 
     def test_vitest_runner_returns_typed_event(self) -> None:
         """Test runner returns VitestCollectEvent."""
         json_path = FIXTURES_DIR / 'vitest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         assert isinstance(event, VitestCollectEvent)
@@ -86,7 +86,7 @@ class TestVitestRunner:
     def test_vitest_runner_parses_tests(self) -> None:
         """Test runner parses and flattens test details."""
         json_path = FIXTURES_DIR / 'vitest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         assert len(event.tests) == 5
@@ -102,7 +102,7 @@ class TestVitestRunner:
     def test_vitest_runner_sets_exit_code(self) -> None:
         """Test runner sets exit_code based on success field."""
         json_path = FIXTURES_DIR / 'vitest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         # Fixture has "success": false

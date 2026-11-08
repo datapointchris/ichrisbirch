@@ -37,7 +37,7 @@ const testArticles: Article[] = [
     url: 'https://example.com/docker',
     tags: ['docker', 'devops'],
     summary: 'Production patterns for compose',
-    notes: 'Relevant to ichrisbirch infra',
+    notes: 'Relevant to life infra',
     save_date: '2026-03-15T00:00:00Z',
     read_count: 0,
     is_favorite: false,
@@ -177,7 +177,7 @@ describe('ArticlesView', () => {
     await wrapper.findAll('[data-testid="article-expand-button"]')[0]!.trigger('click')
 
     const detail = wrapper.find('.articles__detail--open')
-    expect(detail.text()).toContain('Relevant to ichrisbirch infra')
+    expect(detail.text()).toContain('Relevant to life infra')
   })
 
   it('collapses detail on second click', async () => {
@@ -262,7 +262,7 @@ describe('ArticlesView', () => {
       url: 'https://example.com/docker',
       tags: ['docker', 'devops'],
       summary: 'Production patterns for compose',
-      notes: 'Relevant to ichrisbirch infra',
+      notes: 'Relevant to life infra',
     })
   })
 

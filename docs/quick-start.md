@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get the iChrisBirch application running locally with modern Traefik deployment and browser-trusted HTTPS in under 5 minutes.
+Get the Life application running locally with modern Traefik deployment and browser-trusted HTTPS in under 5 minutes.
 
 ## 🚀 Prerequisites
 
@@ -44,10 +44,10 @@ echo "127.0.0.1 dashboard.docker.localhost" | sudo tee -a /etc/hosts
 
 ```bash
 # Navigate to project directory
-cd ichrisbirch
+cd life
 
 # Start development environment (includes HTTPS + Traefik automatically)
-./ops/icbops dev start
+./ops/lifeops dev start
 ```
 
 **What this does**:
@@ -61,10 +61,10 @@ cd ichrisbirch
 
 ```bash
 # Check service status and URLs
-./ops/icbops dev status
+./ops/lifeops dev status
 
 # Run comprehensive health checks
-./ops/icbops dev health
+./ops/lifeops dev health
 ```
 
 ### 3. Access Your Applications
@@ -91,15 +91,15 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Single commands for each operation
-./ops/icbops dev start       # Start development (Traefik + HTTPS automatic)
-./ops/icbops dev status      # Show status + URLs
-./ops/icbops dev health      # Run health checks
-./ops/icbops dev logs        # View service logs
-./ops/icbops dev stop        # Stop development
+./ops/lifeops dev start       # Start development (Traefik + HTTPS automatic)
+./ops/lifeops dev status      # Show status + URLs
+./ops/lifeops dev health      # Run health checks
+./ops/lifeops dev logs        # View service logs
+./ops/lifeops dev stop        # Stop development
 
 # SSL certificate management
-./ops/icbops ssl-manager generate dev    # Generate certificates
-./ops/icbops ssl-manager info dev        # Certificate information
+./ops/lifeops ssl-manager generate dev    # Generate certificates
+./ops/lifeops ssl-manager info dev        # Certificate information
 ```
 
 **No more confusing command duplication** - each operation has exactly one command.
@@ -124,14 +124,14 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Check what's running
-./ops/icbops dev status
+./ops/lifeops dev status
 
 # Example output:
 # Container Status:
-# [✓] icb-dev-traefik    (Up 2 minutes)
-# [✓] icb-dev-postgres   (Up 2 minutes (healthy))
-# [✓] icb-dev-api        (Up 2 minutes (healthy))
-# [✓] icb-dev-vue        (Up 2 minutes (healthy))
+# [✓] life-dev-traefik    (Up 2 minutes)
+# [✓] life-dev-postgres   (Up 2 minutes (healthy))
+# [✓] life-dev-api        (Up 2 minutes (healthy))
+# [✓] life-dev-vue        (Up 2 minutes (healthy))
 #
 # Development environment URLs:
 #   API:       https://api.docker.localhost/
@@ -145,44 +145,44 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 
 ```bash
 # Start development
-./ops/icbops dev start
+./ops/lifeops dev start
 
 # Quick status check
-./ops/icbops dev status
+./ops/lifeops dev status
 
 # View API logs while developing
-./ops/icbops dev logs api
+./ops/lifeops dev logs api
 
 # Stop when done
-./ops/icbops dev stop
+./ops/lifeops dev stop
 ```
 
 ### Troubleshooting
 
 ```bash
 # Run comprehensive health check
-./ops/icbops dev health
+./ops/lifeops dev health
 
 # View specific service logs
-./ops/icbops dev logs traefik    # Traefik proxy logs
-./ops/icbops dev logs api        # API backend logs
-./ops/icbops dev logs vue        # Vue frontend logs
+./ops/lifeops dev logs traefik    # Traefik proxy logs
+./ops/lifeops dev logs api        # API backend logs
+./ops/lifeops dev logs vue        # Vue frontend logs
 
 # Restart if needed
-./ops/icbops dev restart
+./ops/lifeops dev restart
 ```
 
 ### SSL Certificate Management
 
 ```bash
 # Generate certificates (automatic with mkcert)
-./ops/icbops ssl-manager generate dev
+./ops/lifeops ssl-manager generate dev
 
 # Check certificate information
-./ops/icbops ssl-manager info dev
+./ops/lifeops ssl-manager info dev
 
 # Validate certificates
-./ops/icbops ssl-manager validate dev
+./ops/lifeops ssl-manager validate dev
 ```
 
 ## 🚨 Quick Troubleshooting
@@ -196,8 +196,8 @@ The CLI has been **completely simplified** to eliminate confusing command duplic
 ```bash
 brew install mkcert
 mkcert -install
-./ops/icbops ssl-manager generate dev
-./ops/icbops dev restart
+./ops/lifeops ssl-manager generate dev
+./ops/lifeops dev restart
 ```
 
 ### 2. Service Not Accessible
@@ -207,9 +207,9 @@ mkcert -install
 **Solution**: Check service status and health
 
 ```bash
-./ops/icbops dev status
-./ops/icbops dev health
-./ops/icbops dev logs
+./ops/lifeops dev status
+./ops/lifeops dev health
+./ops/lifeops dev logs
 ```
 
 ### 3. Port Conflicts
@@ -219,9 +219,9 @@ mkcert -install
 **Solution**: Stop conflicting services
 
 ```bash
-./ops/icbops dev stop
-docker stop $(docker ps -q --filter "name=ichrisbirch")
-./ops/icbops dev start
+./ops/lifeops dev stop
+docker stop $(docker ps -q --filter "name=life")
+./ops/lifeops dev start
 ```
 
 ### 4. DNS Resolution Issues
@@ -248,15 +248,15 @@ grep docker.localhost /etc/hosts
 
 - **[Developer Setup](developer_setup.md)** - Complete development environment setup
 - **[Testing Guide](testing/overview.md)** - Running tests and test environments
-- **[Docker Quick Reference](docker/docker-quick-reference.md)** - the `icbops` verb for each common task
+- **[Docker Quick Reference](docker/docker-quick-reference.md)** - the `lifeops` verb for each common task
 
 ### Other Environments
 
 ```bash
 # Tests: pytest starts its own Postgres and Redis, and the e2e suite runs
 # inside this checkout's test stack, which publishes no ports
-./ops/icbops test run
-./ops/icbops test e2e
+./ops/lifeops test run
+./ops/lifeops test e2e
 
 # Production environment (runs on homelab, not locally)
 # See blue-green-deployment.md

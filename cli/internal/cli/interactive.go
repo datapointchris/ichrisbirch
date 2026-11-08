@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
+	"github.com/datapointchris/life/cli/internal/prompt"
 )
 
 // errAborted is a form the user canceled. Abandoning a record half-typed is a

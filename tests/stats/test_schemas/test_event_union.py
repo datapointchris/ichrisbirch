@@ -35,7 +35,7 @@ class TestParseEvent:
         data = {
             'type': 'hook.ruff-check',
             'timestamp': '2025-12-31T07:36:12Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'status': 'passed',
             'exit_code': 0,
@@ -57,7 +57,7 @@ class TestParseEvent:
         data = {
             'type': 'hook.mypy',
             'timestamp': '2025-12-31T07:36:12Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'status': 'passed',
             'exit_code': 0,
@@ -77,7 +77,7 @@ class TestParseEvent:
         data = {
             'type': 'commit',
             'timestamp': '2025-12-31T07:37:00Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'hash': 'abc123',
             'short_hash': 'abc',
@@ -102,7 +102,7 @@ class TestParseEvent:
         data = {
             'type': 'collect.tokei',
             'timestamp': '2025-12-31T07:36:12Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'total_files': 100,
             'total_code': 8000,
@@ -123,7 +123,7 @@ class TestParseEvent:
         data = {
             'type': 'hook.bandit',
             'timestamp': '2025-12-31T07:36:12Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'status': 'passed',
             'exit_code': 0,
@@ -154,7 +154,7 @@ class TestParseEventsFile:
         ruff_event = {
             'type': 'hook.ruff-check',
             'timestamp': '2025-12-31T07:35:00Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'status': 'passed',
             'exit_code': 0,
@@ -165,7 +165,7 @@ class TestParseEventsFile:
         commit_event = {
             'type': 'commit',
             'timestamp': '2025-12-31T07:37:00Z',
-            'project': 'ichrisbirch',
+            'project': 'life',
             'branch': 'master',
             'hash': 'abc123',
             'short_hash': 'abc',
@@ -258,7 +258,7 @@ class TestTokeiSchema:
         """Test TokeiCollectEvent can be created without total_lines."""
         event = TokeiCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             total_files=100,
             total_code=8000,

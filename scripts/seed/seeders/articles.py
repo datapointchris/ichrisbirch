@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.article import Article
+from life.models.article import Article
 from scripts.seed.base import SeedResult
 
 ARTICLES = [

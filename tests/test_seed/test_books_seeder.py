@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.book import Book
+from life.models.book import Book
 from scripts.seed.seeders import books
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

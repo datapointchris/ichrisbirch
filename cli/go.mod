@@ -1,4 +1,4 @@
-module github.com/datapointchris/ichrisbirch/cli
+module github.com/datapointchris/life/cli
 
 go 1.26.8
 

@@ -1,9 +1,9 @@
 # Docker
 
-iChrisBirch runs as a set of containers in every environment, orchestrated with
+Life runs as a set of containers in every environment, orchestrated with
 Docker Compose and fronted by Traefik.
 
-`./ops/icbops --help` is the command surface, covering dev, testing and
+`./ops/lifeops --help` is the command surface, covering dev, testing and
 production. These pages point at it rather than reproduce it. A `docker compose`
 line copied into prose goes stale the first time a flag or a file name changes,
 and nothing fails when it does.
@@ -12,19 +12,19 @@ and nothing fails when it does.
 
 The services defined in `docker-compose.yml`:
 
-| Service     | What it is                                    |
-| ----------- | --------------------------------------------- |
-| `traefik`   | Reverse proxy and TLS termination             |
-| `api`       | FastAPI backend                               |
-| `vue`       | Vue 3 SPA                                     |
-| `scheduler` | APScheduler background jobs                   |
-| `postgres`  | Application database                          |
-| `redis`     | Cache and session storage                     |
+| Service     | What it is                        |
+| ----------- | --------------------------------- |
+| `traefik`   | Reverse proxy and TLS termination |
+| `api`       | FastAPI backend                   |
+| `vue`       | Vue 3 SPA                         |
+| `scheduler` | APScheduler background jobs       |
+| `postgres`  | Application database              |
+| `redis`     | Cache and session storage         |
 
 ## Compose files
 
 `docker-compose.yml` is the base, and dev, test and CI layer over it. Its own
-defaults are production ones, down to the `icb-prod-` container names, so a
+defaults are production ones, down to the `life-prod-` container names, so a
 service read out of the base alone is the production service. Blue/green does
 not use it: `docker-compose.infra.yml` and `docker-compose.app.yml` are
 standalone.
@@ -33,11 +33,11 @@ standalone.
 | -------------------------- | -------------------------------------------------- |
 | `docker-compose.dev.yml`   | Local development                                  |
 | `docker-compose.test.yml`  | Each checkout's test stack, no ports published     |
-| `docker-compose.ci.yml`    | GitHub Actions, added by `icbops` under `CI=true`  |
+| `docker-compose.ci.yml`    | GitHub Actions, added by `lifeops` under `CI=true` |
 | `docker-compose.infra.yml` | Production Traefik, Postgres and Redis             |
 | `docker-compose.app.yml`   | Production api, vue and scheduler, one color       |
 
-`icbops {dev,testing,prod} docker [service]` prints the merged result for
+`lifeops {dev,testing,prod} docker [service]` prints the merged result for
 an environment. No single file shows that, because each one carries only its
 own overrides.
 
@@ -51,12 +51,12 @@ so `https://app.test.localhost:8443/` resolves only there.
 Production runs on a self-hosted server, not locally. A push to `main` triggers
 a webhook that runs `scripts/deploy-homelab.sh`, which deploys the color that
 is not live and cuts Traefik over once it is healthy.
-`docker-compose.infra.yml` stays up as project `icb-infra`, and
-`docker-compose.app.yml` deploys as `icb-blue` or `icb-green`.
+`docker-compose.infra.yml` stays up as project `life-infra`, and
+`docker-compose.app.yml` deploys as `life-blue` or `life-green`.
 [Blue/green deployment](../blue-green-deployment.md) covers the mechanism, and
-`icbops prod deploy-status` reports which color is live.
+`lifeops prod deploy-status` reports which color is live.
 
-Nothing deploys by hand. `icbops prod start` and `prod restart` bring the live
+Nothing deploys by hand. `lifeops prod start` and `prod restart` bring the live
 color back up after a reboot, and they read the color rather than choosing one.
 
 ## Configuration
@@ -85,7 +85,7 @@ the Vite dev server is what answers.
 
 Dev and test read Python code from a bind mount rather than from the image, so
 a Dockerfile fault can pass both and fail the production build.
-`icbops prod build-test` builds the production target locally.
+`lifeops prod build-test` builds the production target locally.
 
 ## These pages
 
@@ -93,8 +93,8 @@ a Dockerfile fault can pass both and fail the production build.
   stages and how an image reaches each environment.
 - [Docker Compose Architecture](docker-compose.md) — how the base and the
   per-environment files layer, and the overrides that are not obvious.
-- [Quick Reference](docker-quick-reference.md) — the `icbops` verb for each
-  common task, and the raw `docker` commands that have no `icbops` equivalent.
+- [Quick Reference](docker-quick-reference.md) — the `lifeops` verb for each
+  common task, and the raw `docker` commands that have no `lifeops` equivalent.
 
 ## Related
 

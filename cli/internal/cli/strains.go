@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
-	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
+	"github.com/datapointchris/life/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/prompt"
 )
 
 // errRatingRange is the refusal a rating outside 1..10 carries, so a test
@@ -45,13 +45,13 @@ func newStrainsCommand() *cobra.Command {
 		Long: "A catalog of cannabis strains: which have been tried, which are queued, and\n" +
 			"what each one is like. `list --status want_to_try` is the queue;\n" +
 			"`list --effect sleepy` narrows to a recorded effect.",
-		Example: "  icb strains list --status want_to_try  the queue of strains to try\n" +
-			"  icb strains search kush                find one by name, breeder or lineage\n" +
-			"  icb strains show 12                    one strain in full",
+		Example: "  life strains list --status want_to_try  the queue of strains to try\n" +
+			"  life strains search kush                find one by name, breeder or lineage\n" +
+			"  life strains show 12                    one strain in full",
 	})
 	goclikit.WithRecoveryHints(cmd,
-		"Search strains by name, breeder, or lineage: icb strains search <query>",
-		"See every value a strain field accepts: icb strains vocabulary",
+		"Search strains by name, breeder, or lineage: life strains search <query>",
+		"See every value a strain field accepts: life strains vocabulary",
 	)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
@@ -85,10 +85,10 @@ func newStrainsListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the first names of the\n" +
 			"narrowed set rather than filtering a capped slice.",
-		Example: "  icb strains list                       the whole catalog\n" +
-			"  icb strains list --status want_to_try  the queue\n" +
-			"  icb strains list --effect sleepy       narrowed to a recorded effect\n" +
-			"  icb strains list --type sativa --rating-min 8\n" +
+		Example: "  life strains list                       the whole catalog\n" +
+			"  life strains list --status want_to_try  the queue\n" +
+			"  life strains list --effect sleepy       narrowed to a recorded effect\n" +
+			"  life strains list --type sativa --rating-min 8\n" +
 			"                                         the highest-rated sativas",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -108,7 +108,7 @@ func newStrainsListCommand() *cobra.Command {
 			})
 		},
 	}
-	cmd.Flags().StringVar(&filter.StrainType, "type", "", "Filter by classification (see: icb strains vocabulary)")
+	cmd.Flags().StringVar(&filter.StrainType, "type", "", "Filter by classification (see: life strains vocabulary)")
 	cmd.Flags().StringVar(&filter.Status, "status", "", "Filter by status: tried, want_to_try")
 	cmd.Flags().StringVar(&filter.Effect, "effect", "", "Filter to strains carrying this effect")
 	cmd.Flags().StringVar(&filter.Flavor, "flavor", "", "Filter to strains carrying this flavor")
@@ -129,7 +129,7 @@ func newStrainsSearchCommand() *cobra.Command {
 		Short: "Search strains by name, breeder, lineage, notes, or tags",
 		Long: "Comma-separated terms preserve phrases (\"purple punch,grape\"); otherwise\n" +
 			"whitespace splits into keywords matched against any field.",
-		Example: "  icb strains search kush\n  icb strains search \"purple punch,grape\" --limit 5",
+		Example: "  life strains search kush\n  life strains search \"purple punch,grape\" --limit 5",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			filter := api.StrainFilter{Query: args[0]}
@@ -151,7 +151,7 @@ func newStrainsVocabularyCommand() *cobra.Command {
 		Long: "The values --type, --status, --effect, --flavor and --terpene accept, with\n" +
 			"how many strains carry each. A count of zero is a value nothing uses yet,\n" +
 			"not a gap.",
-		Example: "  icb strains vocabulary\n  icb strains vocabulary --json",
+		Example: "  life strains vocabulary\n  life strains vocabulary --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -178,7 +178,7 @@ func newStrainsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <strain-id>",
 		Short:   "Show a single strain",
-		Example: "  icb strains show 12",
+		Example: "  life strains show 12",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
@@ -209,7 +209,7 @@ func newStrainsShowCommand() *cobra.Command {
 // the flags are checked against these validators before anything is sent.
 //
 // The choices are fetched, which is why the client is built before the form —
-// see `ichrisbirch/models/strain.py` for what that buys and what it costs.
+// see `life/models/strain.py` for what that buys and what it costs.
 func strainCreateFields(ctx context.Context, client *api.Client) ([]prompt.Field, error) {
 	vocabulary, err := client.GetStrainVocabulary(ctx)
 	if err != nil {
@@ -298,9 +298,9 @@ func newStrainsCreateCommand() *cobra.Command {
 		Short: "Create a new strain",
 		Long: "Only --name is required; a strain copied off a menu board has nothing\n" +
 			"else yet. Run it from a terminal with no --name and it asks.",
-		Example: "  icb strains create\n" +
-			"  icb strains create --name \"Blue Dream\"\n" +
-			"  icb strains create --name \"Zkittlez\" --type indica_dominant --status tried \\\n" +
+		Example: "  life strains create\n" +
+			"  life strains create --name \"Blue Dream\"\n" +
+			"  life strains create --name \"Zkittlez\" --type indica_dominant --status tried \\\n" +
 			"      --rating 9 --effect happy --effect relaxed --flavor tropical",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -413,10 +413,10 @@ func newStrainsEditCommand() *cobra.Command {
 			"\n" +
 			"--clear <field> reaches the numeric fields, which cannot take an empty\n" +
 			"value at all because the flag refuses to parse one.",
-		Example: "  icb strains edit 12 --status tried --rating 8\n" +
-			"  icb strains edit 12 --effect relaxed --effect sleepy\n" +
-			"  icb strains edit 12 --breeder \"\" --effect \"\"\n" +
-			"  icb strains edit 12 --clear rating --clear thc_percent",
+		Example: "  life strains edit 12 --status tried --rating 8\n" +
+			"  life strains edit 12 --effect relaxed --effect sleepy\n" +
+			"  life strains edit 12 --breeder \"\" --effect \"\"\n" +
+			"  life strains edit 12 --clear rating --clear thc_percent",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
@@ -485,7 +485,7 @@ func newStrainsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <strain-id>",
 		Short:   "Delete a strain",
-		Example: "  icb strains delete 12 --yes",
+		Example: "  life strains delete 12 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("strain id", args[0])
@@ -527,14 +527,14 @@ func addStrainFlags(cmd *cobra.Command, v *strainFlagVars) {
 	f.StringVar(&v.name, "name", "", "Strain name")
 	f.StringVar(&v.breeder, "breeder", "", "Who bred it")
 	f.StringVar(&v.lineage, "lineage", "", "Parent cross, e.g. \"Blueberry x Haze\"")
-	f.StringVar(&v.strainType, "type", "", "Classification (see: icb strains vocabulary)")
+	f.StringVar(&v.strainType, "type", "", "Classification (see: life strains vocabulary)")
 	f.StringVar(&v.status, "status", "", "One of: tried, want_to_try")
 	f.Float64Var(&v.thc, "thc", 0, "THC percentage")
 	f.Float64Var(&v.cbd, "cbd", 0, "CBD percentage")
 	f.IntVar(&v.rating, "rating", 0, "Rating from 1 to 10")
-	f.StringArrayVar(&v.effects, "effect", nil, "Effect (repeatable; see: icb strains vocabulary)")
-	f.StringArrayVar(&v.flavors, "flavor", nil, "Flavor (repeatable; see: icb strains vocabulary)")
-	f.StringArrayVar(&v.terpenes, "terpene", nil, "Terpene (repeatable; see: icb strains vocabulary)")
+	f.StringArrayVar(&v.effects, "effect", nil, "Effect (repeatable; see: life strains vocabulary)")
+	f.StringArrayVar(&v.flavors, "flavor", nil, "Flavor (repeatable; see: life strains vocabulary)")
+	f.StringArrayVar(&v.terpenes, "terpene", nil, "Terpene (repeatable; see: life strains vocabulary)")
 	f.StringArrayVar(&v.tags, "tag", nil, "Tag (repeatable)")
 	f.StringVar(&v.source, "source", "", "Dispensary or shop it came from")
 	f.StringVar(&v.notes, "notes", "", "Notes")
@@ -598,8 +598,8 @@ func readFlagIntent(f *pflag.FlagSet, name string) flagIntent {
 //
 // The numeric flags are absent for a different reason — pflag refuses to parse
 // `""` as an int or a float, so the flag never reaches a handler. `--clear
-// <field>` is what reaches those, and is the same grammar `icb recipes edit`
-// and `icb cooking-techniques edit` already take.
+// <field>` is what reaches those, and is the same grammar `life recipes edit`
+// and `life cooking-techniques edit` already take.
 var strainClearableFlags = map[string]string{
 	"breeder": "breeder", "lineage": "lineage", "type": "strain_type",
 	"effect": "effects", "flavor": "flavors", "terpene": "terpenes",

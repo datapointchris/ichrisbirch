@@ -34,9 +34,8 @@ test.describe('Tasks Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/tasks')
-    await expect(page).toHaveTitle('Priority Tasks | iChrisBirch')
     await expect(page.getByTestId('task-info-bar')).toBeVisible()
   })
 
@@ -47,7 +46,7 @@ test.describe('Tasks Page', () => {
 
   test('navigates to completed tasks page', async ({ page }) => {
     await page.goto('/tasks/completed')
-    await expect(page).toHaveTitle('Completed Tasks | iChrisBirch')
+    await expect(page).toHaveTitle('Completed Tasks | Life')
   })
 
   test('opens add task modal and creates a task', async ({ page }) => {
@@ -63,7 +62,7 @@ test.describe('Tasks Page', () => {
 
   test('sidebar navigation to tasks works', async ({ page }) => {
     await page.goto('/tasks')
-    await expect(page).toHaveTitle('Priority Tasks | iChrisBirch')
+    await expect(page).toHaveTitle('Priority Tasks | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Tasks' })
     await expect(sidebarLink).toBeVisible()

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.shopping import ShoppingItem
-from ichrisbirch.models.shopping import ShoppingPurchase
+from life.models.shopping import ShoppingItem
+from life.models.shopping import ShoppingPurchase
 from scripts.seed.seeders import shopping
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

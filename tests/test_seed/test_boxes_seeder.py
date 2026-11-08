@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.box import Box
+from life.models.box import Box
 from scripts.seed.seeders import boxes
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

@@ -10,7 +10,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newEventsCommand() *cobra.Command {
@@ -18,11 +18,11 @@ func newEventsCommand() *cobra.Command {
 		Use:   "events",
 		Short: "List, inspect, and manage your events",
 		Long:  "Dated happenings you might attend, each with a venue, a cost, and whether\nyou have said yes.",
-		Example: "  icb events list                        what is coming up, soonest first\n" +
-			"  icb events list --when past --limit 3  the three most recent past events\n" +
-			"  icb events show 3                      one event in full",
+		Example: "  life events list                        what is coming up, soonest first\n" +
+			"  life events list --when past --limit 3  the three most recent past events\n" +
+			"  life events show 3                      one event in full",
 	})
-	goclikit.WithRecoveryHints(cmd, "List every event: icb events list")
+	goclikit.WithRecoveryHints(cmd, "List every event: life events list")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newEventsListCommand(), newEventsShowCommand())...)
 	cmd.AddCommand(inGroup(groupChanging,
@@ -50,8 +50,8 @@ func newEventsListCommand() *cobra.Command {
 			"\n" +
 			"--limit takes from the front of that order: the next events coming up, or\n" +
 			"the latest ones that happened.",
-		Example: "  icb events list\n  icb events list --limit 5\n" +
-			"  icb events list --when past --limit 3\n  icb events list --when all --json",
+		Example: "  life events list\n  life events list --limit 5\n" +
+			"  life events list --when past --limit 3\n  life events list --when all --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			scope := api.EventScope(when)
@@ -71,7 +71,7 @@ func newEventsListCommand() *cobra.Command {
 			}
 			printEventsTable(cmd.OutOrStdout(), events, scope)
 			if scope == api.EventsUpcoming {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nPast events are hidden: icb events list --when all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nPast events are hidden: life events list --when all")
 			}
 			return nil
 		},
@@ -95,7 +95,7 @@ func newEventsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <event-id>",
 		Short:   "Show a single event",
-		Example: "  icb events show 7",
+		Example: "  life events show 7",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
@@ -135,7 +135,7 @@ func newEventsCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create --name <name> --date <when> --venue <venue> --cost <n> [flags]",
 		Short:   "Create a new event",
-		Example: "  icb events create --name \"Show\" --date \"2026-09-01 20:00\" --venue \"The Hall\" --cost 45 --attending",
+		Example: "  life events create --name \"Show\" --date \"2026-09-01 20:00\" --venue \"The Hall\" --cost 45 --attending",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
@@ -195,7 +195,7 @@ func newEventsEditCommand() *cobra.Command {
 		Use:     "edit <event-id> [flags]",
 		Short:   "Change fields on an existing event",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb events edit 7 --cost 50 --attending",
+		Example: "  life events edit 7 --cost 50 --attending",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
@@ -259,7 +259,7 @@ func newEventsAttendCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "attend <event-id>",
 		Short:   "Mark yourself as attending an event",
-		Example: "  icb events attend 7",
+		Example: "  life events attend 7",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])
@@ -290,7 +290,7 @@ func newEventsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <event-id>",
 		Short:   "Delete an event",
-		Example: "  icb events delete 7 --yes",
+		Example: "  life events delete 7 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("event id", args[0])

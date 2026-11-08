@@ -4,7 +4,7 @@ import datetime as dt
 
 import factory
 
-from ichrisbirch.models.article import Article
+from life.models.article import Article
 
 from .base import get_factory_session
 

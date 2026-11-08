@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.habit import Habit
-from ichrisbirch.models.habitcategory import HabitCategory
-from ichrisbirch.models.habitcompleted import HabitCompleted
+from life.models.habit import Habit
+from life.models.habitcategory import HabitCategory
+from life.models.habitcompleted import HabitCompleted
 from scripts.seed.seeders import habits
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

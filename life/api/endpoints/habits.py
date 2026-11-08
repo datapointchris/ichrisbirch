@@ -1,0 +1,220 @@
+import datetime as dt
+from zoneinfo import ZoneInfo
+
+import structlog
+from fastapi import APIRouter
+from fastapi import Response
+from fastapi import status
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from life import models
+from life import schemas
+from life.api.endpoints.auth import DbSession
+from life.api.exceptions import NotFoundException
+from life.api.request_zone import RequestZone
+from life.api.time_window import TimeWindowQuery
+from life.services import habit_day
+from life.services.row_limit import RowLimit
+from life.services.row_limit import apply_row_limit
+from life.services.time_window import apply_time_window
+
+logger = structlog.get_logger()
+router = APIRouter()
+
+
+@router.post('', response_model=schemas.Habit, status_code=status.HTTP_201_CREATED)
+def create_habit(habit: schemas.HabitCreate, session: DbSession):
+    db_obj = models.Habit(**habit.model_dump())
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+@router.get('', response_model=list[schemas.Habit], status_code=status.HTTP_200_OK)
+def read_many_habits(session: DbSession, current: bool | None = None, limit: RowLimit = None):
+    query = select(models.Habit)
+    if current is True:
+        query = query.filter(models.Habit.is_current.is_(True))
+    if current is False:
+        query = query.filter(models.Habit.is_current.is_(False))
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.post('/categories', response_model=schemas.HabitCategory, status_code=status.HTTP_201_CREATED)
+def create_category(category: schemas.HabitCategoryCreate, session: DbSession):
+    db_obj = models.HabitCategory(**category.model_dump())
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+@router.get('/categories', response_model=list[schemas.HabitCategory], status_code=status.HTTP_200_OK)
+def read_many_categories(session: DbSession, current: bool | None = None, limit: RowLimit = None):
+    query = select(models.HabitCategory)
+    if current is True:
+        query = query.filter(models.HabitCategory.is_current.is_(True))
+    if current is False:
+        query = query.filter(models.HabitCategory.is_current.is_(False))
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.post('/completed', response_model=schemas.HabitCompleted, status_code=status.HTTP_201_CREATED)
+def create_completed(habit: schemas.HabitCompletedCreate, session: DbSession):
+    db_obj = models.HabitCompleted(**habit.model_dump())
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+@router.get('/completed', response_model=list[schemas.HabitCompleted], status_code=status.HTTP_200_OK)
+def read_many_completed(
+    session: DbSession,
+    window: TimeWindowQuery,
+    zone: RequestZone,
+    first: bool | None = None,
+    last: bool | None = None,
+    limit: RowLimit = None,
+):
+    query = select(models.HabitCompleted)
+    oldest_first = (models.HabitCompleted.complete_date.asc(), models.HabitCompleted.id.asc())
+    newest_first = (models.HabitCompleted.complete_date.desc(), models.HabitCompleted.id.desc())
+
+    # `first` and `last` are a row cap of one written as a question, so they fold
+    # into `limit` rather than sitting beside it. An explicit limit can only
+    # tighten that, which is what keeps `first=true&limit=0` answering with none.
+    # A day holds many completions, so `id` orders the ones sharing it.
+    if first:  # first completed
+        query = query.order_by(*oldest_first)
+        limit = 1 if limit is None else min(1, limit)
+
+    elif last:  # most recent (last) completed
+        query = query.order_by(*newest_first)
+        limit = 1 if limit is None else min(1, limit)
+
+    else:
+        query = apply_time_window(query, models.HabitCompleted.complete_date, window, zone=zone)
+        query = query.order_by(*newest_first)
+
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.get('/day', response_model=schemas.HabitsDay, status_code=status.HTTP_200_OK)
+def read_day(session: DbSession, zone: RequestZone, date: dt.date | None = None):
+    """One day's habits: which are still due, and which were done.
+
+    The request's zone decides which day is today, so it only matters when
+    `date` is left off. Both are echoed back so a caller that sent neither can
+    see which day it got.
+
+    Declared above `/{id}/`: FastAPI matches in declaration order, so below it
+    `day` would be parsed as a habit id.
+    """
+    day = date if date is not None else dt.datetime.now(ZoneInfo(zone)).date()
+
+    # `placement` ties every completion carrying no `habit_id`, and `list.sort`
+    # is stable, so an unordered SELECT would leave their order to the planner.
+    # Newest first is what `/habits/completed` already answers.
+    current = list(session.scalars(select(models.Habit).filter(models.Habit.is_current.is_(True)).order_by(models.Habit.id)).all())
+    completed = list(
+        session.scalars(
+            select(models.HabitCompleted).filter(models.HabitCompleted.complete_date == day).order_by(models.HabitCompleted.id.desc())
+        ).all()
+    )
+
+    due = sorted(habit_day.still_due(current, completed), key=lambda h: habit_day.placement(h.id))
+    completed.sort(key=lambda c: habit_day.placement(c.habit_id))
+    return schemas.HabitsDay(
+        date=day,
+        timezone=zone,
+        due=due,
+        completed=completed,
+        current_total=len(current),
+    )
+
+
+@router.get('/{id}', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+def read_one(id: int, session: DbSession):
+    if habit := session.get(models.Habit, id):
+        return habit
+    raise NotFoundException('habit', id, logger)
+
+
+@router.patch('/{id}', response_model=schemas.Habit, status_code=status.HTTP_200_OK)
+def update(id: int, update: schemas.HabitUpdate, session: DbSession):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug('habit_update', habit_id=id, update_data=update_data)
+
+    if habit := session.get(models.Habit, id):
+        for attr, value in update_data.items():
+            setattr(habit, attr, value)
+        session.commit()
+        session.refresh(habit)
+        return habit
+
+    raise NotFoundException('habit', id, logger)
+
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete(id: int, session: DbSession):
+    if habit := session.get(models.Habit, id):
+        session.delete(habit)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    raise NotFoundException('habit', id, logger)
+
+
+@router.get('/categories/{category_id}', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
+def read_one_category(category_id: int, session: DbSession):
+    if category := session.get(models.HabitCategory, category_id):
+        return category
+    raise NotFoundException('habit category', category_id, logger)
+
+
+@router.patch('/categories/{category_id}', response_model=schemas.HabitCategory, status_code=status.HTTP_200_OK)
+def update_habit_category(category_id: int, category_update: schemas.HabitCategoryUpdate, session: DbSession):
+    if category := session.get(models.HabitCategory, category_id):
+        for attr, value in category_update.model_dump().items():
+            if value is not None:
+                setattr(category, attr, value)
+        session.commit()
+        session.refresh(category)
+        return category
+
+    raise NotFoundException('habit category', category_id, logger)
+
+
+@router.delete('/categories/{category_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(category_id: int, session: DbSession):
+    if category := session.get(models.HabitCategory, category_id):
+        try:
+            session.delete(category)
+            session.commit()
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except IntegrityError as e:
+            logger.warning('habit_category_in_use', category=category.name, error=str(e).split('\n')[0])
+            msg = f"Habit category '{category.name}' cannot be deleted because it is in use"
+            return Response(msg, status_code=status.HTTP_409_CONFLICT)
+
+    raise NotFoundException('habit category', category_id, logger)
+
+
+@router.get('/completed/{completed_id}', response_model=schemas.HabitCompleted, status_code=status.HTTP_200_OK)
+def read_one_completed(completed_id: int, session: DbSession):
+    if completed := session.get(models.HabitCompleted, completed_id):
+        return completed
+    raise NotFoundException('habit completed', completed_id, logger)
+
+
+@router.delete('/completed/{completed_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_completed(completed_id: int, session: DbSession):
+    if completed := session.get(models.HabitCompleted, completed_id):
+        session.delete(completed)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    raise NotFoundException('habit completed', completed_id, logger)

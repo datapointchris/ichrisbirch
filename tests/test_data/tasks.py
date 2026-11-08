@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models.task import Task
+from life.models.task import Task
 
 BASE_DATA: list[Task] = [
     Task(

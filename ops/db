@@ -2,7 +2,7 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
-# Database commands for ichrisbirch CLI
+# Database commands for life CLI
 # Sourced by main CLI - do not run directly
 # SC2034: Variables may appear unused but are used by sourcing script
 # SC2154: Color variables are defined in main CLI before sourcing
@@ -34,16 +34,16 @@ function db-container-prefix() {
   # Map environment name to Docker container prefix
   local env="$1"
   case "$env" in
-    development) echo "icb-dev" ;;
-    testing) echo "$ICB_TEST_PROJECT" ;;
-    production) echo "icb-prod" ;;
+    development) echo "life-dev" ;;
+    testing) echo "$LIFE_TEST_PROJECT" ;;
+    production) echo "life-prod" ;;
   esac
 }
 
 function db-seed() {
   local env="$1"
   shift
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
 
   if [[ "$env" == "production" ]]; then
     echo "${red}Seeding production is not allowed${reset}"
@@ -51,8 +51,8 @@ function db-seed() {
   fi
 
   if [[ "$env" == "testing" ]]; then
-    echo "${blue}Seeding testing database in ${ICB_TEST_PROJECT}...${reset}"
-    docker exec "${ICB_TEST_PROJECT}-api" python -m scripts.seed --env testing "$@"
+    echo "${blue}Seeding testing database in ${LIFE_TEST_PROJECT}...${reset}"
+    docker exec "${LIFE_TEST_PROJECT}-api" python -m scripts.seed --env testing "$@"
     return
   fi
 
@@ -63,19 +63,19 @@ function db-seed() {
 
 function db-init() {
   local env="$1"
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
 
   local prefix
   prefix=$(db-container-prefix "$env")
   local container="${prefix}-api"
 
   echo "${blue}Initializing ${env} database via ${container}...${reset}"
-  docker exec "$container" python -m ichrisbirch.database.initialization --env "$env"
+  docker exec "$container" python -m life.database.initialization --env "$env"
 }
 
 function db-reset() {
   local env="$1"
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
 
   if [[ "$env" == "production" ]]; then
     echo "${red}Resetting production is not allowed${reset}"
@@ -83,14 +83,14 @@ function db-reset() {
   fi
 
   if [[ "$env" == "testing" ]]; then
-    echo "${blue}Resetting testing database in ${ICB_TEST_PROJECT}...${reset}"
-    docker exec "${ICB_TEST_PROJECT}-api" python -m ichrisbirch.database.reset_database
+    echo "${blue}Resetting testing database in ${LIFE_TEST_PROJECT}...${reset}"
+    docker exec "${LIFE_TEST_PROJECT}-api" python -m life.database.reset_database
     return
   fi
 
   db-env-vars "$env" || return 1
   echo "${blue}Resetting ${env} database...${reset}"
-  ENVIRONMENT="$env" uv run python -m ichrisbirch.database.reset_database
+  ENVIRONMENT="$env" uv run python -m life.database.reset_database
 }
 
 function env-db() {
@@ -139,6 +139,6 @@ function db-usage() {
   echo "  --seed N           Faker random seed (default: 42)"
   echo ""
   echo "${yellow}Examples:${reset}"
-  echo "  icb dev db seed --scale 3 --dry-run"
-  echo "  icb testing db reset"
+  echo "  life dev db seed --scale 3 --dry-run"
+  echo "  life testing db reset"
 }

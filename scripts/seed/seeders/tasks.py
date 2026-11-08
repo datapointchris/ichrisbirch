@@ -8,8 +8,8 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.task import TASK_CATEGORY_WINDOW_DAYS
-from ichrisbirch.models.task import Task
+from life.models.task import TASK_CATEGORY_WINDOW_DAYS
+from life.models.task import Task
 from scripts.seed.base import SeedResult
 
 TASKS_BY_CATEGORY = {

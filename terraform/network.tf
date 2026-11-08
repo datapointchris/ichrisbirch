@@ -101,20 +101,20 @@ resource "aws_route_table_association" "prod_private" {
 
 # --- Webserver --- #
 
-resource "aws_security_group" "ichrisbirch_webserver" {
+resource "aws_security_group" "life_webserver" {
   description = "HTTP, HTTPS, SSH"
   name        = "ichrisbirch-webserver"
   vpc_id      = aws_vpc.prod.id
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_out" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_all_http_ipv4_in" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 80
@@ -122,7 +122,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_http_ipv4_in" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_all_tls_ipv4_in" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 443
@@ -130,7 +130,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_tls_ipv4_in" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_all_ssh_ipv4_in" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 22
@@ -138,7 +138,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_ssh_ipv4_in" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_all_icmp_ipv4_in" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "icmp"
   from_port         = -1
@@ -154,22 +154,22 @@ resource "aws_vpc_security_group_ingress_rule" "allow_all_icmp_ipv4_in" {
 
 # --- Database --- #
 
-resource "aws_security_group" "ichrisbirch_database" {
+resource "aws_security_group" "life_database" {
   description = "Postgres"
   name        = "ichrisbirch-database"
   vpc_id      = aws_vpc.prod.id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_postgres_from_webserver" {
-  security_group_id            = aws_security_group.ichrisbirch_database.id
-  referenced_security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id            = aws_security_group.life_database.id
+  referenced_security_group_id = aws_security_group.life_webserver.id
   ip_protocol                  = "tcp"
   from_port                    = 5432
   to_port                      = 5432
 }
 
 resource "aws_vpc_security_group_egress_rule" "postgres_out_all_vpc" {
-  security_group_id = aws_security_group.ichrisbirch_webserver.id
+  security_group_id = aws_security_group.life_webserver.id
   cidr_ipv4         = aws_vpc.prod.cidr_block
   ip_protocol       = "tcp"
   from_port         = 5432
@@ -180,20 +180,20 @@ resource "aws_vpc_security_group_egress_rule" "postgres_out_all_vpc" {
 # --- NETWORK INTERFACES ---------------------------------------- #
 
 # # Network Interface
-# resource "aws_network_interface" "ichrisbirch_webserver" {
+# resource "aws_network_interface" "life_webserver" {
 #   subnet_id       = element(aws_subnet.prod_public, 0).id
-#   security_groups = [aws_security_group.ichrisbirch_webserver.id]
+#   security_groups = [aws_security_group.life_webserver.id]
 #   tags            = { Name = "ichrisbirch-webserver-eni" }
 # }
 #
 # # Elastic IP
-# resource "aws_eip" "ichrisbirch_elastic_ip" {
+# resource "aws_eip" "life_elastic_ip" {
 #   domain = "vpc"
 #   tags   = { Name = "ichrisbirch.com" }
 # }
 #
 # # Elastic IP Association
-# resource "aws_eip_association" "ichrisbirch_elastic_ip_assoc" {
-#   allocation_id        = aws_eip.ichrisbirch_elastic_ip.id
-#   network_interface_id = aws_network_interface.ichrisbirch_webserver.id
+# resource "aws_eip_association" "life_elastic_ip_assoc" {
+#   allocation_id        = aws_eip.life_elastic_ip.id
+#   network_interface_id = aws_network_interface.life_webserver.id
 # }

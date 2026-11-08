@@ -13,7 +13,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.book import Book
+from life.models.book import Book
 from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_date
 

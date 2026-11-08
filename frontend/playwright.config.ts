@@ -1,20 +1,20 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright E2E tests for ichrisbirch Vue frontend.
+ * Playwright E2E tests for life Vue frontend.
  *
  * Tests run against the real frontend + API + database (Docker-based).
  * Sequential execution to maintain consistent database state.
  *
  * By default, tests run inside this checkout's test stack, in its vue
- * container, which `./ops/icbops test e2e` starts them in. The stack publishes
+ * container, which `./ops/lifeops test e2e` starts them in. The stack publishes
  * no ports. Set E2E_ENV=dev to run on the host against dev containers
  * (app.docker.localhost).
  */
 
 const isDevEnv = process.env.E2E_ENV === 'dev'
-if (!isDevEnv && !process.env.ICB_TEST_STACK) {
-  throw new Error('The test stack publishes no ports, so its e2e suite runs inside it: ./ops/icbops test e2e')
+if (!isDevEnv && !process.env.LIFE_TEST_STACK) {
+  throw new Error('The test stack publishes no ports, so its e2e suite runs inside it: ./ops/lifeops test e2e')
 }
 const baseURL = isDevEnv ? 'https://app.docker.localhost' : 'https://app.test.localhost:8443'
 const apiURL = isDevEnv ? 'https://api.docker.localhost' : 'https://api.test.localhost:8443'

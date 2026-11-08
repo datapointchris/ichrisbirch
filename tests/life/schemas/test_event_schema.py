@@ -1,0 +1,158 @@
+"""Tests for the event schema validation.
+
+Tests that the Event, EventCreate, and EventUpdate schemas properly validate data.
+"""
+
+import datetime as dt
+
+import pytest
+from pydantic import ValidationError
+
+from life.schemas.event import Event
+from life.schemas.event import EventCreate
+from life.schemas.event import EventUpdate
+
+
+class TestEventSchema:
+    def test_event_create_valid(self):
+        """Test creating a valid EventCreate model."""
+        event_data = {
+            'name': 'Concert',
+            'date': dt.datetime(2023, 6, 15, 20, 0, 0),
+            'venue': 'Stadium',
+            'url': 'https://example.com/concert',
+            'cost': 75.50,
+            'attending': True,
+            'notes': 'Front row seats',
+        }
+        event = EventCreate(**event_data)
+        assert event.name == 'Concert'
+        assert isinstance(event.date, dt.datetime)
+        assert event.venue == 'Stadium'
+        assert event.url == 'https://example.com/concert'
+        assert event.cost == 75.50
+        assert event.attending is True
+        assert event.notes == 'Front row seats'
+
+    def test_event_create_minimum_required(self):
+        """Test creating an event with only required fields."""
+        event_data = {
+            'name': 'Concert',
+            'date': dt.datetime(2023, 6, 15, 20, 0, 0),
+            'venue': 'Stadium',
+            'cost': 75.50,
+            'attending': False,
+        }
+        event = EventCreate(**event_data)
+        assert event.name == 'Concert'
+        assert event.url is None
+        assert event.attending is False
+        assert event.notes is None
+
+    def test_event_create_with_string_date(self):
+        """Test creating an event with a string date that gets converted."""
+        event_data = {'name': 'Concert', 'date': '2023-06-15T20:00:00', 'venue': 'Stadium', 'cost': 75.50, 'attending': True}
+        event = EventCreate(**event_data)
+        assert isinstance(event.date, dt.datetime)
+        assert event.date.year == 2023
+        assert event.date.month == 6
+        assert event.date.day == 15
+
+    def test_event_create_keeps_the_wall_clock_and_drops_the_offset(self):
+        """An offset describes the same reading, so the reading survives it.
+
+        Converting would display a 20:00 event four hours early. The zone
+        that resolves the reading is the `timezone` field, not an offset on the date.
+        """
+        event_data = {'name': 'Concert', 'date': '2023-06-15T20:00:00-05:00', 'venue': 'Stadium', 'cost': 75.50, 'attending': True}
+        event = EventCreate(**event_data)
+        assert event.date.tzinfo is None
+        assert event.date.hour == 20
+        assert event.date.day == 15
+
+    def test_event_create_defaults_the_timezone_to_utc(self):
+        event = EventCreate(name='Concert', date='2023-06-15T20:00:00', venue='Stadium', cost=75.50, attending=True)
+        assert event.timezone == 'UTC'
+
+    def test_event_create_rejects_an_offset_as_a_timezone(self):
+        """An offset cannot answer what the local time will be on a future date."""
+        with pytest.raises(ValidationError) as exc_info:
+            EventCreate(name='Concert', date='2023-06-15T20:00:00', timezone='-05:00', venue='Stadium', cost=75.50, attending=True)
+        assert 'IANA' in str(exc_info.value)
+
+    def test_event_create_accepts_an_iana_name(self):
+        event = EventCreate(
+            name='Concert',
+            date='2023-06-15T20:00:00',
+            timezone='America/New_York',
+            venue='Stadium',
+            cost=75.50,
+            attending=True,
+        )
+        assert event.timezone == 'America/New_York'
+
+    def test_event_create_invalid_missing_fields(self):
+        """Test EventCreate fails with missing required fields."""
+        with pytest.raises(ValidationError) as exc_info:
+            EventCreate(name='Concert', venue='Stadium', attending=True)
+
+        errors = exc_info.value.errors()
+        assert any(err['type'] == 'missing' and err['loc'][0] in ('date', 'cost') for err in errors)
+
+    def test_event_create_invalid_date(self):
+        """Test EventCreate fails with invalid date format."""
+        with pytest.raises(ValidationError):
+            EventCreate(name='Concert', date='invalid-date', venue='Stadium', cost=75.50, attending=True)
+
+    def test_event_model_valid(self):
+        """Test creating a valid Event model."""
+        now = dt.datetime.now()
+        event_data = {
+            'id': 1,
+            'name': 'Concert',
+            'date': now,
+            'timezone': 'America/New_York',
+            'venue': 'Stadium',
+            'url': 'https://example.com/concert',
+            'cost': 75.50,
+            'attending': True,
+            'notes': 'Front row seats',
+        }
+        event = Event(**event_data)
+        assert event.id == 1
+        assert event.name == 'Concert'
+        assert event.date == now
+        assert event.venue == 'Stadium'
+        assert event.url == 'https://example.com/concert'
+        assert event.cost == 75.50
+        assert event.attending is True
+        assert event.notes == 'Front row seats'
+
+    def test_event_model_missing_fields(self):
+        """Test Event model fails with missing required fields."""
+        incomplete_data = {'name': 'Concert', 'venue': 'Stadium', 'cost': 75.50, 'attending': True}
+
+        with pytest.raises(ValidationError):
+            Event(**incomplete_data)
+
+    def test_event_update_valid(self):
+        """Test creating a valid EventUpdate model."""
+        event_update = EventUpdate(name='Updated Concert', attending=False)
+        assert event_update.name == 'Updated Concert'
+        assert event_update.attending is False
+        assert event_update.date is None
+        assert event_update.venue is None
+        assert event_update.url is None
+        assert event_update.cost is None
+        assert event_update.notes is None
+
+    def test_event_update_empty(self):
+        """Test creating an empty EventUpdate is valid (all fields optional)."""
+        event_update = EventUpdate()
+        assert event_update.name is None
+        assert event_update.date is None
+        assert event_update.venue is None
+        assert event_update.url is None
+        assert event_update.cost is None
+        assert event_update.attending is None
+        assert event_update.notes is None

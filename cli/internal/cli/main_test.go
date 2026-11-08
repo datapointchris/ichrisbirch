@@ -13,7 +13,7 @@ import (
 // Done here rather than per-test so a new test cannot reintroduce the leak by
 // forgetting. A test that wants a config writes its own with configure.
 func TestMain(m *testing.M) {
-	empty, err := os.MkdirTemp("", "icb-cli-config")
+	empty, err := os.MkdirTemp("", "life-cli-config")
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +33,7 @@ func configure(t *testing.T, api, issuer, clientID string) {
 	t.Helper()
 	root := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", root)
-	dir := filepath.Join(root, "icb")
+	dir := filepath.Join(root, "life")
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		t.Fatal(err)
 	}

@@ -39,7 +39,7 @@ class TestMarkdownlintSchema:
         """Test MarkdownlintHookEvent with issues."""
         event = MarkdownlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -66,7 +66,7 @@ class TestMarkdownlintSchema:
         """Test MarkdownlintHookEvent with no issues."""
         event = MarkdownlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -94,7 +94,7 @@ class TestMarkdownlintRunner:
                 stderr='',
             )
 
-            event = run(['README.md'], 'master', 'ichrisbirch')
+            event = run(['README.md'], 'master', 'life')
 
             assert isinstance(event, MarkdownlintHookEvent)
             assert event.status == 'passed'
@@ -112,7 +112,7 @@ class TestMarkdownlintRunner:
                 stderr='',
             )
 
-            event = run(['docs/README.md', 'CHANGELOG.md'], 'master', 'ichrisbirch')
+            event = run(['docs/README.md', 'CHANGELOG.md'], 'master', 'life')
 
             assert isinstance(event, MarkdownlintHookEvent)
             assert event.status == 'failed'
@@ -131,13 +131,13 @@ class TestMarkdownlintRunner:
                 stderr='',
             )
 
-            event = run(['README.md'], 'master', 'ichrisbirch')
+            event = run(['README.md'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
     def test_markdownlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, MarkdownlintHookEvent)
         assert event.status == 'passed'
@@ -154,7 +154,7 @@ class TestMarkdownlintRunner:
                 stderr='',
             )
 
-            event = run(['README.md', 'main.py', 'docs/guide.md', 'config.yaml'], 'master', 'ichrisbirch')
+            event = run(['README.md', 'main.py', 'docs/guide.md', 'config.yaml'], 'master', 'life')
 
             # Should only check .md files
             assert event.files_checked == ['README.md', 'docs/guide.md']

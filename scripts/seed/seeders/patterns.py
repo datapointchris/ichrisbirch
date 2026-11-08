@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.pattern import Pattern
+from life.models.pattern import Pattern
 from scripts.seed.base import SeedResult
 
 MESSAGES = [

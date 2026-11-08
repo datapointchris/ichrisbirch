@@ -1,13 +1,13 @@
 # Test Environment Configuration
 
-This document details how the test environments are configured, set up, and managed in the ichrisbirch project's testing infrastructure.
+This document details how the test environments are configured, set up, and managed in the life project's testing infrastructure.
 
 ## Overview
 
 Two suites need two different environments, and neither environment is shared between checkouts.
 
 - **pytest** needs Postgres and Redis. Every session starts its own pair with [testcontainers](https://testcontainers-python.readthedocs.io/), on ports Docker picks, through `PrivateServices` in `tests/environment.py`. The API runs in-process through FastAPI's `TestClient`.
-- **Playwright** needs the whole app behind Traefik. It runs inside the checkout's test stack, a Docker Compose project that `./ops/icbops test e2e` starts when it is down.
+- **Playwright** needs the whole app behind Traefik. It runs inside the checkout's test stack, a Docker Compose project that `./ops/lifeops test e2e` starts when it is down.
 
 So two worktrees run either suite at the same time, and neither truncates the other's tables or serves the other's code.
 
@@ -21,13 +21,13 @@ It enters `PrivateServices(test_settings)`:
 
 1. It starts a Redis and a Postgres container from the images production runs, which it reads from `docker-compose.yml`. Postgres keeps its data on tmpfs with `fsync`, `synchronous_commit` and `full_page_writes` off, and Redis persists nothing.
 2. It points `test_settings` at the ports Docker published for them. Nothing builds an engine or a Redis client at import time, so every later connection reaches them.
-3. It runs `full_initialization()` from `ichrisbirch/database/initialization.py`. That migrates the database to head, creates the APScheduler jobstore table, and inserts the admin settings row and the default users.
+3. It runs `full_initialization()` from `life/database/initialization.py`. That migrates the database to head, creates the APScheduler jobstore table, and inserts the admin settings row and the default users.
 
 testcontainers' reaper container (Ryuk) removes both when the session ends, however it ends, including a killed process. A container that fails to start ends the session through `pytest.exit`, after stopping the one that did start.
 
 Readiness is polled every 100 ms rather than testcontainers' default of every second.
 
-The migrations run inside the pytest process. `alembic_config()` passes `configure_logger=False`, so `alembic/env.py` skips `fileConfig`, which would otherwise disable every logger the process already created. alembic's own records reach stderr through the root handler `ichrisbirch/logger.py` installs.
+The migrations run inside the pytest process. `alembic_config()` passes `configure_logger=False`, so `alembic/env.py` skips `fileConfig`, which would otherwise disable every logger the process already created. alembic's own records reach stderr through the root handler `life/logger.py` installs.
 
 ### `truncate_tables` resets the data
 
@@ -37,10 +37,10 @@ It truncates every table, then re-inserts the rows the app cannot run without. T
 
 ```text
 checkout A                          checkout B
-  icbops test e2e                     icbops test e2e
+  lifeops test e2e                     lifeops test e2e
     │ compose exec vue                  │
     ▼                                   ▼
-  project icb-test-A                  project icb-test-B
+  project life-test-A                  project life-test-B
     vue (Playwright image)              vue (Playwright image)
       Chromium ── MAP → traefik:8443      Chromium ── MAP → traefik:8443
       traefik ──→ api:8000                traefik ──→ api:8000
@@ -49,11 +49,11 @@ checkout A                          checkout B
   nothing published to the host
 ```
 
-`ops/icbops` names the project `icb-test-<checkout directory>`, lowercased to what compose accepts. Compose scopes the containers (`icb-test-<checkout>-api`), the networks and the node_modules volume to it. Nothing is published to the host, so any number of stacks run side by side.
+`ops/lifeops` names the project `life-test-<checkout directory>`, lowercased to what compose accepts. Compose scopes the containers (`life-test-<checkout>-api`), the networks and the node_modules volume to it. Nothing is published to the host, so any number of stacks run side by side.
 
-The API and the scheduler run `ichrisbirch:icb-test-<checkout>`, which the stack builds on its first start. So each stack's venv comes from its own checkout's lockfile, and a `testing rebuild` in one checkout reaches no other.
+The API and the scheduler run `life:life-test-<checkout>`, which the stack builds on its first start. So each stack's venv comes from its own checkout's lockfile, and a `testing rebuild` in one checkout reaches no other.
 
-The installed `icbops` is a symlink into the checkout that ran `icbops install`. Run through it inside another checkout, it hands over to that checkout's `ops/icbops`, so a bare `icbops test e2e` tests the code it is run beside.
+The installed `lifeops` is a symlink into the checkout that ran `lifeops install`. Run through it inside another checkout, it hands over to that checkout's `ops/lifeops`, so a bare `lifeops test e2e` tests the code it is run beside.
 
 The browser runs inside the stack for one reason. Chromium in the host's network namespace watches the host's interfaces, and every container that starts or stops anywhere on the machine adds or removes one. Chromium reads that as a network change and aborts its in-flight requests with `ERR_NETWORK_CHANGED`. Inside the vue container it sees only that container's interfaces.
 
@@ -67,19 +67,19 @@ Test Traefik reads its routers and services from files alone, `deploy-containers
 
 The vue service runs Playwright's image, `mcr.microsoft.com/playwright:v<version>-noble`. That image carries Node and the browsers, so the dev server and the suite share one container and one node_modules. Its tag must equal `@playwright/test` in `frontend/package-lock.json`, because the package launches only its own browser build. `tests/playwright-image-version.bats` holds them level.
 
-`icbops test e2e` runs `npx playwright test` there through `docker compose exec`, as your user, so traces and screenshots in `frontend/test-results/` are yours. The JSON report lands in `.test-reports/playwright-report.json`, through a bind mount of the checkout's `.test-reports/`. The container sets `ICB_TEST_STACK=true`. Without it, `playwright.config.ts` refuses to run and names `./ops/icbops test e2e`, so a host run fails at once, naming that command, rather than timing out against a stack the host cannot reach.
+`lifeops test e2e` runs `npx playwright test` there through `docker compose exec`, as your user, so traces and screenshots in `frontend/test-results/` are yours. The JSON report lands in `.test-reports/playwright-report.json`, through a bind mount of the checkout's `.test-reports/`. The container sets `LIFE_TEST_STACK=true`. Without it, `playwright.config.ts` refuses to run and names `./ops/lifeops test e2e`, so a host run fails at once, naming that command, rather than timing out against a stack the host cannot reach.
 
 ### What the host cannot do
 
 - Browse the test app. The dev stack is the one to browse.
 - Run Playwright headed or in UI mode against the test stack. Traces open on the host with `npx playwright show-trace`.
-- Reach the stack's Postgres or Redis by port. `docker exec -it icb-test-<checkout>-postgres psql -U postgres ichrisbirch` is the way in, and `./ops/icbops testing start` prints it.
+- Reach the stack's Postgres or Redis by port. `docker exec -it life-test-<checkout>-postgres psql -U postgres life` is the way in, and `./ops/lifeops testing start` prints it.
 
 ### Stack lifecycle
 
 | Verb | What it does |
 | --- | --- |
-| `testing start` | Removes every `icb-test-*` stack whose checkout is gone, with its image, brings this one up with `up --wait`, then initializes its database |
+| `testing start` | Removes every `life-test-*` stack whose checkout is gone, with its image, brings this one up with `up --wait`, then initializes its database |
 | `testing ensure` | Starts the stack unless every service with a health check reads `healthy` |
 | `testing stop` | `down --volumes` on this checkout's project alone |
 | `testing restart` / `rebuild` | As for dev, scoped to this project, each ending in database initialization |
@@ -97,17 +97,17 @@ A new checkout's first `test e2e` starts its stack from nothing, including a ful
 
 ```bash
 # Run all Python tests
-./ops/icbops test run
+./ops/lifeops test run
 
 # Run specific tests
-./ops/icbops test run tests/ichrisbirch/api/endpoints/test_tasks.py
+./ops/lifeops test run tests/life/api/endpoints/test_tasks.py
 
 # A bare pytest does the same, without writing the reports
-uv run pytest tests/ichrisbirch/api/endpoints/test_tasks.py::test_create -v
+uv run pytest tests/life/api/endpoints/test_tasks.py::test_create -v
 
 # Run the e2e suite, or one spec
-./ops/icbops test e2e
-./ops/icbops test e2e e2e/tasks.spec.ts --trace on
+./ops/lifeops test e2e
+./ops/lifeops test e2e e2e/tasks.spec.ts --trace on
 ```
 
 `test run` writes `.test-reports/pytest-output.log` and `.test-reports/pytest-report.json` in the checkout. `test e2e` writes `.test-reports/playwright-report.json`.
@@ -127,22 +127,22 @@ The migrations create every schema they write into, so a database needs nothing 
 
 The Python job runs pytest on the runner, which starts its own Postgres and Redis exactly as a workstation does. It needs nothing but Docker: its configuration is the committed `tests/testing.env`.
 
-The e2e job runs `./ops/icbops testing start` and then `./ops/icbops test e2e`, the same commands as a workstation. Under `CI=true`, `icbops` adds `docker-compose.ci.yml`, which drops the API's Docker socket mount, and passes `CI` into the vue container, where the Playwright config turns on retries and forbids `.only`. On a runner the checkout directory is the repository's name, so the project is `icb-test-ichrisbirch`.
+The e2e job runs `./ops/lifeops testing start` and then `./ops/lifeops test e2e`, the same commands as a workstation. Under `CI=true`, `lifeops` adds `docker-compose.ci.yml`, which drops the API's Docker socket mount, and passes `CI` into the vue container, where the Playwright config turns on retries and forbids `.only`. On a runner the checkout directory is the repository's name, so the project is `life-test-<repository name>`.
 
 ## Troubleshooting
 
 ### Containers Not Starting
 
 ```bash
-./ops/icbops testing status
-./ops/icbops testing logs
+./ops/lifeops testing status
+./ops/lifeops testing logs
 ```
 
 ### Database Connection Issues
 
 ```bash
-./ops/icbops testing health
-./ops/icbops testing logs postgres
+./ops/lifeops testing health
+./ops/lifeops testing logs postgres
 ```
 
 ### pytest cannot start its services
@@ -164,7 +164,7 @@ gh run view <run-id> --log-failed
 | --- | --- |
 | `docker-compose.yml` | Base service definitions, and the images pytest's services use |
 | `docker-compose.test.yml` | The per-checkout test stack: project-scoped names, no ports, Playwright's image for vue |
-| `docker-compose.ci.yml` | CI-specific overrides, added by `icbops` under `CI=true` |
+| `docker-compose.ci.yml` | CI-specific overrides, added by `lifeops` under `CI=true` |
 | `deploy-containers/traefik/dynamic/test/` | Test Traefik's routers, services, middlewares and TLS |
 | `tests/environment.py` | `PrivateServices`, pytest's Postgres and Redis |
 | `tests/conftest.py` | Pytest fixtures |

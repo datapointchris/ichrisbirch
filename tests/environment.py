@@ -20,8 +20,8 @@ from testcontainers.community.redis import RedisContainer
 from testcontainers.core.config import testcontainers_config
 from testcontainers.core.container import DockerContainer
 
-from ichrisbirch.config import Settings
-from ichrisbirch.database.initialization import full_initialization
+from life.config import Settings
+from life.database.initialization import full_initialization
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ testcontainers_config.max_tries = 1200
 REPO_ROOT = Path(__file__).resolve().parents[1]
 POSTGRES_USER = 'postgres'
 POSTGRES_PASSWORD = 'postgres'
-POSTGRES_DB = 'ichrisbirch'
+POSTGRES_DB = 'life'
 POSTGRES_DATA = '/var/lib/postgresql/data'
 
 

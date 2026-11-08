@@ -1,0 +1,1442 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# shellcheck disable=SC2034
+
+set -euo pipefail
+
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+
+# The installed lifeops links into the checkout that ran `lifeops install`. Run
+# through that link inside a checkout, it hands over to that checkout's own script.
+if [[ -L "${BASH_SOURCE[0]}" ]]; then
+  checkout_here="$(git rev-parse --show-toplevel 2>/dev/null)" || checkout_here=""
+  if [[ -n "$checkout_here" && -x "$checkout_here/ops/lifeops" && "$(readlink -f "$checkout_here/ops/lifeops")" != "$SCRIPT_PATH" ]]; then
+    exec "$checkout_here/ops/lifeops" "$@"
+  fi
+fi
+
+LIFE_HOME="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+
+# URLs for each environment, derived from the grid ops/health-check.sh also reads
+source "$LIFE_HOME/ops/lib/urls.sh"
+
+DEV_API_URL="$(life_service_url dev api)"
+DEV_APP_URL="$(life_service_url dev app)"
+DEV_DASHBOARD_URL="$(life_service_url dev dashboard)"
+DEV_API_PORT="http://localhost:8000"
+
+# Each checkout keeps its own test reports, because several run tests at once
+TEST_REPORTS_DIR="$LIFE_HOME/.test-reports"
+
+PROD_API_URL="$(life_service_url prod api)"
+PROD_APP_URL="$(life_service_url prod app)"
+
+# Each checkout runs its own test stack, named after the checkout's directory.
+# Compose project names take lowercase letters, digits, `-` and `_`.
+test-project-name() {
+  echo "life-test-$(basename "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '-')"
+}
+
+# Exported for ops/health-check.sh and ops/log_viewer.py.
+LIFE_TEST_PROJECT="$(test-project-name "$LIFE_HOME")"
+export LIFE_TEST_PROJECT
+
+# Docker compose commands. Every dev and test `up` passes --renew-anon-volumes,
+# because compose otherwise hands a recreated container the anonymous
+# /app/.venv of the one it replaces, and a rebuilt image's venv never runs.
+# The test stack interpolates from the suite's committed configuration rather
+# than the checkout's .env, which on a workstation is the development one.
+COMPOSE_DEV="docker compose --project-name life-dev -f docker-compose.yml -f docker-compose.dev.yml"
+COMPOSE_TEST="docker compose --project-name $LIFE_TEST_PROJECT --env-file tests/testing.env -f docker-compose.yml -f docker-compose.test.yml"
+if [[ "${CI:-}" == true ]]; then
+  COMPOSE_TEST+=" -f docker-compose.ci.yml"
+fi
+COMPOSE_PROD="docker compose --project-name life-prod -f docker-compose.yml"
+
+# Blue/green deployment compose commands
+COMPOSE_INFRA="docker compose --project-name life-infra -f docker-compose.infra.yml"
+BLUEGREEN_STATE_FILE="/var/lib/life/bluegreen-state"
+
+compose_app() {
+  local color="$1"
+  shift
+  DEPLOY_COLOR="$color" docker compose --project-name "life-${color}" -f docker-compose.app.yml "$@"
+}
+
+get_active_color() {
+  if [[ -f "$BLUEGREEN_STATE_FILE" ]]; then
+    cat "$BLUEGREEN_STATE_FILE"
+  else
+    echo ""
+  fi
+}
+
+# Production install directory, which only exists on the production host.
+PROD_INSTALL_DIR="/srv/life"
+
+# Every prod verb that reads the local Docker daemon or the blue/green state
+# file is meaningless anywhere else, and silently wrong rather than merely
+# useless: off-host there is no state file, so get_active_color returns empty,
+# the caller takes the legacy single-compose path, and a healthy production is
+# reported as seven missing containers. That is the worst available failure for
+# the command you reach for when you think something is down.
+require_prod_host() {
+  if [[ -d "$PROD_INSTALL_DIR" ]]; then
+    return 0
+  fi
+  echo "${red}lifeops prod $1 inspects the production host's Docker daemon and must run there.${reset}" >&2
+  echo "" >&2
+  echo "  ssh \"\$LIFE_PROD_HOST\" 'cd ${PROD_INSTALL_DIR} && ./ops/lifeops prod $1'" >&2
+  echo "" >&2
+  echo "From a workstation, these reach production over HTTPS and work anywhere:" >&2
+  echo "  lifeops prod apihealth    # the API's own health endpoint" >&2
+  echo "  lifeops prod smoke        # smoke tests against the public URLs" >&2
+  exit 2
+}
+
+# Script paths
+HEALTH_CHECK_SCRIPT="$LIFE_HOME/ops/health-check.sh"
+SSL_MANAGER_SCRIPT="$LIFE_HOME/deploy-containers/traefik/scripts/ssl-manager.sh"
+
+# Colors. A CI runner sets no TERM, and tput then writes an error for every
+# call, so there every color is empty.
+red='' green='' yellow='' blue='' magenta='' cyan='' white='' gray=''
+bright_red='' bright_green='' bright_yellow='' bright_blue='' bright_magenta='' bright_cyan=''
+orange='' reset=''
+if tput sgr0 >/dev/null 2>&1; then
+  red=$(tput setaf 1)
+  green=$(tput setaf 2)
+  yellow=$(tput setaf 3)
+  blue=$(tput setaf 4)
+  magenta=$(tput setaf 5)
+  cyan=$(tput setaf 6)
+  white=$(tput setaf 7)
+  gray=$(tput setaf 8)
+  bright_red=$(tput setaf 9)
+  bright_green=$(tput setaf 10)
+  bright_yellow=$(tput setaf 11)
+  bright_blue=$(tput setaf 12)
+  bright_magenta=$(tput setaf 13)
+  bright_cyan=$(tput setaf 14)
+  orange=$(tput setaf 208)
+  reset=$(tput sgr0)
+fi
+
+# Source command modules
+source "$LIFE_HOME/ops/stats"
+source "$LIFE_HOME/ops/db"
+
+# The value of one key in a dotenv file, or nothing where the file lacks it.
+function dotenv-value() {
+  grep -E "^$1=" "$2" | cut -d= -f2 | tr -d '"' || true
+}
+
+function dev-credentials() {
+  local env_file="$LIFE_HOME/.env"
+  if [ -f "$env_file" ]; then
+    local admin_email admin_pass regular_email regular_pass
+    admin_email=$(dotenv-value USERS_DEFAULT_ADMIN_USER_EMAIL "$env_file")
+    admin_pass=$(dotenv-value USERS_DEFAULT_ADMIN_USER_PASSWORD "$env_file")
+    regular_email=$(dotenv-value USERS_DEFAULT_REGULAR_USER_EMAIL "$env_file")
+    regular_pass=$(dotenv-value USERS_DEFAULT_REGULAR_USER_PASSWORD "$env_file")
+
+    echo ""
+    echo "${yellow}Dev Credentials:${reset}"
+    echo "  ${cyan}Regular${reset}: ${regular_email} / ${regular_pass}"
+    echo "  ${green}Admin${reset}:   ${admin_email} / ${admin_pass}"
+  else
+    echo ""
+    echo "${yellow}Dev Credentials:${reset} ${red}.env file not found${reset}"
+  fi
+}
+
+function colored-logs() {
+  local RED_REDIS="${red}redis${reset}"
+  local GREEN_POSTGRES="${green}postgres${reset}"
+  local BRIGHT_GREEN_API="${bright_green}api${reset}"
+  local BRIGHT_BLUE_VUE="${bright_blue}vue${reset}"
+  local YELLOW_SCHEDULER="${yellow}scheduler${reset}"
+  local CYAN_TRAEFIK="${cyan}traefik${reset}"
+
+  sed \
+    -e 's/life-//g' \
+    -e 's/dev-//g' \
+    -e 's/test-//g' \
+    -e 's/prod-//g' \
+    -e 's/blue-//g' \
+    -e 's/green-//g' \
+    -e 's/infra-//g' \
+    -e 's/^api[ ]*|/'"${BRIGHT_GREEN_API}"' |/' \
+    -e 's/^vue[ ]*|/'"${BRIGHT_BLUE_VUE}"' |/' \
+    -e 's/^redis[ ]*|/'"${RED_REDIS}"' |/' \
+    -e 's/^postgres[ ]*|/'"${GREEN_POSTGRES}"' |/' \
+    -e 's/^scheduler[ ]*|/'"${YELLOW_SCHEDULER}"' |/' \
+    -e 's/^traefik[ ]*|/'"${CYAN_TRAEFIK}"' |/'
+}
+
+function colored-status() {
+  local GREEN_RUNNING="${green}running${reset}"
+  local RED_EXITED="${red}exited${reset}"
+  local YELLOW_RESTARTING="${yellow}restarting${reset}"
+  local BLUE_PAUSED="${blue}paused${reset}"
+  local MAGENTA_DEAD="${magenta}dead${reset}"
+  local CYAN_CREATED="${cyan}created${reset}"
+  local YELLOW_UNHEALTHY="${yellow}unhealthy${reset}"
+  local GREEN_HEALTHY="${green}healthy${reset}"
+
+  awk -v running="$GREEN_RUNNING" \
+    -v exited="$RED_EXITED" \
+    -v restarting="$YELLOW_RESTARTING" \
+    -v paused="$BLUE_PAUSED" \
+    -v dead="$MAGENTA_DEAD" \
+    -v created="$CYAN_CREATED" \
+    -v unhealthy="$YELLOW_UNHEALTHY" \
+    -v healthy="$GREEN_HEALTHY" '
+    {
+        gsub(/life-/, "");
+        gsub(/blue-/, "");
+        gsub(/green-/, "");
+        gsub(/infra-/, "");
+        gsub(/running/, running);
+        gsub(/exited/, exited);
+        gsub(/restarting/, restarting);
+        gsub(/paused/, paused);
+        gsub(/dead/, dead);
+        gsub(/created/, created);
+        gsub(/unhealthy/, unhealthy);
+        gsub(/healthy/, healthy);
+        print $0;
+    }'
+}
+
+function install() {
+  local target="$HOME/.local/bin/lifeops"
+  mkdir -p "$(dirname "$target")"
+  ln -sf "$LIFE_HOME/ops/lifeops" "$target"
+  echo "${green}Installed:${reset} $target -> $LIFE_HOME/ops/lifeops"
+  # MIGRATION: the link this verb made before the tool was named lifeops.
+  local former="$HOME/.local/bin/icbops"
+  if [[ -L "$former" && "$(basename "$(readlink "$former")")" == icbops ]]; then
+    rm "$former"
+    echo "${green}Removed:${reset} $former, the link to this tool under its former name"
+  fi
+}
+
+function wait-for-healthy() {
+  local container="$1"
+  local max_wait="${2:-60}"
+  local interval="${3:-1}"
+  local waited=0
+
+  while [[ $waited -lt $max_wait ]]; do
+    local health
+    health=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "missing")
+    if [[ "$health" == "healthy" ]]; then
+      echo "${green}${container} healthy after ${waited}s${reset}"
+      return 0
+    fi
+    sleep "$interval"
+    waited=$((waited + interval))
+  done
+
+  echo "${yellow}${container} not healthy after ${max_wait}s (continuing anyway)${reset}"
+  return 1
+}
+
+# Every verb that brings an environment's containers up ends here. The test
+# Postgres keeps PGDATA on tmpfs, so a recreated container holds an empty
+# database, and a healthy container says nothing about its schema.
+# Initialization is idempotent, so a database that survived passes through
+# unchanged.
+function env-initialize() {
+  local env="$1"
+  local container
+  container="$(db-container-prefix "$env")-api"
+
+  echo "Waiting for ${container}..."
+  wait-for-healthy "$container" 60 || true
+
+  if db-init "$env"; then
+    echo "${green}Database initialized${reset}"
+  else
+    echo "${red}Database initialization failed${reset}"
+    return 1
+  fi
+}
+
+function env-docker-config() {
+  local env="$1"
+  shift
+  local service="${1:-}"
+  local compose_cmd
+
+  case "$env" in
+    development) compose_cmd="$COMPOSE_DEV" ;;
+    testing) compose_cmd="$COMPOSE_TEST" ;;
+    production) compose_cmd="$COMPOSE_PROD" ;;
+    *)
+      echo "${red}Unknown environment: $env${reset}"
+      return 1
+      ;;
+  esac
+
+  cd "$LIFE_HOME" || return 1
+
+  if [[ -z "$service" ]]; then
+    $compose_cmd config
+  else
+    if ! $compose_cmd config --services 2>/dev/null | grep -q "^${service}$"; then
+      echo "${red}Unknown service: $service${reset}"
+      echo "Available: $($compose_cmd config --services 2>/dev/null | tr '\n' ' ')"
+      return 1
+    fi
+    $compose_cmd config 2>/dev/null | yq -y ".services.\"$service\""
+  fi
+}
+
+function ssl-manager() {
+  local action="${1:-info}"
+  local environment="${2:-all}"
+  cd "$LIFE_HOME" || exit
+
+  if [ -x "$SSL_MANAGER_SCRIPT" ]; then
+    "$SSL_MANAGER_SCRIPT" "$action" "$environment"
+  else
+    echo "${red}SSL manager script not found: $SSL_MANAGER_SCRIPT${reset}"
+    return 1
+  fi
+}
+
+# MIGRATION: this tool was named icbops, and dev's database ichrisbirch. A .env
+# still naming it would point the API at a database dev no longer has.
+function refuse-former-database-name() {
+  local line
+  line=$(grep -n '^POSTGRES_DB=["]\?ichrisbirch["]\?$' "$LIFE_HOME/.env" 2>/dev/null | cut -d: -f1) || true
+  if [[ -n "$line" ]]; then
+    echo "${red}Line ${line} of ${LIFE_HOME}/.env names the database ichrisbirch, and dev's is life: make it POSTGRES_DB=\"life\".${reset}" >&2
+    exit 2
+  fi
+}
+
+# MIGRATION: dev's data sat in icb-dev-* volumes. The first start on a machine
+# copies them into life-dev-* and renames the database. The old volumes stay
+# until someone removes them.
+function move-former-dev-volumes() {
+  docker volume inspect icb-dev-postgres-data >/dev/null 2>&1 || return 0
+  docker volume inspect life-dev-postgres-data >/dev/null 2>&1 && return 0
+  echo "Moving dev's data from ${yellow}icb-dev-*${reset} into ${yellow}life-dev-*${reset}"
+  docker ps -aq --filter label=com.docker.compose.project=icb-dev | xargs -r docker rm -f >/dev/null
+  $COMPOSE_DEV create postgres redis >/dev/null
+  local name
+  for name in postgres-data redis-data; do
+    docker run --rm -v "icb-dev-${name}:/from:ro" -v "life-dev-${name}:/to" --entrypoint sh postgres:16-alpine \
+      -c 'cp -a /from/. /to/' || return 1
+  done
+  $COMPOSE_DEV up -d --wait postgres || return 1
+  docker exec life-dev-postgres psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q \
+    -c 'ALTER DATABASE ichrisbirch RENAME TO life' || return 1
+  echo "Moved. ${yellow}icb-dev-postgres-data${reset} and ${yellow}icb-dev-redis-data${reset} still hold the copy it was made from."
+}
+
+# Development environment
+function dev-start() {
+  cd "$LIFE_HOME" || exit
+  refuse-former-database-name
+  move-former-dev-volumes || return 1
+  echo "Starting ${blue}DEV${reset} environment"
+  $COMPOSE_DEV up -d --renew-anon-volumes
+  env-initialize development || return 1
+
+  echo ""
+  echo "Development environment started:"
+  echo "  ${green}API${reset}:       ${cyan}${DEV_API_URL}${reset}"
+  echo "  ${green}APP${reset}:       ${cyan}${DEV_APP_URL}${reset}"
+  echo "  ${green}DASHBOARD${reset}: ${cyan}${DEV_DASHBOARD_URL}${reset} (user: dev, pass: devpass)"
+  echo ""
+  echo "Direct ports (bypass Traefik):"
+  echo "  ${green}API${reset}:  ${cyan}${DEV_API_PORT}${reset}"
+  echo "  ${green}PostgreSQL${reset}: ${cyan}localhost:5432${reset}"
+  echo "  ${green}Redis${reset}: ${cyan}localhost:6379${reset}"
+  dev-credentials
+}
+
+function dev-stop() {
+  cd "$LIFE_HOME" || exit
+  echo "Stopping ${blue}DEV${reset} environment"
+  $COMPOSE_DEV down
+}
+
+function dev-restart() {
+  cd "$LIFE_HOME" || exit
+  echo "Restarting ${blue}DEV${reset} environment"
+  $COMPOSE_DEV up -d --renew-anon-volumes
+  env-initialize development || return 1
+  dev-credentials
+}
+
+function dev-rebuild() {
+  cd "$LIFE_HOME" || exit
+
+  local rebuild_all=false
+  local wipe_volumes=false
+  for arg in "$@"; do
+    case "$arg" in
+      --all) rebuild_all=true ;;
+      --volumes) wipe_volumes=true ;;
+      *)
+        echo "${red}Unknown flag: $arg${reset}"
+        echo "Valid flags: --all, --volumes"
+        return 1
+        ;;
+    esac
+  done
+
+  if [[ "$wipe_volumes" == true ]]; then
+    echo "Wiping volumes for ${blue}DEV${reset} environment (${yellow}--volumes${reset})"
+    $COMPOSE_DEV down --volumes
+  elif [[ "$rebuild_all" == true ]]; then
+    echo "Full rebuild of ${blue}DEV${reset} environment (${yellow}--all${reset})"
+    $COMPOSE_DEV down
+  fi
+
+  if [[ "$rebuild_all" == true ]]; then
+    echo "Building all images..."
+    $COMPOSE_DEV build
+    echo "Starting all services..."
+    $COMPOSE_DEV up -d --renew-anon-volumes
+  elif [[ "$wipe_volumes" == true ]]; then
+    # Volumes wiped, everything is down. Rebuild api only and start everything back up.
+    echo "Building app image..."
+    $COMPOSE_DEV build api
+    echo "Starting all services (volumes were wiped)..."
+    $COMPOSE_DEV up -d --renew-anon-volumes
+  else
+    echo "Rebuilding ${blue}DEV${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
+    echo "Building app image..."
+    $COMPOSE_DEV build api
+    echo "Recreating app services..."
+    $COMPOSE_DEV up -d --renew-anon-volumes --force-recreate api scheduler vue
+  fi
+
+  env-initialize development || return 1
+  echo "Seeding database..."
+  db-seed development
+  echo "${green}DEV environment rebuilt, initialized, and seeded${reset}"
+  dev-credentials
+}
+
+function dev-logs() {
+  cd "$LIFE_HOME" || exit
+  echo "Viewing ${blue}DEV${reset} logs (Ctrl+C to exit)"
+  echo ""
+  uv run ops/log_viewer.py dev "$@"
+}
+
+function dev-status() {
+  cd "$LIFE_HOME" || exit
+  echo "${blue}DEV${reset} environment status:"
+  echo ""
+  $COMPOSE_DEV ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  echo ""
+  echo "${blue}URLs${reset}: $DEV_API_URL | $DEV_APP_URL"
+  dev-credentials
+}
+
+function dev-health() {
+  echo "Running health check for ${blue}DEV${reset} environment"
+  cd "$LIFE_HOME" || exit
+  "$HEALTH_CHECK_SCRIPT" dev
+}
+
+function dev-is-ready() {
+  curl -sSf -k "$DEV_API_URL/health" >/dev/null 2>&1
+}
+
+function dev-ensure() {
+  if dev-is-ready; then
+    echo "${green}Dev containers are running${reset}"
+  else
+    echo "${yellow}Dev containers not ready, starting...${reset}"
+    dev-start
+  fi
+}
+
+function dev-usage() {
+  echo "${green}Dev commands:${reset}"
+  echo "  ${blue}dev start${reset}              Start dev containers"
+  echo "  ${blue}dev stop${reset}               Stop dev containers"
+  echo "  ${blue}dev restart${reset}            Restart dev containers"
+  echo "  ${blue}dev rebuild${reset}            Rebuild app services (api, scheduler, vue)"
+  echo "  ${blue}dev rebuild --all${reset}      Full rebuild including infra (traefik, postgres, redis)"
+  echo "  ${blue}dev rebuild --volumes${reset}  Wipe named volumes and rebuild (combines with --all)"
+  echo "  ${blue}dev status${reset}             Show container status"
+  echo "  ${blue}dev health${reset}             Full diagnostic health check"
+  echo "  ${blue}dev is-ready${reset}           Quick check if API is responding (exit 0/1)"
+  echo "  ${blue}dev ensure${reset}             Start containers if not already running"
+  echo "  ${blue}dev smoke${reset}              Run smoke tests against all endpoints"
+  echo "  ${blue}dev logs [service]${reset}     View logs"
+  echo "  ${blue}dev docker [service]${reset}   Show merged Docker Compose config"
+  echo "  ${blue}dev db ...${reset}             Database commands (seed, init)"
+}
+
+function dev-smoke() {
+  echo "Running smoke tests on ${blue}DEV${reset} environment"
+  local response
+  if ! response=$(curl --silent -X POST "$DEV_API_URL/api/v1/admin/smoke-tests" \
+    -H "Remote-User: user@icb.com" \
+    -H "Remote-Email: user@icb.com" \
+    -k 2>/dev/null) || [[ -z "$response" ]]; then
+    echo "${red}Error: Could not connect to $DEV_API_URL${reset}"
+    return 1
+  fi
+  printf "  %-6s %5s  %-40s %-30s %8s  %s\n" "RESULT" "CODE" "PATH" "NAME" "TIME" "ERROR"
+  printf "  %s\n" "$(printf '%0.s─' {1..100})"
+  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m  PASS\u001b[0m" else "  \u001b[31m  FAIL\u001b[0m" end) + " " + ((.status_code // 0 | tostring) | " " * (5 - length) + .) + "  " + (.path + " " * 40)[:40] + " " + (.name + " " * 30)[:30] + " " + ((.response_time_ms | tostring) + "ms" | " " * (8 - length) + .) + "  " + (.error // "")'
+  echo ""
+  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_passed: .all_passed}'
+}
+
+# Test environment
+
+# The project is named after the checkout's directory, so two clones sharing a
+# directory name would share one stack. Compose labels each container with the
+# checkout that started it, and from the other clone the stack would serve the
+# first one's API and Vue code.
+function require-test-stack-here() {
+  local owner
+  owner=$(docker ps -a --filter "label=com.docker.compose.project=${LIFE_TEST_PROJECT}" \
+    --format '{{.Label "com.docker.compose.project.working_dir"}}' 2>/dev/null | sort -u | head -n 1)
+  if [[ -z "$owner" || "$owner" == "$LIFE_HOME" ]]; then
+    return 0
+  fi
+  echo "${red}The test stack ${LIFE_TEST_PROJECT} was started from ${owner}, not from ${LIFE_HOME}.${reset}" >&2
+  echo "Both checkouts have the directory name that names the stack, and it serves that checkout's code." >&2
+  echo "" >&2
+  echo "Once nothing there is using it, take the stack over:" >&2
+  echo "  ${blue}${LIFE_HOME}/ops/lifeops testing stop${reset}" >&2
+  echo "  ${blue}${LIFE_HOME}/ops/lifeops testing start${reset}" >&2
+  return 1
+}
+
+# MIGRATION: test stacks were named icb-test-<checkout>. A checkout still on
+# the old code holds the tool under its former name and runs one, so its stack
+# stays. Any other stack under the old name serves nothing, and goes with its image.
+function runs-former-tool() {
+  local former=icbops
+  [[ -e "$1/.git" && -e "$1/ops/$former" ]]
+}
+
+function remove-former-test-stacks() {
+  local project checkout line
+  local -A in_use=()
+  while read -r project checkout; do
+    runs-former-tool "$checkout" && in_use[$project]=1
+  done < <(docker ps -a --filter label=com.docker.compose.project \
+    --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
+    | grep '^icb-test-' | sort -u || true)
+  while read -r line; do
+    checkout=${line#worktree }
+    if [[ "$line" == "worktree "* ]] && runs-former-tool "$checkout"; then
+      in_use[$(test-project-name "$checkout" | sed 's/^life-/icb-/')]=1
+    fi
+  done < <(git -C "$LIFE_HOME" worktree list --porcelain 2>/dev/null || true)
+  while read -r project; do
+    [[ -z "$project" || -n "${in_use[$project]:-}" ]] && continue
+    echo "Removing ${yellow}${project}${reset}: it carries the tool's former name"
+    docker ps -aq --filter "label=com.docker.compose.project=${project}" | xargs -r docker rm -f -v >/dev/null
+    docker volume ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker volume rm >/dev/null
+    docker network ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker network rm >/dev/null
+    docker image rm "ichrisbirch:${project}" >/dev/null 2>&1 || true
+  done < <({
+    docker ps -a --filter label=com.docker.compose.project --format '{{.Label "com.docker.compose.project"}}'
+    docker volume ls --filter label=com.docker.compose.project --format '{{.Label "com.docker.compose.project"}}'
+    docker image ls ichrisbirch --format '{{.Tag}}'
+  } | grep '^icb-test-' | sort -u || true)
+}
+
+# A stack whose checkout is gone serves nothing and holds its memory and its
+# image, so starting any checkout's stack removes it. Compose labels every
+# container, volume and network with its project, and the containers with
+# their checkout. The test is `.git`, because Docker recreates a missing
+# bind-mount source as an empty directory whenever a container starts.
+function testing-remove-orphans() {
+  remove-former-test-stacks
+  local project checkout
+  local -A has_containers=()
+  while read -r project checkout; do
+    has_containers[$project]=1
+    if [[ -e "$checkout/.git" ]]; then
+      continue
+    fi
+    echo "Removing ${yellow}${project}${reset}: its checkout ${checkout} is gone"
+    docker ps -aq --filter "label=com.docker.compose.project=${project}" | xargs -r docker rm -f -v >/dev/null
+    docker volume ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker volume rm >/dev/null
+    docker network ls -q --filter "label=com.docker.compose.project=${project}" | xargs -r docker network rm >/dev/null
+    # Its image may already be gone, and that leaves nothing to remove
+    docker image rm "life:${project}" >/dev/null 2>&1 || true
+  done < <(docker ps -a --filter label=com.docker.compose.project \
+    --format '{{.Label "com.docker.compose.project"}} {{.Label "com.docker.compose.project.working_dir"}}' \
+    | grep '^life-test-' | sort -u)
+
+  # A stack stopped before its checkout was removed leaves only its image,
+  # which names no checkout. It goes once no worktree of this repository is
+  # named for it, so a separate clone's stopped stack rebuilds at its next start.
+  local worktrees line
+  local -A live=()
+  worktrees=$(git -C "$LIFE_HOME" worktree list --porcelain 2>/dev/null) || return 0
+  while read -r line; do
+    if [[ "$line" == "worktree "* && -e "${line#worktree }/.git" ]]; then
+      live[$(test-project-name "${line#worktree }")]=1
+    fi
+  done <<<"$worktrees"
+  while read -r project; do
+    if [[ -z "${has_containers[$project]:-}" && -z "${live[$project]:-}" ]]; then
+      echo "Removing the image of ${yellow}${project}${reset}: no checkout is named for it"
+      docker image rm "life:${project}" >/dev/null
+    fi
+  done < <(docker image ls life --format '{{.Tag}}' | grep '^life-test-')
+}
+
+function test-run() {
+  case "${1:-}" in
+    -h | --help | help)
+      test-usage
+      return 0
+      ;;
+  esac
+  cd "$LIFE_HOME" || exit
+  export ENVIRONMENT=testing
+  mkdir -p "$TEST_REPORTS_DIR"
+
+  echo ""
+  echo "${green}Running tests...${reset}"
+  echo ""
+  local -a json_report_flags=(--json-report --json-report-file="$TEST_REPORTS_DIR/pytest-report.json" --json-report-indent=2)
+  # Under pipefail the pipeline's status is pytest's, not tee's
+  uv run pytest "${json_report_flags[@]}" "$@" 2>&1 | tee "$TEST_REPORTS_DIR/pytest-output.log"
+}
+
+# The browser runs in the stack's vue container, as this user, so traces and
+# screenshots in frontend/test-results/ belong to whoever ran the suite.
+function test-e2e() {
+  case "${1:-}" in
+    -h | --help | help)
+      test-usage
+      return 0
+      ;;
+  esac
+  cd "$LIFE_HOME" || exit
+  testing-ensure || return 1
+  mkdir -p "$TEST_REPORTS_DIR"
+
+  local -a exec_args=(--user "$(id -u):$(id -g)" --env HOME=/tmp)
+  if [[ ! -t 0 || ! -t 1 ]]; then
+    exec_args+=(-T)
+  fi
+  # The Playwright config retries and forbids `.only` under CI, and exec passes no host variable on its own
+  if [[ -n "${CI:-}" ]]; then
+    exec_args+=(--env "CI=$CI")
+  fi
+  echo ""
+  echo "${green}Running e2e tests in ${LIFE_TEST_PROJECT}...${reset}"
+  echo ""
+  $COMPOSE_TEST exec "${exec_args[@]}" vue npx playwright test "$@"
+}
+
+function test-usage() {
+  echo "${green}Test commands:${reset}"
+  echo "  ${blue}test run [path] [args]${reset}  Run pytest against its own throwaway Postgres and Redis"
+  echo "  ${blue}test e2e [spec] [args]${reset}  Run Playwright inside this checkout's test stack, starting it if needed"
+  echo ""
+  echo "Arguments after the path go to pytest or Playwright."
+  echo "The output and JSON reports land in ${cyan}.test-reports/${reset} in this checkout,"
+  echo "and Playwright's traces and screenshots in ${cyan}frontend/test-results/${reset}."
+}
+
+function testing-start() {
+  require-test-stack-here || return 1
+  cd "$LIFE_HOME" || exit
+  testing-remove-orphans
+  echo "Starting ${blue}TESTING${reset} environment ${cyan}${LIFE_TEST_PROJECT}${reset}"
+  mkdir -p "$TEST_REPORTS_DIR"
+  $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
+  env-initialize testing || return 1
+
+  echo ""
+  echo "Testing environment ${cyan}${LIFE_TEST_PROJECT}${reset} started. It publishes no ports."
+  echo "  ${green}e2e${reset}:   ${blue}lifeops test e2e${reset}"
+  echo "  ${green}psql${reset}:  ${blue}docker exec -it ${LIFE_TEST_PROJECT}-postgres psql -U postgres life${reset}"
+  echo "  ${green}shell${reset}: ${blue}docker exec -it ${LIFE_TEST_PROJECT}-api bash${reset}"
+}
+
+function testing-stop() {
+  cd "$LIFE_HOME" || exit
+  echo "Stopping ${blue}TESTING${reset} environment ${cyan}${LIFE_TEST_PROJECT}${reset}"
+  $COMPOSE_TEST down --volumes
+}
+
+function testing-restart() {
+  require-test-stack-here || return 1
+  cd "$LIFE_HOME" || exit
+  echo "Restarting ${blue}TESTING${reset} environment ${cyan}${LIFE_TEST_PROJECT}${reset}"
+  mkdir -p "$TEST_REPORTS_DIR"
+  $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
+  env-initialize testing
+}
+
+function testing-rebuild() {
+  cd "$LIFE_HOME" || exit
+
+  local rebuild_all=false
+  local wipe_volumes=false
+  for arg in "$@"; do
+    case "$arg" in
+      --all) rebuild_all=true ;;
+      --volumes) wipe_volumes=true ;;
+      *)
+        echo "${red}Unknown flag: $arg${reset}"
+        echo "Valid flags: --all, --volumes"
+        return 1
+        ;;
+    esac
+  done
+  require-test-stack-here || return 1
+  mkdir -p "$TEST_REPORTS_DIR"
+
+  if [[ "$wipe_volumes" == true ]]; then
+    echo "Wiping volumes for ${blue}TESTING${reset} environment (${yellow}--volumes${reset})"
+    $COMPOSE_TEST down --volumes
+  elif [[ "$rebuild_all" == true ]]; then
+    echo "Full rebuild of ${blue}TESTING${reset} environment (${yellow}--all${reset})"
+    $COMPOSE_TEST down
+  fi
+
+  if [[ "$rebuild_all" == true ]]; then
+    echo "Building all images..."
+    $COMPOSE_TEST build
+    echo "Starting all services..."
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
+  elif [[ "$wipe_volumes" == true ]]; then
+    echo "Building app image..."
+    $COMPOSE_TEST build api
+    echo "Starting all services (volumes were wiped)..."
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes || return 1
+  else
+    echo "Rebuilding ${blue}TESTING${reset} app services (use ${cyan}--all${reset} for infra, ${cyan}--volumes${reset} to wipe volumes)"
+    echo "Building app image..."
+    $COMPOSE_TEST build api
+    echo "Recreating app services..."
+    $COMPOSE_TEST up -d --wait --renew-anon-volumes --force-recreate api scheduler vue || return 1
+  fi
+
+  env-initialize testing || return 1
+  echo "${green}TESTING environment rebuilt and initialized${reset}"
+}
+
+function testing-logs() {
+  cd "$LIFE_HOME" || exit
+  echo "Viewing ${blue}TESTING${reset} logs (Ctrl+C to exit)"
+  echo ""
+  uv run ops/log_viewer.py testing "$@"
+}
+
+function testing-status() {
+  cd "$LIFE_HOME" || exit
+  echo "${blue}TESTING${reset} environment ${cyan}${LIFE_TEST_PROJECT}${reset} status:"
+  echo ""
+  $COMPOSE_TEST ps --format "table {{.Service}}\t{{.State}}\t{{.Status}}" | colored-status
+}
+
+function testing-health() {
+  echo "Running health check for ${blue}TESTING${reset} environment"
+  cd "$LIFE_HOME" || exit
+  "$HEALTH_CHECK_SCRIPT" test
+}
+
+# The stack publishes no ports, so readiness is each health check's own verdict.
+function testing-is-ready() {
+  local service health
+  for service in traefik postgres redis api vue; do
+    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' \
+      "${LIFE_TEST_PROJECT}-${service}" 2>/dev/null) || return 1
+    if [[ "$health" != healthy ]]; then
+      return 1
+    fi
+  done
+}
+
+function testing-ensure() {
+  require-test-stack-here || return 1
+  if testing-is-ready; then
+    echo "${green}Test stack ${LIFE_TEST_PROJECT} is running${reset}"
+  else
+    echo "${yellow}Test stack ${LIFE_TEST_PROJECT} not ready, starting...${reset}"
+    testing-start
+  fi
+}
+
+function testing-usage() {
+  echo "${green}Testing commands:${reset}"
+  echo "  ${blue}testing start${reset}          Start test containers and initialize the database"
+  echo "  ${blue}testing stop${reset}           Stop test containers and remove volumes"
+  echo "  ${blue}testing restart${reset}        Restart test containers"
+  echo "  ${blue}testing rebuild${reset}        Rebuild app services (api, scheduler, vue)"
+  echo "  ${blue}testing rebuild --all${reset}  Full rebuild including infra (traefik, postgres, redis)"
+  echo "  ${blue}testing rebuild --volumes${reset} Wipe named volumes and rebuild (combines with --all)"
+  echo "  ${blue}testing status${reset}         Show container status"
+  echo "  ${blue}testing health${reset}         Full diagnostic health check"
+  echo "  ${blue}testing is-ready${reset}       Quick check if every service is healthy (exit 0/1)"
+  echo "  ${blue}testing ensure${reset}         Start containers if not already running"
+  echo "  ${blue}testing logs [service]${reset} View logs"
+  echo "  ${blue}testing docker [service]${reset} Show merged Docker Compose config"
+  echo "  ${blue}testing db ...${reset}         Database commands (seed, reset)"
+}
+
+# Production environment
+function load-prod-env() {
+  cd "$LIFE_HOME" || exit
+  if ! command -v sops &>/dev/null; then
+    echo "${red}sops not found. Install from https://github.com/getsops/sops/releases${reset}"
+    return 1
+  fi
+  if [[ ! -f "secrets/secrets.prod.enc.env" ]]; then
+    echo "${red}secrets/secrets.prod.enc.env not found${reset}"
+    return 1
+  fi
+  echo "${yellow}Loading production secrets via SOPS...${reset}"
+  # The decrypted file is dotenv data rather than script, so a `$` in one of
+  # its values is no reason to abort a production verb.
+  set -a +u
+  # shellcheck disable=SC1090
+  source <(sops decrypt secrets/secrets.prod.enc.env)
+  set +a -u
+  export DOMAIN="${DOMAIN:-ichrisbirch.com}"
+}
+
+function prod-start() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Starting ${magenta}PRODUCTION${reset} (blue/green: ${cyan}${color}${reset})"
+    $COMPOSE_INFRA up -d
+    compose_app "$color" up -d
+  else
+    echo "Starting ${magenta}PRODUCTION${reset} (legacy single-compose)"
+    $COMPOSE_PROD up -d
+  fi
+
+  echo ""
+  echo "  ${green}APP${reset}:  ${cyan}${PROD_APP_URL}${reset}"
+  echo "  ${green}API${reset}:  ${cyan}${PROD_API_URL}${reset}"
+}
+
+function prod-stop() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Stopping ${magenta}PRODUCTION${reset} app (${cyan}${color}${reset})"
+    compose_app "$color" down
+    echo "Stopping ${magenta}PRODUCTION${reset} infrastructure"
+    $COMPOSE_INFRA down
+  else
+    echo "Stopping ${magenta}PRODUCTION${reset} environment"
+    $COMPOSE_PROD down
+  fi
+}
+
+function prod-restart() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "Restarting ${magenta}PRODUCTION${reset} (${cyan}${color}${reset})"
+    $COMPOSE_INFRA up -d
+    compose_app "$color" up -d
+  else
+    echo "Restarting ${magenta}PRODUCTION${reset} environment"
+    $COMPOSE_PROD up -d
+  fi
+}
+
+function prod-rebuild() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "${yellow}Blue/green is active. Use the deploy script instead:${reset}"
+    echo "  ${cyan}./scripts/deploy-homelab.sh${reset}"
+    echo ""
+    echo "Or to force a legacy rebuild (${red}causes downtime${reset}):"
+    echo "  ${cyan}lifeops prod legacy-rebuild${reset}"
+    return 1
+  fi
+
+  echo "Rebuilding ${magenta}PRODUCTION${reset} environment"
+  $COMPOSE_PROD down
+  echo "Building images..."
+  $COMPOSE_PROD build
+  echo "Starting services..."
+  $COMPOSE_PROD up -d
+}
+
+function prod-legacy-rebuild() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+  echo "${red}WARNING: Legacy rebuild causes downtime!${reset}"
+  echo "Rebuilding ${magenta}PRODUCTION${reset} environment (single-compose)"
+  $COMPOSE_PROD down
+  echo "Building images..."
+  $COMPOSE_PROD build
+  echo "Starting services..."
+  $COMPOSE_PROD up -d
+}
+
+function prod-deploy-status() {
+  cd "$LIFE_HOME" || exit
+
+  local color
+  color=$(get_active_color)
+
+  echo "${magenta}PRODUCTION${reset} deployment status:"
+  echo ""
+
+  if [[ -z "$color" ]]; then
+    echo "  ${yellow}Blue/green not initialized${reset} (using legacy single-compose)"
+    echo ""
+    return 0
+  fi
+
+  echo "  ${green}Active color${reset}: ${cyan}${color}${reset}"
+  echo ""
+
+  echo "  ${green}Infrastructure:${reset}"
+  docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=life-infra" 2>/dev/null || echo "    not running"
+  echo ""
+
+  echo "  ${green}App (${color}):${reset}"
+  docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=life-${color}" 2>/dev/null || echo "    not running"
+  echo ""
+
+  # Check if the other color has any containers (shouldn't normally)
+  local other_color
+  if [[ "$color" == "blue" ]]; then other_color="green"; else other_color="blue"; fi
+  # A report runs to its end, so an unreachable daemon reads as nothing running
+  local other_containers
+  other_containers=$(docker ps --format '{{.Names}}' --filter "name=life-${other_color}" 2>/dev/null) || other_containers=""
+  if [[ -n "$other_containers" ]]; then
+    echo "  ${yellow}Standby (${other_color}) — still running:${reset}"
+    docker ps --format '    {{.Names}}: {{.Status}}' --filter "name=life-${other_color}" 2>/dev/null
+    echo ""
+  fi
+
+  echo "  ${green}Routing:${reset}"
+  local services_file="$LIFE_HOME/deploy-containers/traefik/dynamic/prod/services.yml"
+  if [[ -f "$services_file" ]]; then
+    local routing_color
+    routing_color=$(grep -o 'life-\(blue\|green\)-api' "$services_file" | head -1 | sed 's/life-\(.*\)-api/\1/') || routing_color=""
+    echo "    Traefik routing → ${cyan}${routing_color}${reset}"
+    if [[ "$routing_color" != "$color" ]]; then
+      echo "    ${red}WARNING: services.yml points to ${routing_color} but state says ${color}!${reset}"
+    fi
+  else
+    echo "    ${red}services.yml not found${reset}"
+  fi
+}
+
+function prod-rollback() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local current_color
+  current_color=$(get_active_color)
+
+  if [[ -z "$current_color" ]]; then
+    echo "${red}Blue/green not initialized — nothing to roll back${reset}"
+    return 1
+  fi
+
+  local previous_color
+  if [[ "$current_color" == "blue" ]]; then previous_color="green"; else previous_color="blue"; fi
+
+  echo "${yellow}Rolling back:${reset} ${current_color} → ${previous_color}"
+  echo ""
+
+  # Check if previous color containers are still running. An unreachable
+  # daemon stops the rollback here, before routing or state changes.
+  local prev_running
+  prev_running=$(docker ps --format '{{.Names}}' --filter "name=life-${previous_color}-api")
+
+  if [[ -z "$prev_running" ]]; then
+    echo "Previous containers (${previous_color}) not running. Starting them..."
+    compose_app "$previous_color" up -d
+
+    if ! wait-for-healthy "life-${previous_color}-api" 90; then
+      echo "${red}Previous containers did not become healthy. Rollback aborted.${reset}"
+      return 1
+    fi
+  else
+    echo "Previous containers (${previous_color}) still running"
+  fi
+
+  # Switch routing by regenerating services.yml
+  local services_file="$LIFE_HOME/deploy-containers/traefik/dynamic/prod/services.yml"
+
+  "$LIFE_HOME/scripts/generate-services-yml.sh" "$previous_color" "$services_file" 'CLI rollback'
+
+  echo "$previous_color" >"$BLUEGREEN_STATE_FILE"
+
+  echo ""
+  echo "${green}Rolled back to ${previous_color}${reset}"
+  echo "Traefik will pick up the change within 1-2 seconds."
+  echo ""
+  echo "The ${current_color} containers are still running. Stop them with:"
+  echo "  ${cyan}DEPLOY_COLOR=${current_color} docker compose --project-name life-${current_color} -f docker-compose.app.yml down${reset}"
+}
+
+function prod-logs() {
+  cd "$LIFE_HOME" || exit
+  local log_dir="$PROD_INSTALL_DIR/logs"
+
+  case "${1:-}" in
+    deploy)
+      echo "${magenta}PRODUCTION${reset} deployment logs:"
+      echo ""
+      echo "${cyan}Log directory:${reset} $log_dir"
+      echo ""
+      if [ -f "$log_dir/deploy.log" ]; then
+        echo "${yellow}=== Recent deployment events (deploy.log) ===${reset}"
+        tail -50 "$log_dir/deploy.log"
+      else
+        echo "${red}deploy.log not found${reset}"
+      fi
+      ;;
+    build)
+      echo "${magenta}PRODUCTION${reset} build logs:"
+      echo ""
+      echo "${cyan}Available build logs:${reset}"
+      # shellcheck disable=SC2012
+      ls -lt "$log_dir"/build-*.log 2>/dev/null | head -5 || echo "  No build logs found"
+      echo ""
+      local latest_log
+      # shellcheck disable=SC2012
+      latest_log=$(ls -t "$log_dir"/build-*.log 2>/dev/null | head -1) || latest_log=""
+      if [ -n "$latest_log" ]; then
+        echo "${yellow}=== Most recent build log: $(basename "$latest_log") ===${reset}"
+        tail -100 "$latest_log"
+      fi
+      ;;
+    *)
+      load-prod-env || return 1
+      local color
+      color=$(get_active_color)
+      if [[ -n "$color" ]]; then
+        echo "Viewing ${magenta}PRODUCTION${reset} logs (${cyan}${color}${reset}) (Ctrl+C to exit)"
+      else
+        echo "Viewing ${magenta}PRODUCTION${reset} logs (Ctrl+C to exit)"
+      fi
+      echo ""
+      uv run ops/log_viewer.py prod "$@"
+      ;;
+  esac
+}
+
+function prod-status() {
+  cd "$LIFE_HOME" || exit
+  load-prod-env || return 1
+
+  local color
+  color=$(get_active_color)
+
+  if [[ -n "$color" ]]; then
+    echo "${magenta}PRODUCTION${reset} status (active: ${cyan}${color}${reset}):"
+    echo ""
+    echo "${green}Infrastructure:${reset}"
+    $COMPOSE_INFRA ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+    echo ""
+    echo "${green}App (${color}):${reset}"
+    compose_app "$color" ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  else
+    echo "${magenta}PRODUCTION${reset} environment status:"
+    echo ""
+    $COMPOSE_PROD ps --format "table {{.Service}}\t{{.State}}\t{{.Ports}}" | colored-status
+  fi
+
+  echo ""
+  echo "${magenta}URLs${reset}: $PROD_APP_URL | $PROD_API_URL"
+}
+
+function prod-health() {
+  echo "Running health check for ${magenta}PRODUCTION${reset} environment"
+  cd "$LIFE_HOME" || exit
+  "$HEALTH_CHECK_SCRIPT" prod
+}
+
+# The edge carries a request holding a bearer past ForwardAuth, and the API
+# verifies the token on every route that resolves a user. The header goes
+# through stdin, which keeps the token out of the process list.
+function prod-api-curl() {
+  local token
+  if ! command -v life >/dev/null; then
+    echo "${red}Error: the life CLI is not installed; it holds the access token${reset}" >&2
+    return 1
+  fi
+  token=$(life auth token) || return 1
+  printf 'Authorization: Bearer %s\n' "$token" | curl --header @- "$@"
+}
+
+function prod-apihealth() {
+  # /health, not /health/: the trailing slash answers 307. The body is captured
+  # rather than piped into jq, whose exit status would replace curl's.
+  local body
+  if ! body=$(prod-api-curl --silent --show-error --location --fail-with-body "$PROD_API_URL/health"); then
+    [[ -n "$body" ]] && echo "$body"
+    return 1
+  fi
+  jq <<<"$body"
+}
+
+function prod-smoke() {
+  echo "Running smoke tests on ${magenta}PRODUCTION${reset} environment"
+  local response
+  if ! response=$(prod-api-curl --silent --show-error --fail-with-body -X POST "$PROD_API_URL/api/v1/admin/smoke-tests"); then
+    echo "${red}Error: the smoke-test request to $PROD_API_URL failed${reset}"
+    [[ -n "$response" ]] && echo "$response"
+    return 1
+  fi
+  printf "  %-6s %5s  %-40s %-30s %8s  %s\n" "RESULT" "CODE" "PATH" "NAME" "TIME" "ERROR"
+  printf "  %s\n" "$(printf '%0.s─' {1..100})"
+  echo "$response" | jq -r '.results[] | (if .passed then "  \u001b[32m  PASS\u001b[0m" else "  \u001b[31m  FAIL\u001b[0m" end) + " " + ((.status_code // 0 | tostring) | " " * (5 - length) + .) + "  " + (.path + " " * 40)[:40] + " " + (.name + " " * 30)[:30] + " " + ((.response_time_ms | tostring) + "ms" | " " * (8 - length) + .) + "  " + (.error // "")'
+  echo ""
+  echo "$response" | jq '{total: .total, passed: .passed, failed: .failed, duration_ms: .duration_ms, all_passed: .all_passed}'
+}
+
+function prod-build-test() {
+  # Test that production Docker build works correctly.
+  # This catches issues that only manifest in production builds
+  # (not dev/test which use bind mounts).
+  cd "$LIFE_HOME" || exit
+
+  echo "${magenta}Testing PRODUCTION build${reset}"
+  echo "This tests the actual production Docker build (no bind mounts)"
+  echo ""
+
+  echo "${cyan}Step 1: Building production images...${reset}"
+  if ! $COMPOSE_PROD build; then
+    echo "${red}Production build FAILED${reset}"
+    return 1
+  fi
+  echo "${green}Build completed${reset}"
+  echo ""
+
+  echo "${cyan}Step 2: Verifying images...${reset}"
+  docker images | grep -E "life|REPOSITORY"
+  echo ""
+
+  echo "${green}Production build test PASSED${reset}"
+  echo ""
+  echo "${yellow}Note:${reset} This only tests the build, not container startup."
+  echo "To test startup, run: ${cyan}lifeops prod start${reset} (requires SOPS + age key)"
+}
+
+function prod-usage() {
+  echo "${green}Prod commands:${reset}"
+  echo "  ${blue}prod start${reset}             Start production (blue/green aware)"
+  echo "  ${blue}prod stop${reset}              Stop production services"
+  echo "  ${blue}prod restart${reset}           Restart production services"
+  echo "  ${blue}prod status${reset}            Show container status"
+  echo "  ${blue}prod health${reset}            Full diagnostic health check"
+  echo "  ${blue}prod apihealth${reset}         Check API health endpoint (requires life auth login)"
+  echo "  ${blue}prod smoke${reset}             Run smoke tests (requires life auth login)"
+  echo "  ${blue}prod deploy-status${reset}     Show blue/green deployment state"
+  echo "  ${blue}prod rollback${reset}          Switch traffic to previous color"
+  echo "  ${blue}prod build-test${reset}        Test production Docker build locally"
+  echo "  ${blue}prod logs [service]${reset}    View logs"
+  echo "  ${blue}prod docker [service]${reset}  Show merged Docker Compose config"
+  echo "  ${blue}prod db ...${reset}            Database commands (init)"
+}
+
+function usage() {
+  echo "${yellow}           _                  _                  _       ${reset}"
+  echo "${yellow}  (*)     |=|         (*)    |=|   (*)          |=|      ${reset}"
+  echo "${yellow}   _  ____|=| _   ____ _  ___|=| _  _  ____ ____|=| _    ${reset}"
+  echo "${yellow}  |=|/ ___)=|| =\/ ___)=|/___)=|| \|=|/ ___) ___)=|| =\  ${reset}"
+  echo "${yellow}  |=(=(___|=| |=|=|   |=|___ |=|_)=)=|=|  (=(___|=| |=|  ${reset}"
+  echo "${yellow}  |_|\____)_| |_|_|   |_(___/|____/|_|_|   \____)_| |_|  ${reset}"
+  echo
+  echo "${green}Development:${reset}"
+  echo "  ${blue}dev start|stop|restart|rebuild${reset} - Manage dev environment"
+  echo "  ${blue}dev logs [service]${reset} - View logs (persists across restarts)"
+  echo "  ${blue}dev status|health${reset} - Check environment"
+  echo "  ${blue}dev smoke${reset} - Run smoke tests against all endpoints"
+  echo "  ${green}DB:${reset}"
+  echo "    ${blue}dev db seed [--scale N] [--dry-run]${reset} - Seed with test data"
+  echo "    ${blue}dev db init${reset} - Initialize schema"
+  echo
+  echo "${green}Testing:${reset}"
+  echo "  ${blue}testing start|stop|restart|rebuild${reset} - Manage test environment"
+  echo "  ${blue}testing logs [service]${reset} - View logs"
+  echo "  ${blue}testing status|health${reset} - Check environment"
+  echo "  ${blue}test run [path] [args]${reset} - Run pytest (fast iteration)"
+  echo "  ${blue}test e2e [spec] [args]${reset} - Run Playwright inside this checkout's test stack"
+  echo "  ${green}DB:${reset}"
+  echo "    ${blue}testing db seed [--scale N] [--dry-run]${reset} - Seed with test data"
+  echo "    ${blue}testing db reset${reset} - Drop + recreate everything (nuclear)"
+  echo
+  echo "${green}Production:${reset}"
+  echo "  ${blue}prod start|stop|restart${reset} - Manage production (blue/green aware)"
+  echo "  ${blue}prod logs [service]${reset} - View logs"
+  echo "  ${blue}prod status|health|apihealth${reset} - Check environment"
+  echo "  ${blue}prod smoke${reset} - Run smoke tests against all endpoints"
+  echo "  ${blue}prod deploy-status${reset} - Show blue/green deployment state"
+  echo "  ${blue}prod rollback${reset} - Switch traffic back to previous color"
+  echo "  ${blue}prod build-test${reset} - Test production Docker build locally"
+  echo "  ${green}DB:${reset}"
+  echo "    ${blue}prod db init${reset} - Initialize schema"
+  echo
+  echo "${green}Tools:${reset}"
+  echo "  ${blue}ssl-manager <action> [env]${reset} - Manage SSL certificates"
+  echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
+  echo "  ${blue}install${reset} - Symlink CLI to ~/.local/bin/lifeops"
+  echo
+  echo "${green}Stats:${reset}"
+  echo "  ${blue}stats${reset} - Show stats submenu"
+  echo "  ${blue}stats summary${reset} - Dashboard overview"
+  echo
+  echo "${green}URLs:${reset}"
+  echo "  ${blue}Dev${reset}:  $DEV_API_URL | $DEV_APP_URL"
+  echo "  ${blue}Prod${reset}: $PROD_API_URL | $PROD_APP_URL"
+  echo "  The test stack publishes no ports; its e2e suite runs inside it."
+  echo
+  echo "${green}The grammar:${reset} ${blue}lifeops <environment> <verb>${reset}, where the environment is"
+  echo "  dev, testing or prod. Run any environment with no verb to see its own."
+  echo "  ${blue}test${reset}, ${blue}stats${reset}, ${blue}routing${reset} and ${blue}ssl-manager${reset} are tools rather than environments."
+  echo
+  echo "${green}Examples:${reset}"
+  echo "  ${blue}lifeops dev start${reset}              # bring the dev stack up"
+  echo "  ${blue}lifeops dev logs api${reset}           # follow one service's logs"
+  echo "  ${blue}lifeops test run${reset}               # run the suite against throwaway Postgres and Redis"
+  echo "  ${blue}lifeops test run tests/x.py -v${reset} # run one file"
+  echo "  ${blue}lifeops test e2e e2e/tasks.spec.ts${reset} # run one e2e spec, starting the test stack if needed"
+  echo "  ${blue}lifeops testing rebuild --volumes${reset}  # when a code change is not taking effect"
+  echo "  ${blue}lifeops prod deploy-status${reset}     # which color is live"
+}
+
+if [ -z "${1:-}" ]; then
+  usage
+  exit 0
+fi
+
+function routing-usage() {
+  echo "${green}Routing Commands:${reset}"
+  echo "  ${blue}routing generate${reset} - Regenerate Traefik routing from vue-paths.txt"
+  echo ""
+  echo "Canonical path list: deploy-containers/traefik/vue-paths.txt"
+}
+
+# A help flag after a verb prints its group's usage, so no verb acts on it.
+for arg in "${@:2}"; do
+  if [[ "$arg" == -h || "$arg" == --help ]]; then
+    case "$1" in
+      dev) dev-usage ;;
+      test) test-usage ;;
+      testing) testing-usage ;;
+      prod) prod-usage ;;
+      stats) stats-usage ;;
+      routing) routing-usage ;;
+      ssl-manager) ssl-manager help ;;
+      *) usage ;;
+    esac
+    exit 0
+  fi
+done
+
+case $1 in
+  help | -h | --help)
+    usage
+    ;;
+  install)
+    install
+    ;;
+  test)
+    case "${2:-}" in
+      "" | -h | --help | help) test-usage ;;
+      run)
+        shift 2
+        test-run "$@"
+        ;;
+      e2e)
+        shift 2
+        test-e2e "$@"
+        ;;
+      *)
+        echo "${red}Unknown test command: $2${reset}" >&2
+        test-usage >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  testing)
+    case "${2:-}" in
+      "" | -h | --help | help) testing-usage ;;
+      start) testing-start ;;
+      stop) testing-stop ;;
+      restart) testing-restart ;;
+      rebuild)
+        shift 2
+        testing-rebuild "$@"
+        ;;
+      status) testing-status ;;
+      health) testing-health ;;
+      is-ready) testing-is-ready ;;
+      ensure) testing-ensure ;;
+      logs)
+        shift 2
+        testing-logs "$@"
+        ;;
+      db)
+        shift 2
+        case "${1:-}" in
+          seed | init | reset) require-test-stack-here || exit 1 ;;
+        esac
+        env-db testing "$@"
+        ;;
+      docker)
+        shift 2
+        env-docker-config testing "$@"
+        ;;
+      *)
+        echo "${red}Unknown testing command: $2${reset}" >&2
+        testing-usage >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  dev)
+    case "${2:-}" in
+      "" | -h | --help | help) dev-usage ;;
+      start) dev-start ;;
+      stop) dev-stop ;;
+      restart) dev-restart ;;
+      rebuild)
+        shift 2
+        dev-rebuild "$@"
+        ;;
+      status) dev-status ;;
+      smoke) dev-smoke ;;
+      health) dev-health ;;
+      is-ready) dev-is-ready ;;
+      ensure) dev-ensure ;;
+      logs)
+        shift 2
+        dev-logs "$@"
+        ;;
+      db)
+        shift 2
+        env-db development "$@"
+        ;;
+      docker)
+        shift 2
+        env-docker-config development "$@"
+        ;;
+      *)
+        echo "${red}Unknown dev command: $2${reset}" >&2
+        dev-usage >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  prod)
+    case "${2:-}" in
+      "" | -h | --help | help) prod-usage ;;
+      start) require_prod_host start && prod-start ;;
+      stop) require_prod_host stop && prod-stop ;;
+      restart) require_prod_host restart && prod-restart ;;
+      rebuild) require_prod_host rebuild && prod-rebuild ;;
+      status) require_prod_host status && prod-status ;;
+      smoke) prod-smoke ;;
+      apihealth) prod-apihealth ;;
+      health) require_prod_host health && prod-health ;;
+      logs)
+        require_prod_host logs
+        shift 2
+        prod-logs "$@"
+        ;;
+      db)
+        require_prod_host db
+        shift 2
+        env-db production "$@"
+        ;;
+      docker)
+        require_prod_host docker
+        shift 2
+        env-docker-config production "$@"
+        ;;
+      deploy-status) require_prod_host deploy-status && prod-deploy-status ;;
+      rollback) require_prod_host rollback && prod-rollback ;;
+      legacy-rebuild) require_prod_host legacy-rebuild && prod-legacy-rebuild ;;
+      build-test) prod-build-test ;;
+      *)
+        echo "${red}Unknown prod command: $2${reset}" >&2
+        prod-usage >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  ssl-manager)
+    ssl-manager "${2:-}" "${3:-}"
+    ;;
+  routing)
+    case "${2:-}" in
+      generate)
+        bash "$LIFE_HOME/deploy-containers/traefik/generate-routing.sh"
+        echo ""
+        if ! git -C "$LIFE_HOME" diff --quiet deploy-containers/traefik/dynamic/; then
+          echo "${blue}Changes:${reset}"
+          git -C "$LIFE_HOME" diff --stat deploy-containers/traefik/dynamic/
+        else
+          echo "${green}No changes — routing files already up to date.${reset}"
+        fi
+        ;;
+      *) routing-usage ;;
+    esac
+    ;;
+  stats)
+    case "${2:-}" in
+      "") stats-usage ;;
+      summary) stats-summary ;;
+      code) stats-code ;;
+      tests) stats-tests ;;
+      quality) stats-quality ;;
+      activity) stats-activity "${3:-}" ;;
+      events) stats-events "${3:-}" ;;
+      trends) stats-trends ;;
+      churn) stats-churn "${3:-}" ;;
+      snapshot) stats-snapshot ;;
+      *)
+        echo "${red}Unknown stats command: $2${reset}" >&2
+        stats-usage >&2
+        exit 2
+        ;;
+    esac
+    ;;
+  *)
+    echo "${red}Unknown command: $1${reset}" >&2
+    echo "" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

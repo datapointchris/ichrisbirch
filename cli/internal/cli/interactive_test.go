@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
+	"github.com/datapointchris/life/cli/internal/prompt"
 )
 
 // answerCommand builds a bare command carrying the create flags, so the

@@ -7,11 +7,11 @@ services:
   # Test database - optimized for speed over durability
   postgres:
     image: postgres:16-alpine
-    container_name: icb-metal-test-postgres
+    container_name: life-metal-test-postgres
     ports:
       - "5434:5432"
     environment:
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - PGDATA=/tmp/postgres
@@ -31,7 +31,7 @@ services:
       -c log_destination=stderr
       -c logging_collector=off
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,7 +46,7 @@ services:
   # Test Redis - optimized for speed, no persistence
   redis:
     image: redis:7-alpine
-    container_name: icb-metal-test-redis
+    container_name: life-metal-test-redis
     ports:
       - "6380:6379"
     # Test optimizations: no persistence, minimal configuration
@@ -73,10 +73,10 @@ services:
     build:
       context: .
       target: testing
-    container_name: icb-metal-test-api
+    container_name: life-metal-test-api
     # Run without reload for consistent test environment
     command: >
-      uv run uvicorn ichrisbirch.wsgi_api:api
+      uv run uvicorn life.wsgi_api:api
       --host 0.0.0.0
       --port 8000
       --log-level debug
@@ -86,7 +86,7 @@ services:
     environment:
       - ENVIRONMENT=testing
       - FASTAPI_TESTING=True
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FILE_PATH=/var/log/life/testing.log
     volumes:
       - type: bind
         source: .
@@ -95,8 +95,8 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
+        source: life_testing_logs
+        target: /var/log/life
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -124,11 +124,11 @@ services:
     build:
       context: .
       target: testing
-    container_name: icb-metal-test-scheduler
-    command: uv run python -m ichrisbirch.wsgi_scheduler
+    container_name: life-metal-test-scheduler
+    command: uv run python -m life.wsgi_scheduler
     environment:
       - ENVIRONMENT=testing
-      - LOG_FILE_PATH=/var/log/ichrisbirch/testing.log
+      - LOG_FILE_PATH=/var/log/life/testing.log
     volumes:
       - type: bind
         source: .
@@ -137,8 +137,8 @@ services:
         source: venv_shared
         target: /app/.venv
       - type: volume
-        source: ichrisbirch_testing_logs
-        target: /var/log/ichrisbirch
+        source: life_testing_logs
+        target: /var/log/life
       - type: volume
         source: uv_cache
         target: /root/.cache/uv
@@ -161,16 +161,16 @@ services:
         tag: "scheduler-test"
 
 volumes:
-  ichrisbirch_testing_logs:
-    name: icb-metal-test-logs
+  life_testing_logs:
+    name: life-metal-test-logs
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${ICHRISBIRCH_HOME:-${PWD}}/test-logs
+      device: ${LIFE_HOME:-${PWD}}/test-logs
   uv_cache:
-    name: icb-metal-test-uv-cache
+    name: life-metal-test-uv-cache
     driver: local
   venv_shared:
-    name: icb-metal-test-venv-shared
+    name: life-metal-test-venv-shared
     driver: local

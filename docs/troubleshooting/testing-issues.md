@@ -10,10 +10,10 @@ are stale container state. A stop-and-start clears most of them, and a
 
 Work these in order. Do not substitute manual `docker` subcommands.
 
-1. **`./ops/icbops testing stop && ./ops/icbops testing start`** — around 30
+1. **`./ops/lifeops testing stop && ./ops/lifeops testing start`** — around 30
    seconds. Clears accumulated database state, routes FastAPI has not
    re-registered, and stale module imports. A changed model needs this.
-2. **`./ops/icbops testing rebuild --volumes`** — around 60 to 90 seconds.
+2. **`./ops/lifeops testing rebuild --volumes`** — around 60 to 90 seconds.
    Clears a stale `.venv`, a dependency added to `pyproject.toml`,
    anonymous-volume staleness, and a corrupted `node_modules`.
 3. **Only now** reach for `docker logs`, `docker inspect` or `docker exec`.
@@ -44,7 +44,7 @@ and screenshots land in `frontend/test-results/`.
 It lives on tmpfs, so every stop or recreate of the Postgres container empties
 it. That is the design, not a fault. pytest never connects to it.
 
-Every `icbops` verb that brings the stack up initializes the database
+Every `lifeops` verb that brings the stack up initializes the database
 afterwards — `testing start`, `testing restart`, `testing rebuild` with any
 flags, and `test e2e`'s cold start. Initializing migrates to head, so a new
 migration reaches the e2e suite after step 1 of the ladder.
@@ -65,7 +65,7 @@ objects.
 ## The API is stuck in `health: starting`
 
 The API container runs `uvicorn` directly rather than `uv run`, and `/app/.venv`
-is an anonymous volume that Docker seeds from the image layer. Every `icbops`
+is an anonymous volume that Docker seeds from the image layer. Every `lifeops`
 `up` passes `--renew-anon-volumes`, because compose otherwise hands a recreated
 container the volume of the one it replaces.
 
@@ -83,7 +83,7 @@ The test Vue container keeps `node_modules` in a named volume and runs
 while the container is running is not installed in that volume.
 
 ```bash
-./ops/icbops testing stop && ./ops/icbops testing start
+./ops/lifeops testing stop && ./ops/lifeops testing start
 ```
 
 The symptom is specific: pages importing the new package return 500 while every
@@ -91,13 +91,13 @@ other page works.
 
 ## `ENOTEMPTY` in a restart loop
 
-Partial install state in the checkout's `icb-test-<checkout>-vue-node-modules`
+Partial install state in the checkout's `life-test-<checkout>-vue-node-modules`
 volume — an `npm install` interrupted mid-run — produces `ENOTEMPTY: directory
 not empty` in a loop. Left running long enough, that loop has taken down
 `dockerd` itself.
 
 ```bash
-./ops/icbops testing rebuild --all --volumes
+./ops/lifeops testing rebuild --all --volumes
 ```
 
 If the daemon has already crashed, [Docker
@@ -110,18 +110,18 @@ The test stack publishes no ports. Every service in `docker-compose.test.yml`
 replaces the base file's `ports` with `ports: !override []`. Compose appends
 `ports` and `volumes` across files unless the override carries `!override`, so
 a test service missing it publishes the dev port and collides with the dev
-stack. `icbops testing docker` prints the resolved result, which is where an
+stack. `lifeops testing docker` prints the resolved result, which is where an
 inherited mapping shows up.
 
 ## E2E tests
 
-`./ops/icbops test e2e` runs them inside the vue container, through the stack's
+`./ops/lifeops test e2e` runs them inside the vue container, through the stack's
 Traefik, against `https://app.test.localhost:8443`.
 [Test Environment](../testing/environment.md#playwright-runs-inside-the-checkouts-test-stack)
 explains how Chromium there reaches Traefik.
 
 `npm run test:e2e` on the host fails at once with `The test stack publishes no
-ports`. `ICB_TEST_STACK` is set only inside the vue container. Setting
+ports`. `LIFE_TEST_STACK` is set only inside the vue container. Setting
 `E2E_ENV=dev` points a host run at `https://app.docker.localhost` instead,
 which is what `npm run test:e2e:dev` and `npm run test:e2e:ui` do.
 `frontend/playwright.config.ts` and `frontend/e2e/global.setup.ts` are the two
@@ -156,12 +156,12 @@ uv run pytest -m integration   # tests requiring running services
 ## Coverage
 
 Configured in `pyproject.toml` under `[tool.coverage.run]`: parallel, branch
-coverage, sourced from `ichrisbirch` with `ichrisbirch/alembic` omitted.
+coverage, sourced from `life` with `life/alembic` omitted.
 Migrations are generated and exercised by running them, so measuring them
 reports noise.
 
 ```bash
-./ops/icbops test run --cov=ichrisbirch --cov-report=html
+./ops/lifeops test run --cov=life --cov-report=html
 ```
 
 Parallel mode writes one data file per worker. A report showing almost nothing
@@ -173,13 +173,13 @@ pytest runs the same way in CI as on a workstation. Each session starts its own
 Postgres and Redis on the runner's Docker, so a CI-only pytest failure is rarely
 about the containers.
 
-The e2e job runs `./ops/icbops testing start` and `./ops/icbops test e2e`, the
-commands a workstation runs. Under `CI=true`, `icbops` adds
+The e2e job runs `./ops/lifeops testing start` and `./ops/lifeops test e2e`, the
+commands a workstation runs. Under `CI=true`, `lifeops` adds
 `docker-compose.ci.yml`, which removes the API's Docker socket mount. Anything
 in the stack touching container status behaves differently there. The
 Playwright config also retries a failed test and refuses `.only` under CI.
 
-Read `CI=true ./ops/icbops testing docker` before blaming a line in the CI
+Read `CI=true ./ops/lifeops testing docker` before blaming a line in the CI
 file. It prints the compose set the job resolves.
 
 ## Related

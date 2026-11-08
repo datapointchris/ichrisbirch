@@ -1,0 +1,23 @@
+{
+  "life.articles.read": [
+    "GET /api/v1/articles"
+  ],
+  "life.books.read": [
+    "GET /api/v1/books"
+  ],
+  "life.habits.read": [
+    "GET /api/v1/habits/completed"
+  ],
+  "life.overview.read": [
+    "GET /api/v1/articles",
+    "GET /api/v1/articles/current",
+    "GET /api/v1/books",
+    "GET /api/v1/countdowns",
+    "GET /api/v1/events",
+    "GET /api/v1/habits/day",
+    "GET /api/v1/tasks"
+  ],
+  "life.tasks.read": [
+    "GET /api/v1/tasks"
+  ]
+}

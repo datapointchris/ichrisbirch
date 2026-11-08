@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This comprehensive troubleshooting guide documents common issues, their root causes, attempted solutions, and final resolutions encountered during the development and operation of the iChrisBirch project.
+This comprehensive troubleshooting guide documents common issues, their root causes, attempted solutions, and final resolutions encountered during the development and operation of the Life project.
 
 ## Overview
 
@@ -29,8 +29,8 @@ Most dev and test failures are stale container state rather than bugs. Clearing
 them costs less than reading logs:
 
 ```bash
-./ops/icbops testing stop && ./ops/icbops testing start   # ~30s
-./ops/icbops testing rebuild --volumes                    # ~60-90s
+./ops/lifeops testing stop && ./ops/lifeops testing start   # ~30s
+./ops/lifeops testing rebuild --volumes                    # ~60-90s
 ```
 
 Only after both is a manual `docker` subcommand worth reaching for.

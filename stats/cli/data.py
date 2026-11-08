@@ -523,7 +523,7 @@ def aggregate_slowest_tests(events_path: str | Path, top_n: int = 12) -> list[di
         # Shorten path: keep full path for deep test dirs,
         # truncate to 3 segments otherwise
         parts = file_path.split('/')
-        if len(parts) > 2 and parts[1] == 'ichrisbirch' and parts[2] in ('api', 'app', 'frontend'):
+        if len(parts) > 2 and parts[1] == 'life' and parts[2] in ('api', 'app', 'frontend'):
             short = file_path
         else:
             short = '/'.join(parts[:3])
@@ -563,7 +563,7 @@ def tests_per_directory(events_path: str | Path, top_n: int = 10) -> list[dict]:
         file_path = nodeid.split('::')[0] if '::' in nodeid else nodeid
         parts = file_path.split('/')
 
-        if len(parts) > 3 and parts[1] == 'ichrisbirch' and parts[2] in ('api', 'app'):
+        if len(parts) > 3 and parts[1] == 'life' and parts[2] in ('api', 'app'):
             dir_key = '/'.join(parts[:4])
         else:
             dir_key = '/'.join(parts[:3])

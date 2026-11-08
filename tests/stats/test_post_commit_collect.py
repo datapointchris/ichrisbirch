@@ -133,7 +133,7 @@ class TestMain:
                 patch('stats.post_commit_collect.get_staged_files_from_commit') as mock_staged,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'collect': {'collectors': []},
                 }
@@ -171,7 +171,7 @@ class TestMain:
                 patch('stats.collectors.tokei.run') as mock_tokei_run,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'collect': {'collectors': ['tokei']},
                 }
@@ -190,7 +190,7 @@ class TestMain:
                 mock_staged.return_value = []
                 mock_tokei_run.return_value = TokeiCollectEvent(
                     timestamp=dt.datetime.now(dt.UTC),
-                    project='ichrisbirch',
+                    project='life',
                     branch='master',
                     total_files=100,
                     total_lines=10000,
@@ -221,7 +221,7 @@ class TestMain:
                 patch('stats.post_commit_collect.get_staged_files_from_commit') as mock_staged,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'collect': {'collectors': ['nonexistent_collector']},
                 }
@@ -259,7 +259,7 @@ class TestMain:
                 patch('stats.collectors.pytest_collector.run') as mock_pytest_run,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'collect': {'collectors': ['pytest_collector']},
                 }

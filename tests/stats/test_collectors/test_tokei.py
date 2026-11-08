@@ -42,7 +42,7 @@ class TestTokeiSchema:
         """Test TokeiCollectEvent schema."""
         event = TokeiCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             languages={'Python': TokeiLanguageStats(blanks=100, code=1000, comments=50, files=[])},
             total_code=1000,
@@ -71,7 +71,7 @@ class TestTokeiRunner:
                 stderr='',
             )
 
-            event = run('master', 'ichrisbirch')
+            event = run('master', 'life')
 
             assert isinstance(event, TokeiCollectEvent)
             assert 'Python' in event.languages
@@ -88,7 +88,7 @@ class TestTokeiRunner:
                 stderr='',
             )
 
-            event = run('master', 'ichrisbirch')
+            event = run('master', 'life')
 
             # Sum of Python (8789) + JS (296) + HTML (2752) + CSS (10111)
             assert event.total_code == 21948
@@ -104,8 +104,8 @@ class TestTokeiRunner:
                 stderr='',
             )
 
-            event = run('master', 'ichrisbirch')
+            event = run('master', 'life')
 
             python_files = event.languages['Python'].files
             assert len(python_files) == 2
-            assert python_files[0].name == 'ichrisbirch/api/main.py'
+            assert python_files[0].name == 'life/api/main.py'

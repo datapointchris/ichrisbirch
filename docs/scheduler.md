@@ -2,8 +2,8 @@
 
 ## APScheduler
 
-The scheduler runs as its own Docker container (`icb-{env}-scheduler` for
-dev/test, `icb-{blue,green}-scheduler` for production). It uses APScheduler's
+The scheduler runs as its own Docker container (`life-{env}-scheduler` for
+dev/test, `life-{blue,green}-scheduler` for production). It uses APScheduler's
 blocking scheduler in a single process — a single instance is required to
 avoid duplicate job runs.
 
@@ -16,7 +16,7 @@ log line emitted during the job is queryable in Loki by
 Exceptions inside a job are logged but swallowed so one failing job cannot
 take down the whole scheduler.
 
-Jobs are registered in `ichrisbirch/scheduler/jobs.py` via `get_jobs_to_add()`.
+Jobs are registered in `life/scheduler/jobs.py` via `get_jobs_to_add()`.
 
 ## Current Jobs
 

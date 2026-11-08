@@ -34,7 +34,6 @@ test.describe('Durations Page', () => {
 
   test('loads the page and displays the duration list', async ({ page }) => {
     await page.goto('/durations')
-    await expect(page).toHaveTitle('Durations | iChrisBirch')
     await expect(page.locator('.grid').first()).toBeVisible()
   })
 
@@ -79,7 +78,7 @@ test.describe('Durations Page', () => {
 
   test('sidebar navigation to durations works', async ({ page }) => {
     await page.goto('/durations')
-    await expect(page).toHaveTitle('Durations | iChrisBirch')
+    await expect(page).toHaveTitle('Durations | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Durations' })
     await expect(sidebarLink).toBeVisible()

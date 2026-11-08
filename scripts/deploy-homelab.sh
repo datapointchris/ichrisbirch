@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Blue/green deployment script for ichrisbirch
+# Blue/green deployment script for life
 #
 # Deploys the opposite color from what's currently live, verifies health and
 # smoke tests, then atomically switches Traefik routing. If anything fails
 # before the switch, the live containers are never touched.
 #
 # Images are built by GHA (.github/workflows/release.yml) and pushed to
-# ghcr.io/datapointchris/{ichrisbirch,ichrisbirch-vue}:latest. This script
+# ghcr.io/datapointchris/{life,life-vue}:latest. This script
 # pulls them — it does not build locally.
 #
 # Flow:
@@ -26,15 +26,22 @@
 
 set -euo pipefail
 
-INSTALL_DIR="/srv/ichrisbirch"
+# MIGRATION: a host still on the ichrisbirch layout moves to life's first, and
+# the cutover runs this script again from its new path. This check comes before
+# anything creates /srv/life, because a move into an existing directory nests.
+if [[ -d /srv/ichrisbirch/.git && ! -e /srv/life ]]; then
+  exec "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/cutover-to-life.sh"
+fi
+
+INSTALL_DIR="/srv/life"
 LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-LOCK_FILE="/var/lock/ichrisbirch-deploy.lock"
-STATE_DIR="/var/lib/ichrisbirch"
+LOCK_FILE="/var/lock/life-deploy.lock"
+STATE_DIR="/var/lib/life"
 STATE_FILE="${STATE_DIR}/bluegreen-state"
-COMPOSE_INFRA="docker compose --project-name icb-infra -f docker-compose.infra.yml"
+COMPOSE_INFRA="docker compose --project-name life-infra -f docker-compose.infra.yml"
 GRACE_PERIOD=30
 
 mkdir -p "$LOG_DIR"
@@ -53,18 +60,20 @@ FAILURE_STEP=""
 FAILURE_OUTPUT=""
 LIVE_COLOR=""
 DEPLOY_COLOR=""
+TRAFFIC_SWITCHED=false
+LOCK_HELD=false
 
 # --remove-orphans on every up and down, because removing a service from
 # docker-compose.app.yml otherwise leaves its container running forever: neither
 # verb reaps what the compose file no longer mentions. The MCP server was retired
 # on 2026-07-24 and icb-blue-mcp was still up two weeks later, restart=always,
 # invisible to every deploy since. Scoped to one color's project, so it can only
-# ever touch that color — icb-infra is a different project and is not reachable
+# ever touch that color — life-infra is a different project and is not reachable
 # from here.
 compose_app() {
   local color="$1"
   shift
-  DEPLOY_COLOR="$color" docker compose --project-name "icb-${color}" -f docker-compose.app.yml "$@"
+  DEPLOY_COLOR="$color" docker compose --project-name "life-${color}" -f docker-compose.app.yml "$@"
 }
 
 compose_app_up() {
@@ -77,9 +86,6 @@ compose_app_down() {
 
 cleanup() {
   local exit_code=$?
-
-  # Always release the lock
-  rmdir "$LOCK_FILE" 2>/dev/null || true
 
   if [[ "$DEPLOY_STARTED" == "true" && "$DEPLOY_SUCCESS" != "true" ]]; then
     local commit_msg
@@ -99,10 +105,23 @@ cleanup() {
       compose_app_down "$DEPLOY_COLOR" 2>/dev/null || true
     fi
 
+    local serving="${LIVE_COLOR:-unknown} (still serving)"
+
+    # MIGRATION: the deploy the cutover handed to failed before its switch, so
+    # the old stack goes back up and the next release runs the cutover again.
+    if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" && "$TRAFFIC_SWITCHED" != "true" ]]; then
+      if "${SCRIPT_DIR}/cutover-to-life.sh" --roll-back; then
+        serving="${LIVE_COLOR:-unknown} (serving again on the old stack)"
+      else
+        log_error "cutover_roll_back_failed" "site" "down" | tee -a "$LOG_FILE"
+        serving="none: the cutover's roll back failed and the site is DOWN"
+      fi
+    fi
+
     local message="*Commit:* \`${NEW_SHA:0:7}\`"
     message+="\n*Step Failed:* ${FAILURE_STEP:-unknown}"
     message+="\n*Exit Code:* $exit_code"
-    message+="\n*Live Color:* ${LIVE_COLOR:-unknown} (still serving)"
+    message+="\n*Live Color:* ${serving}"
     message+="\n\n*Commit:* $commit_msg"
 
     local context=""
@@ -110,20 +129,33 @@ cleanup() {
       local truncated_output="${FAILURE_OUTPUT: -500}"
       context="*Error Output:*\n\`\`\`${truncated_output}\`\`\`"
     fi
-    context+="\n\n*Logs:* \`/srv/ichrisbirch/logs/\`"
+    context+="\n\n*Logs:* \`/srv/life/logs/\`"
 
     notify_slack "failure" "$message" "$context"
+  fi
+
+  # Released last, so no other deploy starts while this one is still undoing
+  # itself, and only by the deploy that holds it.
+  if [[ "$LOCK_HELD" == "true" ]]; then
+    rmdir "$LOCK_FILE" 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
 
 acquire_lock() {
+  # MIGRATION: the cutover took the lock before it stopped the site, and hands it here.
+  if [[ "${CUTOVER_HOLDS_LOCK:-}" == 1 ]]; then
+    log_info "lock_held_by_cutover" | tee -a "$LOG_FILE"
+    LOCK_HELD=true
+    return 0
+  fi
   if ! mkdir "$LOCK_FILE" 2>/dev/null; then
     log_warn "deploy_already_running" "lock" "$LOCK_FILE" | tee -a "$LOG_FILE"
     # Not a failure — another deploy is handling it
     DEPLOY_STARTED=false
     exit 0
   fi
+  LOCK_HELD=true
   log_info "lock_acquired" | tee -a "$LOG_FILE"
 }
 
@@ -241,8 +273,8 @@ ensure_infra_running() {
 
   while [[ $waited -lt $max_wait ]]; do
     local pg_health redis_health
-    pg_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-postgres 2>/dev/null || echo "missing")
-    redis_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-redis 2>/dev/null || echo "missing")
+    pg_health=$(docker inspect --format='{{.State.Health.Status}}' life-infra-postgres 2>/dev/null || echo "missing")
+    redis_health=$(docker inspect --format='{{.State.Health.Status}}' life-infra-redis 2>/dev/null || echo "missing")
 
     if [[ "$pg_health" == "healthy" && "$redis_health" == "healthy" ]]; then
       log_info "infra_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
@@ -298,7 +330,7 @@ wait_for_healthy() {
   local max_wait=90
   local interval=5
   local waited=0
-  local services="icb-${DEPLOY_COLOR}-api icb-${DEPLOY_COLOR}-vue"
+  local services="life-${DEPLOY_COLOR}-api life-${DEPLOY_COLOR}-vue"
 
   log_info "waiting_for_healthy" "color" "$DEPLOY_COLOR" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
 
@@ -326,7 +358,7 @@ wait_for_healthy() {
 
   # Log container statuses for debugging
   local container_statuses
-  container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep "icb-${DEPLOY_COLOR}" || echo "no containers")
+  container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep "life-${DEPLOY_COLOR}" || echo "no containers")
   FAILURE_OUTPUT="Containers not healthy after ${max_wait}s. Status: $container_statuses"
   log_error "containers_not_healthy" "color" "$DEPLOY_COLOR" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
   exit 1
@@ -338,7 +370,7 @@ run_migrations() {
   cd "$INSTALL_DIR"
 
   local migration_output
-  if migration_output=$(docker exec -w /app/ichrisbirch "icb-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
+  if migration_output=$(docker exec -w /app/life "life-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
     log_info "migrations_completed" "color" "$DEPLOY_COLOR" "output" "$migration_output" | tee -a "$LOG_FILE"
   else
     FAILURE_OUTPUT="$migration_output"
@@ -353,7 +385,7 @@ run_smoke_tests() {
 
   # Verify Vue SPA serves correctly
   local vue_output
-  if ! vue_output=$(docker exec "icb-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ 2>&1); then
+  if ! vue_output=$(docker exec "life-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ 2>&1); then
     FAILURE_OUTPUT="Vue not serving SPA: $vue_output"
     log_error "vue_smoke_failed" "color" "$DEPLOY_COLOR" "output" "${vue_output:0:200}" | tee -a "$LOG_FILE"
     exit 1
@@ -372,7 +404,7 @@ run_smoke_tests() {
   log_info "smoke_using_admin" "email" "$admin_email" | tee -a "$LOG_FILE"
 
   local smoke_output http_code
-  smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
+  smoke_output=$(docker exec "life-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
     -X POST http://localhost:8000/api/v1/admin/smoke-tests \
     -H "Remote-User: ${admin_email}" \
     -H "Remote-Email: ${admin_email}" 2>&1)
@@ -488,6 +520,10 @@ main() {
   # === POINT OF NO RETURN ===
   # Everything above verified successfully. Now switch traffic.
   switch_traffic
+  TRAFFIC_SWITCHED=true
+  if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" ]]; then
+    log_info "site_restored" "cutover_downtime_seconds" "$(($(date +%s) - CUTOVER_SITE_STOPPED_AT))" | tee -a "$LOG_FILE"
+  fi
   update_state
   stop_old_containers
   cleanup_docker

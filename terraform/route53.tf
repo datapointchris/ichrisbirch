@@ -10,12 +10,12 @@
 #   force_destroy = false
 # }
 #
-# resource "aws_route53_record" "ichrisbirch_a" {
+# resource "aws_route53_record" "life_a" {
 #   name    = "ichrisbirch.com"
 #   zone_id = aws_route53_zone.ichrisbirch.zone_id
 #   ttl     = 300
 #   type    = "A"
-#   records = [aws_eip.ichrisbirch_elastic_ip.public_ip]
+#   records = [aws_eip.life_elastic_ip.public_ip]
 # }
 #
 # resource "aws_route53_record" "www_ichrisbirch_a" {
@@ -23,10 +23,10 @@
 #   zone_id = aws_route53_zone.ichrisbirch.zone_id
 #   ttl     = 300
 #   type    = "A"
-#   records = [aws_eip.ichrisbirch_elastic_ip.public_ip]
+#   records = [aws_eip.life_elastic_ip.public_ip]
 # }
 #
-# resource "aws_route53_record" "ichrisbirch_ns" {
+# resource "aws_route53_record" "life_ns" {
 #   name            = "ichrisbirch.com"
 #   zone_id         = aws_route53_zone.ichrisbirch.zone_id
 #   ttl             = 172800
@@ -67,7 +67,7 @@
 #   zone_id = aws_route53_zone.chat_ichrisbirch.zone_id
 #   ttl     = 300
 #   type    = "A"
-#   records = [aws_eip.ichrisbirch_elastic_ip.public_ip]
+#   records = [aws_eip.life_elastic_ip.public_ip]
 # }
 #
 #

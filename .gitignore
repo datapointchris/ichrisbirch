@@ -57,7 +57,7 @@ logs/
 xperiments/
 
 # Local copies of backup files
-ichrisbirch-backups/
+life-backups/
 
 # MCP configuration (contains API keys)
 .mcp.json
@@ -83,7 +83,7 @@ terraform.tfstate.*
 # Diagram generator cache
 .diagram_hash_cache.json
 
-# Compiled icb binary (task cli:build)
+# Compiled life binary (task cli:build)
 bin/
 
 # Traefik secrets

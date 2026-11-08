@@ -1,12 +1,12 @@
-# icb — the ichrisbirch data CLI
+# life — the life data CLI
 
-`icb` is a Go/cobra thin REST client over the ichrisbirch FastAPI. It is the
-programmatic front door to the personal-productivity apps, which `icb --help`
+`life` is a Go/cobra thin REST client over the life FastAPI. It is the
+programmatic front door to the personal-productivity apps, which `life --help`
 lists by group, and the **replacement for the retired MCP server** — the agent and power-user surface,
 driven by Claude via Bash or by a person at the terminal.
 
 It is a per-machine developer tool, not one of the deployed containers. The bash
-ops/deploy tool lives at `../ops/icbops` — a different concern in a different
+ops/deploy tool lives at `../ops/lifeops` — a different concern in a different
 language; the two share no code.
 
 ## What it covers
@@ -33,8 +33,8 @@ them in. Adding a value is an insert on the server, not a release of this
 binary. On `strains`, `--type`, `--status`, `--effect`, `--flavor` and
 `--terpene` are all lookup tables, so their values are read from the server on
 every create and edit and a wrong one is refused with the list of what would
-have worked. `icb strains vocabulary` prints every value with how many strains
-carry it. On `recipes`, `icb recipes vocabulary` prints what `--cuisine`,
+have worked. `life strains vocabulary` prints every value with how many strains
+carry it. On `recipes`, `life recipes vocabulary` prints what `--cuisine`,
 `--meal-type` and `--difficulty` accept.
 
 `shopping` takes its own verbs, because an item is a catalog row rather than a
@@ -44,23 +44,23 @@ item off, `remove` takes it off without one, and `delete` forgets it. `history`
 reads the purchase log. `shopping sections` creates, renames, reorders and
 deletes the sections. Items and sections are named by name, in any case.
 
-Each machine authenticates as its own Authelia public client, `icb-cli-<host>`.
+Each machine authenticates as its own Authelia public client, `life-cli-<host>`.
 A new machine needs that client registered in the Authelia configuration before
-`icb auth login` will complete.
+`life auth login` will complete.
 
 ## Build & install
 
 Run these from the repo root — the Taskfile lives there and enters `cli/` itself.
 
 ```bash
-task cli:build      # -> ./bin/icb (local testing)
-task cli:install    # -> ~/.local/bin/icb, over the released binary
+task cli:build      # -> ./bin/life (local testing)
+task cli:install    # -> ~/.local/bin/life, over the released binary
 task cli:test       # go test -race ./...
 task cli:lint       # go vet + gofmt check
 task cli:format     # gofmt -w .
 ```
 
-Install uses `go build -o`, not `go install`: the module path is `ichrisbirch/cli`,
+Install uses `go build -o`, not `go install`: the module path is `life/cli`,
 so `go install` would name the binary after the path's last segment (`cli`).
 
 These build from your working tree, version-stamped with `git describe`. Released
@@ -69,7 +69,7 @@ is what a machine installs.
 
 ## Auth
 
-`icb auth login` runs the OAuth 2.0 device authorization grant (RFC 8628). The
+`life auth login` runs the OAuth 2.0 device authorization grant (RFC 8628). The
 CLI prints a code and a URL; approval happens in any browser on any device,
 which is what makes login work over SSH — a loopback redirect needs a browser
 that can reach a listener on this machine, and there is none.
@@ -77,39 +77,39 @@ that can reach a listener on this machine, and there is none.
 The resulting access token is an **RFC 9068 JWT** (`typ: at+jwt`, RS256, `kid:
 main`) that the FastAPI verifies itself against Authelia's JWKS. It is not
 authorized at the Traefik edge: Authelia forbids the `authelia.bearer.authz`
-scope alongside the device grant, so the CLI targets the app's public host. The
-`ichrisbirch-bearer` Traefik router carries a request holding an `Authorization`
-header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
+scope alongside the device grant, so the CLI targets the app's public host,
+`https://life.ichrisbirch.com`. The edge's bearer router for that host carries a
+request holding an `Authorization` header past ForwardAuth to FastAPI, so that host serves the CLI without the edge
 authorizing the token. That address is the config file's `api` key, and every
 request goes to a path under `/api/v1` on it.
 
 Authelia leaves `aud` empty on the device grant and the client-credentials grant
 alike, so cross-product isolation rests on the `client_id` claim. The API
-requires it to start with `icb-cli-` or `icb-svc-`.
+requires it to start with `life-cli-` or `life-svc-`.
 
-A service runs icb with no person present to approve a login. Its config file
-names its confidential client, `icb-svc-<machine>`, as `client_id`, and
-`ICB_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
-is told which one to write. icb then requests a token
+A service runs life with no person present to approve a login. Its config file
+names its confidential client, `life-svc-<machine>`, as `client_id`, and
+`LIFE_CLIENT_SECRET` holds that client's secret. A service whose file lacks a key
+is told which one to write. life then requests a token
 through the client-credentials grant on each run, asking for
 the scopes `config.Service` names, and stores nothing. `auth login` and
 `auth logout` refuse in that mode. The API never resolves that token to a user.
 It answers 403 on every route its scopes do not list.
-`ichrisbirch/api/client_scopes.py` holds that table, and a refused call's message
+`life/api/client_scopes.py` holds that table, and a refused call's message
 names the routes its scopes reach.
 
 A workload that gets short-lived tokens from a broker needs no client secret. Its
 config file names the broker's command as `token_command`, an argv such as
-`["broker", "token", "icb"]`, and needs only `api` beside it. icb runs the
+`["broker", "token", "life"]`, and needs only `api` beside it. life runs the
 command whenever its last token has expired, and sends the `access_token` it
 prints (RFC 6749 § 5.1). The token speaks for the service client that minted it.
 `auth status` reports the credential as `external_account`. `auth login` and `auth
 logout` refuse, and a 401 names the command rather than a login. A file setting
-`token_command` while `ICB_CLIENT_SECRET` is set is refused.
+`token_command` while `LIFE_CLIENT_SECRET` is set is refused.
 
 Authelia refuses the whole token request when it names a scope the client does
 not hold. So a scope is granted to the client in Authelia before a release of
-icb requests it.
+life requests it.
 
 The login flow, the keychain store and the refresh are
 [goclilogin](https://github.com/datapointchris/goclilogin), shared with the
@@ -118,7 +118,7 @@ automatically. That refresh takes a machine-wide lock, because Authelia revokes
 the whole grant when two processes replay the same rotated refresh token — the
 library's README carries the mechanism.
 
-`icb auth status` reports `live`, `rejected` or `unverified` rather than
+`life auth status` reports `live`, `rejected` or `unverified` rather than
 predicting a refresh, since a stored token says what this machine holds and not
 what Authelia will honor. A rejected session exits 1. The `--json` output names
 the credential it checked in `type`, `authorized_user` for a person's login or
@@ -126,30 +126,30 @@ the credential it checked in `type`, `authorized_user` for a person's login or
 stores no token, so its status requests one. It exits 1 unless the provider
 grants it.
 
-`icb auth token` prints the current access token for scripting. curl reads the
+`life auth token` prints the current access token for scripting. curl reads the
 header from stdin, so the token never appears in another process's arguments:
 
 ```bash
-printf 'Authorization: Bearer %s\n' "$(icb auth token)" | curl --header @- https://icb.example.com/api/v1/tasks
+printf 'Authorization: Bearer %s\n' "$(life auth token)" | curl --header @- https://life.example.com/api/v1/tasks
 ```
 
-Client id is per (machine × app): `icb-cli-<shorthostname>`.
+Client id is per (machine × app): `life-cli-<shorthostname>`.
 
-## `icb overview` — the cross-cutting snapshot
+## `life overview` — the cross-cutting snapshot
 
-Every other command is `icb <resource> <verb>`. `overview` is the composition
+Every other command is `life <resource> <verb>`. `overview` is the composition
 that crosses every app, fetched concurrently and returned as one payload, so a
-dashboard needs a single call instead of one per app. `icb overview --help` names
+dashboard needs a single call instead of one per app. `life overview --help` names
 its sections.
 
-Its `habits` section and `icb habits today` answer the same question through one
+Its `habits` section and `life habits today` answer the same question through one
 split, so the two agree on which habits are outstanding. They differ in reach:
 `overview` caps each section and `habits today` returns the whole board.
 
 ```bash
-icb overview                 # the human glance
-icb overview --json          # the stable schema, for consumers
-icb overview --limit 3       # a tighter per-section cap
+life overview                 # the human glance
+life overview --json          # the stable schema, for consumers
+life overview --limit 3       # a tighter per-section cap
 ```
 
 `--limit 0` returns nothing everywhere it appears, and a negative is a usage
@@ -176,7 +176,7 @@ Contract notes for consumers (a terminal dashboard is the first):
 
 ## Guided create — `internal/prompt`
 
-`icb tasks create` with `--name` or `--category` missing asks for the rest of the
+`life tasks create` with `--name` or `--category` missing asks for the rest of the
 record one field at a time, rather than refusing:
 
 ```text
@@ -211,7 +211,7 @@ name, window, and notes only. Without a terminal — a pipe, a script, or
 `--no-input` — nothing is asked and the command names the flags that would have
 answered.
 
-`icb strains create` is the same form over fetched choices: its type, status,
+`life strains create` is the same form over fetched choices: its type, status,
 effect, flavor and terpene lists come from the server on each run. `Effect`,
 `Flavor` and `Terpene` repeat because their flags do, and Enter on an empty one
 moves on:
@@ -265,28 +265,28 @@ the wrong package to travel with a copy of that directory.
 
 ## Config
 
-Where icb is pointed is `$XDG_CONFIG_HOME/icb/config.toml`, read through
+Where life is pointed is `$XDG_CONFIG_HOME/life/config.toml`, read through
 goclilogin's config-file contract. It holds three keys, and none has a compiled-in
 default:
 
 ```toml
-api = "https://icb.example.com"
+api = "https://life.example.com"
 issuer = "https://auth.example.com"
-client_id = "icb-cli-laptop"
+client_id = "life-cli-laptop"
 ```
 
 `--api` on any command that reaches the API outranks the file's `api`. With no
-file, every such command refuses, naming the file and `icb auth login <url>`. That
+file, every such command refuses, naming the file and `life auth login <url>`. That
 login fills in whatever the file lacks — the issuer from the API's RFC 9728
 metadata, the client id from `--client-id` or the short hostname — prints each
 with where it came from, and writes the file once the login succeeds.
-`icb config show` prints the three values, where each came from and the file's
-path, as does `icb auth status` beside the session. `icb config path` prints the
+`life config show` prints the three values, where each came from and the file's
+path, as does `life auth status` beside the session. `life config path` prints the
 path alone, whether or not the file exists.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant for the file's `client_id` |
+| `LIFE_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant for the file's `client_id` |
 
 ## Structure
 

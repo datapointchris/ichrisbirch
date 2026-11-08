@@ -16,7 +16,7 @@ ORDER BY pinned DESC, rank_at ASC, add_date ASC
 gets its creation time plus its window, in `window_days`. The window comes
 from the request when one is given, and from the task's category otherwise.
 
-`icb tasks categories list` prints each category's window.
+`life tasks categories list` prints each category's window.
 `TASK_CATEGORY_WINDOW_DAYS` holds the defaults a new database starts with.
 The deployed values live in `task_categories.window_days` and change through
 `PATCH /tasks/categories/{name}`. A changed window applies to the next task

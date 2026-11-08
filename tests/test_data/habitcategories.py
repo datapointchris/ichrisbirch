@@ -1,8 +1,8 @@
 import datetime as dt
 
-from ichrisbirch.models.habit import Habit
-from ichrisbirch.models.habitcategory import HabitCategory
-from ichrisbirch.models.habitcompleted import HabitCompleted
+from life.models.habit import Habit
+from life.models.habitcategory import HabitCategory
+from life.models.habitcompleted import HabitCompleted
 
 BASE_DATA: list[HabitCategory] = [
     HabitCategory(

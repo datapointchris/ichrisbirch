@@ -20,7 +20,7 @@ class TestEmitEvent:
 
             event = BaseEvent(
                 timestamp=dt.datetime.now(dt.UTC),
-                project='ichrisbirch',
+                project='life',
                 branch='master',
             )
 
@@ -28,7 +28,7 @@ class TestEmitEvent:
 
             assert events_path.exists()
             content = events_path.read_text()
-            assert 'ichrisbirch' in content
+            assert 'life' in content
             assert content.endswith('\n')
 
     def test_emit_creates_parent_directories(self) -> None:
@@ -37,7 +37,7 @@ class TestEmitEvent:
 
             event = BaseEvent(
                 timestamp=dt.datetime.now(dt.UTC),
-                project='ichrisbirch',
+                project='life',
                 branch='master',
             )
 
@@ -52,7 +52,7 @@ class TestEmitEvent:
             for i in range(3):
                 event = BaseEvent(
                     timestamp=dt.datetime.now(dt.UTC),
-                    project='ichrisbirch',
+                    project='life',
                     branch=f'branch-{i}',
                 )
                 emit_event(event, str(events_path))
@@ -66,7 +66,7 @@ class TestEmitEvent:
 
             event = BaseEvent(
                 timestamp=dt.datetime.now(dt.UTC),
-                project='ichrisbirch',
+                project='life',
                 branch='master',
             )
 
@@ -74,5 +74,5 @@ class TestEmitEvent:
 
             content = events_path.read_text().strip()
             parsed = json.loads(content)
-            assert parsed['project'] == 'ichrisbirch'
+            assert parsed['project'] == 'life'
             assert parsed['branch'] == 'master'

@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from ichrisbirch.config import get_settings
+from life.config import get_settings
 from scripts.seed.run import run_seed
 
 

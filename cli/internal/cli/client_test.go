@@ -10,12 +10,12 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func TestHandleAPIError_NotLoggedInPointsAtLogin(t *testing.T) {
 	got := handleAPIError(fmt.Errorf("wrapped: %w", errNeedsLogin))
-	if !strings.Contains(got.Error(), "icb auth login") {
+	if !strings.Contains(got.Error(), "life auth login") {
 		t.Errorf("got %q, want the login hint", got)
 	}
 }
@@ -32,11 +32,11 @@ func TestHandleAPIError_RefusedRefreshPointsAtLogin(t *testing.T) {
 	}
 	// The shape the API client actually produces: an *url.Error from the HTTP
 	// round trip, wrapped again with the base URL.
-	wrapped := fmt.Errorf("reach ichrisbirch API at %s: %w", "https://icb.example.com",
-		&url.Error{Op: "Get", URL: "https://icb.example.com/api/v1/tasks", Err: retrieveErr})
+	wrapped := fmt.Errorf("reach life API at %s: %w", "https://life.example.com",
+		&url.Error{Op: "Get", URL: "https://life.example.com/api/v1/tasks", Err: retrieveErr})
 
 	got := handleAPIError(wrapped)
-	if !strings.Contains(got.Error(), "icb auth login") {
+	if !strings.Contains(got.Error(), "life auth login") {
 		t.Errorf("got %q, want the login hint", got)
 	}
 	if strings.Contains(got.Error(), "invalid_grant") {
@@ -46,7 +46,7 @@ func TestHandleAPIError_RefusedRefreshPointsAtLogin(t *testing.T) {
 
 func TestHandleAPIError_UnauthorizedPointsAtLogin(t *testing.T) {
 	got := handleAPIError(&api.APIError{StatusCode: http.StatusUnauthorized, Status: "401 Unauthorized"})
-	if !strings.Contains(got.Error(), "icb auth login") {
+	if !strings.Contains(got.Error(), "life auth login") {
 		t.Errorf("got %q, want the login hint", got)
 	}
 }

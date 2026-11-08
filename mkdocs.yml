@@ -1,7 +1,7 @@
 # Shared docs standard — theme, features, and markdown_extensions below are the
 # canonical set kept identical across datapointchris/{docs,ichrisbirch,dotfiles}.
 # Only site_name/repo/nav/site_url and repo-specific plugins differ per repo.
-site_name: iChrisBirch
+site_name: Life
 repo_name: datapointchris/ichrisbirch
 repo_url: https://github.com/datapointchris/ichrisbirch
 
@@ -127,7 +127,7 @@ nav:
       - Dependency Reach: dependency-reach.md
       - Logging: logging-configuration.md
       - Admin Dashboard: admin.md
-      - Audit Trail: icb-audit-trail.md
+      - Audit Trail: life-audit-trail.md
       - Database: alembic.md
       - Scheduler: scheduler.md
       - Tasks: tasks.md

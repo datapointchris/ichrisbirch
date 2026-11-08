@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 
-from ichrisbirch import models
-from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import create_session
-from ichrisbirch.models.user import DEFAULT_USER_PREFERENCES
+from life import models
+from life.config import get_settings
+from life.database.session import create_session
+from life.models.user import DEFAULT_USER_PREFERENCES
 
 
 def fill_missing_default_preferences(user_prefs: dict, default_prefs: dict) -> dict:

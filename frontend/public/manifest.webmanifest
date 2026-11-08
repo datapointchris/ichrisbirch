@@ -1,6 +1,6 @@
 {
-  "name": "iChrisBirch",
-  "short_name": "iChrisBirch",
+  "name": "Life",
+  "short_name": "Life",
   "start_url": "/today",
   "scope": "/",
   "display": "standalone",

@@ -12,8 +12,8 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
-	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
+	"github.com/datapointchris/life/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/prompt"
 )
 
 // shoppingPurchasesShown is the API's cap on a purchase-log read that sends no
@@ -31,14 +31,14 @@ func newShoppingCommand() *cobra.Command {
 			"off the list, and adding the same name later puts it back where it was.\n" +
 			"\n" +
 			"An item or a section is named by its name, in any case, or by its id.",
-		Example: "  icb shopping list            what is on the list, by section\n" +
-			"  icb shopping add milk eggs   put both on the list\n" +
-			"  icb shopping check milk      bought it: log the purchase, take it off the list",
+		Example: "  life shopping list            what is on the list, by section\n" +
+			"  life shopping add milk eggs   put both on the list\n" +
+			"  life shopping check milk      bought it: log the purchase, take it off the list",
 	})
 	goclikit.WithRecoveryHints(cmd,
-		"List what is on the list: icb shopping list",
-		"List the whole catalog: icb shopping list --status all",
-		"List every section: icb shopping sections list")
+		"List what is on the list: life shopping list",
+		"List the whole catalog: life shopping list --status all",
+		"List every section: life shopping sections list")
 	splitReadingFromChanging(cmd)
 	cmd.AddGroup(&cobra.Group{ID: groupShoppingSections, Title: "Section commands:"})
 	cmd.AddCommand(inGroup(groupReading, newShoppingListCommand(), newShoppingHistoryCommand())...)
@@ -66,9 +66,9 @@ func newShoppingListCommand() *cobra.Command {
 		Long: "Items come back in list order: Unsorted first, then each section in the order\n" +
 			"you arranged it. --status stocked lists the catalog items off the list, and\n" +
 			"--status all lists both.",
-		Example: "  icb shopping list\n" +
-			"  icb shopping list --section costco\n" +
-			"  icb shopping list --status all --json",
+		Example: "  life shopping list\n" +
+			"  life shopping list --section costco\n" +
+			"  life shopping list --status all --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") {
@@ -137,14 +137,14 @@ func newShoppingAddCommand() *cobra.Command {
 			"\n" +
 			"Names are added in order, and the first that fails stops the rest. Run it\n" +
 			"from a terminal with no names and it asks.",
-		Example: "  icb shopping add eggs milk bananas\n" +
-			"  icb shopping add \"wood glue\" --section hardware --note \"the yellow one\"\n" +
-			"  icb shopping add",
+		Example: "  life shopping add eggs milk bananas\n" +
+			"  life shopping add \"wood glue\" --section hardware --note \"the yellow one\"\n" +
+			"  life shopping add",
 		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
 			if len(args) == 0 && !interactive(cmd) {
-				return goclikit.UsageError(fmt.Errorf("name an item, as in `icb shopping add eggs`, or run from a terminal to be asked"))
+				return goclikit.UsageError(fmt.Errorf("name an item, as in `life shopping add eggs`, or run from a terminal to be asked"))
 			}
 			in := api.ShoppingItemAddInput{}
 			var clear []string
@@ -241,9 +241,9 @@ func newShoppingCheckCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "check <name>...",
 		Short: "Check items off: record the purchase and take them off the list",
-		Long: "Each name becomes a purchase in the log, which `icb shopping history` reads.\n" +
+		Long: "Each name becomes a purchase in the log, which `life shopping history` reads.\n" +
 			"Names are checked in order, and the first that fails stops the rest.",
-		Example: "  icb shopping check eggs milk",
+		Example: "  life shopping check eggs milk",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -284,9 +284,9 @@ func newShoppingEditCommand() *cobra.Command {
 		Long: "Update only the fields whose flags you pass. --note \"\" removes the note, and\n" +
 			"--section \"\" moves the item to Unsorted. A move puts it last in its new\n" +
 			"section.",
-		Example: "  icb shopping edit eggs --note \"2 dozen\"\n" +
-			"  icb shopping edit \"wood glue\" --section hardware\n" +
-			"  icb shopping edit tp --name \"toilet paper\"",
+		Example: "  life shopping edit eggs --note \"2 dozen\"\n" +
+			"  life shopping edit \"wood glue\" --section hardware\n" +
+			"  life shopping edit tp --name \"toilet paper\"",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
@@ -338,7 +338,7 @@ func newShoppingRemoveCommand() *cobra.Command {
 		Short: "Take items off the list without buying them",
 		Long: "The item stays in the catalog with its section and place, and no purchase is\n" +
 			"recorded. Names are taken in order, and the first that fails stops the rest.",
-		Example: "  icb shopping remove eggs",
+		Example: "  life shopping remove eggs",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -366,7 +366,7 @@ func newShoppingDeleteCommand() *cobra.Command {
 		Short: "Forget an item: remove it from the catalog",
 		Long: "The item leaves the list and the catalog, so adding the name again starts it\n" +
 			"in Unsorted. Its purchases stay in the log under the name they recorded.",
-		Example: "  icb shopping delete \"hot plate for glue\" --yes",
+		Example: "  life shopping delete \"hot plate for glue\" --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -408,10 +408,10 @@ func newShoppingHistoryCommand() *cobra.Command {
 		Use:   "history",
 		Short: "List what was bought, newest first",
 		Long:  "--since/--until bound when a purchase was made, and either works without the other.",
-		Example: "  icb shopping history\n" +
-			"  icb shopping history --since 2026-10-01 --until 2026-10-31\n" +
-			"  icb shopping history --since 2w\n" +
-			"  icb shopping history --limit 500 --json",
+		Example: "  life shopping history\n" +
+			"  life shopping history --since 2026-10-01 --until 2026-10-31\n" +
+			"  life shopping history --since 2w\n" +
+			"  life shopping history --limit 500 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			window, err := readWindow(cmd)
@@ -445,9 +445,9 @@ func newShoppingSectionsCommand() *cobra.Command {
 		Short: "List, create, rename, reorder, and delete sections",
 		Long: "A section is a part of the list such as a store or an aisle. Deleting one\n" +
 			"moves its items to Unsorted.",
-		Example: "  icb shopping sections list                          every section in list order\n" +
-			"  icb shopping sections create Costco                 add a section at the end\n" +
-			"  icb shopping sections move hardware --after costco  walk the list in store order",
+		Example: "  life shopping sections list                          every section in list order\n" +
+			"  life shopping sections create Costco                 add a section at the end\n" +
+			"  life shopping sections move hardware --after costco  walk the list in store order",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newShoppingSectionsListCommand())...)
@@ -468,7 +468,7 @@ func newShoppingSectionsListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List sections in list order",
-		Example: "  icb shopping sections list",
+		Example: "  life shopping sections list",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -502,7 +502,7 @@ func newShoppingSectionsCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create <name>",
 		Short:   "Add a section at the end of the list",
-		Example: "  icb shopping sections create Costco",
+		Example: "  life shopping sections create Costco",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[0]) == "" {
@@ -532,7 +532,7 @@ func newShoppingSectionsRenameCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "rename <section> <new-name>",
 		Short:   "Rename a section",
-		Example: "  icb shopping sections rename grocery \"Trader Joe's\"",
+		Example: "  life shopping sections rename grocery \"Trader Joe's\"",
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if strings.TrimSpace(args[1]) == "" {
@@ -562,7 +562,7 @@ func newShoppingSectionsMoveCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "move <section> (--before <section> | --after <section>)",
 		Short:   "Move a section before or after another",
-		Example: "  icb shopping sections move hardware --after costco",
+		Example: "  life shopping sections move hardware --after costco",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
@@ -597,7 +597,7 @@ func newShoppingSectionsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <section>",
 		Short:   "Delete a section; its items move to Unsorted",
-		Example: "  icb shopping sections delete hardware --yes",
+		Example: "  life shopping sections delete hardware --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())

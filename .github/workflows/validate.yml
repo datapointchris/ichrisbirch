@@ -495,21 +495,21 @@ jobs:
       # initializes its database, and the browser runs inside its vue container,
       # whose image carries Node and Chromium.
       - name: Start test stack
-        run: ./ops/icbops testing start
+        run: ./ops/lifeops testing start
 
       - name: Run the E2E suite
-        run: ./ops/icbops test e2e
+        run: ./ops/lifeops test e2e
 
       # This and the upload run on a pass too. A test that fails and then passes
       # on retry leaves the job green, and its retry trace is the only record of
-      # what the first attempt waited on. icbops names the stack after the
+      # what the first attempt waited on. lifeops names the stack after the
       # checkout's directory, which on a runner is the repository's name.
       - name: Save the stack's logs
         if: always()
         run: |
           mkdir -p frontend/test-results
           docker compose -f docker-compose.yml -f docker-compose.test.yml -f docker-compose.ci.yml \
-            --project-name icb-test-ichrisbirch logs --no-color --timestamps > frontend/test-results/stack.log
+            --project-name "life-test-$(basename "$PWD")" logs --no-color --timestamps > frontend/test-results/stack.log
 
       # The reporters are list and JSON, so no HTML report exists. The evidence
       # is test-results/ (first-retry traces, screenshots, page snapshots, the
@@ -528,7 +528,7 @@ jobs:
 
       - name: Stop test stack
         if: always()
-        run: ./ops/icbops testing stop
+        run: ./ops/lifeops testing stop
 
   production-build:
     name: Production image build

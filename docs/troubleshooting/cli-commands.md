@@ -1,6 +1,6 @@
 # CLI Command Troubleshooting
 
-This guide covers common CLI issues and solutions, particularly focusing on the **elimination of confusing command duplication** in the iChrisBirch CLI.
+This guide covers common CLI issues and solutions, particularly focusing on the **elimination of confusing command duplication** in the Life CLI.
 
 ## 🎯 Overview
 
@@ -15,10 +15,10 @@ The CLI underwent a **major simplification** to eliminate confusing command dupl
 **Error Messages**:
 
 ```bash
-$ icb traefik start dev
+$ life traefik start dev
 Unknown command: traefik
 
-$ icb traefik status dev
+$ life traefik status dev
 Unknown command: traefik
 ```
 
@@ -27,30 +27,30 @@ Unknown command: traefik
 **Attempted Solutions (That Failed)**:
 
 - Looking for `traefik` command in help output (it's no longer there)
-- Trying variations like `icb traefik-start dev` (doesn't exist)
+- Trying variations like `life traefik-start dev` (doesn't exist)
 - Assuming the CLI is broken (it's working correctly, just simplified)
 
 **Resolution**: Use the simplified commands instead
 
 ```bash
 # WRONG (removed commands)
-icb traefik start dev     → Use: icbops dev start
-icb traefik stop dev      → Use: icbops dev stop
-icb traefik restart dev   → Use: icbops dev restart
-icb traefik status dev    → Use: icbops dev status
-icb traefik logs dev      → Use: icbops dev logs
-icb traefik health dev    → Use: icbops dev health
+life traefik start dev     → Use: lifeops dev start
+life traefik stop dev      → Use: lifeops dev stop
+life traefik restart dev   → Use: lifeops dev restart
+life traefik status dev    → Use: lifeops dev status
+life traefik logs dev      → Use: lifeops dev logs
+life traefik health dev    → Use: lifeops dev health
 
 # CORRECT (current commands)
-icbops dev start             # Starts dev with Traefik + HTTPS
-icbops dev stop              # Stops dev environment
-icbops dev restart           # Restarts dev environment
-icbops dev status            # Shows status + HTTPS URLs
-icbops dev logs              # Shows service logs
-icbops dev health            # Runs health checks
+lifeops dev start             # Starts dev with Traefik + HTTPS
+lifeops dev stop              # Stops dev environment
+lifeops dev restart           # Restarts dev environment
+lifeops dev status            # Shows status + HTTPS URLs
+lifeops dev logs              # Shows service logs
+lifeops dev health            # Runs health checks
 ```
 
-**Prevention**: Use `icbops help` to see all available commands. The simplified interface only shows actual working commands.
+**Prevention**: Use `lifeops help` to see all available commands. The simplified interface only shows actual working commands.
 
 ### 2. Confusion About Which Command to Use
 
@@ -62,12 +62,12 @@ icbops dev health            # Runs health checks
 
 ```bash
 # SIMPLE RULE: Environment first, then action
-ichrisbirch <environment> <action>
+life <environment> <action>
 
 # Examples:
-icbops dev start         # Development environment
-icbops testing start    # Testing environment
-icbops prod start       # Production environment
+lifeops dev start         # Development environment
+lifeops testing start    # Testing environment
+lifeops prod start       # Production environment
 ```
 
 **Benefits of Simplified Interface**:
@@ -84,7 +84,7 @@ icbops prod start       # Production environment
 **Error Messages**:
 
 ```bash
-$ icb traefik ssl-manager generate dev
+$ life traefik ssl-manager generate dev
 Unknown command: traefik
 ```
 
@@ -94,12 +94,12 @@ Unknown command: traefik
 
 ```bash
 # WRONG (old location)
-icb traefik ssl-manager generate dev
+life traefik ssl-manager generate dev
 
 # CORRECT (current location)
-icbops ssl-manager generate dev
-icbops ssl-manager info dev
-icbops ssl-manager validate dev
+lifeops ssl-manager generate dev
+lifeops ssl-manager info dev
+lifeops ssl-manager validate dev
 ```
 
 **Why This Changed**: SSL management is a fundamental operation that applies to all environments, not just Traefik-specific functionality.
@@ -114,13 +114,13 @@ icbops ssl-manager validate dev
 
 | Old Command (Removed) | New Command (Current) | Description |
 | --- | --- | --- |
-| `icb traefik start <env>` | `ichrisbirch <env> start` | Start environment |
-| `icb traefik stop <env>` | `ichrisbirch <env> stop` | Stop environment |
-| `icb traefik restart <env>` | `ichrisbirch <env> restart` | Restart environment |
-| `icb traefik status <env>` | `ichrisbirch <env> status` | Environment status |
-| `icb traefik logs <env>` | `ichrisbirch <env> logs` | View logs |
-| `icb traefik health <env>` | `ichrisbirch <env> health` | Health checks |
-| `icb traefik ssl-manager <cmd>` | `icbops ssl-manager <cmd>` | SSL management |
+| `life traefik start <env>` | `life <env> start` | Start environment |
+| `life traefik stop <env>` | `life <env> stop` | Stop environment |
+| `life traefik restart <env>` | `life <env> restart` | Restart environment |
+| `life traefik status <env>` | `life <env> status` | Environment status |
+| `life traefik logs <env>` | `life <env> logs` | View logs |
+| `life traefik health <env>` | `life <env> health` | Health checks |
+| `life traefik ssl-manager <cmd>` | `lifeops ssl-manager <cmd>` | SSL management |
 
 **Prevention**: Always refer to the current [CLI Management Guide](../cli-traefik-usage.md) for up-to-date command references.
 
@@ -129,7 +129,7 @@ icbops ssl-manager validate dev
 **Problem**: Looking for `traefik` in help output
 
 ```bash
-$ icbops help
+$ lifeops help
 # traefik commands not listed
 ```
 
@@ -139,13 +139,13 @@ $ icbops help
 
 ```bash
 # General help (shows all top-level commands)
-icbops help
+lifeops help
 
 # Environment-specific help
-icbops dev help
+lifeops dev help
 
 # SSL manager help
-icbops ssl-manager help
+lifeops ssl-manager help
 ```
 
 **Expected Help Output**:
@@ -165,7 +165,7 @@ Available commands:
 **Error Messages**:
 
 ```bash
-./deploy.sh: line 15: icb traefik start dev: command failed
+./deploy.sh: line 15: life traefik start dev: command failed
 ```
 
 **Root Cause**: Scripts written for the old duplicated CLI interface
@@ -175,13 +175,13 @@ Available commands:
 ```bash
 # WRONG (will fail)
 #!/bin/bash
-icb traefik start dev
-icb traefik health dev
+life traefik start dev
+life traefik health dev
 
 # CORRECT (current)
 #!/bin/bash
-icbops dev start
-icbops dev health
+lifeops dev start
+lifeops dev health
 ```
 
 **Prevention**: Update all automation scripts and CI/CD pipelines to use the new simplified interface.
@@ -192,33 +192,33 @@ icbops dev health
 
 ```bash
 # Verify CLI is executable
-ls -la ./ops/icbops
+ls -la ./ops/lifeops
 
 # Make executable if needed
-chmod +x ./ops/icbops
+chmod +x ./ops/lifeops
 
 # Test basic functionality
-./ops/icbops help
+./ops/lifeops help
 ```
 
 ### Verify Current CLI Version
 
 ```bash
 # Check CLI script for version information
-head -20 ./ops/icbops
+head -20 ./ops/lifeops
 
 # Look for the function definitions to confirm simplified interface
-grep -n "function.*start\|function.*traefik" ./ops/icbops
+grep -n "function.*start\|function.*traefik" ./ops/lifeops
 ```
 
 ### Debug Command Parsing
 
 ```bash
 # Enable bash debugging to see command parsing
-bash -x ./ops/icbops dev start
+bash -x ./ops/lifeops dev start
 
 # Check if commands are being recognized
-./ops/icbops dev help
+./ops/lifeops dev help
 ```
 
 ## 🚀 CLI Migration Guide
@@ -228,7 +228,7 @@ bash -x ./ops/icbops dev start
 1. **Update muscle memory**: Practice using `<env> <action>` pattern
 2. **Update bookmarks**: Replace any documented commands with new syntax
 3. **Check scripts**: Update any personal scripts or aliases
-4. **Use help commands**: Rely on `icbops help` for current command reference
+4. **Use help commands**: Rely on `lifeops help` for current command reference
 
 ### For Teams
 
@@ -252,8 +252,8 @@ bash -x ./ops/icbops dev start
 
 ```bash
 # Users had to choose between equivalent commands
-icb traefik start dev    # Started dev environment
-icbops dev start            # Also started dev environment (same result)
+life traefik start dev    # Started dev environment
+lifeops dev start            # Also started dev environment (same result)
 
 # Problems:
 # - Confusion about which command to use
@@ -266,7 +266,7 @@ icbops dev start            # Also started dev environment (same result)
 
 ```bash
 # One command per operation
-icbops dev start            # Clear, simple, consistent
+lifeops dev start            # Clear, simple, consistent
 
 # Benefits:
 # - No confusion about which command to use
@@ -296,55 +296,55 @@ icbops dev start            # Clear, simple, consistent
 
 ```bash
 # Development
-icbops dev start|stop|restart|rebuild  # Manage dev environment
-icbops dev status|health               # Check environment
-icbops dev logs [service]              # View logs
-icbops dev smoke                       # Run smoke tests
-icbops dev is-ready                    # Quick health check (exit 0/1)
-icbops dev ensure                      # Start if not running
-icbops dev docker [service]            # Show merged compose config
-icbops dev db backup|restore|list|seed|init  # Database commands
+lifeops dev start|stop|restart|rebuild  # Manage dev environment
+lifeops dev status|health               # Check environment
+lifeops dev logs [service]              # View logs
+lifeops dev smoke                       # Run smoke tests
+lifeops dev is-ready                    # Quick health check (exit 0/1)
+lifeops dev ensure                      # Start if not running
+lifeops dev docker [service]            # Show merged compose config
+lifeops dev db backup|restore|list|seed|init  # Database commands
 
 # Testing
-icbops testing start|stop|restart|rebuild  # Manage test environment
-icbops testing status|health               # Check environment
-icbops testing logs [service]              # View logs
-icbops testing db backup|restore|list|seed|reset  # Database commands
-icbops test run [path] [args]              # Run pytest
+lifeops testing start|stop|restart|rebuild  # Manage test environment
+lifeops testing status|health               # Check environment
+lifeops testing logs [service]              # View logs
+lifeops testing db backup|restore|list|seed|reset  # Database commands
+lifeops test run [path] [args]              # Run pytest
 
 # Production (blue/green aware)
-icbops prod start|stop|restart         # Manage production
-icbops prod status|health|apihealth    # Check environment
-icbops prod logs [service|deploy|build]  # View logs
-icbops prod smoke                      # Run smoke tests (requires icb auth login)
-icbops prod deploy-status              # Show blue/green state
-icbops prod rollback                   # Switch traffic to previous color
-icbops prod build-test                 # Test production Docker build locally
-icbops prod db backup|restore|list|init  # Database commands
+lifeops prod start|stop|restart         # Manage production
+lifeops prod status|health|apihealth    # Check environment
+lifeops prod logs [service|deploy|build]  # View logs
+lifeops prod smoke                      # Run smoke tests (requires life auth login)
+lifeops prod deploy-status              # Show blue/green state
+lifeops prod rollback                   # Switch traffic to previous color
+lifeops prod build-test                 # Test production Docker build locally
+lifeops prod db backup|restore|list|init  # Database commands
 
 # Tools
-icbops ssl-manager generate|validate|info [env]  # SSL certificates
-icbops routing generate                # Regenerate Traefik routing
-icbops install                         # Symlink CLI to ~/.local/bin/icb
-icbops stats summary|code|tests|quality|activity|events|trends|churn  # Stats
+lifeops ssl-manager generate|validate|info [env]  # SSL certificates
+lifeops routing generate                # Regenerate Traefik routing
+lifeops install                         # Symlink CLI to ~/.local/bin/life
+lifeops stats summary|code|tests|quality|activity|events|trends|churn  # Stats
 
 # Help
-icbops help                # General help
-icbops dev help            # Development help
-icbops test help           # Test help
-icbops stats               # Stats submenu
+lifeops help                # General help
+lifeops dev help            # Development help
+lifeops test help           # Test help
+lifeops stats               # Stats submenu
 ```
 
 ### Removed Commands (Do Not Use)
 
 ```bash
 # THESE COMMANDS NO LONGER EXIST:
-icb traefik start <env>     # REMOVED
-icb traefik stop <env>      # REMOVED
-icb traefik restart <env>   # REMOVED
-icb traefik status <env>    # REMOVED
-icb traefik logs <env>      # REMOVED
-icb traefik health <env>    # REMOVED
+life traefik start <env>     # REMOVED
+life traefik stop <env>      # REMOVED
+life traefik restart <env>   # REMOVED
+life traefik status <env>    # REMOVED
+life traefik logs <env>      # REMOVED
+life traefik health <env>    # REMOVED
 ```
 
 The CLI simplification provides a clean, professional interface that eliminates confusion and follows modern CLI design principles. The new simplified commands are more intuitive, easier to remember, and provide a better developer experience.

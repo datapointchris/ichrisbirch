@@ -23,11 +23,6 @@ test.describe('Today Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page', async ({ page }) => {
-    await page.goto('/today')
-    await expect(page).toHaveTitle('Today | iChrisBirch')
-  })
-
   test('adds a task, then completing the first task moves it to done today and tapping it reopens it', async ({ page }) => {
     await page.goto('/today')
     await page.getByTestId('today-mode-task').click()

@@ -1,20 +1,20 @@
 # Dev overrides — only what differs from base (docker-compose.yml)
-# Verify merged result: icbops dev docker
+# Verify merged result: lifeops dev docker
 #
 # `on-failure:3` stops a service after three failed starts, so a removed
 # checkout or a corrupt volume cannot restart-loop. Docker never restarts
 # these when the daemon starts, so after a reboot the stack stays down until
-# `icbops dev start`.
+# `lifeops dev start`.
 
 x-app-build: &app-build
-  image: ichrisbirch:development
+  image: life:development
   build:
     context: .
     target: development
 
 services:
   traefik:
-    container_name: icb-dev-traefik
+    container_name: life-dev-traefik
     restart: on-failure:3
     security_opt:
       - no-new-privileges:true
@@ -39,7 +39,7 @@ services:
       - "--providers.file.watch=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=icb-dev-proxy"
+      - "--providers.docker.network=life-dev-proxy"
       - "--providers.docker.constraints=Label(`traefik.environment`,`development`)"
       - "--api.dashboard=true"
       - "--api.insecure=true"
@@ -64,9 +64,9 @@ services:
         tag: "traefik-dev"
 
   postgres:
-    container_name: icb-dev-postgres
+    container_name: life-dev-postgres
     environment: !override
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports: !override
@@ -78,7 +78,7 @@ services:
       -c max_connections=200
     restart: on-failure:3
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -90,7 +90,7 @@ services:
         tag: "postgres-dev"
 
   redis:
-    container_name: icb-dev-redis
+    container_name: life-dev-redis
     ports: !override
       - "6379:6379"
     command: redis-server --save 60 1 --loglevel notice --maxmemory 256mb --maxmemory-policy allkeys-lru
@@ -110,8 +110,8 @@ services:
 
   api:
     <<: *app-build
-    container_name: icb-dev-api
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir ichrisbirch/api --reload-dir ichrisbirch/models --reload-dir ichrisbirch/schemas --log-level debug --no-access-log
+    container_name: life-dev-api
+    command: uvicorn life.wsgi_api:api --host 0.0.0.0 --port 8000 --reload --reload-dir life/api --reload-dir life/models --reload-dir life/schemas --log-level debug --no-access-log
     environment: !override
       - ENVIRONMENT=development
       - FASTAPI_DEBUG=True
@@ -149,7 +149,7 @@ services:
   vue:
     image: node:24-alpine
     build: !reset null
-    container_name: icb-dev-vue
+    container_name: life-dev-vue
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     environment: !override
@@ -179,7 +179,7 @@ services:
 
   scheduler:
     <<: *app-build
-    container_name: icb-dev-scheduler
+    container_name: life-dev-scheduler
     environment: !override
       - ENVIRONMENT=development
       - LOG_FORMAT=${LOG_FORMAT:-json}
@@ -200,18 +200,18 @@ services:
 # Dev volumes — override base names to isolate from prod
 volumes:
   postgres_data:
-    name: icb-dev-postgres-data
+    name: life-dev-postgres-data
     driver: local
   redis_data:
-    name: icb-dev-redis-data
+    name: life-dev-redis-data
     driver: local
   vue_node_modules:
-    name: icb-dev-vue-node-modules
+    name: life-dev-vue-node-modules
     driver: local
 
 networks:
   proxy:
-    name: icb-dev-proxy
+    name: life-dev-proxy
     external: false
     driver: bridge
   default:

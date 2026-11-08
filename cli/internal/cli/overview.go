@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 const (
@@ -167,7 +167,7 @@ func newOverviewCommand() *cobra.Command {
 			"articles you are reading and what is next in each, and approaching countdowns\n" +
 			"and events. Composed from those endpoints in one command so a dashboard needs\n" +
 			"a single call.",
-		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
+		Example: "  life overview\n  life overview --json\n  life overview --limit 3",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -414,7 +414,7 @@ func upcomingCountdowns(countdowns []api.Countdown, now time.Time) []api.Countdo
 //
 // Every section reaches the JSON through here, and a nil slice marshals to
 // `null`. A section whose fetch failed has nothing to cap, so
-// `jq '.habits.due_today[]'` would meet a null and exit 5 while icb exited 0.
+// `jq '.habits.due_today[]'` would meet a null and exit 5 while life exited 0.
 //
 // Zero is a row count like any other and caps to nothing, so it needs no branch
 // of its own: len(items) <= 0 is false whenever there is anything to cut.

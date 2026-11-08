@@ -4,7 +4,7 @@ import datetime as dt
 
 import factory
 
-from ichrisbirch.models.autotask import AutoTask
+from life.models.autotask import AutoTask
 
 from .base import get_factory_session
 

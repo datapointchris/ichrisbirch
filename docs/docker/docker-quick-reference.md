@@ -1,9 +1,9 @@
 # Docker Quick Reference
 
-The grammar is `icbops <environment> <verb>`, where the environment is `dev`,
+The grammar is `lifeops <environment> <verb>`, where the environment is `dev`,
 `testing` or `prod`. `test`, `stats`, `routing` and `ssl-manager` are tools
 rather than environments. Run any environment with no verb to see its own
-listing. `icbops --help` lists all of them.
+listing. `lifeops --help` lists all of them.
 
 This page covers the common cases. `--help` is the surface of record.
 
@@ -28,15 +28,15 @@ the browser.
 ## Development
 
 ```bash
-./ops/icbops dev start
-./ops/icbops dev stop
-./ops/icbops dev restart
-./ops/icbops dev logs api          # follow one service
-./ops/icbops dev status            # container state
-./ops/icbops dev health            # health checks
-./ops/icbops dev smoke             # hit every endpoint
-./ops/icbops dev db seed --scale 10
-./ops/icbops dev db init
+./ops/lifeops dev start
+./ops/lifeops dev stop
+./ops/lifeops dev restart
+./ops/lifeops dev logs api          # follow one service
+./ops/lifeops dev status            # container state
+./ops/lifeops dev health            # health checks
+./ops/lifeops dev smoke             # hit every endpoint
+./ops/lifeops dev db seed --scale 10
+./ops/lifeops dev db init
 ```
 
 `dev logs` persists across restarts, so a container that died on startup still
@@ -45,14 +45,14 @@ has readable logs.
 ## Testing
 
 ```bash
-./ops/icbops test run                                    # whole suite
-./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py
-./ops/icbops test run tests/path.py -v -k some_case
-./ops/icbops testing start                               # leave the stack up
-./ops/icbops testing stop
-./ops/icbops testing logs api
-./ops/icbops testing db seed --scale 10
-./ops/icbops testing db reset                            # drop and recreate
+./ops/lifeops test run                                    # whole suite
+./ops/lifeops test run tests/life/api/endpoints/test_habits.py
+./ops/lifeops test run tests/path.py -v -k some_case
+./ops/lifeops testing start                               # leave the stack up
+./ops/lifeops testing stop
+./ops/lifeops testing logs api
+./ops/lifeops testing db seed --scale 10
+./ops/lifeops testing db reset                            # drop and recreate
 ```
 
 `test run` starts the containers if they are not up and waits for health
@@ -68,14 +68,14 @@ names them and says what each holds.
 Nothing here deploys. A push to `main` does that.
 
 ```bash
-./ops/icbops prod deploy-status    # which color is live
-./ops/icbops prod status
-./ops/icbops prod health
-./ops/icbops prod apihealth
-./ops/icbops prod logs api
-./ops/icbops prod smoke
-./ops/icbops prod rollback         # switch traffic to the previous color
-./ops/icbops prod build-test       # build the production target locally
+./ops/lifeops prod deploy-status    # which color is live
+./ops/lifeops prod status
+./ops/lifeops prod health
+./ops/lifeops prod apihealth
+./ops/lifeops prod logs api
+./ops/lifeops prod smoke
+./ops/lifeops prod rollback         # switch traffic to the previous color
+./ops/lifeops prod build-test       # build the production target locally
 ```
 
 `prod start` and `prod restart` bring the live color back up, after a reboot
@@ -84,10 +84,10 @@ for instance. Both read the active color rather than choosing one.
 ## Tools
 
 ```bash
-./ops/icbops routing generate      # after editing vue-paths.txt
-./ops/icbops ssl-manager <action> [env]
-./ops/icbops stats summary
-./ops/icbops install               # symlink to ~/.local/bin/icbops
+./ops/lifeops routing generate      # after editing vue-paths.txt
+./ops/lifeops ssl-manager <action> [env]
+./ops/lifeops stats summary
+./ops/lifeops install               # symlink to ~/.local/bin/lifeops
 ```
 
 `routing generate` rewrites all three routing files from
@@ -97,8 +97,8 @@ first, or Traefik routes that path to the API and the page 404s.
 ## When a change is not taking effect
 
 ```bash
-./ops/icbops testing stop && ./ops/icbops testing start   # ~30s
-./ops/icbops testing rebuild --volumes                    # ~60-90s
+./ops/lifeops testing stop && ./ops/lifeops testing start   # ~30s
+./ops/lifeops testing rebuild --volumes                    # ~60-90s
 ```
 
 Work them in that order, and reach for a manual `docker` subcommand only after
@@ -120,7 +120,7 @@ sops secrets/secrets.prod.enc.env
 
 [Configuration](../configuration.md) covers precedence and what each key does.
 
-## Things `icbops` does not cover
+## Things `lifeops` does not cover
 
 Docker's own disk usage and cleanup:
 

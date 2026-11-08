@@ -7,8 +7,8 @@ import random
 import structlog
 from faker import Faker
 
-from ichrisbirch.config import Settings
-from ichrisbirch.database.session import create_session
+from life.config import Settings
+from life.database.session import create_session
 from scripts.seed.base import SeedResult
 from scripts.seed.seeders import SEED_ORDER
 

@@ -11,7 +11,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newRecipesCommand() *cobra.Command {
@@ -21,13 +21,13 @@ func newRecipesCommand() *cobra.Command {
 		Long: "Your recipe catalog: what you can cook, what you have cooked, and what you\n" +
 			"could make from the ingredients on hand. The ai- verbs propose candidates\n" +
 			"for review and never save on their own.",
-		Example: "  icb recipes search oatmeal                        find a recipe by name, instructions or tag\n" +
-			"  icb recipes search --ingredients \"chicken,lemon\"  what you could make from what is on hand\n" +
-			"  icb recipes made 2                                record that you cooked recipe 2",
+		Example: "  life recipes search oatmeal                        find a recipe by name, instructions or tag\n" +
+			"  life recipes search --ingredients \"chicken,lemon\"  what you could make from what is on hand\n" +
+			"  life recipes made 2                                record that you cooked recipe 2",
 	})
 	goclikit.WithRecoveryHints(cmd,
-		"Search recipes by name, instructions, or tags: icb recipes search <query>",
-		"See every value --cuisine, --meal-type and --difficulty accept: icb recipes vocabulary",
+		"Search recipes by name, instructions, or tags: life recipes search <query>",
+		"See every value --cuisine, --meal-type and --difficulty accept: life recipes vocabulary",
 	)
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
@@ -66,9 +66,9 @@ func newRecipesListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the first names of the\n" +
 			"narrowed set rather than filtering a capped slice.",
-		Example: "  icb recipes list\n" +
-			"  icb recipes list --limit 10\n" +
-			"  icb recipes list --cuisine italian --rating-min 4 --max-total-time 45",
+		Example: "  life recipes list\n" +
+			"  life recipes list --limit 10\n" +
+			"  life recipes list --cuisine italian --rating-min 4 --max-total-time 45",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
@@ -79,9 +79,9 @@ func newRecipesListCommand() *cobra.Command {
 			})
 		},
 	}
-	cmd.Flags().StringVar(&cuisine, "cuisine", "", "Filter by cuisine (see: icb recipes vocabulary)")
-	cmd.Flags().StringVar(&mealType, "meal-type", "", "Filter by meal type (see: icb recipes vocabulary)")
-	cmd.Flags().StringVar(&difficulty, "difficulty", "", "Filter by difficulty (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(&cuisine, "cuisine", "", "Filter by cuisine (see: life recipes vocabulary)")
+	cmd.Flags().StringVar(&mealType, "meal-type", "", "Filter by meal type (see: life recipes vocabulary)")
+	cmd.Flags().StringVar(&difficulty, "difficulty", "", "Filter by difficulty (see: life recipes vocabulary)")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().IntVar(&maxTotalTime, "max-total-time", 0, "Maximum total time in minutes")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output recipes as JSON to stdout")
@@ -98,7 +98,7 @@ func newRecipesShowCommand() *cobra.Command {
 		Use:     "show <recipe-id>",
 		Short:   "Show a single recipe with ingredients",
 		Long:    "Pass --servings to scale each ingredient (scaled_quantity in the output).",
-		Example: "  icb recipes show 2\n  icb recipes show 2 --servings 12",
+		Example: "  life recipes show 2\n  life recipes show 2 --servings 12",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
@@ -143,11 +143,11 @@ func newRecipesSearchCommand() *cobra.Command {
 			"recipes containing every one.\n" +
 			"\n" +
 			"Pass a query or --ingredients, not both: the two are separate searches.",
-		Example: "  # a recipe by name, instructions or tag\n  icb recipes search oatmeal\n\n" +
+		Example: "  # a recipe by name, instructions or tag\n  life recipes search oatmeal\n\n" +
 			"  # what you could make from what is on hand, best match first\n" +
-			"  icb recipes search --ingredients \"chicken,lemon\"\n\n" +
+			"  life recipes search --ingredients \"chicken,lemon\"\n\n" +
 			"  # only the recipes that use every one\n" +
-			"  icb recipes search --ingredients \"oats,milk\" --match all",
+			"  life recipes search --ingredients \"oats,milk\" --match all",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f := cmd.Flags()
@@ -155,12 +155,12 @@ func newRecipesSearchCommand() *cobra.Command {
 			switch {
 			case len(args) == 0 && !byIngredients:
 				return goclikit.UsageError(fmt.Errorf(
-					"nothing to search for — pass a query, as in icb recipes search oatmeal, " +
-						"or what you have, as in icb recipes search --ingredients \"chicken,lemon\""))
+					"nothing to search for — pass a query, as in life recipes search oatmeal, " +
+						"or what you have, as in life recipes search --ingredients \"chicken,lemon\""))
 			case len(args) == 1 && byIngredients:
 				return goclikit.UsageError(fmt.Errorf(
 					"a query and --ingredients are separate searches — pass one: " +
-						"icb recipes search <query>, or icb recipes search --ingredients <list>"))
+						"life recipes search <query>, or life recipes search --ingredients <list>"))
 			case f.Changed("match") && !byIngredients:
 				return goclikit.UsageError(fmt.Errorf("--match ranks an --ingredients search — pass --ingredients with it"))
 			case match != "any" && match != "all":
@@ -217,7 +217,7 @@ func newRecipesCreateCommand() *cobra.Command {
 		Short: "Create a recipe",
 		Long: "Create a recipe. --name and --instructions are required. --ingredients-json\n" +
 			"is a JSON array of {quantity,unit,item,prep_note,is_optional,ingredient_group}.",
-		Example: "  icb recipes create --name \"Chimichurri\" --instructions \"Blend all.\" \\\n" +
+		Example: "  life recipes create --name \"Chimichurri\" --instructions \"Blend all.\" \\\n" +
 			"    --ingredients-json '[{\"quantity\":1,\"unit\":\"cup\",\"item\":\"parsley\"}]' --cuisine argentine",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -301,7 +301,7 @@ func newRecipesEditCommand() *cobra.Command {
 		Long: "Update only the fields whose flags you pass. --ingredients-json replaces the\n" +
 			"whole ingredient list. --clear <field> sets a field to null (repeatable) —\n" +
 			"use it for numeric fields an empty string cannot clear.",
-		Example: "  icb recipes edit 2 --rating 5\n  icb recipes edit 2 --clear cuisine --clear rating",
+		Example: "  life recipes edit 2 --rating 5\n  life recipes edit 2 --clear cuisine --clear rating",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
@@ -369,7 +369,7 @@ func newRecipesDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <recipe-id>",
 		Short:   "Delete a recipe",
-		Example: "  icb recipes delete 2 --yes",
+		Example: "  life recipes delete 2 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
@@ -411,7 +411,7 @@ func newRecipesMadeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "made <recipe-id>",
 		Short:   "Mark a recipe made (bump times-made, stamp now)",
-		Example: "  icb recipes made 2",
+		Example: "  life recipes made 2",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("recipe id", args[0])
@@ -448,9 +448,9 @@ func newRecipesAISuggestCommand() *cobra.Command {
 		Use:   "ai-suggest --have <ingredient> [flags]",
 		Short: "Ask Claude for recipe candidates from ingredients you have",
 		Long: "Server-side Claude (with web search) returns candidates WITHOUT saving. Feed a\n" +
-			"candidate object to `icb recipes ai-save --candidate-json <json>` to persist.\n" +
+			"candidate object to `life recipes ai-save --candidate-json <json>` to persist.\n" +
 			"Slow (30-60s). Use --json to capture candidates for piping to ai-save.",
-		Example: "  icb recipes ai-suggest --have chicken --have lemon --want \"quick weeknight dinner\"",
+		Example: "  life recipes ai-suggest --have chicken --have lemon --want \"quick weeknight dinner\"",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if len(have) == 0 {
@@ -487,7 +487,7 @@ func newRecipesAISaveCommand() *cobra.Command {
 		Use:     "ai-save --candidate-json <json>",
 		Short:   "Persist an AI recipe candidate",
 		Long:    "Save a candidate object (one element from `ai-suggest`) to the recipe catalog.",
-		Example: "  icb recipes ai-save --candidate-json \"$(cat candidate.json)\"",
+		Example: "  life recipes ai-save --candidate-json \"$(cat candidate.json)\"",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
@@ -523,9 +523,9 @@ func newRecipesAIImportCommand() *cobra.Command {
 		Use:   "ai-import <url>",
 		Short: "Classify a URL into recipe/technique candidate(s)",
 		Long: "Fetch and classify a YouTube or article URL, returning candidate(s) WITHOUT\n" +
-			"saving. Feed the candidate to `icb recipes ai-save-import`. --hint forces a\n" +
+			"saving. Feed the candidate to `life recipes ai-save-import`. --hint forces a\n" +
 			"kind: auto (default), recipe, technique, or both.",
-		Example: "  icb recipes ai-import https://youtu.be/xyz --hint both --json",
+		Example: "  life recipes ai-import https://youtu.be/xyz --hint both --json",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if hint != "auto" && hint != "recipe" && hint != "technique" && hint != "both" {
@@ -561,7 +561,7 @@ func newRecipesAISaveImportCommand() *cobra.Command {
 		Short: "Persist a reviewed URL-import candidate",
 		Long: "Save the candidate returned by `ai-import` (recipe and/or technique). For\n" +
 			"kind=both, the technique_mention is appended to the recipe's notes.",
-		Example: "  icb recipes ai-save-import --candidate-json \"$(cat candidate.json)\"",
+		Example: "  life recipes ai-save-import --candidate-json \"$(cat candidate.json)\"",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			candidate, err := validJSONFlag("--candidate-json", candidateJSON)
@@ -600,7 +600,7 @@ func newRecipesVocabularyCommand() *cobra.Command {
 		Short: "Show every value a recipe's cuisine, meal type and difficulty accept",
 		Long: "The values --cuisine, --meal-type and --difficulty accept, read from the\n" +
 			"server's lookup tables. Difficulty is listed easiest first.",
-		Example: "  icb recipes vocabulary\n  icb recipes vocabulary --json",
+		Example: "  life recipes vocabulary\n  life recipes vocabulary --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -651,9 +651,9 @@ func addRecipeScalarFlags(cmd *cobra.Command, description, sourceURL, sourceName
 	cmd.Flags().IntVar(prepTime, "prep-time", 0, "Prep time in minutes")
 	cmd.Flags().IntVar(cookTime, "cook-time", 0, "Cook time in minutes")
 	cmd.Flags().IntVar(totalTime, "total-time", 0, "Total time in minutes")
-	cmd.Flags().StringVar(difficulty, "difficulty", "", "Difficulty (see: icb recipes vocabulary)")
-	cmd.Flags().StringVar(cuisine, "cuisine", "", "Cuisine (see: icb recipes vocabulary)")
-	cmd.Flags().StringVar(mealType, "meal-type", "", "Meal type (see: icb recipes vocabulary)")
+	cmd.Flags().StringVar(difficulty, "difficulty", "", "Difficulty (see: life recipes vocabulary)")
+	cmd.Flags().StringVar(cuisine, "cuisine", "", "Cuisine (see: life recipes vocabulary)")
+	cmd.Flags().StringVar(mealType, "meal-type", "", "Meal type (see: life recipes vocabulary)")
 	cmd.Flags().StringArrayVar(tags, "tag", nil, "Tag (repeatable; replaces the tag list)")
 	cmd.Flags().StringVar(notes, "notes", "", "Notes")
 	cmd.Flags().IntVar(rating, "rating", 0, "Rating (1-5)")

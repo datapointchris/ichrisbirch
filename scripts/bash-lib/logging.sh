@@ -69,11 +69,11 @@ notify_slack() {
   if [[ "$status" == "success" ]]; then
     color="good"
     icon="✅"
-    title="ichrisbirch deployment succeeded"
+    title="life deployment succeeded"
   else
     color="danger"
     icon="🔴"
-    title="ichrisbirch deployment failed"
+    title="life deployment failed"
   fi
 
   # Escape special characters for JSON

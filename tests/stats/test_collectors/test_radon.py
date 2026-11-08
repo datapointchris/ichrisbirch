@@ -55,7 +55,7 @@ class TestRadonSchema:
         """Test RadonCollectEvent schema."""
         event = RadonCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             files=[
                 FileComplexity(
@@ -101,7 +101,7 @@ class TestRadonRunner:
                     MagicMock(returncode=0, communicate=MagicMock(return_value=(mi_output, ''))),
                 ]
 
-                event = run('master', 'ichrisbirch', tmpdir)
+                event = run('master', 'life', tmpdir)
 
                 assert event is not None
                 assert isinstance(event, RadonCollectEvent)
@@ -112,6 +112,6 @@ class TestRadonRunner:
         """Test runner returns None when no Python files found."""
         with tempfile.TemporaryDirectory() as tmpdir:
             # Empty directory with no Python files
-            event = run('master', 'ichrisbirch', tmpdir)
+            event = run('master', 'life', tmpdir)
 
             assert event is None

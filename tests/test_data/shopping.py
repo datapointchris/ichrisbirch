@@ -1,6 +1,6 @@
-from ichrisbirch.models.shopping import ShoppingItem
-from ichrisbirch.models.shopping import ShoppingPurchase
-from ichrisbirch.models.shopping import ShoppingSection
+from life.models.shopping import ShoppingItem
+from life.models.shopping import ShoppingPurchase
+from life.models.shopping import ShoppingSection
 
 # Items arrive through `ShoppingSection.items`. Ranks interleave across sections
 # on purpose, because the table holds one rank space.

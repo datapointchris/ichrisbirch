@@ -16,5 +16,5 @@ SELECT cron.schedule('decrease_priority', '1 0 * * *', 'SELECT decrease_priority
 
 -- Move the job to the corresponding database
 UPDATE cron.job
-SET DATABASE = 'ichrisbirch'
+SET DATABASE = 'life'
 WHERE jobid = (SELECT jobid from cron.job WHERE jobname = 'decrease_priority');

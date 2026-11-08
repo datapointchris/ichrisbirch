@@ -44,7 +44,7 @@ class TestBanditSchema:
 
         event = BanditHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -62,7 +62,7 @@ class TestBanditSchema:
         """Test BanditHookEvent with no issues."""
         event = BanditHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -91,7 +91,7 @@ class TestBanditRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, BanditHookEvent)
             assert event.status == 'passed'
@@ -109,7 +109,7 @@ class TestBanditRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, BanditHookEvent)
             assert event.status == 'failed'
@@ -127,7 +127,7 @@ class TestBanditRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert event.metrics.confidence_high == 2
             assert event.metrics.severity_low == 2

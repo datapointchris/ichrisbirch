@@ -4,7 +4,7 @@ import datetime as dt
 
 import factory
 
-from ichrisbirch.models.countdown import Countdown
+from life.models.countdown import Countdown
 
 from .base import get_factory_session
 

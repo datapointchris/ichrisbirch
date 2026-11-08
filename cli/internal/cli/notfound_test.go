@@ -13,7 +13,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/datapointchris/goselfupdate/autoupdate"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // apiNotFound is the error shape the api package produces for a 404, with the
@@ -37,14 +37,14 @@ func hintsFor(cmd *cobra.Command) []string {
 }
 
 // findCommand resolves a command path against the real assembled tree, so a
-// test asserts on what `icb` actually runs rather than a fixture of it.
+// test asserts on what `life` actually runs rather than a fixture of it.
 func findCommand(t *testing.T, path ...string) *cobra.Command {
 	t.Helper()
 	cmd, _, err := NewRootCommand().Find(path)
 	if err != nil {
 		t.Fatalf("Find(%v): %v", path, err)
 	}
-	if strings.Join(path, " ") != strings.TrimPrefix(cmd.CommandPath(), "icb ") {
+	if strings.Join(path, " ") != strings.TrimPrefix(cmd.CommandPath(), "life ") {
 		t.Fatalf("Find(%v) resolved to %q", path, cmd.CommandPath())
 	}
 	return cmd
@@ -61,7 +61,7 @@ func runWith(t *testing.T, failure error, argv ...string) error {
 	t.Helper()
 
 	original := os.Args
-	os.Args = append([]string{"icb"}, argv...)
+	os.Args = append([]string{"life"}, argv...)
 	t.Cleanup(func() { os.Args = original })
 
 	root := NewRootCommand()
@@ -92,8 +92,8 @@ func TestA404FromTheRealTreeCarriesItsRecoveryHints(t *testing.T) {
 	got := err.Error()
 	for _, want := range []string{
 		"task 999999 not found",
-		"icb tasks search <query>",
-		"icb tasks list --status all",
+		"life tasks search <query>",
+		"life tasks list --status all",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("error = %q, want it to name %q", got, want)
@@ -208,8 +208,8 @@ func TestEveryResourceCommandCarriesNotFoundHints(t *testing.T) {
 			}
 			for _, hint := range hints {
 				_, command, found := strings.Cut(hint, ": ")
-				if !found || !strings.HasPrefix(command, "icb ") {
-					t.Errorf("%s hint %q is not a sentence, a colon, and an icb command",
+				if !found || !strings.HasPrefix(command, "life ") {
+					t.Errorf("%s hint %q is not a sentence, a colon, and a life command",
 						cmd.CommandPath(), hint)
 				}
 			}
@@ -252,7 +252,7 @@ func TestEveryHintNamesACommandThatResolves(t *testing.T) {
 	walkCommands(root, func(cmd *cobra.Command) {
 		for _, hint := range hintsFor(cmd) {
 			command := hintCommand(t, hint)
-			words := strings.Fields(strings.TrimPrefix(command, "icb "))
+			words := strings.Fields(strings.TrimPrefix(command, "life "))
 			current, consumed := root, 0
 			for _, word := range words {
 				next := childNamed(current, word)

@@ -163,7 +163,7 @@ def render_slowest_files(con: Console, events_path: str) -> None:
 
     labels = []
     for f in slowest:
-        short = f['path'].removeprefix('tests/ichrisbirch/').removeprefix('tests/')
+        short = f['path'].removeprefix('tests/life/').removeprefix('tests/')
         labels.append(short[:38])
     values = [f['total'] for f in slowest]
 
@@ -214,7 +214,7 @@ def render_slowest_from_snapshot(con: Console, snap: dict, section: str, title: 
         dur = str(t.get('duration', 0))[:5]
         name = t.get('name', '')
         if path_transform == 'python':
-            name = name.replace('tests/ichrisbirch/', '').replace('::test_', ': ')
+            name = name.replace('tests/life/', '').replace('::test_', ': ')
         elif path_transform == 'frontend':
             name = name.split('frontend/src/')[-1].replace('/__tests__', '').replace('.test.ts::', ': ')
         con.print(f'  {dur}s  {name}')

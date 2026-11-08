@@ -9,7 +9,7 @@ import (
 
 	"github.com/datapointchris/goclikit"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func intPtr(n int) *int { return &n }
@@ -164,7 +164,7 @@ func TestPrintHabitsDay_ShowsTheCountTheZoneAndEveryRow(t *testing.T) {
 	printHabitsDay(&out, board)
 	got := out.String()
 
-	for _, want := range []string{"1 of 2 done today", "America/New_York", "Brush", "Floss", "icb habits complete <id>"} {
+	for _, want := range []string{"1 of 2 done today", "America/New_York", "Brush", "Floss", "life habits complete <id>"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("output missing %q:\n%s", want, got)
 		}
@@ -197,7 +197,7 @@ func TestPrintHabitsDay_DropsTheHintWhenEverythingIsDone(t *testing.T) {
 	var out strings.Builder
 	printHabitsDay(&out, board)
 
-	if strings.Contains(out.String(), "icb habits complete") {
+	if strings.Contains(out.String(), "life habits complete") {
 		t.Errorf("output offers a completion with nothing due:\n%s", out.String())
 	}
 }

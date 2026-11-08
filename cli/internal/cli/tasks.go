@@ -12,8 +12,8 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
-	"github.com/datapointchris/ichrisbirch/cli/internal/prompt"
+	"github.com/datapointchris/life/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/prompt"
 )
 
 func newTasksCommand() *cobra.Command {
@@ -29,13 +29,13 @@ func newTasksCommand() *cobra.Command {
 			"shown. `snooze` restarts a task's window, `pin` holds it at the top,\n" +
 			"`drop` lets it go while keeping it on record, and `reopen` brings back a\n" +
 			"completed or dropped one.",
-		Example: "  icb tasks list --limit 5  the five to do next\n" +
-			"  icb tasks complete 42     mark task 42 done\n" +
-			"  icb tasks search gutters  find a task by name or notes",
+		Example: "  life tasks list --limit 5  the five to do next\n" +
+			"  life tasks complete 42     mark task 42 done\n" +
+			"  life tasks search gutters  find a task by name or notes",
 	})
 	goclikit.WithRecoveryHints(cmd,
-		"Search tasks by name or notes: icb tasks search <query>",
-		"Completed and dropped tasks are hidden: icb tasks list --status all",
+		"Search tasks by name or notes: life tasks search <query>",
+		"Completed and dropped tasks are hidden: life tasks list --status all",
 	)
 	splitReadingFromChanging(cmd)
 	cmd.AddGroup(&cobra.Group{ID: groupTaskCategories, Title: "Category commands:"})
@@ -84,12 +84,12 @@ func newTasksListCommand() *cobra.Command {
 			"--category narrows to one of: " + strings.Join(api.TaskCategories, ", ") + ".\n" +
 			"It is matched by the API, so --limit caps the category rather than the\n" +
 			"whole list.",
-		Example: "  icb tasks list\n" +
-			"  icb tasks list --category Personal\n" +
-			"  icb tasks list --status completed\n" +
-			"  icb tasks list --status completed --since 2026-08-17 --until 2026-08-23\n" +
-			"  icb tasks list --status completed --since 12h\n" +
-			"  icb tasks list --status all --limit 10 --json",
+		Example: "  life tasks list\n" +
+			"  life tasks list --category Personal\n" +
+			"  life tasks list --status completed\n" +
+			"  life tasks list --status completed --since 2026-08-17 --until 2026-08-23\n" +
+			"  life tasks list --status completed --since 12h\n" +
+			"  life tasks list --status all --limit 10 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if cmd.Flags().Changed("status") && !slices.Contains(api.TaskStatuses, taskStatus) {
@@ -114,7 +114,7 @@ func newTasksListCommand() *cobra.Command {
 				return err
 			}
 			if !asJSON && !cmd.Flags().Changed("status") {
-				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and dropped tasks are hidden: icb tasks list --status all")
+				_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "\nCompleted and dropped tasks are hidden: life tasks list --status all")
 			}
 			return nil
 		},
@@ -132,7 +132,7 @@ func newTasksSearchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "search <query>",
 		Short:   "Search tasks by name or notes",
-		Example: "  icb tasks search invoice",
+		Example: "  life tasks search invoice",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTaskList(cmd, asJSON, func(c *api.Client) ([]api.Task, error) {
@@ -149,7 +149,7 @@ func newTasksShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <task-id>",
 		Short:   "Show a single task",
-		Example: "  icb tasks show 42",
+		Example: "  life tasks show 42",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
@@ -220,8 +220,8 @@ func newTasksCreateCommand() *cobra.Command {
 			"\n" +
 			"An answer the field rejects comes back for editing and nothing already\n" +
 			"entered is lost. Ctrl-C abandons the task.",
-		Example: "  icb tasks create\n" +
-			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
+		Example: "  life tasks create\n" +
+			"  life tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fields := taskCreateFields()
@@ -295,7 +295,7 @@ func newTasksEditCommand() *cobra.Command {
 		Long: "Update only the fields whose flags you pass. A new --window-days applies\n" +
 			"from the next snooze; `snooze` restarts the window now. Use `complete` to\n" +
 			"finish a task and `drop` to let one go.",
-		Example: "  icb tasks edit 42 --window-days 7 --notes \"due friday\"",
+		Example: "  life tasks edit 42 --window-days 7 --notes \"due friday\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
@@ -354,7 +354,7 @@ func newTasksCompleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "complete <task-id>",
 		Short:   "Mark a task completed",
-		Example: "  icb tasks complete 42",
+		Example: "  life tasks complete 42",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])
@@ -420,7 +420,7 @@ func newTasksSnoozeCommand() *cobra.Command {
 		"Restart a task's window, moving it back down the list",
 		"Not now: the task's window starts again from today, so it comes back up\n"+
 			"after as many days as its window holds. A pinned task is unpinned.",
-		"  icb tasks snooze 42",
+		"  life tasks snooze 42",
 		"Snoozed",
 		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
 			return c.SnoozeTask(cmd.Context(), id)
@@ -435,7 +435,7 @@ func newTasksPinCommand(pinned bool) *cobra.Command {
 			"Hold a task at the top of the list",
 			"A pinned task sorts ahead of every unpinned one until it is unpinned,\n"+
 				"snoozed, completed or dropped. A closed task cannot be pinned.",
-			"  icb tasks pin 42",
+			"  life tasks pin 42",
 			"Pinned",
 			func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
 				return c.SetTaskPinned(cmd.Context(), id, true)
@@ -446,7 +446,7 @@ func newTasksPinCommand(pinned bool) *cobra.Command {
 		"unpin <task-id>",
 		"Return a pinned task to its place by window",
 		"",
-		"  icb tasks unpin 42",
+		"  life tasks unpin 42",
 		"Unpinned",
 		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
 			return c.SetTaskPinned(cmd.Context(), id, false)
@@ -461,8 +461,8 @@ func newTasksDropCommand() *cobra.Command {
 		"Let a task go without completing it",
 		"A dropped task leaves the list and stays on record under --status dropped.\n"+
 			"It does not count as completed. --reason is optional and kept with it.\n"+
-			"icb tasks reopen brings it back.",
-		"  icb tasks drop 42 --reason \"bought one instead\"",
+			"life tasks reopen brings it back.",
+		"  life tasks drop 42 --reason \"bought one instead\"",
 		"Dropped",
 		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
 			return c.DropTask(cmd.Context(), id, reason)
@@ -478,7 +478,7 @@ func newTasksReopenCommand() *cobra.Command {
 		"Return a completed or dropped task to the open list",
 		"Clears the completion or drop date along with the drop reason. The task\n"+
 			"returns unpinned, at the place its window already gave it.",
-		"  icb tasks reopen 42",
+		"  life tasks reopen 42",
 		"Reopened",
 		func(cmd *cobra.Command, c *api.Client, id int) (api.Task, error) {
 			return c.ReopenTask(cmd.Context(), id)
@@ -490,8 +490,8 @@ func newTaskCategoriesCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "categories",
 		Short: "List and tune the categories --category accepts, with each one's window",
-		Example: "  icb tasks categories list                        each category and its window\n" +
-			"  icb tasks categories edit Home --window-days 45  give new Home tasks 45 days",
+		Example: "  life tasks categories list                        each category and its window\n" +
+			"  life tasks categories edit Home --window-days 45  give new Home tasks 45 days",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newTaskCategoriesListCommand())...)
@@ -504,7 +504,7 @@ func newTaskCategoriesListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List the task categories and the window a new task in each gets",
-		Example: "  icb tasks categories list",
+		Example: "  life tasks categories list",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -540,7 +540,7 @@ func newTaskCategoriesEditCommand() *cobra.Command {
 		Short: "Change the window a new task in a category gets",
 		Long: "Applies to tasks created afterwards. Open tasks keep the window they were\n" +
 			"made with.",
-		Example: "  icb tasks categories edit Home --window-days 45",
+		Example: "  life tasks categories edit Home --window-days 45",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name, err := taskCategory(args[0])
@@ -578,7 +578,7 @@ func newTasksDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <task-id>",
 		Short:   "Delete a task",
-		Example: "  icb tasks delete 42 --yes",
+		Example: "  life tasks delete 42 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("task id", args[0])

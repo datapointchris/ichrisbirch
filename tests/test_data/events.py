@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import Event
+from life.models import Event
 
 # Far ahead, so the collection read's default of today onward returns every one.
 BASE_DATA: list[Event] = [

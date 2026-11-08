@@ -24,7 +24,7 @@ class TestCodeSyncSchema:
     def test_code_sync_hook_event(self) -> None:
         event = CodeSyncHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -39,7 +39,7 @@ class TestCodeSyncSchema:
         """Test CodeSyncHookEvent with failing sync check."""
         event = CodeSyncHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -58,7 +58,7 @@ class TestCodeSyncRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = code_sync.run(['docs/guide.md'], 'master', 'ichrisbirch')
+            event = code_sync.run(['docs/guide.md'], 'master', 'life')
 
             assert isinstance(event, CodeSyncHookEvent)
             assert event.status == 'passed'
@@ -72,7 +72,7 @@ class TestCodeSyncRunner:
                 stderr='',
             )
 
-            event = code_sync.run(['docs/api.md'], 'master', 'ichrisbirch')
+            event = code_sync.run(['docs/api.md'], 'master', 'life')
 
             assert isinstance(event, CodeSyncHookEvent)
             assert event.status == 'failed'
@@ -85,7 +85,7 @@ class TestGenerateFixtureDiagramsSchema:
     def test_generate_fixture_diagrams_hook_event(self) -> None:
         event = GenerateFixtureDiagramsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -99,7 +99,7 @@ class TestGenerateFixtureDiagramsSchema:
         """Test GenerateFixtureDiagramsHookEvent with failing check."""
         event = GenerateFixtureDiagramsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -115,7 +115,7 @@ class TestGenerateFixtureDiagramsRunner:
     """Tests for generate-fixture-diagrams hook runner."""
 
     def test_generate_fixture_diagrams_runner_skips_irrelevant(self) -> None:
-        event = generate_fixture_diagrams.run(['main.py'], 'master', 'ichrisbirch')
+        event = generate_fixture_diagrams.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -129,7 +129,7 @@ class TestGenerateFixtureDiagramsRunner:
                 stderr='',
             )
 
-            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'ichrisbirch')
+            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'life')
 
             assert isinstance(event, GenerateFixtureDiagramsHookEvent)
             assert event.status == 'passed'
@@ -144,7 +144,7 @@ class TestGenerateFixtureDiagramsRunner:
                 stderr='',
             )
 
-            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'ichrisbirch')
+            event = generate_fixture_diagrams.run(['tests/conftest.py'], 'master', 'life')
 
             assert isinstance(event, GenerateFixtureDiagramsHookEvent)
             assert event.status == 'failed'
@@ -157,7 +157,7 @@ class TestValidateHtmlSchema:
     def test_validate_html_hook_event_with_issues(self) -> None:
         event = ValidateHtmlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -180,7 +180,7 @@ class TestValidateHtmlSchema:
         """Test ValidateHtmlHookEvent with no issues."""
         event = ValidateHtmlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -207,15 +207,15 @@ class TestValidateHtmlRunner:
                 stderr='',
             )
 
-            event = validate_html.run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
+            event = validate_html.run(['life/app/templates/books/index.html'], 'master', 'life')
 
             assert isinstance(event, ValidateHtmlHookEvent)
             assert event.status == 'failed'
             assert len(event.issues) == 2
-            assert event.issues[0].file == 'ichrisbirch/app/templates/books/index.html'
+            assert event.issues[0].file == 'life/app/templates/books/index.html'
             assert event.issues[0].line == 15
             assert event.issues[0].level == 'ERROR'
-            assert event.issues[1].file == 'ichrisbirch/app/templates/books/add.html'
+            assert event.issues[1].file == 'life/app/templates/books/add.html'
             assert event.issues[1].level == 'WARNING'
 
     def test_validate_html_runner_clean(self) -> None:
@@ -229,14 +229,14 @@ class TestValidateHtmlRunner:
                 stderr='',
             )
 
-            event = validate_html.run(['ichrisbirch/app/templates/books/index.html'], 'master', 'ichrisbirch')
+            event = validate_html.run(['life/app/templates/books/index.html'], 'master', 'life')
 
             assert isinstance(event, ValidateHtmlHookEvent)
             assert event.status == 'passed'
             assert not event.issues
 
     def test_validate_html_runner_skips_non_html(self) -> None:
-        event = validate_html.run(['main.py'], 'master', 'ichrisbirch')
+        event = validate_html.run(['main.py'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

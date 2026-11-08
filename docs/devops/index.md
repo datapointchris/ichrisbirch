@@ -16,11 +16,11 @@ without that note leads to a deploy path that no longer exists.
 
 Jobs are APScheduler entries in a Postgres jobstore, added at runtime rather
 than declared in this repo, so the job list is read from the scheduler and not
-from a file here. `ichrisbirch/scheduler/main.py` is where the store is
+from a file here. `life/scheduler/main.py` is where the store is
 attached.
 
-`icbops stats` is the project-statistics surface — `summary`, `code`, `tests`,
+`lifeops stats` is the project-statistics surface — `summary`, `code`, `tests`,
 `quality`, `activity`, `events`, `trends`, `churn` and `snapshot`.
 
 `scripts/bootstrap-homelab.sh` restores a database dump into
-`icb-infra-postgres` with `pg_restore`.
+`life-infra-postgres` with `pg_restore`.

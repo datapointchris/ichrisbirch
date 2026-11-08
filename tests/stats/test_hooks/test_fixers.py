@@ -25,7 +25,7 @@ class TestTrailingWhitespaceSchema:
         """Test TrailingWhitespaceHookEvent with fixed files."""
         event = TrailingWhitespaceHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -55,12 +55,12 @@ class TestTrailingWhitespaceRunner:
                 stderr='',
             )
 
-            event = trailing_whitespace.run([str(source)], 'master', 'ichrisbirch')
+            event = trailing_whitespace.run([str(source)], 'master', 'life')
 
             assert isinstance(event, TrailingWhitespaceHookEvent)
             assert event.status == 'failed'
             assert len(event.fixed_files) == 3
-            assert 'ichrisbirch/api/main.py' in event.fixed_files
+            assert 'life/api/main.py' in event.fixed_files
 
 
 class TestEndOfFileFixerSchema:
@@ -70,7 +70,7 @@ class TestEndOfFileFixerSchema:
         """Test EndOfFileFixerHookEvent with fixed files."""
         event = EndOfFileFixerHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -99,7 +99,7 @@ class TestEndOfFileFixerRunner:
                 stderr='',
             )
 
-            event = end_of_file_fixer.run([str(readme)], 'master', 'ichrisbirch')
+            event = end_of_file_fixer.run([str(readme)], 'master', 'life')
 
             assert isinstance(event, EndOfFileFixerHookEvent)
             assert event.status == 'failed'
@@ -123,7 +123,7 @@ class TestFixersLeaveBinariesAlone:
 
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
-            event = importlib.import_module(module).run([str(image), str(source)], 'master', 'ichrisbirch')
+            event = importlib.import_module(module).run([str(image), str(source)], 'master', 'life')
 
         argv = mock_run.call_args.args[0]
         assert (str(image) in argv, str(source) in argv) == (False, True)
@@ -134,7 +134,7 @@ class TestFixersLeaveBinariesAlone:
         image.write_bytes(PNG_BYTES)
 
         with patch('subprocess.run') as mock_run:
-            event = importlib.import_module(module).run([str(image)], 'master', 'ichrisbirch')
+            event = importlib.import_module(module).run([str(image)], 'master', 'life')
 
         mock_run.assert_not_called()
         assert (event.status, event.files_checked) == ('passed', [])

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.duration import Duration
-from ichrisbirch.models.duration_note import DurationNote
+from life.models.duration import Duration
+from life.models.duration_note import DurationNote
 from scripts.seed.seeders import durations
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

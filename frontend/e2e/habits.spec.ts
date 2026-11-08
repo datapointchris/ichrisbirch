@@ -37,7 +37,7 @@ test.describe('Habits Page', () => {
     })
 
     await page.goto('/habits')
-    await expect(page).toHaveTitle('Daily Habits | iChrisBirch')
+    await expect(page).toHaveTitle('Daily Habits | Life')
     await expect(page.locator(ERROR)).not.toBeVisible()
     expect(apiErrors).toEqual([])
   })
@@ -49,7 +49,7 @@ test.describe('Habits Page', () => {
 
   test('navigates to completed page', async ({ page }) => {
     await page.goto('/habits/completed')
-    await expect(page).toHaveTitle('Completed Habits | iChrisBirch')
+    await expect(page).toHaveTitle('Completed Habits | Life')
   })
 
   test('creates a category and habit on manage page', async ({ page }) => {
@@ -82,7 +82,7 @@ test.describe('Habits Page', () => {
 
   test('sidebar navigation to habits works', async ({ page }) => {
     await page.goto('/habits')
-    await expect(page).toHaveTitle('Daily Habits | iChrisBirch')
+    await expect(page).toHaveTitle('Daily Habits | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Habits' })
     await expect(sidebarLink).toBeVisible()

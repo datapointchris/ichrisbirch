@@ -1,4 +1,4 @@
-"""Structured log viewer for ichrisbirch dev/testing/prod docker logs.
+"""Structured log viewer for life dev/testing/prod docker logs.
 
 Streams `docker compose logs --follow`, parses structlog JSON output, and
 renders with filtering and color. Non-JSON lines (postgres, redis, traefik,
@@ -51,9 +51,9 @@ SERVICE_STYLE = {
 
 ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 PREFIX_RE = re.compile(r'^([A-Za-z0-9_.-]+)\s*\|\s?(.*)$')
-# A test stack's project carries its checkout's name, `icb-test-<checkout>`, and
+# A test stack's project carries its checkout's name, `life-test-<checkout>`, and
 # no service name has a hyphen, so the service is what follows the last one.
-CONTAINER_STRIP_RE = re.compile(r'^icb-(?:dev|test(?:-.+?)?|prod|blue|green|infra)-(?=[a-z]+$)')
+CONTAINER_STRIP_RE = re.compile(r'^life-(?:dev|test(?:-.+?)?|prod|blue|green|infra)-(?=[a-z]+$)')
 
 META_KEYS = {'timestamp', 'level', 'event', 'filename', 'func_name', 'lineno'}
 
@@ -174,19 +174,19 @@ def build_compose_cmd(env: str, tail: int, follow: bool, services: list[str]) ->
     base = ['docker', 'compose']
 
     if env == 'dev':
-        base += ['--project-name', 'icb-dev', '-f', 'docker-compose.yml', '-f', 'docker-compose.dev.yml']
+        base += ['--project-name', 'life-dev', '-f', 'docker-compose.yml', '-f', 'docker-compose.dev.yml']
     elif env == 'testing':
-        project = os.environ.get('ICB_TEST_PROJECT')
+        project = os.environ.get('LIFE_TEST_PROJECT')
         if not project:
-            raise SystemExit('ICB_TEST_PROJECT is unset; run this as: icbops testing logs')
+            raise SystemExit('LIFE_TEST_PROJECT is unset; run this as: lifeops testing logs')
         base += ['--project-name', project, '-f', 'docker-compose.yml', '-f', 'docker-compose.test.yml']
     elif env == 'prod':
         color = read_bluegreen_color()
         if color:
-            base += ['--project-name', f'icb-{color}', '-f', 'docker-compose.app.yml']
+            base += ['--project-name', f'life-{color}', '-f', 'docker-compose.app.yml']
             os.environ['DEPLOY_COLOR'] = color
         else:
-            base += ['--project-name', 'icb-prod', '-f', 'docker-compose.yml']
+            base += ['--project-name', 'life-prod', '-f', 'docker-compose.yml']
     else:
         raise SystemExit(f'Unknown environment: {env!r} (expected dev|testing|prod)')
 
@@ -198,7 +198,7 @@ def build_compose_cmd(env: str, tail: int, follow: bool, services: list[str]) ->
 
 
 def read_bluegreen_color() -> str:
-    state_file = Path('/var/lib/ichrisbirch/bluegreen-state')
+    state_file = Path('/var/lib/life/bluegreen-state')
     try:
         return state_file.read_text().strip()
     except (FileNotFoundError, PermissionError):
@@ -262,7 +262,7 @@ def build_filters(args: argparse.Namespace) -> Filters:
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         prog='log-viewer',
-        description='Structured log viewer for ichrisbirch docker containers.',
+        description='Structured log viewer for life docker containers.',
     )
     p.add_argument('env', choices=['dev', 'testing', 'prod'], help='Target environment')
     p.add_argument('services', nargs='*', help='Service names to tail (e.g. api scheduler)')

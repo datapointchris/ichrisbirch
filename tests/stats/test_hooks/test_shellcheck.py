@@ -41,7 +41,7 @@ class TestShellcheckSchema:
 
         event = ShellcheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -58,7 +58,7 @@ class TestShellcheckSchema:
         """Test ShellcheckHookEvent with no issues."""
         event = ShellcheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -86,7 +86,7 @@ class TestShellcheckRunner:
                 stderr='',
             )
 
-            event = run(['deploy.sh'], 'master', 'ichrisbirch')
+            event = run(['deploy.sh'], 'master', 'life')
 
             assert isinstance(event, ShellcheckHookEvent)
             assert event.status == 'passed'
@@ -104,7 +104,7 @@ class TestShellcheckRunner:
                 stderr='',
             )
 
-            event = run(['deploy.sh'], 'master', 'ichrisbirch')
+            event = run(['deploy.sh'], 'master', 'life')
 
             assert isinstance(event, ShellcheckHookEvent)
             assert event.status == 'failed'
@@ -113,7 +113,7 @@ class TestShellcheckRunner:
 
     def test_shellcheck_runner_skips_non_shell_files(self) -> None:
         """Test runner skips non-shell files."""
-        event = run(['test.py', 'main.js'], 'master', 'ichrisbirch')
+        event = run(['test.py', 'main.js'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

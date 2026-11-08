@@ -22,7 +22,7 @@ import datetime as dt
 
 import factory
 
-from ichrisbirch.models.task import Task
+from life.models.task import Task
 
 from .base import get_factory_session
 

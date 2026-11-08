@@ -1,0 +1,112 @@
+import datetime as dt
+
+from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import field_validator
+from pydantic import model_validator
+
+from life.schemas.not_null import NotNull
+
+
+class BookConfig(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BookCreate(BookConfig):
+    isbn: str | None = None
+    title: str
+    author: str
+    tags: list[str]
+    goodreads_url: str | None = None
+    priority: int | None = None
+    purchase_date: dt.date | None = None
+    purchase_price: float | None = None
+    sell_date: dt.date | None = None
+    sell_price: float | None = None
+    read_start_date: dt.date | None = None
+    read_finish_date: dt.date | None = None
+    rating: int | None = None
+    location: str | None = None
+    notes: str | None = None
+    ownership: str = 'owned'
+    progress: str = 'unread'
+    reject_reason: str | None = None
+    review: str | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def empty_field_to_none(cls, data):
+        if isinstance(data, dict):
+            # preserve lists so the tags field_validator can provide a clear error for []
+            return {k: (v if isinstance(v, list) else (v or None)) for k, v in data.items()}
+        return data
+
+    @field_validator('tags')
+    @classmethod
+    def tags_must_not_be_empty(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError('at least one tag is required')
+        return v
+
+
+class Book(BookConfig):
+    id: int
+    isbn: str | None = None
+    title: str
+    author: str
+    tags: list[str]
+    goodreads_url: str | None = None
+    priority: int | None = None
+    purchase_date: dt.date | None = None
+    purchase_price: float | None = None
+    sell_date: dt.date | None = None
+    sell_price: float | None = None
+    read_start_date: dt.date | None = None
+    read_finish_date: dt.date | None = None
+    rating: int | None = None
+    location: str | None = None
+    notes: str | None = None
+    ownership: str = 'owned'
+    progress: str = 'unread'
+    reject_reason: str | None = None
+    review: str | None = None
+
+
+class BookUpdate(BookConfig):
+    isbn: str | None = None
+    title: NotNull[str] = None
+    author: NotNull[str] = None
+    tags: list[str] = []
+    goodreads_url: str | None = None
+    priority: int | None = None
+    purchase_date: dt.date | None = None
+    purchase_price: float | None = None
+    sell_date: dt.date | None = None
+    sell_price: float | None = None
+    read_start_date: dt.date | None = None
+    read_finish_date: dt.date | None = None
+    rating: int | None = None
+    location: str | None = None
+    notes: str | None = None
+    ownership: NotNull[str] = None
+    progress: NotNull[str] = None
+    reject_reason: str | None = None
+    review: str | None = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def empty_field_to_none(cls, data):
+        if isinstance(data, dict):
+            return {k: (None if v == '' else v) for k, v in data.items()}
+        return data
+
+
+class BookGoodreadsLookup(BookConfig):
+    isbn: str
+
+
+class BookGoodreadsInfo(BookConfig):
+    title: str
+    author: str
+    tags: str
+    goodreads_url: str

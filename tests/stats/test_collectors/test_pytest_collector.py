@@ -49,7 +49,7 @@ class TestPytestSchema:
         """Test PytestCollectEvent schema."""
         event = PytestCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             summary=PytestSummary(passed=100, total=100),
             tests=[],
@@ -67,7 +67,7 @@ class TestPytestRunner:
     def test_pytest_runner_returns_typed_event(self) -> None:
         """Test runner returns PytestCollectEvent."""
         json_path = FIXTURES_DIR / 'pytest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         assert isinstance(event, PytestCollectEvent)
@@ -76,7 +76,7 @@ class TestPytestRunner:
     def test_pytest_runner_parses_tests(self) -> None:
         """Test runner parses test details."""
         json_path = FIXTURES_DIR / 'pytest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         assert len(event.tests) == 4
@@ -84,14 +84,14 @@ class TestPytestRunner:
 
     def test_pytest_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None if file doesn't exist."""
-        event = run('master', 'ichrisbirch', '/nonexistent/path.json')
+        event = run('master', 'life', '/nonexistent/path.json')
 
         assert event is None
 
     def test_pytest_runner_parses_failed_tests(self) -> None:
         """Test runner parses failed test details."""
         json_path = FIXTURES_DIR / 'pytest_report.json'
-        event = run('master', 'ichrisbirch', str(json_path))
+        event = run('master', 'life', str(json_path))
 
         assert event is not None
         failed_tests = [t for t in event.tests if t.outcome == 'failed']

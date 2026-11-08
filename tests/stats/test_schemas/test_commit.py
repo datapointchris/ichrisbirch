@@ -25,7 +25,7 @@ class TestStagedFile:
     def test_staged_file_serialization(self) -> None:
         """Test StagedFile serializes correctly."""
         file = StagedFile(
-            path='ichrisbirch/api/main.py',
+            path='life/api/main.py',
             status='modified',
             lines_added=25,
             lines_removed=10,
@@ -33,7 +33,7 @@ class TestStagedFile:
 
         data = file.model_dump()
 
-        assert data['path'] == 'ichrisbirch/api/main.py'
+        assert data['path'] == 'life/api/main.py'
         assert data['status'] == 'modified'
         assert data['lines_added'] == 25
         assert data['lines_removed'] == 10
@@ -46,7 +46,7 @@ class TestCommitEvent:
         """Test CommitEvent has correct type literal."""
         event = CommitEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             hash='abc123def456789012345678901234567890abcd',
             short_hash='abc123d',
@@ -71,7 +71,7 @@ class TestCommitEvent:
 
         event = CommitEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='feature-branch',
             hash='abc123def456789012345678901234567890abcd',
             short_hash='abc123d',
@@ -93,7 +93,7 @@ class TestCommitEvent:
         """Test CommitEvent serializes to JSON correctly."""
         event = CommitEvent(
             timestamp=dt.datetime(2025, 12, 31, 12, 0, 0, tzinfo=dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             hash='abc123def456789012345678901234567890abcd',
             short_hash='abc123d',

@@ -10,7 +10,7 @@ sources.
 
 ## Initializing
 
-The state lives in the account's state bucket under `ichrisbirch/terraform.tfstate`. The bucket
+The state lives in the account's state bucket under `life/terraform.tfstate`. The bucket
 name carries the account id, and so does the role the provider assumes. Neither is committed. Both
 come from the credentials in use:
 

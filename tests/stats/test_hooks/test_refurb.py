@@ -20,14 +20,14 @@ class TestRefurbSchema:
     def test_refurb_issue_schema(self) -> None:
         """Test that RefurbIssue captures all fields."""
         issue = RefurbIssue(
-            path='ichrisbirch/api/main.py',
+            path='life/api/main.py',
             line=6,
             column=14,
             code='FURB110',
             message='Replace `x if x else "default"` with `x or "default"`',
         )
 
-        assert issue.path == 'ichrisbirch/api/main.py'
+        assert issue.path == 'life/api/main.py'
         assert issue.line == 6
         assert issue.column == 14
         assert issue.code == 'FURB110'
@@ -37,20 +37,20 @@ class TestRefurbSchema:
         """Test RefurbHookEvent with issues."""
         event = RefurbHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
             issues=[
                 RefurbIssue(
-                    path='ichrisbirch/api/main.py',
+                    path='life/api/main.py',
                     line=6,
                     column=14,
                     code='FURB110',
                     message='Replace `x if x else "default"` with `x or "default"`',
                 )
             ],
-            files_checked=['ichrisbirch/api/main.py'],
+            files_checked=['life/api/main.py'],
             duration_seconds=0.5,
         )
 
@@ -62,12 +62,12 @@ class TestRefurbSchema:
         """Test RefurbHookEvent with no issues."""
         event = RefurbHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
             issues=[],
-            files_checked=['ichrisbirch/api/main.py'],
+            files_checked=['life/api/main.py'],
             duration_seconds=0.5,
         )
 
@@ -90,7 +90,7 @@ class TestRefurbRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, RefurbHookEvent)
             assert event.status == 'passed'
@@ -108,13 +108,13 @@ class TestRefurbRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, RefurbHookEvent)
             assert event.status == 'failed'
             assert len(event.issues) == 3
             assert event.issues[0].code == 'FURB110'
-            assert event.issues[0].path == 'ichrisbirch/api/main.py'
+            assert event.issues[0].path == 'life/api/main.py'
             assert event.issues[0].line == 6
             assert event.issues[0].column == 14
             assert event.issues[1].code == 'FURB146'
@@ -129,13 +129,13 @@ class TestRefurbRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
     def test_refurb_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, RefurbHookEvent)
         assert event.status == 'passed'

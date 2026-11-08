@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document provides a high-level overview of the testing system in the ichrisbirch project. For more detailed information, please refer to the specific documentation files linked below.
+This document provides a high-level overview of the testing system in the life project. For more detailed information, please refer to the specific documentation files linked below.
 
 ## Comprehensive Testing Documentation
 
@@ -15,20 +15,20 @@ We now have detailed documentation for the testing infrastructure:
 ## Running Tests
 
 ```bash
-./ops/icbops test run
-./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
+./ops/lifeops test run
+./ops/lifeops test run tests/life/api/endpoints/test_habits.py -v
 ```
 
 Each pytest session starts its own Postgres and Redis and removes them when it
 ends, so nothing needs starting first. The e2e suite is
-`./ops/icbops test e2e`, which starts this checkout's test stack if it is down.
+`./ops/lifeops test e2e`, which starts this checkout's test stack if it is down.
 [Test Environment](environment.md) covers both.
 
 `test run` exports `ENVIRONMENT=testing` itself, so nothing is needed from the
 shell.
 
 Running pytest by hand, leave `ENVIRONMENT` unset. `detect_environment` in
-`ichrisbirch/config.py` returns `testing` when pytest is in `sys.modules`. An
+`life/config.py` returns `testing` when pytest is in `sys.modules`. An
 `ENVIRONMENT` already exported in your shell outranks that check, and every
 test calling `get_settings()` directly then gets that environment's settings.
 

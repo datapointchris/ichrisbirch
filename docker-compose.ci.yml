@@ -1,4 +1,4 @@
-# CI-specific overrides for GitHub Actions. `icbops` adds this file to the
+# CI-specific overrides for GitHub Actions. `lifeops` adds this file to the
 # test stack's compose set when CI=true.
 
 services:

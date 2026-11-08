@@ -9,7 +9,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newCountdownsCommand() *cobra.Command {
@@ -17,10 +17,10 @@ func newCountdownsCommand() *cobra.Command {
 		Use:   "countdowns",
 		Short: "List, inspect, and manage your countdowns",
 		Long:  "Named future dates and how long is left on each — birthdays, deadlines,\nanniversaries, anything you are counting down to.",
-		Example: "  icb countdowns list --limit 5  the five due soonest\n" +
-			"  icb countdowns show 3          one countdown and how long is left",
+		Example: "  life countdowns list --limit 5  the five due soonest\n" +
+			"  life countdowns show 3          one countdown and how long is left",
 	})
-	goclikit.WithRecoveryHints(cmd, "List every countdown: icb countdowns list")
+	goclikit.WithRecoveryHints(cmd, "List every countdown: life countdowns list")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newCountdownsListCommand(), newCountdownsShowCommand())...)
 	cmd.AddCommand(inGroup(groupChanging, newCountdownsCreateCommand(), newCountdownsEditCommand(), newCountdownsDeleteCommand())...)
@@ -37,7 +37,7 @@ func newCountdownsListCommand() *cobra.Command {
 		Short: "List all countdowns by due date",
 		Long: "Countdowns come back soonest-due first, so --limit takes the ones about to\n" +
 			"arrive rather than an arbitrary slice.",
-		Example: "  icb countdowns list\n  icb countdowns list --limit 5\n  icb countdowns list --json",
+		Example: "  life countdowns list\n  life countdowns list --limit 5\n  life countdowns list --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -65,7 +65,7 @@ func newCountdownsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <countdown-id>",
 		Short:   "Show a single countdown",
-		Example: "  icb countdowns show 3",
+		Example: "  life countdowns show 3",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])
@@ -101,7 +101,7 @@ func newCountdownsCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create --name <name> --due <YYYY-MM-DD> [flags]",
 		Short:   "Create a new countdown",
-		Example: "  icb countdowns create --name \"Lease ends\" --due 2027-03-01",
+		Example: "  life countdowns create --name \"Lease ends\" --due 2027-03-01",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
@@ -150,7 +150,7 @@ func newCountdownsEditCommand() *cobra.Command {
 		Use:     "edit <countdown-id> [flags]",
 		Short:   "Change fields on an existing countdown",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb countdowns edit 3 --due 2027-04-01",
+		Example: "  life countdowns edit 3 --due 2027-04-01",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])
@@ -201,7 +201,7 @@ func newCountdownsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <countdown-id>",
 		Short:   "Delete a countdown",
-		Example: "  icb countdowns delete 3 --yes",
+		Example: "  life countdowns delete 3 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("countdown id", args[0])

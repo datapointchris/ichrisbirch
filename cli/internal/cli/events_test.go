@@ -63,7 +63,7 @@ func TestEventsList_AsksForUpcomingInThisMachinesZone(t *testing.T) {
 func TestEventsList_TheDefaultNamesTheFlagThatShowsThePast(t *testing.T) {
 	run := runEventsList(t)
 
-	if !strings.Contains(run.stderr, "icb events list --when all") {
+	if !strings.Contains(run.stderr, "life events list --when all") {
 		t.Errorf("stderr = %q, want the command that shows past events", run.stderr)
 	}
 }

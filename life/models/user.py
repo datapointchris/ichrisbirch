@@ -1,0 +1,368 @@
+import datetime as dt
+import enum
+import random
+from typing import Any
+
+from sqlalchemy import BigInteger
+from sqlalchemy import Boolean
+from sqlalchemy import DateTime
+from sqlalchemy import Identity
+from sqlalchemy import Integer
+from sqlalchemy import Text
+from sqlalchemy import event
+from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import validates
+from sqlalchemy_json import mutable_json_type
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
+
+from life.database.base import Base
+from life.schemas.iana_zone import refuse_unknown_zone
+
+MutableJSONB = mutable_json_type(dbtype=JSONB, nested=True)
+
+
+class AppView(enum.StrEnum):
+    BLOCK = 'block'
+    COMPACT = 'compact'
+
+
+class ThemeColor(enum.StrEnum):
+    # Simple color themes (OKLCH hue rotation)
+    TURQUOISE = 'turquoise'
+    BLUE = 'blue'
+    GREEN = 'green'
+    ORANGE = 'orange'
+    RED = 'red'
+    PURPLE = 'purple'
+    YELLOW = 'yellow'
+    PINK = 'pink'
+    RANDOM = 'random'
+    # Named themes (bespoke palettes from theme.yml)
+    CHARCOAL_EMBER = 'charcoal-ember'
+    KANAGAWA = 'kanagawa'
+    ROSE_PINE = 'rose-pine'
+    GRUVBOX = 'gruvbox'
+    NORD = 'nord'
+    NIGHTFOX = 'nightfox'
+    EVERFOREST = 'everforest'
+    SOLARIZED_OSAKA = 'solarized-osaka'
+    TERAFOX = 'terafox'
+    OCEANIC_NEXT = 'oceanic-next'
+    FLEXOKI = 'flexoki'
+    RETROBOX = 'retrobox'
+
+
+PREFERENCE_VALUE_CHECKS = {'view_type': AppView, 'theme_color': ThemeColor}
+
+
+def refuse_unknown_zone_preference(value: object) -> None:
+    """Null is a zone nobody has chosen yet, which the web app fills from the browser."""
+    if value is None:
+        return
+    if not isinstance(value, str):
+        raise ValueError(f"Invalid value for 'timezone'. Expected an IANA timezone name, got {value!r}.")
+    refuse_unknown_zone(value)
+
+
+PREFERENCE_VALIDATORS = {'timezone': refuse_unknown_zone_preference}
+
+# Only a user who has never opened the web app has no zone preference.
+CALENDAR_FALLBACK_ZONE = 'UTC'
+
+DEFAULT_USER_PREFERENCES = {
+    'theme_color': ThemeColor.TURQUOISE,
+    'font_family': 'ubuntu-mono',
+    'custom_accent_hue': 62,
+    'dashboard_widgets': [
+        {
+            'id': 'w-tasks-priority',
+            'widgetType': 'tasks-priority',
+            'col': 0,
+            'row': 0,
+            'colSpan': 4,
+            'rowSpan': 6,
+            'minColSpan': 3,
+            'minRowSpan': 4,
+        },
+        {
+            'id': 'w-countdowns',
+            'widgetType': 'countdowns',
+            'col': 4,
+            'row': 0,
+            'colSpan': 4,
+            'rowSpan': 4,
+            'minColSpan': 2,
+            'minRowSpan': 4,
+        },
+        {
+            'id': 'w-events',
+            'widgetType': 'events',
+            'col': 8,
+            'row': 0,
+            'colSpan': 4,
+            'rowSpan': 6,
+            'minColSpan': 3,
+            'minRowSpan': 4,
+        },
+        {
+            'id': 'w-habits',
+            'widgetType': 'habits',
+            'col': 4,
+            'row': 4,
+            'colSpan': 4,
+            'rowSpan': 6,
+            'minColSpan': 3,
+            'minRowSpan': 4,
+        },
+    ],
+    'sidebar_order': [
+        '/',
+        '/dashboard',
+        '/articles',
+        '/autotasks',
+        '/books',
+        '/box-packing',
+        '/countdowns',
+        '/durations',
+        '/events',
+        '/habits',
+        '/money-wasted',
+        '/projects',
+        '/tasks',
+    ],
+    'dark_mode': True,
+    'notifications': False,
+    'timezone': None,
+    'dashboard_layout': [
+        ['tasks_priority', 'countdowns', 'events'],
+        ['habits', 'brainlog', 'devlog'],
+    ],
+    'box_packing': {
+        'pages': {
+            'all': {'view_type': AppView.BLOCK},
+            'index': {'view_type': AppView.BLOCK},
+            'edit': {'view_type': AppView.BLOCK},
+            'orphans': {'view_type': AppView.BLOCK},
+            'search': {'view_type': AppView.BLOCK},
+        },
+    },
+    'tasks': {
+        'pages': {
+            'index': {'view_type': AppView.COMPACT},
+            'todo': {'view_type': AppView.COMPACT},
+            'completed': {'view_type': AppView.COMPACT},
+            'search': {'view_type': AppView.COMPACT},
+        },
+    },
+    'autofun': {
+        'interval_days': 7,
+        'max_concurrent': 1,
+        'is_paused': False,
+        'task_window_days': 30,
+    },
+    'events': {
+        'pages': {
+            'index': {'view_type': AppView.COMPACT},
+        },
+    },
+}
+
+
+def changed_preferences(stored: dict, updated: dict) -> dict:
+    """The part of `updated` that differs from `stored`, at every depth."""
+    changed = {}
+    for key, value in updated.items():
+        if key not in stored:
+            changed[key] = value
+        elif isinstance(value, dict) and isinstance(stored[key], dict):
+            inner = changed_preferences(stored[key], value)
+            if inner:
+                changed[key] = inner
+        elif value != stored[key]:
+            changed[key] = value
+    return changed
+
+
+class User(Base):
+    __tablename__ = 'users'
+
+    @staticmethod
+    def generate_63_bit_int():
+        """Generate a 63-bit integer to use as alternative_id.
+
+        63 bits to ensure it will fit inside Postgres BigInt column
+        """
+        return random.getrandbits(63)
+
+    @staticmethod
+    def default_preferences():
+        return DEFAULT_USER_PREFERENCES
+
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    alternative_id: Mapped[int] = mapped_column(BigInteger, unique=True, default=generate_63_bit_int)
+    name: Mapped[str] = mapped_column(Text, unique=False, nullable=False)
+    email: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(Text, primary_key=False, unique=False, nullable=False, info={'record_changes': False})
+    is_admin: Mapped[bool] = mapped_column(Boolean, primary_key=False, unique=False, nullable=False, default=False)
+    created_on: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
+    last_login: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=lambda: dt.datetime.now(dt.UTC))
+    preferences: Mapped[Any] = mapped_column(MutableJSONB, index=False, unique=False, default=default_preferences)
+
+    @staticmethod
+    def _hash_password(mapper, connection, target):
+        """Hash a password assigned since the last flush, on insert and on update alike.
+
+        A password is set by assigning the plaintext, and this listener is the one place it is
+        hashed. A flush that leaves the password alone carries the stored hash unchanged.
+        """
+        if inspect(target).attrs.password.history.has_changes():
+            target.password = generate_password_hash(target.password)
+
+    def _validate_preferences(self, updated_preferences: dict, preferences=DEFAULT_USER_PREFERENCES):
+        """Validate if the preference exists and the value is valid."""
+        for key, value in updated_preferences.items():
+            if key not in preferences:
+                raise ValueError(f"Invalid preference: '{key}'. Expected one of {list(preferences.keys())}.")
+
+            current_pref = preferences[key]
+            if isinstance(current_pref, dict) and isinstance(value, dict):
+                # Recurse into nested dictionaries
+                self._validate_preferences(value, current_pref)
+            elif key in PREFERENCE_VALUE_CHECKS:
+                # Check if this key needs validation against an enum
+                enum_class = PREFERENCE_VALUE_CHECKS[key]
+                valid_values = [e.value for e in enum_class]
+                if value not in valid_values:
+                    raise ValueError(f"Invalid value for '{key}'. Expected one of {valid_values}, got '{value}'.")
+            elif key in PREFERENCE_VALIDATORS:
+                PREFERENCE_VALIDATORS[key](value)
+
+        return updated_preferences
+
+    @validates('preferences')
+    def validate_preferences(self, key, updated_preferences: dict):
+        """Validate what an assignment changes, and leave the keys it keeps as stored.
+
+        A key retired from the defaults stays in storage until the preferences
+        migration script prunes or transfers it. Validating the whole tree would
+        refuse every save that never touched that key.
+
+        Must use secondary private method to avoid recursively calling the validates decorator, which will reset the preferences and check
+        for sub preferences at top level.
+        """
+        self._validate_preferences(changed_preferences(self.preferences or {}, updated_preferences))
+        return updated_preferences
+
+    @staticmethod
+    def dot_preference_to_nested_dict(dot_key: str, value: Any) -> dict:
+        """Create a nested dictionary from a dot-separated key.
+
+        Args:
+            dot_key (str): The dot-separated key.
+            value (Any): The value to set.
+
+        Returns:
+            dict: A nested dictionary representing the dot-separated key.
+
+        Example:
+            ```
+            dot_key = "tasks.pages.index.view_type"
+            value = "grid"
+            result = _convert_dot_separated_prefernce_to_nested_dict(dot_key, value)
+            print(result)
+            >>> {'tasks': {'pages': {'index': {'view_type': 'grid'}}}}
+            ```
+        """
+        if not dot_key:
+            return {}
+        keys = dot_key.split('.')
+        nested_dict = value
+        for key in reversed(keys):
+            nested_dict = {key: nested_dict}
+        return nested_dict
+
+    def get_preference(self, dot_key: str, default: Any = None) -> Any:
+        """Get a preference value with automatic fallback to DEFAULT_USER_PREFERENCES.
+
+        Args:
+            dot_key: Dot-separated path like 'tasks.pages.todo.view_type'
+            default: Override default (uses DEFAULT_USER_PREFERENCES if None)
+
+        Returns:
+            User's preference value, or default from DEFAULT_USER_PREFERENCES
+
+        Example:
+            # User has custom theme_color but not tasks preferences
+            user.preferences = {'theme_color': 'red'}
+
+            user.get_preference('theme_color')  # Returns 'red' (user's value)
+            user.get_preference('tasks.pages.todo.view_type')  # Returns 'compact' (from defaults)
+            user.get_preference('unknown.key')  # Returns None
+            user.get_preference('unknown.key', default='fallback')  # Returns 'fallback'
+        """
+        keys = dot_key.split('.')
+
+        # Try user's preferences first
+        value = self.preferences
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
+            else:
+                value = None
+                break
+
+        if value is not None:
+            return value
+
+        # Use explicit default if provided
+        if default is not None:
+            return default
+
+        # Fall back to DEFAULT_USER_PREFERENCES
+        default_value: Any = DEFAULT_USER_PREFERENCES
+        for key in keys:
+            if isinstance(default_value, dict) and key in default_value:
+                default_value = default_value[key]
+            else:
+                return None
+        return default_value
+
+    @property
+    def calendar_zone(self) -> str:
+        """The IANA zone this user's days are read in: the preference, else UTC."""
+        return self.get_preference('timezone') or CALENDAR_FALLBACK_ZONE
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_authenticated(self):
+        return self.is_active
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        """Return the alternative_id to keep primary id consistent upon session invalidation."""
+        return str(self.alternative_id)
+
+    def set_alternative_id(self):
+        """Set alternative_id as 64-bit integer."""
+        self.alternative_id = self.generate_63_bit_int()
+
+    def check_password(self, password):
+        """Check hashed password."""
+        return check_password_hash(self.password, password)
+
+    def __repr__(self):
+        return f'User(name={self.name}, email={self.email}, created_on={self.created_on}, last_login={self.last_login})'
+
+
+event.listen(User, 'before_insert', User._hash_password)
+event.listen(User, 'before_update', User._hash_password)

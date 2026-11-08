@@ -14,28 +14,28 @@ For this document example we will be creating a new app called `Widgets`
 
 ### 1. SQLAlchemy Model
 
-:material-import: Import new models into `ichrisbirch/alembic/env.py`
-:material-import: Import new models into `ichrisbirch/models/__init__.py`
+:material-import: Import new models into `life/alembic/env.py`
+:material-import: Import new models into `life/models/__init__.py`
 
 ```python
-from ichrisbirch import models
+from life import models
 
 widget = models.Widget(**data)
 ```
 
 ### 2. Pydantic Schema
 
-:material-import: Import new schemas into `ichrisbirch/schemas/__init__.py`
+:material-import: Import new schemas into `life/schemas/__init__.py`
 
 ```python
-from ichrisbirch import schemas
+from life import schemas
 
 widget = schemas.WidgetCreate(**data)
 ```
 
 ### 3. API Router and Endpoints
 
-Create endpoint file in `ichrisbirch/api/endpoints/widgets.py`, register in `ichrisbirch/api/main.py`.
+Create endpoint file in `life/api/endpoints/widgets.py`, register in `life/api/main.py`.
 
 ### 4. Database Migration
 
@@ -49,7 +49,7 @@ alembic upgrade head
 :material-seed: Create `scripts/seed/seeders/widgets.py` implementing `seed(session, scale)` and `clear(session)`
 :material-import: Register in `scripts/seed/seeders/__init__.py` — add to the imports and to `SEED_ORDER` after any FK dependencies
 
-If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add the lookup values to `LOOKUP_DATA` in `ichrisbirch/database/initialization.py` — that dict is re-seeded after every test truncate, separate from the Alembic migration seed.
+If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add the lookup values to `LOOKUP_DATA` in `life/database/initialization.py` — that dict is re-seeded after every test truncate, separate from the Alembic migration seed.
 
 ### 6. Test Data
 
@@ -58,7 +58,7 @@ If the model uses lookup tables (FK to a `*_TEXT PRIMARY KEY` table), also add t
 
 ### 7. API Tests
 
-Create `tests/ichrisbirch/api/endpoints/test_widgets.py` using `ApiCrudTester` or direct assertions.
+Create `tests/life/api/endpoints/test_widgets.py` using `ApiCrudTester` or direct assertions.
 
 `ApiCrudTester` defaults `expected_length=3`, so the test data holds exactly
 three rows unless you pass a different count.
@@ -66,7 +66,7 @@ three rows unless you pass a different count.
 ### 8. Row limit on every list read
 
 A read answering with a list takes `RowLimit` and `apply_row_limit` from
-`ichrisbirch/services/row_limit.py`, applied last so the cap takes the top of
+`life/services/row_limit.py`, applied last so the cap takes the top of
 what the filters left. Declaring `limit: int | None` by hand loses the floor, so
 a negative reaches SQL as `LIMIT -1`, and a falsy test answers `limit=0` with
 the whole collection — both invisible in the response.
@@ -104,7 +104,7 @@ Add the new path to `deploy-containers/traefik/vue-paths.txt` and regenerate rou
 
 ```bash
 echo "/widgets" >> deploy-containers/traefik/vue-paths.txt
-./ops/icbops routing generate
+./ops/lifeops routing generate
 ```
 
 ### 5. Tests
@@ -116,10 +116,10 @@ echo "/widgets" >> deploy-containers/traefik/vue-paths.txt
 
 ```bash
 npm --prefix frontend test   # Build check + unit tests
-./ops/icbops test e2e        # E2E inside this checkout's test stack
+./ops/lifeops test e2e        # E2E inside this checkout's test stack
 ```
 
-## `icb` CLI
+## `life` CLI
 
 The Go resource CLI in `cli/` is the programmatic front door to the same API, so
 a new endpoint group reaches it too. A resource adds two files and two test
@@ -172,7 +172,7 @@ value stays an insert on the server. Three things come with it:
 
 Fetch where the vocabulary is an open set that grows. Declare where it is a
 closed lifecycle each client has to render differently — `strains` does both,
-and `ichrisbirch/models/strain.py` says which is which and why.
+and `life/models/strain.py` says which is which and why.
 
 ### 3. Register
 
@@ -189,8 +189,8 @@ the real command tree through `runTree` and asserts exit codes.
 
 ```bash
 task cli:lint && task cli:test
-icb widgets list --api https://api.docker.localhost
+life widgets list --api https://api.docker.localhost
 ```
 
-The installed `icb` targets the config file's `api`, which is production,
+The installed `life` targets the config file's `api`, which is production,
 regardless of working directory. That is why a check against dev passes `--api`.

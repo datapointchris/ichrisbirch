@@ -16,7 +16,7 @@
 
 !!! failure "Error"
     ```log
-    FileNotFoundError: [Errno 2] No such file or directory: '/var/www/ichrisbirch/ichrisbirch/NoneNone/pylogger.log'
+    FileNotFoundError: [Errno 2] No such file or directory: '/var/www/life/life/NoneNone/pylogger.log'
     ```
 
 !!! success "Solution"

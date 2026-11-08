@@ -1,6 +1,6 @@
 # Blue/Green Deployment
 
-This document covers the zero-downtime deployment strategy for icb production.
+This document covers the zero-downtime deployment strategy for life production.
 
 ## Why Blue/Green
 
@@ -12,15 +12,15 @@ Two parallel sets of **app containers** exist — called **blue** and **green**.
 
 ```text
                    ┌─────────────────────────────────────────────────┐
-                   │              icb-infra (always running)         │
+                   │              life-infra (always running)         │
 Internet           │                                                 │
-  → Cloudflare     │   Traefik ──→ services.yml ──→ icb-blue-api    │
-    → Tunnel       │     :80          (file         icb-blue-vue     │
+  → Cloudflare     │   Traefik ──→ services.yml ──→ life-blue-api    │
+    → Tunnel       │     :80          (file         life-blue-vue     │
       → :80        │                  provider)                      │
                    │   PostgreSQL                                    │
                    │   Redis                                         │
                    │                                                 │
-                   │              icb-green (standby, not receiving  │
+                   │              life-green (standby, not receiving  │
                    │                         traffic until verified) │
                    └─────────────────────────────────────────────────┘
 ```
@@ -41,15 +41,15 @@ If anything fails in steps 1-3, the live color is untouched. Zero downtime, zero
 
 | File | Project Name | Contains | Lifecycle |
 | --- | --- | --- | --- |
-| `docker-compose.infra.yml` | `icb-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
-| `docker-compose.app.yml` | `icb-blue` or `icb-green` | API, Vue, Scheduler | Created/destroyed per deploy |
-| `docker-compose.yml` | `icb-prod` | All services (legacy) | Emergency fallback only |
+| `docker-compose.infra.yml` | `life-infra` | Traefik, PostgreSQL, Redis | Always running, never restarted during deploys |
+| `docker-compose.app.yml` | `life-blue` or `life-green` | API, Vue, Scheduler | Created/destroyed per deploy |
+| `docker-compose.yml` | `life-prod` | All services (legacy) | Emergency fallback only |
 
 Dev and test environments (`docker-compose.dev.yml`, `docker-compose.test.yml`) are completely unaffected.
 
 ### Networking
 
-All containers join the external `proxy` network. Traefik resolves app containers by Docker DNS name (e.g., `http://icb-blue-api:8000`). App containers also join `icb-infra_default` to reach PostgreSQL and Redis by service name.
+All containers join the external `proxy` network. Traefik resolves app containers by Docker DNS name (e.g., `http://life-blue-api:8000`). App containers also join `life-infra_default` to reach PostgreSQL and Redis by service name.
 
 App services have `ports: []` — they do **not** bind to host ports. Only Traefik binds `:80`. This means two copies of the API both listening on container port 8000 is fine — they have separate network IPs. No port collisions.
 
@@ -66,11 +66,11 @@ http:
     api:
       loadBalancer:
         servers:
-          - url: "http://icb-green-api:8000"  # ← blue or green
+          - url: "http://life-green-api:8000"  # ← blue or green
     vue:
       loadBalancer:
         servers:
-          - url: "http://icb-green-vue:80"
+          - url: "http://life-green-vue:80"
 ```
 
 To add a new Traefik-routed service: add it to `docker-compose.app.yml`, `routing.yml`, and `scripts/generate-services-yml.sh`, which both the deploy and the rollback path call.
@@ -81,8 +81,8 @@ Traefik has `--providers.file.watch=true`, so it hot-reloads within 1-2 seconds 
 
 | File | Location | Purpose |
 | --- | --- | --- |
-| `bluegreen-state` | `/var/lib/ichrisbirch/bluegreen-state` | Active color (`blue` or `green`) |
-| Deploy lock | `/var/lock/ichrisbirch-deploy.lock` | Prevents concurrent deploys |
+| `bluegreen-state` | `/var/lib/life/bluegreen-state` | Active color (`blue` or `green`) |
+| Deploy lock | `/var/lock/life-deploy.lock` | Prevents concurrent deploys |
 
 Both are outside the git repo to avoid `git pull` conflicts.
 
@@ -96,7 +96,7 @@ The deploy script at `scripts/deploy-homelab.sh` runs this sequence:
  2. pull_latest_code()
  3. decrypt_secrets()
  4. determine_colors()          # Read bluegreen-state → LIVE=blue, DEPLOY=green
- 5. ensure_infra_running()      # Start icb-infra if not already up
+ 5. ensure_infra_running()      # Start life-infra if not already up
  6. build_new_images()          # Build DEPLOY color images (site stays up on LIVE)
  7. start_new_containers()      # docker compose up -d for DEPLOY color
  8. wait_for_healthy()          # Poll Docker healthchecks on DEPLOY containers (90s)
@@ -118,7 +118,7 @@ Before switching traffic, the deploy script runs the full smoke test suite again
 
 ```bash
 # Admin email is read from the decrypted .env (USERS_DEFAULT_ADMIN_USER_EMAIL)
-docker exec icb-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
+docker exec life-${DEPLOY_COLOR}-api curl -s -w '\n%{http_code}' \
     -X POST http://localhost:8000/api/v1/admin/smoke-tests \
     -H "Remote-User: ${admin_email}" \
     -H "Remote-Email: ${admin_email}"
@@ -131,7 +131,7 @@ The suite discovers its endpoints from the app's route table, so it covers every
 A lock file prevents two deploys from running simultaneously:
 
 ```bash
-LOCK_FILE="/var/lock/ichrisbirch-deploy.lock"
+LOCK_FILE="/var/lock/life-deploy.lock"
 if ! mkdir "$LOCK_FILE" 2>/dev/null; then
     exit 0  # Another deploy is handling it
 fi
@@ -144,8 +144,8 @@ fi
 ### Blue/Green Commands
 
 ```bash
-icbops prod deploy-status    # Show active color, container status, routing state
-icbops prod rollback         # Switch traffic back to previous color
+lifeops prod deploy-status    # Show active color, container status, routing state
+lifeops prod rollback         # Switch traffic back to previous color
 ```
 
 ### Standard Commands (Blue/Green Aware)
@@ -153,13 +153,13 @@ icbops prod rollback         # Switch traffic back to previous color
 These commands automatically detect whether blue/green is active and act accordingly:
 
 ```bash
-icbops prod start            # Start infra + active color (or legacy single-compose)
-icbops prod stop             # Stop active color + infra (or legacy)
-icbops prod restart          # Restart active color + infra (or legacy)
-icbops prod status           # Show infra + active color status (or legacy)
-icbops prod logs [service]   # View active color logs (or legacy)
-icbops prod health           # Health check with correct container names
-icbops prod smoke            # Run smoke tests via API
+lifeops prod start            # Start infra + active color (or legacy single-compose)
+lifeops prod stop             # Stop active color + infra (or legacy)
+lifeops prod restart          # Restart active color + infra (or legacy)
+lifeops prod status           # Show infra + active color status (or legacy)
+lifeops prod logs [service]   # View active color logs (or legacy)
+lifeops prod health           # Health check with correct container names
+lifeops prod smoke            # Run smoke tests via API
 ```
 
 ### Emergency Fallback
@@ -167,7 +167,7 @@ icbops prod smoke            # Run smoke tests via API
 If blue/green causes issues, the original `docker-compose.yml` still works:
 
 ```bash
-icbops prod legacy-rebuild   # Old-style down→build→up (causes downtime)
+lifeops prod legacy-rebuild   # Old-style down→build→up (causes downtime)
 ```
 
 ## Database Migrations
@@ -246,7 +246,7 @@ If the build, health checks, or smoke tests fail, the live containers were never
 ### Manual (Post-Switch Problem)
 
 ```bash
-icbops prod rollback
+lifeops prod rollback
 ```
 
 This command:
@@ -265,7 +265,7 @@ After switching traffic, the deploy script waits 30 seconds before tearing down 
 
 ## Infrastructure Updates
 
-Traefik, PostgreSQL, and Redis run in `icb-infra` and are **not** restarted during code deploys. You only need to update them for:
+Traefik, PostgreSQL, and Redis run in `life-infra` and are **not** restarted during code deploys. You only need to update them for:
 
 - PostgreSQL version upgrade (yearly)
 - Redis version upgrade (yearly)
@@ -275,11 +275,11 @@ Traefik, PostgreSQL, and Redis run in `icb-infra` and are **not** restarted duri
 To update infrastructure:
 
 ```bash
-cd /srv/ichrisbirch
-docker compose --project-name icb-infra -f docker-compose.infra.yml up -d
+cd /srv/life
+docker compose --project-name life-infra -f docker-compose.infra.yml up -d
 ```
 
-Data persists via named volumes (`icb-prod-postgres-data`, `icb-prod-redis-data`).
+Data persists via named volumes (`life-prod-postgres-data`, `life-prod-redis-data`).
 
 ## Resource Requirements
 
@@ -298,8 +298,8 @@ When transitioning from the legacy single-compose deployment to blue/green:
 1. Create the state directory on the production server:
 
    ```bash
-   sudo mkdir -p /var/lib/ichrisbirch
-   sudo chown chris:chris /var/lib/ichrisbirch
+   sudo mkdir -p /var/lib/life
+   sudo chown chris:chris /var/lib/life
    ```
 
 2. Deploy the new files via git push
@@ -307,36 +307,36 @@ When transitioning from the legacy single-compose deployment to blue/green:
 3. SSH to production and perform the migration:
 
    ```bash
-   cd /srv/ichrisbirch
+   cd /srv/life
 
    # Start infrastructure (reuses existing named volumes)
-   docker compose --project-name icb-infra -f docker-compose.infra.yml up -d
+   docker compose --project-name life-infra -f docker-compose.infra.yml up -d
 
    # Wait for postgres/redis to be healthy
    # Start blue app services
-   DEPLOY_COLOR=blue docker compose --project-name icb-blue -f docker-compose.app.yml up -d
+   DEPLOY_COLOR=blue docker compose --project-name life-blue -f docker-compose.app.yml up -d
 
    # Verify the site works through the new routing
    curl -sf http://localhost:80/api/health -H "Host: ichrisbirch.com"
 
    # Stop old containers
-   docker compose --project-name icb-prod down
+   docker compose --project-name life-prod down
 
    # Set initial state
-   echo "blue" > /var/lib/ichrisbirch/bluegreen-state
+   echo "blue" > /var/lib/life/bluegreen-state
 
    # Clean up old network
-   docker network rm icb-prod_default 2>/dev/null || true
+   docker network rm life-prod_default 2>/dev/null || true
    ```
 
-4. Verify with `icbops prod deploy-status`
+4. Verify with `lifeops prod deploy-status`
 
 ## Monitoring
 
 ### Deploy Status
 
 ```bash
-icbops prod deploy-status
+lifeops prod deploy-status
 ```
 
 Shows: active color, infrastructure container status, app container status, routing file state, and any mismatches.
@@ -355,9 +355,9 @@ Every deploy sends a Slack notification with:
 
 | Log | Path | Contents |
 | --- | --- | --- |
-| Deploy log | `/srv/ichrisbirch/logs/deploy.log` | Structured JSON events from each deploy |
-| Build logs | `/srv/ichrisbirch/logs/build-*.log` | Docker build output (last 5 kept) |
-| Container logs | `docker logs icb-{color}-{service}` | Application stdout/stderr |
+| Deploy log | `/srv/life/logs/deploy.log` | Structured JSON events from each deploy |
+| Build logs | `/srv/life/logs/build-*.log` | Docker build output (last 5 kept) |
+| Container logs | `docker logs life-{color}-{service}` | Application stdout/stderr |
 
 ## Key Files
 
@@ -370,5 +370,5 @@ Every deploy sends a Slack notification with:
 | `deploy-containers/traefik/dynamic/prod/routing.yml` | Traefik routers — rules, middleware, priorities (git-tracked) |
 | `deploy-containers/traefik/dynamic/prod/services.yml` | Traefik services — active color's container URLs (generated per deploy) |
 | `deploy-containers/traefik/dynamic/prod/middlewares.yml` | Traefik middleware definitions |
-| `ops/icbops` | CLI with blue/green-aware commands |
+| `ops/lifeops` | CLI with blue/green-aware commands |
 | `ops/health-check.sh` | Health check script (reads active color from state file) |

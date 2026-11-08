@@ -1,6 +1,6 @@
 # Test Fixtures
 
-This document details the test fixtures available in the ichrisbirch project's testing infrastructure. These fixtures provide standardized ways to set up test prerequisites and resources.
+This document details the test fixtures available in the life project's testing infrastructure. These fixtures provide standardized ways to set up test prerequisites and resources.
 
 ## Fixture Scopes
 

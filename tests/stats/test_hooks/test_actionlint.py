@@ -26,7 +26,7 @@ class TestActionlintRunner:
                 stderr='',
             )
 
-            event = run(['.github/workflows/ci.yml'], 'master', 'ichrisbirch')
+            event = run(['.github/workflows/ci.yml'], 'master', 'life')
 
             assert isinstance(event, ActionlintHookEvent)
             assert event.status == 'passed'
@@ -44,7 +44,7 @@ class TestActionlintRunner:
                 stderr='',
             )
 
-            event = run(['.github/workflows/ci.yml'], 'master', 'ichrisbirch')
+            event = run(['.github/workflows/ci.yml'], 'master', 'life')
 
             assert isinstance(event, ActionlintHookEvent)
             assert event.status == 'failed'
@@ -63,13 +63,13 @@ class TestActionlintRunner:
                 stderr='',
             )
 
-            event = run(['.github/workflows/ci.yml'], 'master', 'ichrisbirch')
+            event = run(['.github/workflows/ci.yml'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
     def test_actionlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, ActionlintHookEvent)
         assert event.status == 'passed'
@@ -95,7 +95,7 @@ class TestActionlintRunner:
                     '.github/dependabot.yml',  # Not in workflows dir
                 ],
                 'master',
-                'ichrisbirch',
+                'life',
             )
 
             # Should only check .github/workflows/*.yml or .yaml

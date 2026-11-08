@@ -31,7 +31,7 @@ class TestCoverageSchema:
         """Test CoverageCollectEvent schema."""
         event = CoverageCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             summary=CoverageSummary(
                 covered_lines=1000,
@@ -53,7 +53,7 @@ class TestCoverageRunner:
 
     def test_coverage_runner_returns_none_for_missing_file(self) -> None:
         """Test runner returns None if file doesn't exist."""
-        event = run('master', 'ichrisbirch', '/nonexistent/coverage.json')
+        event = run('master', 'life', '/nonexistent/coverage.json')
         assert event is None
 
     def test_coverage_runner_parses_json(self) -> None:
@@ -82,7 +82,7 @@ class TestCoverageRunner:
             json.dump(coverage_data, f)
             f.flush()
 
-            event = run('master', 'ichrisbirch', f.name)
+            event = run('master', 'life', f.name)
 
             assert event is not None
             assert isinstance(event, CoverageCollectEvent)

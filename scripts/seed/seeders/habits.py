@@ -8,9 +8,9 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.habit import Habit
-from ichrisbirch.models.habitcategory import HabitCategory
-from ichrisbirch.models.habitcompleted import HabitCompleted
+from life.models.habit import Habit
+from life.models.habitcategory import HabitCategory
+from life.models.habitcompleted import HabitCompleted
 from scripts.seed.base import SeedResult
 
 CATEGORIES = [

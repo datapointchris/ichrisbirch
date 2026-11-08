@@ -29,7 +29,7 @@ class TestFilesSchema:
         """Test FilesCollectEvent schema."""
         event = FilesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             file_types=[],
             total_files=0,
@@ -49,7 +49,7 @@ class TestFilesRunner:
             (Path(tmpdir) / 'test.py').write_text('# test')
             (Path(tmpdir) / 'test.js').write_text('// test')
 
-            event = run('master', 'ichrisbirch', tmpdir)
+            event = run('master', 'life', tmpdir)
 
             assert isinstance(event, FilesCollectEvent)
             assert event.total_files == 2

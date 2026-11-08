@@ -64,7 +64,7 @@ type StrainCreateInput struct {
 // StrainUpdateInput is a partial update (PATCH /strains/{id}): only changed
 // fields are sent. Emptying a field is `--clear <field>`, which mergeClearNulls
 // writes as an explicit null after this struct is marshaled — the same grammar
-// `icb recipes edit` and `icb cooking-techniques edit` take.
+// `life recipes edit` and `life cooking-techniques edit` take.
 type StrainUpdateInput struct {
 	Name          *string  `json:"name,omitempty"`
 	Breeder       *string  `json:"breeder,omitempty"`

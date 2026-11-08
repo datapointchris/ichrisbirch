@@ -9,7 +9,7 @@ import (
 )
 
 // Classifying a session lives in goclilogin, which tests it against a provider
-// that rotates and revokes. What is icb's own is how each of the three states
+// that rotates and revokes. What is life's own is how each of the three states
 // reads on the terminal.
 func statusOutput(r statusReport) string {
 	var out bytes.Buffer
@@ -19,8 +19,8 @@ func statusOutput(r statusReport) string {
 }
 
 func TestPrintStatus_NotLoggedInNamesTheLoginCommand(t *testing.T) {
-	got := statusOutput(statusReport{ClientID: "icb-cli-archlinux"})
-	if !strings.Contains(got, "icb auth login") {
+	got := statusOutput(statusReport{ClientID: "life-cli-archlinux"})
+	if !strings.Contains(got, "life auth login") {
 		t.Errorf("got %q, want the login command named", got)
 	}
 }
@@ -28,11 +28,11 @@ func TestPrintStatus_NotLoggedInNamesTheLoginCommand(t *testing.T) {
 func TestPrintStatus_RejectedNamesTheLoginCommand(t *testing.T) {
 	got := statusOutput(statusReport{
 		LoggedIn: true,
-		ClientID: "icb-cli-archlinux",
+		ClientID: "life-cli-archlinux",
 		Issuer:   "https://auth.example.com",
 		Session:  goclilogin.SessionRejected,
 	})
-	if !strings.Contains(got, "icb auth login") {
+	if !strings.Contains(got, "life auth login") {
 		t.Errorf("got %q, want the login command named", got)
 	}
 	if !strings.Contains(got, "rejected") {
@@ -43,7 +43,7 @@ func TestPrintStatus_RejectedNamesTheLoginCommand(t *testing.T) {
 func TestPrintStatus_UnverifiedSaysWhyItCouldNotAnswer(t *testing.T) {
 	got := statusOutput(statusReport{
 		LoggedIn:  true,
-		ClientID:  "icb-cli-archlinux",
+		ClientID:  "life-cli-archlinux",
 		Issuer:    "https://auth.example.com",
 		ExpiresAt: "2026-08-22T06:13:47-04:00",
 		Expired:   true,

@@ -15,17 +15,17 @@ import (
 
 	"github.com/datapointchris/goclilogin"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/life/cli/internal/config"
 )
 
 const (
-	serviceClientID = "icb-svc-worker"
+	serviceClientID = "life-svc-worker"
 	serviceSecret   = "service-secret"
 	serviceToken    = "service-access-token"
 )
 
 // serviceIDP grants a token only to serviceClientID presenting serviceSecret in
-// a Basic header and naming exactly the scopes icb asks for. Anything else gets
+// a Basic header and naming exactly the scopes life asks for. Anything else gets
 // the refusal Authelia sends.
 func serviceIDP(t *testing.T) *httptest.Server {
 	t.Helper()
@@ -54,7 +54,7 @@ func serviceIDP(t *testing.T) *httptest.Server {
 	return srv
 }
 
-// asService points icb at idp and api as serviceClientID holding secret, with a
+// asService points life at idp and api as serviceClientID holding secret, with a
 // state directory the test can inspect afterwards.
 func asService(t *testing.T, idp, api, secret string) string {
 	t.Helper()
@@ -106,7 +106,7 @@ func TestService_ARefusedSecretNamesTheSecretRatherThanALogin(t *testing.T) {
 	asService(t, serviceIDP(t).URL, api.URL, "wrong-secret")
 
 	_, err := runService(t, "tasks", "list")
-	if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_SECRET") || strings.Contains(err.Error(), "auth login") {
+	if err == nil || !strings.Contains(err.Error(), "LIFE_CLIENT_SECRET") || strings.Contains(err.Error(), "auth login") {
 		t.Errorf("got %v, want the secret named and no login suggested", err)
 	}
 }
@@ -127,7 +127,7 @@ func TestService_StatusAsksTheProvider(t *testing.T) {
 
 	asService(t, idp.URL, "http://127.0.0.1:9", "wrong-secret")
 	out, err = runService(t, "auth", "status")
-	if exitCodeFor(err) != 1 || !strings.Contains(out, "ICB_CLIENT_SECRET") || strings.Contains(out, "auth login") {
+	if exitCodeFor(err) != 1 || !strings.Contains(out, "LIFE_CLIENT_SECRET") || strings.Contains(out, "auth login") {
 		t.Errorf("status with a refused secret: exit %d, output %q, want 1 and the secret named", exitCodeFor(err), out)
 	}
 }
@@ -150,7 +150,7 @@ func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 	asService(t, serviceIDP(t).URL, "http://127.0.0.1:9", serviceSecret)
 	for _, verb := range []string{"login", "logout"} {
 		_, err := runService(t, "auth", verb)
-		if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_SECRET") {
+		if err == nil || !strings.Contains(err.Error(), "LIFE_CLIENT_SECRET") {
 			t.Errorf("auth %s: got %v, want it refused with the secret named", verb, err)
 		}
 	}
@@ -173,12 +173,12 @@ func TestService_ARouteOutsideTheScopeReportsTheAPIsMessage(t *testing.T) {
 }
 
 // serviceIDP grants whatever scopes the CLI asks for. So a scope the API
-// renamed, or a route `icb overview` sends that the API stopped listing, passes
+// renamed, or a route `life overview` sends that the API stopped listing, passes
 // every other test here and answers 403 to every service run.
 func TestService_OverviewSendsOnlyRoutesTheRequestedScopeReaches(t *testing.T) {
-	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
+	raw, err := os.ReadFile("../../../tests/life/api/testdata/client-scopes.json")
 	if err != nil {
-		t.Fatalf("read the API's scope table — run tests/ichrisbirch/api/test_client_scopes.py to write it: %v", err)
+		t.Fatalf("read the API's scope table — run tests/life/api/test_client_scopes.py to write it: %v", err)
 	}
 	var reaches map[string][]string
 	if err := json.Unmarshal(raw, &reaches); err != nil {
@@ -247,11 +247,11 @@ func TestHandedToken_AReadCarriesTheTokenTheCommandHands(t *testing.T) {
 	if err := os.WriteFile(command, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.MkdirAll(filepath.Join(root, "icb"), 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Join(root, "life"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	content := fmt.Sprintf("api = %q\nclient_id = %q\ntoken_command = [%q]\n", api.URL, serviceClientID, command)
-	if err := os.WriteFile(filepath.Join(root, "icb", "config.toml"), []byte(content), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "life", "config.toml"), []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
