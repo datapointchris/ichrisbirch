@@ -35,6 +35,7 @@ services:
       # The address the edge serves this API at. Its RFC 9728 metadata names it,
       # and a CLI logging in refuses that document unless it matches exactly.
       - PUBLIC_URL=https://ichrisbirch.com
+      - PROJECTS_READ_ONLY=true
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_COLORS=${LOG_COLORS:-false}

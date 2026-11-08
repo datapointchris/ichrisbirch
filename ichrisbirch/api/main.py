@@ -11,6 +11,7 @@ import structlog
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -157,6 +158,17 @@ async def api_exception_handler(request, exc):
     return error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, f'Internal server error: {type(exc).__name__}')
 
 
+PROJECT_READ_METHODS = frozenset({'GET', 'HEAD', 'OPTIONS'})
+
+
+def refuse_project_writes(request: Request) -> None:
+    """Refuse every write to projects and their items, which the projects app now holds."""
+    if request.method not in PROJECT_READ_METHODS:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, 'Projects are read-only here, because they moved to https://projects.ichrisbirch.com.'
+        )
+
+
 @log_caller
 def create_api(settings: Settings) -> FastAPI:
     @asynccontextmanager
@@ -218,9 +230,10 @@ def create_api(settings: Settings) -> FastAPI:
     v1.include_router(endpoints.events.router, prefix='/events', dependencies=scoped_deps)
     v1.include_router(endpoints.habits.router, prefix='/habits', dependencies=scoped_deps)
     v1.include_router(endpoints.money_wasted.router, prefix='/money-wasted', dependencies=deps)
-    v1.include_router(endpoints.projects.router, prefix='/projects', dependencies=scoped_deps)
-    v1.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=scoped_deps)
-    v1.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=scoped_deps)
+    project_deps = [*scoped_deps, Depends(refuse_project_writes)] if settings.fastapi.projects_read_only else scoped_deps
+    v1.include_router(endpoints.projects.router, prefix='/projects', dependencies=project_deps)
+    v1.include_router(endpoints.project_items.router, prefix='/project-items', dependencies=project_deps)
+    v1.include_router(endpoints.project_item_tasks.router, prefix='/project-items/{item_id}/tasks', dependencies=project_deps)
     v1.include_router(endpoints.recipes.router, prefix='/recipes', dependencies=deps)
     v1.include_router(endpoints.server.router, prefix='/server', dependencies=deps)
     v1.include_router(endpoints.shopping.router, prefix='/shopping', dependencies=deps)
