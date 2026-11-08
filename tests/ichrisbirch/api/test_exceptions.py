@@ -80,8 +80,8 @@ class RecordingLogger:
 
 class TestNotFoundException:
     def test_detail_is_the_noun_then_the_id_then_not_found(self):
-        exception = NotFoundException('project item', 999999, RecordingLogger())
-        assert exception.detail == 'project item 999999 not found'
+        exception = NotFoundException('coffee bean', 999999, RecordingLogger())
+        assert exception.detail == 'coffee bean 999999 not found'
 
     def test_the_walk_finds_every_raise_site_the_source_holds(self):
         """Guards the sweep: an ast walk that stops matching passes vacuously.

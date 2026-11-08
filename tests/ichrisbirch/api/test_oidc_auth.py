@@ -35,7 +35,7 @@ CLI_CLIENT_ID_PREFIX = 'icb-cli-'
 CLI_CLIENT_ID = 'icb-cli-macmini'
 SERVICE_CLIENT_ID_PREFIX = 'icb-svc-'
 SERVICE_CLIENT_ID = 'icb-svc-worker'
-SERVICE_SCOPE = 'icb.project-items.read'
+SERVICE_SCOPE = 'icb.overview.read'
 
 
 class IdentityProviderStub:

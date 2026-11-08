@@ -54,7 +54,7 @@ def read_many(
     The default narrows because closed tasks accumulate without bound.
     Completed and dropped tasks are ordered by when they closed, most recent
     first — their place in the queue stopped meaning anything the moment they
-    left it, which is the same reason a closed project orders by `closed_at`.
+    left it.
 
     `/todo` and `/completed` answer narrower versions of this and remain for
     the web app. This is the one the CLI asks, so it has to be able to express

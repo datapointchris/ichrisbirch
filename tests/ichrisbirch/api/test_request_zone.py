@@ -25,6 +25,6 @@ def test_the_users_calendar_zone_answers_when_no_zone_is_named():
 
 
 def test_a_scoped_client_reads_utc_unless_it_names_a_zone():
-    client = ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.project-items.read'}))
+    client = ScopedClient(client_id='icb-svc-worker', scopes=frozenset({'icb.overview.read'}))
     assert request_zone(client, timezone=None) == 'UTC'
     assert request_zone(client, timezone='Asia/Tokyo') == 'Asia/Tokyo'

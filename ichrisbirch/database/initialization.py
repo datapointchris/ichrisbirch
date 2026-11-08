@@ -31,8 +31,6 @@ from ichrisbirch.database.session import create_session
 from ichrisbirch.database.session import get_db_engine
 from ichrisbirch.models import User
 from ichrisbirch.models.autotask import AUTOTASK_ANCHORS
-from ichrisbirch.models.project import PROJECT_KINDS
-from ichrisbirch.models.project import PROJECT_STATUSES
 from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
 from ichrisbirch.models.recipe import RECIPE_CUISINES
 from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
@@ -132,8 +130,6 @@ LOOKUP_DATA = {
     ],
     'autotask_anchors': AUTOTASK_ANCHORS,
     'task_categories': TASK_CATEGORIES,
-    'project_kinds': PROJECT_KINDS,
-    'project_statuses': PROJECT_STATUSES,
     'book_ownership': ['donated', 'owned', 'rejected', 'sold', 'to_purchase'],
     'book_progress': ['abandoned', 'read', 'reading', 'unread'],
     'coffee.roast_levels': ['light', 'medium-light', 'medium', 'medium-dark', 'dark'],

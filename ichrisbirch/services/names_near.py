@@ -14,9 +14,9 @@ NEAR_NAMES_SHOWN = 5
 def names_near(typed: str, names: Iterable[str]) -> list[str]:
     """Names containing `typed`, then names a typo away from it, case-folded.
 
-    Containment comes first because it is how a short form misses: `ypl` for
-    `ypl — YouTube playlist CLI`. The order of `names` is kept within each
-    group, so a caller passing active projects first sees them offered first.
+    Containment comes first because it is how a short form misses: `dairy` for
+    `Dairy and eggs`. The order of `names` is kept within each group, so a
+    caller passing its likeliest names first sees them offered first.
     """
     by_folded: dict[str, str] = {}
     for name in names:

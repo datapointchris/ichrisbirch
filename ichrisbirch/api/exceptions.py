@@ -35,7 +35,7 @@ class NotFoundException(HTTPException):
     """Exception raised when a requested resource is not found.
 
     `resource_type` is the noun a person reads, so it is written as words:
-    'project item', not 'project_item'. The detail reaches a caller who is
+    'coffee bean', not 'coffee_bean'. The detail reaches a caller who is
     stuck — the `icb` CLI prints it verbatim, and the Vue app surfaces it — and
     an internal spelling there names something they cannot look up or type.
 

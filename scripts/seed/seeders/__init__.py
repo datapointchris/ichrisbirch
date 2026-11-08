@@ -17,7 +17,6 @@ from scripts.seed.seeders import events
 from scripts.seed.seeders import habits
 from scripts.seed.seeders import money_wasted
 from scripts.seed.seeders import patterns
-from scripts.seed.seeders import projects
 from scripts.seed.seeders import recipes
 from scripts.seed.seeders import shopping
 from scripts.seed.seeders import strains
@@ -38,7 +37,6 @@ SEED_ORDER: list[tuple[str, types.ModuleType]] = [
     ('durations', durations),
     ('patterns', patterns),
     ('boxes', boxes),
-    ('projects', projects),
     ('recipes', recipes),
     ('cooking_techniques', cooking_techniques),
     ('strains', strains),
