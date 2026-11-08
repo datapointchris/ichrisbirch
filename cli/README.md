@@ -11,18 +11,7 @@ language; the two share no code.
 
 ## What it covers
 
-`icb projects` is the Projects domain — `{list,show,create,edit,shelve,complete,
-drop,reopen,delete}`, where `create` and `edit` refuse a name the repo registry
-knows, since a project name is bounded work and a repo does not end. `shelve`
-sets a project aside for someday. It is hidden like a closed project, but no
-close is recorded. An item in no other active project leaves `projects items
-next` until `reopen` brings the project back. `icb projects items` nests under
-it, because an item is only meaningful inside a project: item CRUD,
-complete/reopen, archive/unarchive, reorder, multi-project membership,
-dependencies and blockers, sub-task verbs, and `tree` for the dependency graph as
-a drawing or as nodes and edges under `--json`.
-
-The standalone apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
+The apps are `tasks`, `countdowns`, `events`, `habits`, `books`,
 `articles`, `autotasks`, `recipes`, `cooking-techniques` and `strains`. Each
 takes `{list,show,search,create,edit,delete}` plus the verbs its own domain needs
 — `articles current` and `articles read`, `habits complete` and `habits today`,
@@ -167,9 +156,7 @@ icb overview --limit 3       # a tighter per-section cap
 error. What it counts differs by command: a list read caps rows and omitting the
 flag returns every one of them, except `shopping history`, whose purchase log
 only grows and so comes back capped at its newest rows. `overview` caps each
-section separately, and `projects next` caps what it prints and says on
-stderr how many rows the cap left out. Each `--help` names its
-own unit and default.
+section separately. Each `--help` names its own unit and default.
 
 Contract notes for consumers (a terminal dashboard is the first):
 
@@ -211,91 +198,49 @@ Notes (optional):
 The rejected answer comes back on the line for editing, so a typo in the fifth
 field never costs the four already typed. Tab walks the choices matching what has
 been typed; on an empty line it walks the whole list. A match is a substring
-with prefixes ranked first, so `ho` reaches `Home` before `Chore`, and a project
-called `Rewrite the backup scripts in Go` is reached by typing `backup`. A
-value is matched case-insensitively and stored the way its source spells it.
+with prefixes ranked first, so `ho` reaches `Home` before `Chore`, and `bisa`
+reaches `bisabolol`. A value is matched case-insensitively and stored the way
+its source spells it.
 
 A list is laid out in as many columns as its longest entry fits into the
 terminal. Under any fixed count, a dozen one-word categories waste most of a
-screen and a project whose name is a sentence wraps.
+screen and a list of long names wraps.
 
 A flag already passed is never asked about, so `create --category Chore` asks for
 name, window, and notes only. Without a terminal — a pipe, a script, or
 `--no-input` — nothing is asked and the command names the flags that would have
 answered.
 
-`icb projects items create` is the same form over fetched choices. There are
-more projects and more repos than fit above a prompt, so neither list is printed
-unasked — the field says how many there are and Tab is what shows them:
+`icb strains create` is the same form over fetched choices: its type, status,
+effect, flavor and terpene lists come from the server on each run. `Effect`,
+`Flavor` and `Terpene` repeat because their flags do, and Enter on an empty one
+moves on:
 
 ```text
-Project — 54 to choose from. Tab lists them; type part of one to narrow.
-  + makes a new project.
-Project: ⇥
-  Adjust the wooden dingo run              Blue green hardening
-  Rewrite the backup scripts in Go         Garden sensors — the watering layer
-  ⋮
-Project: backup⇥
-Project: Rewrite the backup scripts in Go
-Project (another, or Enter to move on):
-Repo — 82 to choose from. Tab lists them; type part of one to narrow.
-Repo (optional): photo-sorter
-Notes — one or more lines, blank line ends it:
-  > the reasoning that has to outlive the commit
-  >
-```
-
-The first Tab on what is typed prints the matches; the next presses walk them
-one at a time. That is the shell's habit and it is the only way to read a list
-this long — cycling it a keypress at a time shows one project per press and
-never the shape of the whole. A short vocabulary is already printed above the
-prompt, so there Tab walks from the first press. `maxListedChoices` decides
-both: what the field could not introduce is what Tab introduces.
-
-`Project` repeats because `--project` is repeatable — Enter on an empty one moves
-on. `Notes` takes as many lines as it is given, which is where an item's
-reasoning goes. A project is accepted by name or by id, since the API resolves
-either and only the names can be offered as choices.
-
-**Making the missing project without losing the item.** Answering `Project` with
-`+` asks for a name, a description and a kind, creates the project, and carries
-on filing:
-
-```text
-Project: +
-New project. Enter on an empty name goes back to picking one.
-
-Name (optional): Zebra crossing overhaul
-What the effort covers. A project without one collects the wrong items later.
-Description (optional): the crossing rebuild and everything it drags in
-Kind is one of:
-  build  chore  life
+Asked again until you leave it empty.
+Effect is one of:
+  creative   energetic  euphoric   focused    giggly     happy      hungry
+  relaxed    sleepy     talkative  tingly     uplifted
   Tab cycles the matches.
-Kind [life]: life
-  Created project "Zebra crossing overhaul".
-Project (another, or Enter to move on):
+Effect (optional): euphoric
+Effect (another, or Enter to move on): foc⇥
+Effect (another, or Enter to move on): focused
+Effect (another, or Enter to move on):
 ```
 
-The missing project is discovered while filing an item, which is the worst
-moment to leave: quitting to run `projects create` loses the half-typed item. An
-empty name prints `No project made.` and goes back to `Project:`, so a `+`
-pressed by mistake is not a Ctrl-C that abandons the item too. The
-repo-named-project ban runs on the name here exactly as it does behind
-`--name` — a form is not a way around it.
+A field with more choices than `maxListedChoices` prints only how many there
+are, and Tab is what shows them. There the first Tab on what is typed prints the
+matches and the next presses walk them one at a time. That is the shell's habit,
+and the only way to read a long list: cycling it a keypress at a time shows one
+entry per press and never the shape of the whole. A short vocabulary is already
+printed above the prompt, so there Tab walks from the first press.
 
-A project is written the moment it is made, and the item can still be abandoned
-after that. Aborting says which projects were created and kept, because an
-item-less project nobody was told about is the thing that sends the next item to
-the wrong place. A failed create re-asks with all three answers already on their
-lines, so a duplicate name or an expired token costs a keystroke rather than the
-description you were just talked into writing.
-
-This is `prompt.Escape`, and it is the general shape rather than a project
-thing: a `Trigger` answer, a `Hint` printed with the choices, and a `Run` that
-makes the value. What `Run` returns is the answer unvalidated, joins the field's
-choices for the next repeat, and is accepted case-insensitively if it is typed
-again — the escape made the value, so it is the authority on it, and a validator
-built before it existed has nothing to say.
+`prompt.Escape` gives a field a second way to answer, for the value its choices
+do not hold yet: a `Trigger` answer, a `Hint` printed with the choices, and a
+`Run` that makes the value. What `Run` returns is the answer unvalidated, joins
+the field's choices for the next repeat, and is accepted case-insensitively if it
+is typed again. The escape made the value, so it is the authority on it, and a
+validator built before it existed has nothing to say.
 
 **The pattern, for the next resource.** One `[]prompt.Field` describes the record:
 its label, whether it is optional, whether it repeats or takes prose, its default,
@@ -303,13 +248,12 @@ its choices, its validator, and its escape. That list drives both doors — the
 fields nothing answered become the form, and the flags are run through the same
 validators, so a bad value reads identically whichever way it arrived — one
 failure gets one diagnosis, whichever door it came in by. The escape is the one
-part only the form has: `--project` still refuses a
-name that does not exist, because a flag has nobody to ask what kind it is.
+part only the form has, because a flag has nobody to ask how to make the value.
 `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
-example and `itemCreateFields` in `internal/cli/items.go` is the fetched one;
+example and `strainCreateFields` in `internal/cli/strains.go` is the fetched one;
 `flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers`, and `runForm` in
 `internal/cli/interactive.go` are the shared plumbing, and none of them know
-anything about tasks or items.
+anything about tasks or strains.
 
 Where the choices come from an API call, build the client first and check the
 required flags before it. A caller that cannot be asked should be told which flag
@@ -352,37 +296,15 @@ path alone, whether or not the file exists.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `ICB_CLIENT_SECRET` | unset | a service client's secret; setting it selects the client-credentials grant for the file's `client_id` |
-| `ICB_REPOS_REGISTRY` | `$XDG_DATA_HOME/icb/repos.json` | repo registry `--repo` and `projects create` validate against |
-
-The registry is the one file icb reads that other tools also read, so it resolves
-through three rungs rather than two: `$ICB_REPOS_REGISTRY`, then `repos_registry`
-in `$XDG_CONFIG_HOME/icb/config.yml`, then the default above. A leading `~`
-expands in either declared layer.
-
-```yaml
-# $XDG_CONFIG_HOME/icb/config.yml
-repos_registry: ~/.local/share/repos.json
-```
-
-The config file is optional. A machine keeping the registry where icb expects it
-needs none, and an unreadable or malformed one falls through to the default
-rather than failing the command.
-
-No unprefixed variable is read. `$REPOS_JSON` was the rung below the config and
-came out: it is exported from a shell profile, so a process that sources none —
-a systemd timer, anything unattended — never saw it, and the rung was empty in
-exactly the runs it existed to serve.
 
 ## Structure
 
 ```text
 main.go                    → cli.Execute()
-internal/config/           → OIDC + API settings, and the machine config file
+internal/config/           → OIDC + API settings, and the state directory
 internal/cli/              → cobra command tree
 internal/api/              → REST client + wire-contract DTOs
 internal/prompt/           → the guided-create form (§ Guided create)
-internal/graph/            → dependency-graph layout for `projects items tree`
-internal/repos/            → the machine's repo registry, for --repo validation
 ```
 
 The client depends on the JSON **wire contract**, not the server's Python types —

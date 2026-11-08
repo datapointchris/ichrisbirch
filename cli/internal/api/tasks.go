@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// Task mirrors the standalone Tasks app JSON (the flat maintenance list, distinct
-// from project items). IDs are integers here. CompleteDate and DropDate are
+// Task mirrors the standalone Tasks app JSON (the flat maintenance list). IDs are
+// integers here. CompleteDate and DropDate are
 // pointers so an open task (both null) is distinct from a closed one. The
 // /completed endpoint returns a subset of the same shape, so this one DTO
 // covers every read.

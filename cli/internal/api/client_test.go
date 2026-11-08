@@ -22,53 +22,44 @@ func (b bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-func TestListProjects_DecodesAndAuthenticates(t *testing.T) {
+func TestListTasks_DecodesAndAuthenticates(t *testing.T) {
 	var gotAuth string
 	var gotPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotAuth = r.Header.Get("Authorization")
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[
-			{"id":"018f-a","name":"Personal OS","description":"the roadmap","position":0,"created_at":"2026-07-24T00:00:00Z","item_count":3},
-			{"id":"018f-b","name":"House","description":null,"position":1,"created_at":"2026-07-24T00:00:00Z","item_count":0}
-		]`))
+		_, _ = w.Write([]byte(`[{"id":7,"name":"Renew registration","notes":null,"category":"Chore","window_days":14}]`))
 	}))
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("abc123"))
-	projects, err := client.ListProjects(context.Background(), nil, "", nil)
+	tasks, err := client.ListTasks(context.Background(), nil, "", "", Window{})
 	if err != nil {
-		t.Fatalf("ListProjects: %v", err)
+		t.Fatalf("ListTasks: %v", err)
 	}
 
 	if gotAuth != "Bearer abc123" {
 		t.Errorf("Authorization header = %q, want %q", gotAuth, "Bearer abc123")
 	}
-	if gotPath != "/api/v1/projects" {
-		t.Errorf("request path = %q, want /projects/", gotPath)
+	if gotPath != "/api/v1/tasks" {
+		t.Errorf("request path = %q, want /api/v1/tasks", gotPath)
 	}
-	if len(projects) != 2 {
-		t.Fatalf("got %d projects, want 2", len(projects))
-	}
-	if projects[0].Name != "Personal OS" || projects[0].ItemCount == nil || *projects[0].ItemCount != 3 {
-		t.Errorf("project[0] = %+v", projects[0])
-	}
-	if projects[1].Description != nil {
-		t.Errorf("project[1] description should be nil, got %v", projects[1].Description)
+	if len(tasks) != 1 || tasks[0].Name != "Renew registration" || tasks[0].Notes != nil {
+		t.Errorf("tasks = %+v", tasks)
 	}
 }
 
-func TestGetProject_NotFoundIsAPIError(t *testing.T) {
+func TestGetTask_NotFoundIsAPIError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(`{"error":"Not Found","message":"project 018f-x not found"}`))
+		_, _ = w.Write([]byte(`{"error":"Not Found","message":"task 999 not found"}`))
 	}))
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.GetProject(context.Background(), "018f-x")
+	_, err := client.GetTask(context.Background(), 999)
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
@@ -77,19 +68,19 @@ func TestGetProject_NotFoundIsAPIError(t *testing.T) {
 	if !apiErr.NotFound() {
 		t.Errorf("StatusCode = %d, want 404", apiErr.StatusCode)
 	}
-	if apiErr.Message != "project 018f-x not found" {
+	if apiErr.Message != "task 999 not found" {
 		t.Errorf("Message = %q", apiErr.Message)
 	}
 }
 
-func TestGetProject_UnauthorizedFlagged(t *testing.T) {
+func TestGetTask_UnauthorizedFlagged(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.GetProject(context.Background(), "x")
+	_, err := client.GetTask(context.Background(), 1)
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
@@ -110,7 +101,7 @@ func TestSend_NonJSONErrorBody(t *testing.T) {
 	defer srv.Close()
 
 	client := New(srv.URL, staticTokenClient("t"))
-	_, err := client.ListProjects(context.Background(), nil, "", nil)
+	_, err := client.ListTasks(context.Background(), nil, "", "", Window{})
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {

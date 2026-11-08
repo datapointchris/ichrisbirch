@@ -10,8 +10,8 @@ import (
 // the line naming which one.
 //
 // The subject is the API's, not one built from the arguments, because only the
-// API knows which id was missing: `icb projects items complete-task 598 4` can
-// 404 on either number and the message names the one that did.
+// API knows which record was missing. A command naming two records can 404 on
+// either, and the message names the one that did.
 //
 // The "API request failed (404 Not Found)" prefix goes with it. That reports how
 // the answer arrived, and a 404 is an answer rather than a failure to get one.

@@ -7,24 +7,12 @@ import (
 	"testing"
 )
 
-// TestMain clears every layer that can name a registry outside the temp tree
-// these tests build.
-//
-// Tests here point XDG_DATA_HOME at a temp tree and assume the registry is
-// whatever they put in it — usually nothing. $ICB_REPOS_REGISTRY and icb's own
-// config both resolve ahead of that, so without this the suite reads the
-// developer's real registry: TestWithoutARegistryNoProjectNameIsBanned found 80
-// real repo names where it expected none, and failed by banning a name the test
-// had never registered. The config file is neutralized by pointing
-// XDG_CONFIG_HOME at an empty directory, since there is no variable that turns
-// it off.
+// TestMain points XDG_CONFIG_HOME at an empty directory, so no test reads the
+// developer's real config.toml and talks to their deployment.
 //
 // Done here rather than per-test so a new test cannot reintroduce the leak by
-// forgetting. A test that wants a declared path sets it itself with t.Setenv.
+// forgetting. A test that wants a config writes its own with configure.
 func TestMain(m *testing.M) {
-	if err := os.Unsetenv("ICB_REPOS_REGISTRY"); err != nil {
-		panic(err)
-	}
 	empty, err := os.MkdirTemp("", "icb-cli-config")
 	if err != nil {
 		panic(err)

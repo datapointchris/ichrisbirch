@@ -21,7 +21,7 @@ func newTasksCommand() *cobra.Command {
 		Use:   "tasks",
 		Short: "List, inspect, and manage your tasks",
 		Long: "The flat maintenance list — chores and one-offs that belong to no project.\n" +
-			"Structured work lives in `icb projects items` instead.\n" +
+			"Structured work lives in the projects app instead.\n" +
 			"\n" +
 			"Each task has a window in days, its category's unless one is given. A task\n" +
 			"climbs the list as its window runs out, so a short window comes up sooner\n" +
