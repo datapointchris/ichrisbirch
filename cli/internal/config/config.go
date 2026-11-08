@@ -27,10 +27,10 @@ const product = "icb"
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
-// The scope a service client requests: every read `icb overview` makes, which
-// takes in the task, article and book lists. Authelia grants only the scopes a
-// request names, so a request naming none gets a token the API refuses. It
-// refuses the whole request when one names a scope the client does not hold.
+// The scope a service client requests, the one listing every read `icb
+// overview` makes. Authelia grants only the scopes a request names, so a
+// request naming none gets a token the API refuses. It refuses the whole
+// request when one names a scope the client does not hold.
 // ichrisbirch/api/client_scopes.py lists the routes it reaches.
 const serviceScope = "icb.overview.read"
 
@@ -165,9 +165,9 @@ func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
 
 // StatePath resolves a path under icb's own XDG state directory —
 // $XDG_STATE_HOME/icb, falling back to ~/.local/state/icb. State is what the
-// tool writes and the user does not: coordination files, run history, cached
-// timestamps. Returns "" when the home directory cannot be resolved, which
-// callers treat as "no state directory available" rather than as an error.
+// tool writes and the user does not, such as goclilogin's refresh lock. Returns
+// "" when the home directory cannot be resolved, which callers treat as "no
+// state directory available" rather than as an error.
 func StatePath(parts ...string) string {
 	base := os.Getenv("XDG_STATE_HOME")
 	if base == "" {

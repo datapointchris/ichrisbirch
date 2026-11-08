@@ -75,7 +75,7 @@ func (s *TerminalSession) ReadLine(q Question) (string, error) {
 	// A list short enough to print unasked is on the screen already, and
 	// reprinting it under the prompt is noise. A list too long for that was
 	// never shown at all, which leaves Tab as the only way to find out what is
-	// in it — and walking 54 projects one keypress at a time is not finding
+	// in it — and walking a long list one keypress at a time is not finding
 	// out. The form decides which of those this field is.
 	if q.ListChoices {
 		completer.session = s
@@ -185,9 +185,9 @@ func (c *cycler) list(matches []string) {
 // matching returns the choices containing typed, case-insensitively, with the
 // ones it is a prefix of ranked first.
 //
-// Substring rather than prefix alone, because a choice is often a phrase: a
-// project called "Rewrite the backup scripts in Go" is found by typing
-// "backup", which is how anyone would go looking for it. Prefixes still rank
+// Substring rather than prefix alone, because a choice is often a phrase:
+// "Dairy and eggs" is found by typing "eggs", which is how anyone would go
+// looking for it. Prefixes still rank
 // ahead, so a vocabulary of single words behaves the way a shell taught
 // everyone to expect — "ho" reaches "Home" before it reaches "Chore".
 func matching(choices []string, typed string) []string {

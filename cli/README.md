@@ -219,8 +219,7 @@ moves on:
 ```text
 Asked again until you leave it empty.
 Effect is one of:
-  creative   energetic  euphoric   focused    giggly     happy      hungry
-  relaxed    sleepy     talkative  tingly     uplifted
+  creative   energetic  euphoric   focused    …
   Tab cycles the matches.
 Effect (optional): euphoric
 Effect (another, or Enter to move on): foc⇥
@@ -235,20 +234,12 @@ and the only way to read a long list: cycling it a keypress at a time shows one
 entry per press and never the shape of the whole. A short vocabulary is already
 printed above the prompt, so there Tab walks from the first press.
 
-`prompt.Escape` gives a field a second way to answer, for the value its choices
-do not hold yet: a `Trigger` answer, a `Hint` printed with the choices, and a
-`Run` that makes the value. What `Run` returns is the answer unvalidated, joins
-the field's choices for the next repeat, and is accepted case-insensitively if it
-is typed again. The escape made the value, so it is the authority on it, and a
-validator built before it existed has nothing to say.
-
 **The pattern, for the next resource.** One `[]prompt.Field` describes the record:
 its label, whether it is optional, whether it repeats or takes prose, its default,
-its choices, its validator, and its escape. That list drives both doors — the
-fields nothing answered become the form, and the flags are run through the same
-validators, so a bad value reads identically whichever way it arrived — one
-failure gets one diagnosis, whichever door it came in by. The escape is the one
-part only the form has, because a flag has nobody to ask how to make the value.
+its choices and its validator. That list drives both doors — the fields nothing
+answered become the form, and the flags are run through the same validators, so
+a bad value reads identically whichever way it arrived — one failure gets one
+diagnosis, whichever door it came in by.
 `taskCreateFields` in `internal/cli/tasks.go` is the declared-vocabulary
 example and `strainCreateFields` in `internal/cli/strains.go` is the fetched one;
 `flagAnswers`, `unanswered`, `missingFlags`, `validateAnswers`, and `runForm` in

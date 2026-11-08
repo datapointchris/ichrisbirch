@@ -36,9 +36,8 @@ func OneOf(choices []string) func(string) (string, error) {
 
 // listChoices renders candidates for an error that exists to say what to retry
 // with, so each one has to be distinguishable from the punctuation between them.
-// A project title carries commas and em-dashes of its own — "Fleet shape —
-// survey, cross-examine, steer" is one candidate — and a bare comma join leaves
-// no way to tell where it ends. Quoting also shows the shell quoting a value
+// A candidate can carry commas of its own, and a bare comma join leaves no way
+// to tell where it ends. Quoting also shows the shell quoting a value
 // with spaces needs.
 func listChoices(choices []string) string {
 	quoted := make([]string, len(choices))

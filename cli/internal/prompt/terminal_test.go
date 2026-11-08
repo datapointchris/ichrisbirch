@@ -194,7 +194,7 @@ func TestCycler_ListsOnlyWhatMatchesWhatIsTyped(t *testing.T) {
 func TestCycler_TheListingArrivesInOneWrite(t *testing.T) {
 	choices := make([]string, 54)
 	for i := range choices {
-		choices[i] = fmt.Sprintf("project number %02d in the list", i)
+		choices[i] = fmt.Sprintf("choice number %02d in the list", i)
 	}
 	c, out := listing(choices)
 
