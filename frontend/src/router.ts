@@ -195,12 +195,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Manage Habits' },
   },
   {
-    path: '/projects',
-    name: 'projects',
-    component: () => import('@/views/ProjectsView.vue'),
-    meta: { title: 'Projects' },
-  },
-  {
     path: '/box-packing',
     name: 'box-packing',
     component: () => import('@/views/BoxPackingView.vue'),

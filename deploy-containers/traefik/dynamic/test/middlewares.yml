@@ -78,3 +78,10 @@ http:
         customRequestHeaders:
           Remote-User: "admin@icb.com"
           Remote-Email: "admin@icb.com"
+
+    # The projects page moved to the projects app at its own host.
+    redirect-to-projects-app:
+      redirectRegex:
+        regex: ".*"
+        replacement: "https://projects.ichrisbirch.com/"
+        permanent: true

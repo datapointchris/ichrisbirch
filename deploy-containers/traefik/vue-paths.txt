@@ -20,7 +20,6 @@
 /articles
 /habits
 /box-packing
-/projects
 /recipes
 /shopping
 /strains
