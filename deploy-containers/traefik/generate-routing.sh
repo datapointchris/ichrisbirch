@@ -13,8 +13,12 @@ DYNAMIC_DIR="$SCRIPT_DIR/dynamic"
 # Traefik uses backticks in rules; store as variable to avoid shell interpretation
 BT='`'
 
-# Read paths, skip comments and blank lines
-mapfile -t PATHS < <(grep -v '^#' "$PATHS_FILE" | grep -v '^$')
+# Read paths, skip comments and blank lines. A read loop rather than mapfile,
+# which bash 3.2 (the version macOS ships) does not have.
+PATHS=()
+while IFS= read -r path; do
+  PATHS+=("$path")
+done < <(grep -v '^#' "$PATHS_FILE" | grep -v '^$')
 
 if [[ ${#PATHS[@]} -eq 0 ]]; then
   echo "ERROR: No paths found in $PATHS_FILE" >&2

@@ -19,6 +19,8 @@ them behind Traefik, which terminates TLS and routes by host.
 
 `cli/` is a separate Go module building `icb`, a REST client over the same API.
 `ops/icbops` is the bash tool that drives local environments and deploys.
+It and the scripts it calls run on bash 3.2, the version macOS ships, so they
+use no bash-4 constructs such as `mapfile` or `declare -A`.
 
 ## First run
 
