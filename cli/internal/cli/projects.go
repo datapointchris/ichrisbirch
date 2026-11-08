@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -129,8 +131,8 @@ const defaultNextItemLimit = 10
 
 // newProjectsNextCommand prints the focus project, as focusQueue picks it, and
 // its open items in the order they are taken. The head is the next thing to do,
-// which is what a caller asking for `--limit 1` wants. `icb overview` shows the
-// same project and items, and --json answers with the overview's section.
+// which is what a caller asking for `--limit 1` wants. --json answers with
+// projectItemSection.
 //
 // --kind narrows the focus to projects of one kind, so a question about making
 // things never resolves to an errand filed as a project. Every item already
@@ -152,7 +154,7 @@ func newProjectsNextCommand() *cobra.Command {
 			"\n" +
 			"If every open item in the focus project is blocked, it keeps the focus and its\n" +
 			"blocked items are listed instead. An item in several projects belongs to the\n" +
-			"highest-ranked active one. `icb overview` shows the same project.",
+			"highest-ranked active one.",
 		Example: "  icb projects next\n" +
 			"  icb projects next --kind chore\n" +
 			"  icb projects next --repo ichrisbirch\n" +
@@ -679,4 +681,139 @@ func strValue(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// projectItemSection is the focus project and its open items, the ones
+// `projects next` prints and the shape its --json answers with. Project is null
+// when no active project holds an open item.
+type projectItemSection struct {
+	Project      *api.Project      `json:"project"`
+	Next         []api.ProjectItem `json:"next"`
+	NextTotal    int               `json:"next_total"`
+	Blocked      []api.ProjectItem `json:"blocked"`
+	BlockedTotal int               `json:"blocked_total"`
+}
+
+// projectFocus is the one project being worked through and its open items.
+// Next can be taken now; Blocked waits on a dependency. Both are in the order
+// the items are taken. Project is nil when no active project holds an open item.
+type projectFocus struct {
+	Project *api.Project
+	Next    []api.ProjectItem
+	Blocked []api.ProjectItem
+}
+
+// focusQueue picks the project to work on and returns its open items. The
+// project is the highest-ranked active one holding an open item, so the queue
+// stays on one project until it is finished, shelved or moved down. Projects are
+// worked one at a time, so no other project's items appear beside it.
+//
+// A project whose open items are all blocked keeps the focus, with nothing to
+// take. Handing the focus to the next project would switch work without anyone
+// deciding to; moving on is done by completing, shelving or repositioning it.
+//
+// An item in several projects belongs to the highest-ranked active one. A kind
+// narrows which projects rank as well as which items count, so an item that is
+// also in a higher-ranked project of another kind is queued in its own kind's
+// project. An empty kind is every project.
+func focusQueue(all []api.ProjectItem, blocked []api.ProjectItem, kind string) projectFocus {
+	isBlocked := make(map[string]bool, len(blocked))
+	for _, item := range blocked {
+		isBlocked[item.ID] = true
+	}
+
+	var focus projectFocus
+	var open []api.ProjectItem
+	for _, item := range itemsOfKind(all, kind) {
+		if item.Completed || item.Archived {
+			continue
+		}
+		project, active := primaryProject(item, kind)
+		if !active {
+			continue
+		}
+		if focus.Project == nil || outranks(project, *focus.Project) {
+			focus.Project = &project
+		}
+		open = append(open, item)
+	}
+	if focus.Project == nil {
+		return focus
+	}
+
+	sort.SliceStable(open, func(a, b int) bool { return takenBefore(open[a], open[b], kind) })
+	for _, item := range open {
+		if project, _ := primaryProject(item, kind); project.ID != focus.Project.ID {
+			continue
+		}
+		if isBlocked[item.ID] {
+			focus.Blocked = append(focus.Blocked, item)
+		} else {
+			focus.Next = append(focus.Next, item)
+		}
+	}
+	return focus
+}
+
+// takenBefore orders two items by the rank of the project each is queued under,
+// then by where each is queued in that project. Creation time and id settle
+// what remains, which is also the whole order when the API sends no positions.
+func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
+	projectA, _ := primaryProject(a, kind)
+	projectB, _ := primaryProject(b, kind)
+	if projectA.ID != projectB.ID {
+		return outranks(projectA, projectB)
+	}
+	if queuedA, queuedB := queuePosition(a, projectA.ID), queuePosition(b, projectB.ID); queuedA != queuedB {
+		return queuedA < queuedB
+	}
+	if !a.CreatedAt.Equal(b.CreatedAt) {
+		return a.CreatedAt.Before(b.CreatedAt)
+	}
+	return a.ID < b.ID
+}
+
+// queuePosition is where an item is queued in one project. An item with no
+// membership there sorts after every item that has one.
+func queuePosition(item api.ProjectItem, projectID string) int {
+	for _, membership := range item.Memberships {
+		if membership.ProjectID == projectID {
+			return membership.Position
+		}
+	}
+	return math.MaxInt
+}
+
+// primaryProject is the project an item is queued under, and whether it has one.
+// An item can belong to several, so it is queued once, under the
+// highest-ranked one, rather than once per membership. Only an active project
+// queues work, so an item with no active project is out of the queue. A kind
+// limits the candidates to projects of that kind. An empty kind considers every
+// project.
+func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
+	var primary api.Project
+	found := false
+	for _, project := range item.Projects {
+		if project.Status != api.ProjectStatusActive || (kind != "" && project.Kind != kind) {
+			continue
+		}
+		if !found || outranks(project, primary) {
+			primary = project
+			found = true
+		}
+	}
+	return primary, found
+}
+
+// outranks orders projects by the position the API already exposes. Positions
+// are largely unset, so creation time then id break the tie — arbitrary, but
+// stable, which is what keeps the board from reshuffling between refreshes.
+func outranks(a api.Project, b api.Project) bool {
+	if a.Position != b.Position {
+		return a.Position < b.Position
+	}
+	if !a.CreatedAt.Equal(b.CreatedAt) {
+		return a.CreatedAt.Before(b.CreatedAt)
+	}
+	return a.ID < b.ID
 }

@@ -42,14 +42,8 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 			{ID: 2, Title: "Music Theory", Author: "Hein", Progress: "unread"},
 			{ID: 3, Title: "Finished One", Author: "X", Progress: "read"},
 		},
-		Items: []api.ProjectItem{
-			{ID: "a", Title: "Older item", CreatedAt: fixedNow.AddDate(0, 0, -5), Projects: []api.Project{activeProject}},
-			{ID: "b", Title: "Newer item", CreatedAt: fixedNow.AddDate(0, 0, -1), Projects: []api.Project{activeProject}},
-			{ID: "c", Title: "Done item", Completed: true, CreatedAt: fixedNow, Projects: []api.Project{activeProject}},
-		},
-		BlockedItems: []api.ProjectItem{{ID: "b", Title: "Newer item"}},
-		Countdowns:   []api.Countdown{{ID: 1, Name: "Lease renewal", DueDate: "2026-08-05"}},
-		Events:       []api.Event{{ID: 1, Name: "Hike", Date: eventWallClock(fixedNow.AddDate(0, 0, 3)), Timezone: "Local"}},
+		Countdowns: []api.Countdown{{ID: 1, Name: "Lease renewal", DueDate: "2026-08-05"}},
+		Events:     []api.Event{{ID: 1, Name: "Hike", Date: eventWallClock(fixedNow.AddDate(0, 0, 3)), Timezone: "Local"}},
 		UnreadArticles: []api.Article{
 			{ID: 5, Title: "The one being read"},
 			{ID: 6, Title: "Still queued"},
@@ -89,12 +83,6 @@ func TestBuildOverview_ComposesSections(t *testing.T) {
 	if report.Articles.UnreadTotal != 1 || report.Articles.Unread[0].ID != 6 {
 		t.Errorf("unread articles = %+v — the current one must not also be queued", report.Articles.Unread)
 	}
-	if len(report.ProjectItems.Next) != 1 || report.ProjectItems.Next[0].ID != "a" {
-		t.Errorf("next items = %+v, want only the unblocked, incomplete one", report.ProjectItems.Next)
-	}
-	if report.ProjectItems.BlockedTotal != 1 {
-		t.Errorf("blocked total = %d, want 1", report.ProjectItems.BlockedTotal)
-	}
 	if report.Countdowns.Total != 1 || report.Events.Total != 1 {
 		t.Errorf("countdowns/events totals = %d/%d, want 1/1", report.Countdowns.Total, report.Events.Total)
 	}
@@ -115,186 +103,6 @@ func TestBuildOverview_EmptyDataIsNotAFailure(t *testing.T) {
 	if report.Articles.Current != nil {
 		t.Errorf("current article = %+v, want nil", report.Articles.Current)
 	}
-}
-
-var activeProject = api.Project{ID: "live", Name: "Live", Status: api.ProjectStatusActive}
-
-func TestFocusQueue_ExcludesWhatCannotBeTakenNow(t *testing.T) {
-	shelved := api.Project{ID: "shelf", Name: "Shelf", Status: api.ProjectStatusSomeday}
-	finished := api.Project{ID: "finished", Name: "Finished", Status: api.ProjectStatusCompleted}
-	in := []api.Project{activeProject}
-
-	all := []api.ProjectItem{
-		{ID: "new", Title: "Newest", CreatedAt: fixedNow, Projects: in},
-		{ID: "old", Title: "Oldest", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: in},
-		{ID: "done", Title: "Completed", Completed: true, CreatedAt: fixedNow.AddDate(0, 0, -20), Projects: in},
-		{ID: "archived", Title: "Archived", Archived: true, CreatedAt: fixedNow.AddDate(0, 0, -30), Projects: in},
-		{ID: "blocked", Title: "Blocked", CreatedAt: fixedNow.AddDate(0, 0, -40), Projects: in},
-		{ID: "shelved", Title: "Shelved", CreatedAt: fixedNow.AddDate(0, 0, -50), Projects: []api.Project{shelved}},
-		{ID: "finished", Title: "Finished", CreatedAt: fixedNow.AddDate(0, 0, -60), Projects: []api.Project{finished}},
-	}
-	blocked := []api.ProjectItem{{ID: "blocked"}}
-
-	focus := focusQueue(all, blocked, "")
-
-	if len(focus.Next) != 2 {
-		t.Fatalf("next = %s, want the two actionable items", itemIDs(focus.Next))
-	}
-	// Neither carries a position, so age is the whole order.
-	if focus.Next[0].ID != "old" || focus.Next[1].ID != "new" {
-		t.Errorf("next order = %s,%s — want oldest first", focus.Next[0].ID, focus.Next[1].ID)
-	}
-	if got := itemIDs(focus.Blocked); strings.Join(got, ",") != "blocked" {
-		t.Errorf("blocked = %s, want the one item waiting on a dependency", got)
-	}
-}
-
-// Projects are worked one at a time, so the second project's front item, older
-// than anything in the first, stays off the queue entirely.
-func TestFocusQueue_WorksTheHighestRankedProjectAlone(t *testing.T) {
-	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1, CreatedAt: fixedNow}
-	second := api.Project{ID: "second", Status: api.ProjectStatusActive, Position: 2, CreatedAt: fixedNow.AddDate(0, 0, -100)}
-
-	all := []api.ProjectItem{
-		{
-			ID: "second-front", CreatedAt: fixedNow.AddDate(0, 0, -90), Projects: []api.Project{second},
-			Memberships: []api.ProjectItemMembership{{ProjectID: "second", Position: 0}},
-		},
-		{
-			ID: "first-back", CreatedAt: fixedNow.AddDate(0, 0, -20), Projects: []api.Project{first},
-			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 1}},
-		},
-		{
-			ID: "first-front", CreatedAt: fixedNow, Projects: []api.Project{first},
-			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 0}},
-		},
-	}
-
-	focus := focusQueue(all, nil, "")
-
-	if focus.Project == nil || focus.Project.ID != "first" {
-		t.Fatalf("focus project = %+v, want first, the lower position", focus.Project)
-	}
-	want := []string{"first-front", "first-back"}
-	if got := itemIDs(focus.Next); strings.Join(got, ",") != strings.Join(want, ",") {
-		t.Errorf("next = %s, want %s and nothing from second", got, want)
-	}
-}
-
-func TestFocusQueue_AnItemIsQueuedByItsPlaceInItsHighestRankedProject(t *testing.T) {
-	first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
-	second := api.Project{ID: "second", Status: api.ProjectStatusActive, Position: 2}
-
-	all := []api.ProjectItem{
-		{
-			ID: "shared", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{second, first},
-			Memberships: []api.ProjectItemMembership{
-				{ProjectID: "second", Position: 0},
-				{ProjectID: "first", Position: 3},
-			},
-		},
-		{
-			ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first},
-			Memberships: []api.ProjectItemMembership{{ProjectID: "first", Position: 2}},
-		},
-	}
-
-	focus := focusQueue(all, nil, "")
-
-	// shared is queued under first, where it sits behind first-only. Its place at
-	// the front of second does not carry across.
-	if got := itemIDs(focus.Next); strings.Join(got, ",") != "first-only,shared" {
-		t.Errorf("next = %s, want first-only then shared", got)
-	}
-}
-
-// A project that is not active keeps its memberships and its position 0, which
-// sorts first, so ranking by it would make it the focus with nothing to work on.
-func TestFocusQueue_AProjectThatIsNotActiveDoesNotRankAnItem(t *testing.T) {
-	for _, status := range []string{api.ProjectStatusSomeday, api.ProjectStatusCompleted, api.ProjectStatusDropped} {
-		inactive := api.Project{ID: "inactive", Status: status, Position: 0}
-		first := api.Project{ID: "first", Status: api.ProjectStatusActive, Position: 1}
-		later := api.Project{ID: "later", Status: api.ProjectStatusActive, Position: 2}
-
-		all := []api.ProjectItem{
-			{ID: "also-inactive", CreatedAt: fixedNow.AddDate(0, 0, -10), Projects: []api.Project{inactive, later}},
-			{ID: "first-only", CreatedAt: fixedNow, Projects: []api.Project{first}},
-		}
-
-		focus := focusQueue(all, nil, "")
-
-		if focus.Project == nil || focus.Project.ID != "first" {
-			t.Fatalf("%s: focus project = %+v, want first", status, focus.Project)
-		}
-		if got := itemIDs(focus.Next); strings.Join(got, ",") != "first-only" {
-			t.Errorf("%s: next = %s, want first-only; also-inactive is queued under later", status, got)
-		}
-	}
-}
-
-// Handing the focus to the next project would switch work without anyone
-// deciding to, so a stuck project holds the queue until it is moved.
-func TestFocusQueue_ABlockedFocusProjectKeepsTheFocus(t *testing.T) {
-	first := api.Project{ID: "first", Name: "First", Status: api.ProjectStatusActive, Position: 1}
-	second := api.Project{ID: "second", Name: "Second", Status: api.ProjectStatusActive, Position: 2}
-
-	all := []api.ProjectItem{
-		{ID: "waits", CreatedAt: fixedNow, Projects: []api.Project{first}},
-		{ID: "free", CreatedAt: fixedNow, Projects: []api.Project{second}},
-	}
-	blocked := []api.ProjectItem{{ID: "waits"}}
-
-	focus := focusQueue(all, blocked, "")
-
-	if focus.Project == nil || focus.Project.ID != "first" {
-		t.Fatalf("focus project = %+v, want first, though all of it is blocked", focus.Project)
-	}
-	if len(focus.Next) != 0 {
-		t.Errorf("next = %s, want nothing: second's item must not take the queue", itemIDs(focus.Next))
-	}
-	if got := itemIDs(focus.Blocked); strings.Join(got, ",") != "waits" {
-		t.Errorf("blocked = %s, want waits", got)
-	}
-}
-
-func TestFocusQueue_NoActiveProjectIsNoFocus(t *testing.T) {
-	shelved := api.Project{ID: "shelf", Status: api.ProjectStatusSomeday}
-	all := []api.ProjectItem{{ID: "later", Projects: []api.Project{shelved}}}
-
-	focus := focusQueue(all, nil, "")
-
-	if focus.Project != nil || len(focus.Next) != 0 || len(focus.Blocked) != 0 {
-		t.Errorf("focus = %+v, want no project and no items", focus)
-	}
-}
-
-func TestFocusQueue_AMultiProjectItemIsQueuedOnce(t *testing.T) {
-	selling := api.Project{ID: "selling", Name: "Sell Unused Shite", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -100)}
-	linux := api.Project{ID: "linux", Name: "Linux-first", Status: api.ProjectStatusActive, CreatedAt: fixedNow.AddDate(0, 0, -50)}
-
-	all := []api.ProjectItem{
-		{ID: "mac-mini", CreatedAt: fixedNow, Projects: []api.Project{linux, selling}},
-		{ID: "monitors", CreatedAt: fixedNow.AddDate(0, 0, -1), Projects: []api.Project{selling}},
-	}
-
-	focus := focusQueue(all, nil, "")
-
-	if len(focus.Next) != 2 {
-		t.Fatalf("next = %s, want each item once however many projects it is in", itemIDs(focus.Next))
-	}
-	// mac-mini belongs to both, so it is queued under selling — the older, and
-	// therefore higher-ranked, of its two projects — behind the older item there.
-	if focus.Next[0].ID != "monitors" || focus.Next[1].ID != "mac-mini" {
-		t.Errorf("next = %s, want monitors then mac-mini", itemIDs(focus.Next))
-	}
-}
-
-func itemIDs(items []api.ProjectItem) []string {
-	ids := make([]string, 0, len(items))
-	for _, item := range items {
-		ids = append(ids, item.ID)
-	}
-	return ids
 }
 
 func TestBooksByProgress_PreservesServerOrder(t *testing.T) {
@@ -589,51 +397,18 @@ func TestPrintOverview_AnUntouchedArticleListSaysOnlyItsCount(t *testing.T) {
 	}
 }
 
-// Every row is in one project, so the header names it once instead of each row.
-func TestPrintProjectItemSection_NamesTheFocusProjectOnce(t *testing.T) {
-	project := api.Project{Name: "Sell Unused Shite"}
-	var out bytes.Buffer
-
-	printProjectItemSection(&out, projectItemSection{
-		Project:   &project,
-		Next:      []api.ProjectItem{{Title: "Glove 80"}, {Title: "Monitors"}},
-		NextTotal: 2,
-	})
-
-	got := out.String()
-	if !strings.Contains(got, "Project items: Sell Unused Shite (2 next, 0 blocked)") {
-		t.Errorf("header = %q, want the focus project named with its counts", got)
-	}
-	if strings.Count(got, "Sell Unused Shite") != 1 {
-		t.Errorf("section = %q, want the project named once, in the header", got)
-	}
-}
-
-func TestPrintProjectItemSection_NoFocusProjectIsNone(t *testing.T) {
-	var out bytes.Buffer
-
-	printProjectItemSection(&out, projectItemSection{})
-
-	if !strings.Contains(out.String(), "(none)") {
-		t.Errorf("section = %q, want (none) when no active project holds an open item", out.String())
-	}
-}
-
 func TestPrintOverview_SeparatesBooksFromArticles(t *testing.T) {
 	report := buildOverview(overviewData{
 		OwnedBooks:     []api.Book{{ID: 1, Title: "A Book", Author: "Author", Progress: "reading"}},
 		CurrentArticle: &api.Article{ID: 5, Title: "An Article"},
 		UnreadArticles: []api.Article{{ID: 5, Title: "An Article"}, {ID: 6, Title: "A Queued Article"}},
-		Items: []api.ProjectItem{
-			{ID: "a", Title: "Glove 80", Projects: []api.Project{{Name: "Sell Unused Shite", Status: api.ProjectStatusActive}}, CreatedAt: fixedNow},
-		},
 	}, fixedNow, defaultOverviewLimit)
 
 	var out, errOut bytes.Buffer
 	printOverview(&out, &errOut, report)
 	text := out.String()
 
-	for _, want := range []string{"Books (1 reading, 0 queued)", "A Book", "Articles (1 unread)", "An Article", "Sell Unused Shite"} {
+	for _, want := range []string{"Books (1 reading, 0 queued)", "A Book", "Articles (1 unread)", "An Article"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("printed overview missing %q:\n%s", want, text)
 		}

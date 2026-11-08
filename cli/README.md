@@ -153,13 +153,6 @@ that crosses every app, fetched concurrently and returned as one payload, so a
 dashboard needs a single call instead of one per app. `icb overview --help` names
 its sections.
 
-Projects are worked one at a time. The focus is the highest-ranked active project
-holding an open item, and it is the only project `overview` and `projects next`
-show. `projects next --json` answers with the overview's `project_items` section.
-The project keeps the focus while every open item in it is blocked, because
-moving on is a decision: complete it or move it down with `icb projects edit
-<project> --position <n>`.
-
 Its `habits` section and `icb habits today` answer the same question through one
 split, so the two agree on which habits are outstanding. They differ in reach:
 `overview` caps each section and `habits today` returns the whole board.

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -31,7 +30,9 @@ const (
 	// is its rank.
 	//
 	// v4 removed the `issues` section.
-	overviewSchemaVersion = 4
+	//
+	// v5 removed the `project_items` section. Projects live in the projects app.
+	overviewSchemaVersion = 5
 
 	// defaultOverviewLimit caps each section so the payload stays a glance. Every
 	// section reports its pre-cap total, so a capped list never lies about size.
@@ -54,29 +55,27 @@ const (
 // Section names, shared by the fetch table and the warnings so a consumer can
 // tell which part of the snapshot degraded.
 const (
-	sectionTasks        = "tasks"
-	sectionHabits       = "habits"
-	sectionBooks        = "books"
-	sectionArticles     = "articles"
-	sectionProjectItems = "project_items"
-	sectionCountdowns   = "countdowns"
-	sectionEvents       = "events"
+	sectionTasks      = "tasks"
+	sectionHabits     = "habits"
+	sectionBooks      = "books"
+	sectionArticles   = "articles"
+	sectionCountdowns = "countdowns"
+	sectionEvents     = "events"
 )
 
 // overviewReport is the stable JSON schema for `overview --json`: the "what is
 // outstanding right now" snapshot composed from the endpoints `overviewFetches`
 // names.
 type overviewReport struct {
-	SchemaVersion int                `json:"schema_version"`
-	GeneratedAt   time.Time          `json:"generated_at"`
-	Tasks         taskSection        `json:"tasks"`
-	Habits        habitSection       `json:"habits"`
-	Books         bookSection        `json:"books"`
-	Articles      articleSection     `json:"articles"`
-	ProjectItems  projectItemSection `json:"project_items"`
-	Countdowns    countdownSection   `json:"countdowns"`
-	Events        eventSection       `json:"events"`
-	Warnings      []overviewWarning  `json:"warnings"`
+	SchemaVersion int               `json:"schema_version"`
+	GeneratedAt   time.Time         `json:"generated_at"`
+	Tasks         taskSection       `json:"tasks"`
+	Habits        habitSection      `json:"habits"`
+	Books         bookSection       `json:"books"`
+	Articles      articleSection    `json:"articles"`
+	Countdowns    countdownSection  `json:"countdowns"`
+	Events        eventSection      `json:"events"`
+	Warnings      []overviewWarning `json:"warnings"`
 }
 
 type taskSection struct {
@@ -111,17 +110,6 @@ type articleSection struct {
 	ReadLast30Days int        `json:"read_last_30_days"`
 }
 
-// projectItemSection is the focus project and its open items, the ones
-// `projects next` prints and the shape its --json answers with. Project is null
-// when no active project holds an open item.
-type projectItemSection struct {
-	Project      *api.Project      `json:"project"`
-	Next         []api.ProjectItem `json:"next"`
-	NextTotal    int               `json:"next_total"`
-	Blocked      []api.ProjectItem `json:"blocked"`
-	BlockedTotal int               `json:"blocked_total"`
-}
-
 type countdownSection struct {
 	Items []api.Countdown `json:"items"`
 	Total int             `json:"total"`
@@ -148,8 +136,6 @@ type overviewData struct {
 	CurrentArticle *api.Article
 	UnreadArticles []api.Article
 	ReadArticles   []api.Article
-	Items          []api.ProjectItem
-	BlockedItems   []api.ProjectItem
 	Countdowns     []api.Countdown
 	Events         []api.Event
 	Failures       []sectionFailure
@@ -178,9 +164,9 @@ func newOverviewCommand() *cobra.Command {
 		Use:   "overview",
 		Short: "Show everything outstanding right now across the apps",
 		Long: "A cross-cutting snapshot: open tasks, habits still due today, the books and\n" +
-			"articles you are reading and what is next in each, the project in focus with\n" +
-			"its next and blocked items, and approaching countdowns and events. Composed\n" +
-			"from those endpoints in one command so a dashboard needs a single call.",
+			"articles you are reading and what is next in each, and approaching countdowns\n" +
+			"and events. Composed from those endpoints in one command so a dashboard needs\n" +
+			"a single call.",
 		Example: "  icb overview\n  icb overview --json\n  icb overview --limit 3",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
@@ -211,9 +197,8 @@ func newOverviewCommand() *cobra.Command {
 
 // overviewFetches is the fan-out table. Every fetch passes a nil limit, and
 // --limit is applied by capItems after the sections are built. Several of them
-// derive their rows — the next books, the queued articles, the unblocked
-// items — so a server-side cap would cap the set before the derivation and
-// take the wrong rows.
+// derive their rows — the next books, the queued articles — so a server-side
+// cap would cap the set before the derivation and take the wrong rows.
 func overviewFetches() []overviewFetch {
 	return []overviewFetch{
 		{sectionTasks, "tasks", func(ctx context.Context, c *api.Client, d *overviewData) error {
@@ -248,16 +233,6 @@ func overviewFetches() []overviewFetch {
 			archived := true
 			articles, err := c.ListArticles(ctx, nil, &archived, nil, api.Window{}, nil)
 			d.ReadArticles = articles
-			return err
-		}},
-		{sectionProjectItems, "project items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			items, err := c.ListItems(ctx, nil, api.ItemStatusOpen, api.Window{}, nil)
-			d.Items = items
-			return err
-		}},
-		{sectionProjectItems, "blocked items", func(ctx context.Context, c *api.Client, d *overviewData) error {
-			blocked, err := c.ListBlockedItems(ctx, nil)
-			d.BlockedItems = blocked
 			return err
 		}},
 		{sectionCountdowns, "countdowns", func(ctx context.Context, c *api.Client, d *overviewData) error {
@@ -321,7 +296,6 @@ func systemicOverviewFailure(failures []sectionFailure, total int) error {
 // buildOverview composes the report. It is pure — no clock, no network — so the
 // filtering, ordering, and capping rules are directly testable.
 func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
-	focus := focusQueue(data.Items, data.BlockedItems, "")
 	nextBooks := booksByProgress(data.OwnedBooks, "unread")
 	queuedArticles := articlesBehindCurrent(data.UnreadArticles, data.CurrentArticle)
 	lastArticleRead, articlesReadInWindow := articleReadActivity(data.ReadArticles, now)
@@ -351,13 +325,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 			LastReadAt:     lastArticleRead,
 			ReadLast30Days: articlesReadInWindow,
 		},
-		ProjectItems: projectItemSection{
-			Project:      focus.Project,
-			Next:         capItems(focus.Next, limit),
-			NextTotal:    len(focus.Next),
-			Blocked:      capItems(focus.Blocked, limit),
-			BlockedTotal: len(focus.Blocked),
-		},
 		Countdowns: countdownSection{
 			Items: capItems(countdowns, limit),
 			Total: len(countdowns),
@@ -377,130 +344,6 @@ func buildOverview(data overviewData, now time.Time, limit int) overviewReport {
 		})
 	}
 	return report
-}
-
-// projectFocus is the one project being worked through and its open items.
-// Next can be taken now; Blocked waits on a dependency. Both are in the order
-// the items are taken. Project is nil when no active project holds an open item.
-type projectFocus struct {
-	Project *api.Project
-	Next    []api.ProjectItem
-	Blocked []api.ProjectItem
-}
-
-// focusQueue picks the project to work on and returns its open items. The
-// project is the highest-ranked active one holding an open item, so the queue
-// stays on one project until it is finished, shelved or moved down. Projects are
-// worked one at a time, so no other project's items appear beside it.
-//
-// A project whose open items are all blocked keeps the focus, with nothing to
-// take. Handing the focus to the next project would switch work without anyone
-// deciding to; moving on is done by completing, shelving or repositioning it.
-//
-// An item in several projects belongs to the highest-ranked active one. A kind
-// narrows which projects rank as well as which items count, so an item that is
-// also in a higher-ranked project of another kind is queued in its own kind's
-// project. An empty kind is every project.
-func focusQueue(all []api.ProjectItem, blocked []api.ProjectItem, kind string) projectFocus {
-	isBlocked := make(map[string]bool, len(blocked))
-	for _, item := range blocked {
-		isBlocked[item.ID] = true
-	}
-
-	var focus projectFocus
-	var open []api.ProjectItem
-	for _, item := range itemsOfKind(all, kind) {
-		if item.Completed || item.Archived {
-			continue
-		}
-		project, active := primaryProject(item, kind)
-		if !active {
-			continue
-		}
-		if focus.Project == nil || outranks(project, *focus.Project) {
-			focus.Project = &project
-		}
-		open = append(open, item)
-	}
-	if focus.Project == nil {
-		return focus
-	}
-
-	sort.SliceStable(open, func(a, b int) bool { return takenBefore(open[a], open[b], kind) })
-	for _, item := range open {
-		if project, _ := primaryProject(item, kind); project.ID != focus.Project.ID {
-			continue
-		}
-		if isBlocked[item.ID] {
-			focus.Blocked = append(focus.Blocked, item)
-		} else {
-			focus.Next = append(focus.Next, item)
-		}
-	}
-	return focus
-}
-
-// takenBefore orders two items by the rank of the project each is queued under,
-// then by where each is queued in that project. Creation time and id settle
-// what remains, which is also the whole order when the API sends no positions.
-func takenBefore(a api.ProjectItem, b api.ProjectItem, kind string) bool {
-	projectA, _ := primaryProject(a, kind)
-	projectB, _ := primaryProject(b, kind)
-	if projectA.ID != projectB.ID {
-		return outranks(projectA, projectB)
-	}
-	if queuedA, queuedB := queuePosition(a, projectA.ID), queuePosition(b, projectB.ID); queuedA != queuedB {
-		return queuedA < queuedB
-	}
-	if !a.CreatedAt.Equal(b.CreatedAt) {
-		return a.CreatedAt.Before(b.CreatedAt)
-	}
-	return a.ID < b.ID
-}
-
-// queuePosition is where an item is queued in one project. An item with no
-// membership there sorts after every item that has one.
-func queuePosition(item api.ProjectItem, projectID string) int {
-	for _, membership := range item.Memberships {
-		if membership.ProjectID == projectID {
-			return membership.Position
-		}
-	}
-	return math.MaxInt
-}
-
-// primaryProject is the project an item is queued under, and whether it has one.
-// An item can belong to several, so it is queued once, under the
-// highest-ranked one, rather than once per membership. Only an active project
-// queues work, so an item with no active project is out of the queue. A kind
-// limits the candidates to projects of that kind. An empty kind considers every
-// project.
-func primaryProject(item api.ProjectItem, kind string) (api.Project, bool) {
-	var primary api.Project
-	found := false
-	for _, project := range item.Projects {
-		if project.Status != api.ProjectStatusActive || (kind != "" && project.Kind != kind) {
-			continue
-		}
-		if !found || outranks(project, primary) {
-			primary = project
-			found = true
-		}
-	}
-	return primary, found
-}
-
-// outranks orders projects by the position the API already exposes. Positions
-// are largely unset, so creation time then id break the tie — arbitrary, but
-// stable, which is what keeps the board from reshuffling between refreshes.
-func outranks(a api.Project, b api.Project) bool {
-	if a.Position != b.Position {
-		return a.Position < b.Position
-	}
-	if !a.CreatedAt.Equal(b.CreatedAt) {
-		return a.CreatedAt.Before(b.CreatedAt)
-	}
-	return a.ID < b.ID
 }
 
 // articleReadActivity is when an article was last read and how many were read
@@ -598,7 +441,6 @@ func printOverview(out, errOut io.Writer, r overviewReport) {
 	printHabitSection(out, r.Habits)
 	printBookSection(out, r.Books)
 	printArticleSection(out, r.Articles)
-	printProjectItemSection(out, r.ProjectItems)
 	printUpcomingSection(out, r.Countdowns, r.Events, r.GeneratedAt)
 
 	for _, warning := range r.Warnings {
@@ -680,28 +522,6 @@ func printArticleSection(out io.Writer, section articleSection) {
 			break
 		}
 		_, _ = fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(article.Title))
-	}
-	_ = tw.Flush()
-}
-
-func printProjectItemSection(out io.Writer, section projectItemSection) {
-	if section.Project == nil {
-		_, _ = fmt.Fprintln(out, "\nProject items\n  (none)")
-		return
-	}
-	_, _ = fmt.Fprintf(out, "\nProject items: %s (%d next, %d blocked)\n", section.Project.Name, section.NextTotal, section.BlockedTotal)
-	tw := tabwriter.NewWriter(out, 0, 4, 2, ' ', 0)
-	for i, item := range section.Next {
-		if i >= printListCap {
-			break
-		}
-		_, _ = fmt.Fprintf(tw, "  next:\t%s\n", truncateTitle(item.Title))
-	}
-	for i, item := range section.Blocked {
-		if i >= printListCap {
-			break
-		}
-		_, _ = fmt.Fprintf(tw, "  blocked:\t%s\n", truncateTitle(item.Title))
 	}
 	_ = tw.Flush()
 }
