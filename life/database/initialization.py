@@ -58,7 +58,8 @@ def alembic_config(settings) -> Config:
     alembic_ini = project_root / 'life' / 'alembic.ini'
     cfg = Config(str(alembic_ini), attributes={'configure_logger': False})
     cfg.set_main_option('script_location', str(project_root / 'life' / 'alembic'))
-    cfg.set_main_option('sqlalchemy.url', settings.sqlalchemy.db_uri)
+    # The option is interpolated by configparser, so a % in the password is written %%.
+    cfg.set_main_option('sqlalchemy.url', settings.sqlalchemy.db_uri.replace('%', '%%'))
     return cfg
 
 
