@@ -7,6 +7,7 @@ import re
 import subprocess  # nosec B404
 import time
 
+from stats.hooks._scratch_copies import scratch_copies
 from stats.schemas.hooks.pyupgrade import PyupgradeHookEvent
 
 # Pattern to match pyupgrade "Rewriting" output lines
@@ -54,16 +55,15 @@ def run(staged_files: list[str], branch: str, project: str) -> PyupgradeHookEven
             duration_seconds=0.0,
         )
 
-    result = subprocess.run(  # nosec B603 B607
-        ['pyupgrade', '--py312-plus', *python_files],
-        capture_output=True,
-        text=True,
-    )
+    with scratch_copies(python_files) as originals:
+        result = subprocess.run(  # nosec B603 B607
+            ['pyupgrade', '--py312-plus', *originals],
+            capture_output=True,
+            text=True,
+        )
 
     duration = time.perf_counter() - start_time
-
-    # Parse pyupgrade output for rewritten files
-    rewritten_files = parse_pyupgrade_output(result.stdout + result.stderr)
+    rewritten_files = [originals.get(path, path) for path in parse_pyupgrade_output(result.stdout + result.stderr)]
 
     return PyupgradeHookEvent(
         timestamp=dt.datetime.now(dt.UTC),

@@ -125,9 +125,24 @@ class TestFixersLeaveBinariesAlone:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
             event = importlib.import_module(module).run([str(image), str(source)], 'master', 'life')
 
-        argv = mock_run.call_args.args[0]
-        assert (str(image) in argv, str(source) in argv) == (False, True)
+        names = [Path(arg).name for arg in mock_run.call_args.args[0]]
+        assert ('icon.png' in names, 'main.py' in names) == (False, True)
         assert event.files_checked == [str(source)]
+
+    def test_the_fixer_rewrites_a_copy_and_reports_the_original(self, module: str, tmp_path: Path) -> None:
+        source = tmp_path / 'main.py'
+        source.write_text('x = 1   \n')
+
+        def rewrite_every_file(argv: list[str], **_: object) -> MagicMock:
+            files = [Path(arg) for arg in argv if Path(arg).is_file()]
+            for path in files:
+                path.write_text('x = 1\n')
+            return MagicMock(returncode=1, stdout=''.join(f'Fixing {path}\n' for path in files), stderr='')
+
+        with patch('subprocess.run', side_effect=rewrite_every_file):
+            event = importlib.import_module(module).run([str(source)], 'master', 'life')
+
+        assert (source.read_text(), event.fixed_files) == ('x = 1   \n', [str(source)])
 
     def test_only_binaries_staged_runs_no_fixer(self, module: str, tmp_path: Path) -> None:
         image = tmp_path / 'icon.png'

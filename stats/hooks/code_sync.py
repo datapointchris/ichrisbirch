@@ -10,15 +10,16 @@ from stats.schemas.hooks.project import CodeSyncHookEvent
 
 
 def run(staged_files: list[str], branch: str, project: str) -> CodeSyncHookEvent:
-    """Run code-sync on all staged files, return fully-typed event.
+    """Check that docs/ code blocks match their sources, return fully-typed event.
 
     This hook always runs regardless of which files are staged (always_run: true
-    in pre-commit config), so staged_files are not filtered.
+    in pre-commit config), so staged_files are not filtered. It runs in check
+    mode, because a rewrite of docs/ inside capture fails the commit.
     """
     start_time = time.perf_counter()
 
     result = subprocess.run(  # nosec B603 B607
-        ['uv', 'run', 'python', '-m', 'mkdocs_plugins.code_sync', 'docs', '--base-path', '.'],
+        ['uv', 'run', 'python', '-m', 'mkdocs_plugins.code_sync', 'docs', '--base-path', '.', '--check'],
         capture_output=True,
         text=True,
     )

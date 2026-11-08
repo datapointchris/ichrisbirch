@@ -7,6 +7,7 @@ import re
 import subprocess  # nosec B404
 import time
 
+from stats.hooks._scratch_copies import scratch_copies
 from stats.hooks._text_files import text_files
 from stats.schemas.hooks.fixers import EndOfFileFixerHookEvent
 
@@ -31,14 +32,15 @@ def run(staged_files: list[str], branch: str, project: str) -> EndOfFileFixerHoo
             duration_seconds=0.0,
         )
 
-    result = subprocess.run(  # nosec B603 B607
-        ['uvx', '--from', 'pre-commit-hooks', 'end-of-file-fixer', *files],
-        capture_output=True,
-        text=True,
-    )
+    with scratch_copies(files) as originals:
+        result = subprocess.run(  # nosec B603 B607
+            ['uvx', '--from', 'pre-commit-hooks', 'end-of-file-fixer', *originals],
+            capture_output=True,
+            text=True,
+        )
 
     duration = time.perf_counter() - start_time
-    fixed_files = parse_fixer_output(result.stdout + result.stderr)
+    fixed_files = [originals.get(path, path) for path in parse_fixer_output(result.stdout + result.stderr)]
 
     return EndOfFileFixerHookEvent(
         timestamp=dt.datetime.now(dt.UTC),
