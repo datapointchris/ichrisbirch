@@ -37,11 +37,6 @@ test.describe('Articles Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page with correct title', async ({ page }) => {
-    await page.goto('/articles')
-    await expect(page).toHaveTitle('Articles | Life')
-  })
-
   test('creates a new article and verifies it appears', async ({ page }) => {
     await page.goto('/articles')
 

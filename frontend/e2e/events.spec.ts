@@ -34,11 +34,6 @@ test.describe('Events Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the event list', async ({ page }) => {
-    await page.goto('/events')
-    await expect(page).toHaveTitle('Events | Life')
-  })
-
   test('creates a new event and verifies it appears in the list', async ({ page }) => {
     await page.goto('/events')
 

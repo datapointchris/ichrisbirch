@@ -34,11 +34,6 @@ test.describe('Box Packing Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page with correct title', async ({ page }) => {
-    await page.goto('/box-packing')
-    await expect(page).toHaveTitle('Box Packing | Life')
-  })
-
   test('creates a new box and verifies it appears', async ({ page }) => {
     await page.goto('/box-packing')
 

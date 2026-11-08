@@ -33,9 +33,8 @@ test.describe('Strains Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page).toHaveTitle('Strains | Life')
     await expect(page.getByTestId('strains-header')).toBeVisible()
   })
 

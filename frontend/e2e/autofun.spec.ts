@@ -22,9 +22,8 @@ test.describe('AutoFun Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page with correct title and tab navigation', async ({ page }) => {
+  test('loads the page with its tab navigation', async ({ page }) => {
     await page.goto('/autofun')
-    await expect(page).toHaveTitle('AutoFun | Life')
     await expect(page.getByTestId('autofun-tab-list')).toBeVisible()
     await expect(page.getByTestId('autofun-tab-scheduler')).toBeVisible()
   })

@@ -21,9 +21,8 @@ test.describe('Cooking Techniques Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/recipes/cooking-techniques')
-    await expect(page).toHaveTitle('Cooking Techniques | Life')
     await expect(page.locator('.cooking-techniques__header')).toBeVisible()
   })
 

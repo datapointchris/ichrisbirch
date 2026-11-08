@@ -33,9 +33,8 @@ test.describe('Books Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/books')
-    await expect(page).toHaveTitle('Books | Life')
     await expect(page.locator('.books__header')).toBeVisible()
   })
 

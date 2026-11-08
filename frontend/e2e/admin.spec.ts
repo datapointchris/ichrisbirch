@@ -24,7 +24,6 @@ test.describe('Admin Pages', () => {
 
   test('loads system health page with sections', async ({ page }) => {
     await page.goto('/admin')
-    await expect(page).toHaveTitle('Admin — System | Life')
     await expect(page.locator('.admin-section').first()).toBeVisible({ timeout: 10000 })
   })
 

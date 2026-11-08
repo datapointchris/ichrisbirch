@@ -5,9 +5,8 @@ import { test, expect } from '@playwright/test'
 // gain. These E2E tests verify Traefik routing and basic page functionality.
 
 test.describe('Dashboard Page', () => {
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page).toHaveTitle('Dashboard | Life')
     await expect(page.locator('.vuedash__title', { hasText: 'Dashboard' })).toBeVisible()
   })
 

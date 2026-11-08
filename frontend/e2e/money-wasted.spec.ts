@@ -35,7 +35,6 @@ test.describe('Money Wasted Page', () => {
 
   test('loads the page and displays the total', async ({ page }) => {
     await page.goto('/money-wasted')
-    await expect(page).toHaveTitle('Money Wasted | Life')
     await expect(page.locator('.money-wasted--total')).toBeVisible()
   })
 

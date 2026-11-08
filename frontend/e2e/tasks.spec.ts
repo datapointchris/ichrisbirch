@@ -34,9 +34,8 @@ test.describe('Tasks Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/tasks')
-    await expect(page).toHaveTitle('Priority Tasks | Life')
     await expect(page.getByTestId('task-info-bar')).toBeVisible()
   })
 

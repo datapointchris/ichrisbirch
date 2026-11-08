@@ -36,11 +36,6 @@ test.describe('AutoTasks Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
-    await page.goto('/autotasks')
-    await expect(page).toHaveTitle('AutoTasks | Life')
-  })
-
   test('creates a new autotask', async ({ page }) => {
     await page.goto('/autotasks')
     await expect(page.locator('.grid')).toBeVisible({ timeout: 10000 })

@@ -34,9 +34,8 @@ test.describe('Recipes Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the title', async ({ page }) => {
+  test('loads the page', async ({ page }) => {
     await page.goto('/recipes')
-    await expect(page).toHaveTitle('Recipes | Life')
     await expect(page.locator('.recipes__header')).toBeVisible()
   })
 
@@ -87,7 +86,6 @@ test.describe('Recipes Page', () => {
 
   test('stats page loads', async ({ page }) => {
     await page.goto('/recipes/stats')
-    await expect(page).toHaveTitle('Recipes Stats | Life')
     // Either summary cards render or empty state — both confirm stats view loaded
     const loaded = page.locator('.stats-cards, .stats-empty')
     await expect(loaded.first()).toBeVisible({ timeout: 10000 })

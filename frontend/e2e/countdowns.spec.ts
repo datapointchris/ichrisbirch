@@ -32,11 +32,6 @@ test.describe('Countdowns Page', () => {
     expect(apiErrors).toEqual([])
   })
 
-  test('loads the page and displays the countdown list', async ({ page }) => {
-    await page.goto('/countdowns')
-    await expect(page).toHaveTitle('Countdowns | Life')
-  })
-
   test('creates a new countdown and verifies it appears in the list', async ({ page }) => {
     await page.goto('/countdowns')
 

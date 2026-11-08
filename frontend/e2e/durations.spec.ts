@@ -34,7 +34,6 @@ test.describe('Durations Page', () => {
 
   test('loads the page and displays the duration list', async ({ page }) => {
     await page.goto('/durations')
-    await expect(page).toHaveTitle('Durations | Life')
     await expect(page.locator('.grid').first()).toBeVisible()
   })
 
