@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// releaseRepository is the owner/name whose releases this binary updates from.
+// The release build sets it to the repository it ran in, so a binary always
+// updates from the repository that built it.
+var releaseRepository = "datapointchris/ichrisbirch"
+
 // newUpdateCommand replaces this binary with the newest published release.
 //
 // TagPrefix is what makes it resolve the right thing. The CLI is a nested
@@ -22,9 +27,10 @@ import (
 // tag, which is not a semantic version, so it reports as a development build.
 // Only CI strips the prefix, so only a released binary can replace itself.
 func updateConfig() goselfupdate.Config {
+	owner, repo, _ := strings.Cut(releaseRepository, "/")
 	return goselfupdate.Config{
-		Owner:     "datapointchris",
-		Repo:      "ichrisbirch",
+		Owner:     owner,
+		Repo:      repo,
 		Binary:    "life",
 		Version:   version,
 		TagPrefix: "cli/",
