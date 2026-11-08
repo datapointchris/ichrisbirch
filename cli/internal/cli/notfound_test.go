@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"slices"
 	"strings"
 	"testing"
 
@@ -84,17 +83,17 @@ func runWith(t *testing.T, failure error, argv ...string) error {
 // The one WithNotFound in run() is the whole feature reaching a terminal, and
 // every test of the classifier alone stays green without it.
 func TestA404FromTheRealTreeCarriesItsRecoveryHints(t *testing.T) {
-	err := runWith(t, apiNotFound("project item 999999 not found"),
-		"projects", "items", "show", "999999")
+	err := runWith(t, apiNotFound("task 999999 not found"),
+		"tasks", "show", "999999")
 	if err == nil {
 		t.Fatal("expected the 404")
 	}
 
 	got := err.Error()
 	for _, want := range []string{
-		"project item 999999 not found",
-		"icb projects items search <query>",
-		"icb projects items list --status all",
+		"task 999999 not found",
+		"icb tasks search <query>",
+		"icb tasks list --status all",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("error = %q, want it to name %q", got, want)
@@ -106,28 +105,17 @@ func TestA404FromTheRealTreeCarriesItsRecoveryHints(t *testing.T) {
 // the line is read by someone who wants the next command rather than the status
 // code that produced it.
 func TestA404DropsTheTransportPrefix(t *testing.T) {
-	err := runWith(t, apiNotFound("project item 999999 not found"),
-		"projects", "items", "show", "999999")
+	err := runWith(t, apiNotFound("task 999999 not found"),
+		"tasks", "show", "999999")
 
 	if strings.Contains(err.Error(), "API request failed") {
 		t.Errorf("error = %q, want no transport prefix", err)
 	}
 }
 
-// `icb projects items` sits under `icb projects` and acts on a different
-// resource, so the project recovery would send the reader after the wrong noun.
-func TestAnItemDoesNotNameTheProjectRecovery(t *testing.T) {
-	err := runWith(t, apiNotFound("project item 999999 not found"),
-		"projects", "items", "show", "999999")
-
-	if strings.Contains(err.Error(), projectHints[0]) {
-		t.Errorf("an item 404 named the project recovery: %q", err)
-	}
-}
-
 func TestARuntimeFailureIsUntouched(t *testing.T) {
 	boom := errors.New("connection refused")
-	err := runWith(t, boom, "projects", "items", "show", "1")
+	err := runWith(t, boom, "tasks", "show", "1")
 
 	if !errors.Is(err, boom) {
 		t.Fatalf("a non-404 was rewritten: %v", err)
@@ -141,7 +129,7 @@ func TestARuntimeFailureIsUntouched(t *testing.T) {
 // that fixes it.
 func TestAnotherStatusIsUntouched(t *testing.T) {
 	unauthorized := &api.APIError{StatusCode: http.StatusUnauthorized, Status: "401 Unauthorized", Message: "nope"}
-	err := runWith(t, unauthorized, "projects", "items", "show", "1")
+	err := runWith(t, unauthorized, "tasks", "show", "1")
 
 	if err.Error() != unauthorized.Error() {
 		t.Errorf("error = %q, want the 401 left alone", err)
@@ -153,7 +141,7 @@ func TestAnotherStatusIsUntouched(t *testing.T) {
 // item have different remedies.
 func TestABodylessNotFoundKeepsItsStatusLine(t *testing.T) {
 	bare := &api.APIError{StatusCode: http.StatusNotFound, Status: "404 Not Found"}
-	err := runWith(t, bare, "projects", "items", "show", "1")
+	err := runWith(t, bare, "tasks", "show", "1")
 
 	if err.Error() != bare.Error() {
 		t.Errorf("error = %q, want the bare status line", err)
@@ -163,8 +151,8 @@ func TestABodylessNotFoundKeepsItsStatusLine(t *testing.T) {
 // Callers branch on the status code, so the rewritten error has to keep the
 // original reachable rather than only rendering it.
 func TestTheAPIErrorStaysReachable(t *testing.T) {
-	err := runWith(t, apiNotFound("project item 999999 not found"),
-		"projects", "items", "show", "999999")
+	err := runWith(t, apiNotFound("task 999999 not found"),
+		"tasks", "show", "999999")
 
 	var apiErr *api.APIError
 	if !errors.As(err, &apiErr) {
@@ -288,36 +276,6 @@ func TestEveryHintNamesACommandThatResolves(t *testing.T) {
 				}
 				previousWasFlag = isFlag
 			}
-		}
-	})
-}
-
-// A verb taking --project can 404 on the project, and the shape check cannot
-// see that: it asks whether a command has any hints, never whether they match
-// the nouns it can fail on. `items create` and `items tree` both shipped
-// without a project hint and both passed the shape check.
-func TestACommandTakingAProjectNamesHowToFindOne(t *testing.T) {
-	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
-		if cmd.Flags().Lookup("project") == nil {
-			return
-		}
-		hints := hintsFor(cmd)
-		if !slices.ContainsFunc(hints, func(h string) bool { return strings.Contains(h, "icb projects list") }) {
-			t.Errorf("%s takes --project, and its hints name no way to find one: %v", cmd.CommandPath(), hints)
-		}
-	})
-}
-
-// A verb taking both an item and one of its tasks can 404 on either number, so
-// it names the task list as well as the item search.
-func TestACommandTakingAnItemsTaskNamesHowToFindOne(t *testing.T) {
-	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
-		if !strings.Contains(cmd.Use, "<item> <task-id>") {
-			return
-		}
-		hints := hintsFor(cmd)
-		if !slices.ContainsFunc(hints, func(h string) bool { return strings.Contains(h, "icb projects items tasks") }) {
-			t.Errorf("%s takes a task, and its hints name no way to find one: %v", cmd.CommandPath(), hints)
 		}
 	})
 }

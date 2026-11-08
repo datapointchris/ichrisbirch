@@ -12,6 +12,8 @@ import (
 	"github.com/datapointchris/ichrisbirch/cli/internal/api"
 )
 
+func intPtr(n int) *int { return &n }
+
 // The zone is pinned rather than taken from the runner. At 21:30 in New York it
 // is already the next day in UTC, and a runner in UTC would not see the two
 // calendars disagree.

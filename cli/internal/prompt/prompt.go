@@ -7,14 +7,12 @@
 //
 // Nothing here imports the rest of this repo and the only dependency is
 // golang.org/x/term, so copying the directory is the whole port to another
-// project.
+// repo.
 package prompt
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"slices"
 	"strings"
 	"text/tabwriter"
 )
@@ -33,8 +31,8 @@ type Session interface {
 	// advertises Tab where pressing it does something.
 	Completes() bool
 
-	// Width is how many columns a listing has to lay itself out in. A project
-	// name is a phrase rather than a word, so a fixed column count either wraps
+	// Width is how many columns a listing has to lay itself out in. A choice
+	// can be a phrase rather than a word, so a fixed column count either wraps
 	// the long lists or wastes the screen on the short ones.
 	Width() int
 }
@@ -53,12 +51,7 @@ type Question struct {
 	Choices []string
 
 	// ListChoices asks Tab to print the matches before it starts walking them.
-	//
-	// The form settles this once, before the first ask, because it is a fact
-	// about how the field introduced itself rather than about how many choices
-	// it currently holds. An [Escape] grows Choices mid-form, and a field that
-	// printed its list up front must not start reprinting it because the count
-	// crossed a threshold between two answers.
+	// The form sets it on a list too long to print above the prompt.
 	ListChoices bool
 }
 
@@ -102,58 +95,6 @@ type Field struct {
 	// the answer is offered back for editing, which makes the error text the
 	// only place the field explains itself.
 	Validate func(string) (string, error)
-
-	// Escape is a second way to answer, for the case the choices do not cover.
-	Escape *Escape
-
-	// made is what Escape has produced so far, which Validate is not asked
-	// about — see escaped.
-	made []string
-
-	// listChoices is settled once in ask and carried to every Question the
-	// field asks — see [Question.ListChoices].
-	listChoices bool
-}
-
-// Escape turns a field's dead end into a way forward: the answer the choices
-// should have held is made on the spot instead of costing a second command and
-// the half-typed record already on screen.
-//
-// It is a callback rather than anything this package understands, so a form can
-// offer "make a new one" without prompt knowing what is being made.
-type Escape struct {
-	// Trigger is the answer that runs it. Punctuation is what keeps it out of
-	// the way of real values — nobody means a project called "+".
-	Trigger string
-
-	// Hint is printed with the field's choices. A trigger nothing mentions is a
-	// trigger nobody presses.
-	Hint string
-
-	// Run makes the new value, asking on s for whatever that takes. What it
-	// returns is the answer, unvalidated: it made the value, so it is the
-	// authority on it, and the field's own choices grow by it.
-	//
-	// An empty return means nothing was made and the field is asked again,
-	// which is how Run offers a way back out of an escape started by mistake.
-	Run func(Session) (string, error)
-}
-
-// escaped returns the canonical spelling of a value this field's [Escape] made,
-// and reports whether it made one.
-//
-// A repeating field asks again after an escape, so the value just made is on
-// the Tab list for the next answer. Validate was built before it existed and
-// would reject it, which would leave the field offering a choice it refuses.
-// The escape is the authority on what it made, on the second answer as much as
-// on the first.
-func (f Field) escaped(answer string) (string, bool) {
-	for _, value := range f.made {
-		if strings.EqualFold(answer, value) {
-			return value, true
-		}
-	}
-	return "", false
 }
 
 // prompt is the text the answer is typed after. collected is how many answers
@@ -225,10 +166,6 @@ func (f Form) Run(s Session) (Answers, error) {
 		_, _ = fmt.Fprintf(s, "%s\n\n", f.Intro)
 	}
 	answers := Answers{}
-	// By value, and ask takes it by value too. That is what keeps an Escape's
-	// mutation of Choices and made inside the run that made it, so a Form value
-	// can be run twice. TestForm_RunningOneFormTwiceDoesNotCarryTheFirstRunsEscapeOver
-	// is what holds it.
 	for _, field := range f.Fields {
 		values, err := ask(s, field)
 		if err != nil {
@@ -251,18 +188,12 @@ func ask(s Session, field Field) ([]string, error) {
 	if len(field.Choices) > 0 {
 		writeChoices(s, field)
 	}
-	if field.Escape != nil && field.Escape.Hint != "" {
-		_, _ = fmt.Fprintf(s, "  %s\n", field.Escape.Hint)
-	}
-	// Settled here, ahead of every answer, so an Escape growing Choices cannot
-	// change what Tab does half way through the field.
-	field.listChoices = tooManyToList(field.Choices)
 	if field.Multiline {
 		return askProse(s, field)
 	}
 	var values []string
 	for {
-		value, err := askValue(s, &field, len(values))
+		value, err := askValue(s, field, len(values))
 		if err != nil {
 			return nil, err
 		}
@@ -283,18 +214,14 @@ func ask(s Session, field Field) ([]string, error) {
 // collected is how many answers the field already holds. It is what makes an
 // empty line mean "no more" on a repeating field that has one, and "you have to
 // answer this" on a required field that has none.
-//
-// field is a pointer because an [Escape] grows Choices, and a repeating field
-// asks again straight afterwards — a value made a moment ago has to be one Tab
-// away like every other.
-func askValue(s Session, field *Field, collected int) (string, error) {
+func askValue(s Session, field Field, collected int) (string, error) {
 	seed := ""
 	for {
 		answer, err := s.ReadLine(Question{
 			Label:       field.prompt(collected),
 			Seed:        seed,
 			Choices:     field.Choices,
-			ListChoices: field.listChoices,
+			ListChoices: tooManyToList(field.Choices),
 		})
 		if err != nil {
 			return "", err
@@ -311,17 +238,6 @@ func askValue(s Session, field *Field, collected int) (string, error) {
 			seed = ""
 			continue
 		}
-		if field.Escape != nil && answer == field.Escape.Trigger {
-			value, err := runEscape(s, field)
-			if err != nil || value != "" {
-				return value, err
-			}
-			seed = ""
-			continue
-		}
-		if value, ok := field.escaped(answer); ok {
-			return value, nil
-		}
 		if field.Validate == nil {
 			return answer, nil
 		}
@@ -333,30 +249,6 @@ func askValue(s Session, field *Field, collected int) (string, error) {
 		}
 		return value, nil
 	}
-}
-
-// runEscape makes a new value and adds it to what the field offers. It returns
-// an empty value and no error when nothing was made, which sends the field back
-// to asking.
-//
-// A cancel travels: abandoning the record is abandoning it, however deep the
-// question being answered when it happened. Anything else the escape failed at
-// is printed and the field is asked again, because the answer already on the
-// list is still a good answer.
-func runEscape(s Session, field *Field) (string, error) {
-	value, err := field.Escape.Run(s)
-	switch {
-	case errors.Is(err, io.EOF):
-		return "", err
-	case err != nil:
-		_, _ = fmt.Fprintf(s, "  %v\n", err)
-		return "", nil
-	case value == "":
-		return "", nil
-	}
-	field.Choices = append(slices.Clone(field.Choices), value)
-	field.made = append(field.made, value)
-	return value, nil
 }
 
 // proseGutter marks the lines of a multiline field, so it is clear which ones
@@ -439,8 +331,8 @@ func writeChoiceCount(s Session, field Field) {
 //
 // The column count is measured rather than fixed because the two kinds of
 // vocabulary are nothing alike: a dozen one-word categories waste most of a
-// screen under a fixed count, and a project called "Rewrite the backup scripts
-// in Go" wraps under the same one.
+// screen under a fixed count, and a choice that is a whole sentence wraps under
+// the same one.
 //
 // The last cell on a row carries no trailing tab. tabwriter pads every celled
 // column to its widest entry, so a trailing one spends real columns on the

@@ -160,9 +160,8 @@ label can be spelled beside each one. The cost is that the list is copied per
 client: `task_categories` is a lookup table whose values also sit in Python, in
 TypeScript and in Go, and nothing keeps the three level.
 
-**Fetched** — `strains.go` reads them from the API on create and edit, and
-`items.go` reads a project list the same way. Adding a value stays an insert on
-the server. Three things come with it:
+**Fetched** — `strains.go` reads them from the API on create and edit. Adding a
+value stays an insert on the server. Three things come with it:
 
 - The fetch has to run after every refusal that needs no server state, or a
   usage error becomes exit 1 whenever the API is unreachable.

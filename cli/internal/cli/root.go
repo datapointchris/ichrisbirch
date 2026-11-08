@@ -57,7 +57,6 @@ const (
 // verbs are not interleaved with the parent's.
 const (
 	groupTaskCategories   = "task-categories"
-	groupProjectItems     = "project-items"
 	groupShoppingSections = "shopping-sections"
 	groupArticleImports   = "article-imports"
 )
@@ -86,25 +85,6 @@ type exitCode int
 
 func (e exitCode) Error() string { return "" }
 
-// argumentBelongsTo refuses a positional on a leaf that takes that value
-// through flag, and spells the command line that passes it there. It is for a
-// leaf whose siblings take the same value positionally, which is what makes
-// the positional the natural guess.
-//
-// The refusal is marked with goclikit.UsageError, which is what makes
-// goclikit.Execute pass it through with this wording rather than appending its
-// own usage line and help pointer.
-func argumentBelongsTo(flag, purpose string) cobra.PositionalArgs {
-	return func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return nil
-		}
-		refusal := fmt.Sprintf("%s takes no arguments, and was given %q\n\n%s: %s %s %s",
-			cmd.CommandPath(), args[0], purpose, cmd.CommandPath(), flag, shellQuote(args[0]))
-		return goclikit.UsageError(errors.New(refusal))
-	}
-}
-
 func NewRootCommand() *cobra.Command {
 	root := goclikit.AsNamespace(&cobra.Command{
 		Use:   "icb",
@@ -113,15 +93,14 @@ func NewRootCommand() *cobra.Command {
 			"\n" +
 			"Start with `icb overview` for what is outstanding in every app at once.\n" +
 			"Each section stops at ten rows, so the one that caught your eye continues\n" +
-			"under its own noun: `icb tasks list`, `icb projects next`.\n" +
+			"under its own noun: `icb tasks list`, `icb books list`.\n" +
 			"\n" +
 			"The noun comes first and the verb last: `icb books list` becomes\n" +
 			"`icb books edit`. Every read verb takes --json. Run any partial command\n" +
 			"bare to see what comes next. Authenticate once with `icb auth login <url>`;\n" +
 			"`icb auth status` shows where icb is pointed.",
 		Example: "  icb overview\n" +
-			"  icb projects next --limit 1\n" +
-			"  icb projects items show 42\n" +
+			"  icb tasks list --limit 5\n" +
 			"  icb habits complete 5\n" +
 			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Version:       version,
@@ -164,7 +143,6 @@ func NewRootCommand() *cobra.Command {
 	root.SetCompletionCommandGroupID(groupSetup)
 	root.AddCommand(inGroup(groupOverview, withAPIFlag(newOverviewCommand()))...)
 	root.AddCommand(inGroup(groupPlanning,
-		withAPIFlag(newProjectsCommand()),
 		withAPIFlag(newTasksCommand()),
 		withAPIFlag(newAutotasksCommand()),
 		withAPIFlag(newCountdownsCommand()),

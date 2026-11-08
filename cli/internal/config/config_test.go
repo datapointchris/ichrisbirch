@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/datapointchris/goclilogin"
@@ -32,67 +30,6 @@ func TestLoginCarriesTheDeployedIdentifiers(t *testing.T) {
 	}
 	if login.StateDir != "/tmp/xdgstate/icb" {
 		t.Errorf("StateDir = %q, want icb's own state directory", login.StateDir)
-	}
-}
-
-// writeMachineConfig puts a config file where MachineConfigPath resolves to.
-func writeMachineConfig(t *testing.T, body string) {
-	t.Helper()
-	root := t.TempDir()
-	dir := filepath.Join(root, "icb")
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		t.Fatalf("creating config dir: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "config.yml"), []byte(body), 0o600); err != nil {
-		t.Fatalf("writing config: %v", err)
-	}
-	t.Setenv("XDG_CONFIG_HOME", root)
-}
-
-func TestMachineConfigPathIsTheToolsOwnConfigDirectory(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", "/tmp/xdgconfig")
-	if got, want := MachineConfigPath(), "/tmp/xdgconfig/icb/config.yml"; got != want {
-		t.Errorf("MachineConfigPath() = %q, want %q", got, want)
-	}
-}
-
-func TestLoadMachineConfigReadsReposRegistry(t *testing.T) {
-	writeMachineConfig(t, "repos_registry: ~/.local/share/repos.json\n")
-	if got, want := LoadMachineConfig().ReposRegistry, "~/.local/share/repos.json"; got != want {
-		t.Errorf("ReposRegistry = %q, want %q", got, want)
-	}
-}
-
-// The config is optional, so its absence is the zero value rather than a failure.
-// A machine keeping the registry where icb expects it holds no config file.
-func TestLoadMachineConfigTreatsAnAbsentFileAsEmpty(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	if got := LoadMachineConfig().ReposRegistry; got != "" {
-		t.Errorf("ReposRegistry = %q, want empty for an absent config", got)
-	}
-}
-
-// A malformed config falls through for the same reason an absent one does:
-// erroring would break the machine that needs no config at all.
-func TestLoadMachineConfigTreatsMalformedYAMLAsEmpty(t *testing.T) {
-	writeMachineConfig(t, "repos_registry: [not, a, string\n")
-	if got := LoadMachineConfig().ReposRegistry; got != "" {
-		t.Errorf("ReposRegistry = %q, want empty for a malformed config", got)
-	}
-}
-
-func TestExpandTildeResolvesALeadingHome(t *testing.T) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Skipf("no home directory: %v", err)
-	}
-	if got, want := ExpandTilde("~/.local/share/repos.json"), filepath.Join(home, ".local", "share", "repos.json"); got != want {
-		t.Errorf("ExpandTilde = %q, want %q", got, want)
-	}
-	for _, path := range []string{"/absolute/repos.json", "relative/repos.json", ""} {
-		if got := ExpandTilde(path); got != path {
-			t.Errorf("ExpandTilde(%q) = %q, want it untouched", path, got)
-		}
 	}
 }
 

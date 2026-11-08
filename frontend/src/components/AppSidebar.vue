@@ -49,7 +49,7 @@
           :key="link.to"
         >
           <RouterLink
-            v-if="link.migrated"
+            v-if="!link.href"
             :to="link.to"
             class="nav-link"
             :class="{ 'nav-link--active': isActive(link) }"
@@ -61,8 +61,9 @@
           </RouterLink>
           <a
             v-else
-            :href="link.to"
+            :href="link.href"
             class="nav-link"
+            :data-testid="`sidebar-${link.to}`"
           >
             <i :class="link.icon"></i>
             <span class="nav-link__label">{{ link.label }}</span>
@@ -75,7 +76,7 @@
           :key="link.to"
         >
           <RouterLink
-            v-if="link.migrated"
+            v-if="!link.href"
             :to="link.to"
             class="nav-link"
             :class="{ 'nav-link--active': isActive(link) }"
@@ -87,8 +88,9 @@
           </RouterLink>
           <a
             v-else
-            :href="link.to"
+            :href="link.href"
             class="nav-link"
+            :data-testid="`sidebar-${link.to}`"
           >
             <i :class="link.icon"></i>
             <span class="nav-link__label">{{ link.label }}</span>
@@ -126,7 +128,6 @@ const footerLinks = computed(() => {
       to: '/profile',
       label: 'Profile',
       icon: 'fa-solid fa-user',
-      migrated: true,
       activeNames: ['profile'],
     },
   ]
@@ -135,7 +136,6 @@ const footerLinks = computed(() => {
       to: '/admin',
       label: 'Admin',
       icon: 'fa-solid fa-gear',
-      migrated: true,
       activeNames: ['admin', 'admin-scheduler', 'admin-users', 'admin-config', 'admin-design'],
     })
   }

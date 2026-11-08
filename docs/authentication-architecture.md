@@ -92,7 +92,7 @@ acts as the account owner.
 
 `ichrisbirch/api/client_scopes.py` maps each scope to the
 `(method, route template)` pairs it reaches. A template includes the router
-prefix, so `/api/v1/project-items/{id}` covers every item.
+prefix, so `/api/v1/tasks/{id}` covers every task.
 
 A router with a route in `SCOPE_ROUTES` takes
 `get_current_user_or_scoped_client`. It admits a scoped client only on a listed
@@ -111,7 +111,7 @@ reason, and a scoped client that names no `timezone` gets UTC.
 the same view over HTTP holds the scope named for that command, so its comment
 in `SCOPE_ROUTES` names the command. `icb overview` has no route of its own. It
 fans out to every list a lane draws from, so `icb.overview.read` lists each of
-them, the project-item lists included, and renders every lane alone.
+them and renders every lane alone.
 
 `permits` matches a template exactly. `tests/ichrisbirch/api/test_client_scopes.py`
 requests every listed route as a scoped client and requires its success status,
@@ -119,8 +119,8 @@ so a renamed path parameter fails it with 403.
 
 A refused scoped client's 403 message names the routes its scopes reach. The same
 test file writes the table to `tests/ichrisbirch/api/testdata/client-scopes.json`.
-The CLI's suite runs each call a scheduled job makes as a service, in
-`TestService_EachScheduledCallSendsARouteTheRequestedScopesReach`, and requires
-every request it sends to match a route listed there for a scope the CLI
+The CLI's suite runs `icb overview` as a service, in
+`TestService_OverviewSendsOnlyRoutesTheRequestedScopeReaches`, and requires
+every request it sends to match a route listed there for the scope the CLI
 requests. A `{name:path}` template matches any segments, as FastAPI's path
-converter does, because a project name may hold a slash.
+converter does.

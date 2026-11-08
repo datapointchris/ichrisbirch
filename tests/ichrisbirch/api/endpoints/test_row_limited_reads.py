@@ -41,7 +41,6 @@ LIMITED_READS = [
     ('/habits/categories', 'habitcategories'),
     ('/habits/completed', 'habitcategories'),
     ('/patterns', 'patterns'),
-    ('/projects', 'projects'),
     ('/recipes', 'recipes'),
     ('/recipes/cooking-techniques', 'cooking_techniques'),
     ('/shopping/items', 'shopping_sections'),
@@ -86,11 +85,6 @@ UNCAPPED_READS = {
     '/durations',
     '/habits/day',
     '/money-wasted',
-    '/project-items/blocked',
-    '/project-items/search',
-    '/project-items/{id}/blockers',
-    '/project-items/{id}/projects',
-    '/project-items/{item_id}/tasks',
     '/recipes/cooking-techniques/categories',
     '/recipes/cooking-techniques/search',
     '/recipes/search-by-ingredients',
@@ -157,52 +151,6 @@ class TestEveryListReadTakesALimit:
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
 
 
-class TestProjectItemReadsTakeALimit:
-    """`/project-items` and `/projects/{id}/items` are seeded through the API.
-
-    A scope selects which rows come back, never what a filter means, so both
-    paths take the same parameter and read zero the same way.
-    """
-
-    @pytest.fixture
-    def seeded_project(self, txn_api_logged_in):
-        client, _ = txn_api_logged_in
-        project = client.post('/projects', json={'name': 'Row limited reads'})
-        assert project.status_code == status.HTTP_201_CREATED, show_status_and_response(project)
-        project_id = project.json()['id']
-        for title in ('first item', 'second item', 'third item'):
-            created = client.post('/project-items', json={'title': title, 'project_ids': [project_id]})
-            assert created.status_code == status.HTTP_201_CREATED, show_status_and_response(created)
-        return client, project_id
-
-    def test_the_flat_list_caps(self, seeded_project):
-        client, _ = seeded_project
-        assert len(rows(client.get('/project-items', params={'limit': 2}))) == 2
-
-    def test_the_flat_list_reads_zero_as_no_rows(self, seeded_project):
-        client, _ = seeded_project
-        assert rows(client.get('/project-items', params={'limit': 0})) == []
-
-    def test_the_project_scoped_list_caps(self, seeded_project):
-        client, project_id = seeded_project
-        assert len(rows(client.get(f'/projects/{project_id}/items', params={'limit': 2}))) == 2
-
-    def test_the_project_scoped_list_reads_zero_as_no_rows(self, seeded_project):
-        client, project_id = seeded_project
-        assert rows(client.get(f'/projects/{project_id}/items', params={'limit': 0})) == []
-
-    def test_the_limit_composes_with_status(self, seeded_project):
-        """Two narrowing filters both apply, rather than the last one winning."""
-        client, _ = seeded_project
-        response = client.get('/project-items', params={'status': 'all', 'limit': 1})
-        assert len(rows(response)) == 1
-
-    def test_a_negative_limit_is_a_422(self, seeded_project):
-        client, _ = seeded_project
-        response = client.get('/project-items', params={'limit': -1})
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, show_status_and_response(response)
-
-
 def collection_reads(api) -> dict:
     """Every GET route answering with rows, read off the app rather than listed.
 
@@ -228,7 +176,7 @@ def answers_with_rows(model) -> bool:
     stops seeing them the first time someone wraps a collection.
 
     A model declaring `id` is one resource, and a list inside it is a part of
-    that row: a recipe's ingredients, a project's items. Capping those cuts a
+    that row: a recipe's ingredients, a box's items. Capping those cuts a
     relationship rather than a page. An envelope has no identity of its own, so
     its lists are the whole answer.
 

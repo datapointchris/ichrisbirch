@@ -15,18 +15,7 @@
     "GET /api/v1/countdowns",
     "GET /api/v1/events",
     "GET /api/v1/habits/day",
-    "GET /api/v1/project-items",
-    "GET /api/v1/project-items/blocked",
     "GET /api/v1/tasks"
-  ],
-  "icb.project-items.read": [
-    "GET /api/v1/project-items",
-    "GET /api/v1/project-items/blocked",
-    "GET /api/v1/project-items/search",
-    "GET /api/v1/project-items/{id}",
-    "GET /api/v1/project-items/{id}/blockers",
-    "GET /api/v1/project-items/{item_id}/tasks",
-    "GET /api/v1/projects/{id:path}/items"
   ],
   "icb.tasks.read": [
     "GET /api/v1/tasks"

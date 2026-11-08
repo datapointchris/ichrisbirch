@@ -21,6 +21,13 @@ func applyLimit(params url.Values, limit *int) {
 	params.Set("limit", strconv.Itoa(*limit))
 }
 
+func withQuery(path string, query url.Values) string {
+	if len(query) == 0 {
+		return path
+	}
+	return path + "?" + query.Encode()
+}
+
 // Window is the span of instants a list read narrows to. Since is the first
 // instant inside it and Until the first instant past it. A zero end is open.
 type Window struct {

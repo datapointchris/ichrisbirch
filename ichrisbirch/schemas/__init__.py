@@ -59,23 +59,6 @@ from ichrisbirch.schemas.money_wasted import MoneyWastedUpdate
 from ichrisbirch.schemas.pattern import Pattern
 from ichrisbirch.schemas.pattern import PatternCreate
 from ichrisbirch.schemas.pattern import PatternUpdate
-from ichrisbirch.schemas.project import Project
-from ichrisbirch.schemas.project import ProjectCreate
-from ichrisbirch.schemas.project import ProjectUpdate
-from ichrisbirch.schemas.project import ProjectWithItemCount
-from ichrisbirch.schemas.project_item import ProjectItem
-from ichrisbirch.schemas.project_item import ProjectItemCreate
-from ichrisbirch.schemas.project_item import ProjectItemDependencyCreate
-from ichrisbirch.schemas.project_item import ProjectItemDetail
-from ichrisbirch.schemas.project_item import ProjectItemInProject
-from ichrisbirch.schemas.project_item import ProjectItemMembership
-from ichrisbirch.schemas.project_item import ProjectItemMembershipCreate
-from ichrisbirch.schemas.project_item import ProjectItemReorder
-from ichrisbirch.schemas.project_item import ProjectItemSummary
-from ichrisbirch.schemas.project_item import ProjectItemUpdate
-from ichrisbirch.schemas.project_item_task import ProjectItemTask as ProjectItemTaskSchema
-from ichrisbirch.schemas.project_item_task import ProjectItemTaskCreate
-from ichrisbirch.schemas.project_item_task import ProjectItemTaskUpdate
 from ichrisbirch.schemas.recipe import CookingTechnique
 from ichrisbirch.schemas.recipe import CookingTechniqueCategoryBreakdown
 from ichrisbirch.schemas.recipe import CookingTechniqueCreate
@@ -190,23 +173,6 @@ __all__ = [
     'Pattern',
     'PatternCreate',
     'PatternUpdate',
-    'Project',
-    'ProjectCreate',
-    'ProjectUpdate',
-    'ProjectWithItemCount',
-    'ProjectItem',
-    'ProjectItemCreate',
-    'ProjectItemDependencyCreate',
-    'ProjectItemDetail',
-    'ProjectItemInProject',
-    'ProjectItemMembership',
-    'ProjectItemMembershipCreate',
-    'ProjectItemReorder',
-    'ProjectItemSummary',
-    'ProjectItemUpdate',
-    'ProjectItemTaskSchema',
-    'ProjectItemTaskCreate',
-    'ProjectItemTaskUpdate',
     'Recipe',
     'RecipeCandidate',
     'RecipeCategoryBreakdown',

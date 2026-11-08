@@ -76,7 +76,7 @@ func runService(t *testing.T, args ...string) (string, error) {
 	return out.String(), err
 }
 
-func TestService_SearchCarriesTheClientCredentialsToken(t *testing.T) {
+func TestService_AReadCarriesTheClientCredentialsToken(t *testing.T) {
 	var authorization string
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorization = r.Header.Get("Authorization")
@@ -86,8 +86,8 @@ func TestService_SearchCarriesTheClientCredentialsToken(t *testing.T) {
 	t.Cleanup(api.Close)
 	state := asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
 
-	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
-		t.Fatalf("search as a service: %v", err)
+	if _, err := runService(t, "tasks", "list"); err != nil {
+		t.Fatalf("list as a service: %v", err)
 	}
 	if authorization != "Bearer "+serviceToken {
 		t.Errorf("the API saw Authorization %q, want the service token", authorization)
@@ -105,7 +105,7 @@ func TestService_ARefusedSecretNamesTheSecretRatherThanALogin(t *testing.T) {
 	t.Cleanup(api.Close)
 	asService(t, serviceIDP(t).URL, api.URL, "wrong-secret")
 
-	_, err := runService(t, "projects", "items", "search", "sync")
+	_, err := runService(t, "tasks", "list")
 	if err == nil || !strings.Contains(err.Error(), "ICB_CLIENT_SECRET") || strings.Contains(err.Error(), "auth login") {
 		t.Errorf("got %v, want the secret named and no login suggested", err)
 	}
@@ -157,7 +157,7 @@ func TestService_LoginAndLogoutAreRefused(t *testing.T) {
 }
 
 func TestService_ARouteOutsideTheScopeReportsTheAPIsMessage(t *testing.T) {
-	message := "Access denied: Route is outside this client's scopes; they reach only GET /api/v1/project-items"
+	message := "Access denied: Route is outside this client's scopes; they reach only GET /api/v1/tasks"
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusForbidden)
@@ -166,17 +166,16 @@ func TestService_ARouteOutsideTheScopeReportsTheAPIsMessage(t *testing.T) {
 	t.Cleanup(api.Close)
 	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
 
-	_, err := runService(t, "projects", "items", "search", "sync")
+	_, err := runService(t, "tasks", "list")
 	if err == nil || !strings.Contains(err.Error(), serviceClientID) || !strings.Contains(err.Error(), message) || strings.Contains(err.Error(), "auth login") {
 		t.Errorf("got %v, want the client and the API's message whole, and no login suggested", err)
 	}
 }
 
-// serviceIDP grants the scopes this file spells, which is the CLI's own copy.
-// So a scope the API renamed, or a route one of these calls sends that the API
-// stopped listing, passes every other test here and answers 403 to every
-// scheduled run.
-func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.T) {
+// serviceIDP grants whatever scopes the CLI asks for. So a scope the API
+// renamed, or a route `icb overview` sends that the API stopped listing, passes
+// every other test here and answers 403 to every service run.
+func TestService_OverviewSendsOnlyRoutesTheRequestedScopeReaches(t *testing.T) {
 	raw, err := os.ReadFile("../../../tests/ichrisbirch/api/testdata/client-scopes.json")
 	if err != nil {
 		t.Fatalf("read the API's scope table — run tests/ichrisbirch/api/test_client_scopes.py to write it: %v", err)
@@ -187,9 +186,9 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 	}
 
 	// A {name} in these templates is a UUID or a number. Matched as any segment,
-	// /project-items/{id} would also take /project-items/search, which FastAPI
-	// routes to another handler. A {name:path} is FastAPI's path converter, which
-	// takes any segments.
+	// /articles/{id} would also take /articles/current, which FastAPI routes to
+	// another handler. A {name:path} is FastAPI's path converter, which takes any
+	// segments.
 	reference := `(?:[0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})`
 	wildcard := regexp.MustCompile(`\{[^}]*\}`)
 	scopes := config.Service(goclilogin.Deployment{}).Scopes
@@ -216,11 +215,11 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sent = append(sent, r.Method+" "+r.URL.Path)
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`[]`))
+		_, _ = w.Write([]byte(`null`))
 	}))
 	t.Cleanup(api.Close)
 	asService(t, serviceIDP(t).URL, api.URL, serviceSecret)
-	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
+	if _, err := runService(t, "overview", "--json"); err != nil {
 		t.Fatalf("run as a service: %v", err)
 	}
 	if len(sent) == 0 {
@@ -233,7 +232,7 @@ func TestService_EachScheduledCallSendsARouteTheRequestedScopesReach(t *testing.
 	}
 }
 
-func TestHandedToken_SearchCarriesTheTokenTheCommandHands(t *testing.T) {
+func TestHandedToken_AReadCarriesTheTokenTheCommandHands(t *testing.T) {
 	var authorization string
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorization = r.Header.Get("Authorization")
@@ -256,14 +255,14 @@ func TestHandedToken_SearchCarriesTheTokenTheCommandHands(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := runService(t, "projects", "items", "search", "sync"); err != nil {
-		t.Fatalf("search on a handed token: %v", err)
+	if _, err := runService(t, "tasks", "list"); err != nil {
+		t.Fatalf("list on a handed token: %v", err)
 	}
 	if authorization != "Bearer handed-access-token" {
 		t.Errorf("the API saw Authorization %q, want the handed token", authorization)
 	}
 	t.Setenv(config.ClientSecretEnv, serviceSecret)
-	if _, err := runService(t, "projects", "items", "search", "sync"); err == nil || !strings.Contains(err.Error(), "two credentials") {
+	if _, err := runService(t, "tasks", "list"); err == nil || !strings.Contains(err.Error(), "two credentials") {
 		t.Errorf("a token_command beside %s: err = %v", config.ClientSecretEnv, err)
 	}
 }

@@ -145,7 +145,7 @@ def create(
 ):
     """While signups are open, this takes any caller, including one with no login.
 
-    No model is scoped per user, so that account reaches the same tasks, projects and books as the admin.
+    No model is scoped per user, so that account reaches the same tasks and books as the admin.
     """
     caller_is_admin = caller is not None and caller.is_admin
     if not caller_is_admin and not session.scalars(select(models.AdminSettings.is_signup_open)).one():

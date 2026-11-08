@@ -40,7 +40,7 @@ http:
 
     # Vue SPA — migrated pages served at higher priority
     vue-paths:
-      rule: "Host(`ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"
+      rule: "Host(`ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"
       service: vue
       priority: 100
       middlewares:
@@ -53,7 +53,7 @@ http:
 
     # Vue SPA — www subdomain
     vue-paths-www:
-      rule: "Host(`www.ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/projects`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"
+      rule: "Host(`www.ichrisbirch.com`) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"
       service: vue
       priority: 100
       middlewares:
@@ -61,5 +61,17 @@ http:
         - cors-prod@file
         - security-headers-prod@file
         - rate-limit-prod@file
+      entrypoints:
+        - web
+
+    # The projects page moved to the projects app, so its address forwards there.
+    projects-moved:
+      rule: "(Host(`ichrisbirch.com`) || Host(`www.ichrisbirch.com`)) && (Path(`/projects`) || PathPrefix(`/projects/`))"
+      service: noop@internal
+      priority: 100
+      middlewares:
+        - security-headers-prod@file
+        - rate-limit-prod@file
+        - redirect-to-projects-app@file
       entrypoints:
         - web

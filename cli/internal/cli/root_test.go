@@ -52,10 +52,7 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 		meant string
 	}{
 		{[]string{"tasjs"}, "tasks"},
-		{[]string{"items", "show", "848"}, "projects"},
 		{[]string{"tasks", "lisy"}, "list"},
-		{[]string{"projects", "itms", "--json"}, "items"},
-		{[]string{"projects", "items", "lisz", "--json"}, "list"},
 	} {
 		err := runLine(t, c.args...)
 		if err == nil || !slices.Contains(strings.Fields(err.Error()), c.meant) {
@@ -69,8 +66,6 @@ func TestAnUnknownSubcommandNamesTheNearOnes(t *testing.T) {
 func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
 	for _, args := range [][]string{
 		{"bogus", "search", "foo", "--json"},
-		{"projects", "bogus", "--json"},
-		{"projects", "items", "bogus", "5", "--json"},
 		{"tasks", "categories", "bogus", "--json"},
 	} {
 		err := runLine(t, args...)
@@ -88,8 +83,7 @@ func TestAFlagAfterAnUnknownWordRefusesTheWord(t *testing.T) {
 // had been a subcommand.
 func TestAWordTypedWithHelpIsRefusedAtEveryGroup(t *testing.T) {
 	for _, args := range [][]string{
-		{"projects", "bogus", "--help"},
-		{"projects", "items", "bogus", "--help"},
+		{"tasks", "bogus", "--help"},
 		{"tasks", "categories", "bogus", "-h"},
 	} {
 		err := runLine(t, args...)
@@ -98,31 +92,6 @@ func TestAWordTypedWithHelpIsRefusedAtEveryGroup(t *testing.T) {
 		}
 		if got := exitCodeFor(err); got != 2 {
 			t.Errorf("%v exit = %d, want 2", args, got)
-		}
-	}
-}
-
-// A positional on a leaf taking that value through a flag is refused as an
-// argument, never as a command, and the refusal spells the line that passes it
-// there. The refusal keeps its own wording, without the usage line goclikit
-// gives a refusal it has to explain itself.
-func TestAPositionalOnALeafIsRefusedAsAnArgument(t *testing.T) {
-	for _, c := range []struct {
-		args []string
-		want string
-	}{
-		{[]string{"projects", "items", "list", "ypl"}, "icb projects items list --project ypl"},
-		{[]string{"projects", "items", "list", "Kitchen remodel"}, "icb projects items list --project 'Kitchen remodel'"},
-	} {
-		err := runLine(t, c.args...)
-		if err == nil || !strings.Contains(err.Error(), c.want) || strings.Contains(err.Error(), "unknown command") {
-			t.Errorf("%v answered %v, want it to carry %q", c.args, err, c.want)
-		}
-		if err != nil && strings.Contains(err.Error(), "Usage:") {
-			t.Errorf("%v lost its own wording to a usage line: %v", c.args, err)
-		}
-		if got := exitCodeFor(err); got != 2 {
-			t.Errorf("%v exit = %d, want 2", c.args, got)
 		}
 	}
 }
@@ -142,28 +111,10 @@ func TestCommandTree_ExitCodes(t *testing.T) {
 	}{
 		{"bare root shows help (success)", nil, 0},
 		{"bare auth shows help (success)", []string{"auth"}, 0},
-		{"bare projects shows help (success)", []string{"projects"}, 0},
 		{"unknown top-level command is usage error", []string{"nope"}, 2},
 		{"unknown auth subcommand is usage error", []string{"auth", "nope"}, 2},
-		{"unknown projects subcommand is usage error", []string{"projects", "nope"}, 2},
 		{"unknown flag is usage error", []string{"--nonsense"}, 2},
 		{"auth login rejects a second positional arg", []string{"auth", "login", "https://a.example", "extra"}, 2},
-		{"projects show without an id is usage error", []string{"projects", "show"}, 2},
-		{"projects create without --name is usage error", []string{"projects", "create"}, 2},
-		{"projects edit with no fields is usage error", []string{"projects", "edit", "018f"}, 2},
-		{"projects drop without --reason is usage error", []string{"projects", "drop", "018f"}, 2},
-		{"bare projects items shows help (success)", []string{"projects", "items"}, 0},
-		{"unknown projects items subcommand is usage error", []string{"projects", "items", "nope"}, 2},
-		{"projects items list --archived without --project is usage error", []string{"projects", "items", "list", "--archived"}, 2},
-		{"projects items create without --title is usage error", []string{"projects", "items", "create", "--project", "p1"}, 2},
-		{"projects items create without --project is usage error", []string{"projects", "items", "create", "--title", "x"}, 2},
-		{"projects items edit with no fields is usage error", []string{"projects", "items", "edit", "018f"}, 2},
-		{"projects items reorder without --project is usage error", []string{"projects", "items", "reorder", "018f", "--position", "1"}, 2},
-		{"projects items add-project without --project is usage error", []string{"projects", "items", "add-project", "018f"}, 2},
-		{"projects items add-dependency without --depends-on is usage error", []string{"projects", "items", "add-dependency", "018f"}, 2},
-		{"projects items add-task without --title is usage error", []string{"projects", "items", "add-task", "018f"}, 2},
-		{"projects items complete-task needs two ids", []string{"projects", "items", "complete-task", "018f"}, 2},
-		{"projects items edit-task with no fields is usage error", []string{"projects", "items", "edit-task", "018f", "018g"}, 2},
 		{"bare tasks shows help (success)", []string{"tasks"}, 0},
 		{"unknown tasks subcommand is usage error", []string{"tasks", "nope"}, 2},
 		{"tasks show with non-int id is usage error", []string{"tasks", "show", "abc"}, 2},

@@ -12,7 +12,6 @@ from tests.test_data import events
 from tests.test_data import habitcategories
 from tests.test_data import money_wasted
 from tests.test_data import patterns
-from tests.test_data import projects
 from tests.test_data import recipes
 from tests.test_data import scheduler
 from tests.test_data import shopping
@@ -39,7 +38,6 @@ __all__ = [
     # 'habits' - now inserted via HabitCategory.habits relationship
     # 'habitscompleted' - now inserted via HabitCategory.completed_habits relationship
     'money_wasted',
-    'projects',
     'recipes',
     'scheduler',
     'shopping',

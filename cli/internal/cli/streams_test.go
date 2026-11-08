@@ -79,7 +79,7 @@ func TestUsageError_LeavesStdoutClean(t *testing.T) {
 	for _, args := range [][]string{
 		{"nope"},
 		{"auth", "nope"},
-		{"projects", "--not-a-flag"},
+		{"tasks", "--not-a-flag"},
 		{"auth", "token", "extra-arg"},
 	} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {

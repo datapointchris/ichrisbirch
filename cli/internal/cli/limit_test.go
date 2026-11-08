@@ -58,8 +58,6 @@ func TestEveryListCommandTakesLimit(t *testing.T) {
 		{"events", "list"},
 		{"habits", "list"},
 		{"patterns", "list"},
-		{"projects", "list"},
-		{"projects", "items", "list"},
 		{"recipes", "list"},
 		{"shopping", "list"},
 		{"shopping", "history"},
@@ -168,7 +166,7 @@ func TestEveryLimitFlagRefusesANegative(t *testing.T) {
 // The commands that cap what they print carry a default; the reads the API
 // bounds carry none, because an unset --limit sends no parameter at all.
 func TestOnlyTheClientSideCapsCarryADefault(t *testing.T) {
-	capped := map[string]string{"overview": "10", "projects next": "10"}
+	capped := map[string]string{"overview": "10"}
 	for path, flag := range limitCommands(t) {
 		t.Run(path, func(t *testing.T) {
 			want, isCapped := capped[path]

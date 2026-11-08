@@ -2,10 +2,25 @@ package api
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 func intptr(n int) *int { return &n }
+
+// recordQuery serves body and captures the raw query string the client sent.
+func recordQuery(t *testing.T, body string) (*Client, *string) {
+	t.Helper()
+	var got string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+	return New(srv.URL, staticTokenClient("t")), &got
+}
 
 func TestApplyLimit_SendsThePositiveCap(t *testing.T) {
 	client, query := recordQuery(t, `[]`)
@@ -67,18 +82,6 @@ func TestApplyLimit_RidesEveryListRead(t *testing.T) {
 		},
 		"ListEvents": func(c *Client) error {
 			_, err := c.ListEvents(ctx, EventsUpcoming, "", intptr(3))
-			return err
-		},
-		"ListItems": func(c *Client) error {
-			_, err := c.ListItems(ctx, nil, "", Window{}, intptr(3))
-			return err
-		},
-		"ListProjectItems": func(c *Client) error {
-			_, err := c.ListProjectItems(ctx, "018f-a", "", Window{}, intptr(3))
-			return err
-		},
-		"ListProjects": func(c *Client) error {
-			_, err := c.ListProjects(ctx, nil, "", intptr(3))
 			return err
 		},
 		"ListRecipes": func(c *Client) error {

@@ -13,9 +13,6 @@ from ichrisbirch.api.endpoints import habits
 from ichrisbirch.api.endpoints import home
 from ichrisbirch.api.endpoints import money_wasted
 from ichrisbirch.api.endpoints import patterns
-from ichrisbirch.api.endpoints import project_item_tasks
-from ichrisbirch.api.endpoints import project_items
-from ichrisbirch.api.endpoints import projects
 from ichrisbirch.api.endpoints import recipes
 from ichrisbirch.api.endpoints import server
 from ichrisbirch.api.endpoints import shopping
@@ -38,10 +35,7 @@ __all__ = [
     'habits',
     'home',
     'money_wasted',
-    'project_item_tasks',
-    'project_items',
     'patterns',
-    'projects',
     'recipes',
     'server',
     'shopping',

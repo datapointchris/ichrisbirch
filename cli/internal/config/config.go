@@ -1,15 +1,10 @@
-// Package config resolves the icb CLI's settings, of which there are two kinds.
+// Package config resolves the icb CLI's settings and its state directory.
 //
 // Which deployment to talk to is one file, $XDG_CONFIG_HOME/icb/config.toml,
 // read through goclilogin's config-file contract: its api, issuer and
 // client_id keys, with --api the only thing that outranks them. None of the
 // three is compiled in. Each names one installation, so a value shipped in the
 // binary would point somebody else's copy at this one.
-//
-// MachineConfig is what this machine says about its own layout, read from
-// config.yml beside it. It is the middle rung of the order every shared path
-// resolves through: the ICB_-prefixed variable, then the config key, then a
-// default under icb's own XDG directory.
 package config
 
 import (
@@ -18,6 +13,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/datapointchris/goclilogin"
@@ -31,11 +27,12 @@ const product = "icb"
 // independently of the module or binary name.
 const keyringService = "icb-cli"
 
-// The scope a service client requests. Authelia grants only the scopes a
-// request names, so a request naming none gets a token the API refuses. It
-// refuses the whole request when one names a scope the client does not hold.
+// The scope a service client requests, the one listing every read `icb
+// overview` makes. Authelia grants only the scopes a request names, so a
+// request naming none gets a token the API refuses. It refuses the whole
+// request when one names a scope the client does not hold.
 // ichrisbirch/api/client_scopes.py lists the routes it reaches.
-const projectItemsScope = "icb.project-items.read"
+const serviceScope = "icb.overview.read"
 
 // ClientSecretEnv selects the client-credentials grant, for the client the
 // config file names. It is read from the environment alone, so it is never
@@ -163,5 +160,22 @@ func IsService() bool { return ClientSecret() != "" }
 // grant. Nothing it obtains is stored, so it names no keyring or state
 // directory.
 func Service(d goclilogin.Deployment) goclilogin.ServiceClient {
-	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{projectItemsScope}}
+	return goclilogin.ServiceClient{Issuer: d.Issuer.Value, ClientID: d.ClientID.Value, Scopes: []string{serviceScope}}
+}
+
+// StatePath resolves a path under icb's own XDG state directory —
+// $XDG_STATE_HOME/icb, falling back to ~/.local/state/icb. State is what the
+// tool writes and the user does not, such as goclilogin's refresh lock. Returns
+// "" when the home directory cannot be resolved, which callers treat as "no
+// state directory available" rather than as an error.
+func StatePath(parts ...string) string {
+	base := os.Getenv("XDG_STATE_HOME")
+	if base == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		base = filepath.Join(home, ".local", "state")
+	}
+	return filepath.Join(append([]string{base, "icb"}, parts...)...)
 }

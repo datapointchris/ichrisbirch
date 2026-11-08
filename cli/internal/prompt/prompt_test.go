@@ -5,24 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"slices"
 	"strings"
 	"testing"
 )
 
 var categories = []string{"Automotive", "Chore", "Computer", "Dingo"}
-
-// recordingSession keeps the choices each ask was handed, which is what Tab
-// would have had to work with at that point in the form.
-type recordingSession struct {
-	*PlainSession
-	offered [][]string
-}
-
-func (s *recordingSession) ReadLine(q Question) (string, error) {
-	s.offered = append(s.offered, q.Choices)
-	return s.PlainSession.ReadLine(q)
-}
 
 // run drives a form with typed lines and returns the answers plus everything the
 // form said.
@@ -187,16 +174,16 @@ func TestOneOf_RejectionNamesEveryAcceptedValue(t *testing.T) {
 	}
 }
 
-// A project title is the case that breaks a bare comma join: several carry
-// commas of their own, so the separator has to be told apart from the content.
+// A candidate carrying commas of its own breaks a bare comma join, so the
+// separator has to be told apart from the content.
 var commaCarryingTitles = []string{
-	"Fleet shape — survey, cross-examine, steer",
-	"fleet facts — the measurement layer",
-	"Standardize identifier naming across the fleet",
+	"Dairy, eggs, cheese",
+	"dairy — the cold case",
+	"Plant dairy and oat milk",
 }
 
 func TestOneOf_RejectionDelimitsACandidateThatCarriesCommas(t *testing.T) {
-	_, err := OneOf(commaCarryingTitles)("fleet")
+	_, err := OneOf(commaCarryingTitles)("dairy")
 	if err == nil {
 		t.Fatal("OneOf accepted a value that is not in the list")
 	}
@@ -205,7 +192,7 @@ func TestOneOf_RejectionDelimitsACandidateThatCarriesCommas(t *testing.T) {
 			t.Errorf("error = %q, want %q delimited whole", err, title)
 		}
 	}
-	if strings.Contains(err.Error(), "steer, fleet facts") {
+	if strings.Contains(err.Error(), "cheese, dairy") {
 		t.Errorf("error = %q, want a candidate's own comma not to read as the separator", err)
 	}
 }
@@ -246,42 +233,42 @@ func TestIntAtLeast_RefusesBelowTheFloorAndKeepsTheFloor(t *testing.T) {
 }
 
 func TestForm_RepeatKeepsAskingUntilAnEmptyAnswer(t *testing.T) {
-	form := Form{Fields: []Field{{Key: "project", Label: "Project", Repeat: true}}}
+	form := Form{Fields: []Field{{Key: "effect", Label: "Effect", Repeat: true}}}
 
 	answers, out := run(t, form, "one\ntwo\nthree\n\n")
 
-	got := strings.Join(answers.All("project"), ",")
+	got := strings.Join(answers.All("effect"), ",")
 	if got != "one,two,three" {
-		t.Errorf("project = %q, want every answer in order", got)
+		t.Errorf("effect = %q, want every answer in order", got)
 	}
-	if !strings.Contains(out, "Project (another, or Enter to move on):") {
+	if !strings.Contains(out, "Effect (another, or Enter to move on):") {
 		t.Errorf("the prompt did not say what Enter does after the first answer:\n%s", out)
 	}
 }
 
 func TestForm_RepeatStillNeedsItsFirstAnswer(t *testing.T) {
-	form := Form{Fields: []Field{{Key: "project", Label: "Project", Repeat: true}}}
+	form := Form{Fields: []Field{{Key: "effect", Label: "Effect", Repeat: true}}}
 
 	answers, out := run(t, form, "\none\n\n")
 
-	if strings.Join(answers.All("project"), ",") != "one" {
-		t.Errorf("project = %v, want the answer given after the empty one", answers.All("project"))
+	if strings.Join(answers.All("effect"), ",") != "one" {
+		t.Errorf("effect = %v, want the answer given after the empty one", answers.All("effect"))
 	}
-	if !strings.Contains(out, "Project is required.") {
+	if !strings.Contains(out, "Effect is required.") {
 		t.Errorf("an empty first answer was accepted:\n%s", out)
 	}
 }
 
 func TestForm_RepeatValidatesEveryAnswerAndKeepsTheEarlierOnes(t *testing.T) {
 	form := Form{Fields: []Field{
-		{Key: "project", Label: "Project", Repeat: true, Validate: OneOf(categories)},
+		{Key: "effect", Label: "Effect", Repeat: true, Validate: OneOf(categories)},
 	}}
 
 	answers, out := run(t, form, "Chore\nDingoo\nDingo\n\n")
 
-	got := strings.Join(answers.All("project"), ",")
+	got := strings.Join(answers.All("effect"), ",")
 	if got != "Chore,Dingo" {
-		t.Errorf("project = %q, want the first answer kept and the second corrected", got)
+		t.Errorf("effect = %q, want the first answer kept and the second corrected", got)
 	}
 	if !strings.Contains(out, `(was "Dingoo")`) {
 		t.Errorf("the rejected answer was not offered back:\n%s", out)
@@ -325,127 +312,6 @@ func TestForm_ALongChoiceListIsCountedRatherThanPrinted(t *testing.T) {
 	}
 	if !strings.Contains(out, fmt.Sprintf("%d to choose from", len(many))) {
 		t.Errorf("the count stood in for nothing:\n%s", out)
-	}
-}
-
-// escapeForm is one field whose choices do not cover everything, with a way to
-// add what is missing.
-func escapeForm(make func(Session) (string, error)) Form {
-	return Form{Fields: []Field{{
-		Key:      "project",
-		Label:    "Project",
-		Choices:  []string{"Chore"},
-		Repeat:   true,
-		Validate: OneOf([]string{"Chore"}),
-		Escape:   &Escape{Trigger: "+", Hint: "+ makes a new one.", Run: make},
-	}}}
-}
-
-func TestForm_TheEscapeAnswersTheFieldWithWhatItMade(t *testing.T) {
-	runs := 0
-	answers, out := run(t, escapeForm(func(Session) (string, error) {
-		runs++
-		return "Brand new", nil
-	}), "+\n\n")
-
-	if got := strings.Join(answers.All("project"), ","); got != "Brand new" {
-		t.Errorf("project = %q, want what the escape made — it made the value, so nothing validates it", got)
-	}
-	if runs != 1 {
-		t.Errorf("the escape ran %d times, want once", runs)
-	}
-	if !strings.Contains(out, "+ makes a new one.") {
-		t.Errorf("the hint was not printed — a trigger nothing mentions is a trigger nobody presses:\n%s", out)
-	}
-}
-
-func TestForm_WhatTheEscapeMadeJoinsTheChoices(t *testing.T) {
-	session := &recordingSession{PlainSession: NewPlainSession(strings.NewReader("+\n\n"), io.Discard)}
-
-	if _, err := escapeForm(func(Session) (string, error) { return "Brand new", nil }).Run(session); err != nil {
-		t.Fatalf("Run: %v", err)
-	}
-
-	if len(session.offered) < 2 {
-		t.Fatalf("the field was asked %d times, want the repeat after the escape", len(session.offered))
-	}
-	if !slices.Contains(session.offered[1], "Brand new") {
-		t.Errorf("the next ask offered %v, want the new project among them — Tab has to reach it", session.offered[1])
-	}
-	if slices.Contains(session.offered[0], "Brand new") {
-		t.Error("the first ask offered a project that did not exist yet")
-	}
-}
-
-func TestForm_AValueTheEscapeMadeIsNotPutToTheValidator(t *testing.T) {
-	answers, out := run(t, escapeForm(func(Session) (string, error) {
-		return "Brand new", nil
-	}), "+\nbrand NEW\n\n")
-
-	got := strings.Join(answers.All("project"), ",")
-	if got != "Brand new,Brand new" {
-		t.Errorf("project = %q, want the made value accepted again and spelled the way it was made", got)
-	}
-	if strings.Contains(out, "unknown value") {
-		t.Errorf("the field rejected a choice it was offering:\n%s", out)
-	}
-}
-
-func TestForm_RunningOneFormTwiceDoesNotCarryTheFirstRunsEscapeOver(t *testing.T) {
-	form := escapeForm(func(Session) (string, error) { return "Brand new", nil })
-
-	if _, err := form.Run(NewPlainSession(strings.NewReader("+\n\n"), io.Discard)); err != nil {
-		t.Fatalf("first Run: %v", err)
-	}
-	session := &recordingSession{PlainSession: NewPlainSession(strings.NewReader("brand NEW\nChore\n\n"), io.Discard)}
-	answers, err := form.Run(session)
-	if err != nil {
-		t.Fatalf("second Run: %v", err)
-	}
-
-	// askValue takes a *Field so runEscape can grow Choices and made. What keeps
-	// that mutation inside one run is Form.Run's range copy and ask's value
-	// parameter — a convention the type-checker no longer enforces.
-	if slices.Contains(session.offered[0], "Brand new") {
-		t.Errorf("the second run offered %v, want the first run's escape forgotten", session.offered[0])
-	}
-	if strings.Join(answers.All("project"), ",") != "Chore" {
-		t.Errorf("project = %v, want the first run's made value refused by the validator", answers.All("project"))
-	}
-}
-
-func TestForm_AnEscapeThatMakesNothingAsksTheFieldAgain(t *testing.T) {
-	answers, _ := run(t, escapeForm(func(Session) (string, error) { return "", nil }), "+\nChore\n\n")
-
-	if got := strings.Join(answers.All("project"), ","); got != "Chore" {
-		t.Errorf("project = %q, want the answer given after backing out", got)
-	}
-}
-
-func TestForm_AFailedEscapeIsReportedAndTheFieldAskedAgain(t *testing.T) {
-	answers, out := run(t, escapeForm(func(Session) (string, error) {
-		return "", errors.New("the API refused it")
-	}), "+\nChore\n\n")
-
-	if got := strings.Join(answers.All("project"), ","); got != "Chore" {
-		t.Errorf("project = %q, want the field still answerable — a choice on the list is still a good answer", got)
-	}
-	if !strings.Contains(out, "the API refused it") {
-		t.Errorf("the failure was not reported:\n%s", out)
-	}
-}
-
-func TestForm_ACanceledEscapeAbandonsTheRecord(t *testing.T) {
-	var out bytes.Buffer
-	form := escapeForm(func(Session) (string, error) { return "", io.EOF })
-
-	answers, err := form.Run(NewPlainSession(strings.NewReader("+\n"), &out))
-
-	if !errors.Is(err, io.EOF) {
-		t.Fatalf("err = %v, want io.EOF — a cancel travels however deep it happened", err)
-	}
-	if answers != nil {
-		t.Errorf("answers = %v, want none", answers)
 	}
 }
 

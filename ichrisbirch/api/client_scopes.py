@@ -2,7 +2,7 @@
 
 A `ScopedClient` reaches a route only when one of its scopes lists it here. Every other route that
 resolves a user answers 403. A template is FastAPI's with every router prefix included, so
-`/api/v1/project-items/{id}` covers every item.
+`/api/v1/tasks/{id}` covers every task.
 """
 
 from itertools import chain
@@ -19,21 +19,8 @@ ARTICLES_READ = frozenset({('GET', f'{API_PREFIX}/articles')})
 BOOKS_READ = frozenset({('GET', f'{API_PREFIX}/books')})
 
 SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
-    # The reads the `icb projects items` commands make.
-    'icb.project-items.read': frozenset(
-        {
-            ('GET', f'{API_PREFIX}/project-items'),
-            ('GET', f'{API_PREFIX}/project-items/blocked'),
-            ('GET', f'{API_PREFIX}/project-items/search'),
-            ('GET', f'{API_PREFIX}/project-items/{{id}}'),
-            ('GET', f'{API_PREFIX}/project-items/{{id}}/blockers'),
-            ('GET', f'{API_PREFIX}/project-items/{{item_id}}/tasks'),
-            ('GET', f'{API_PREFIX}/projects/{{id:path}}/items'),
-        }
-    ),
     # Every read `icb overview` fans out to, for a service computing the same lanes: the tasks,
-    # articles and books lists, and the reads only the overview makes. Its project-items reads are
-    # listed here too, so a service holding only this scope can render every lane.
+    # articles and books lists, and the reads only the overview makes.
     'icb.overview.read': TASKS_READ
     | ARTICLES_READ
     | BOOKS_READ
@@ -43,8 +30,6 @@ SCOPE_ROUTES: dict[str, frozenset[tuple[str, str]]] = {
             ('GET', f'{API_PREFIX}/countdowns'),
             ('GET', f'{API_PREFIX}/events'),
             ('GET', f'{API_PREFIX}/habits/day'),
-            ('GET', f'{API_PREFIX}/project-items'),
-            ('GET', f'{API_PREFIX}/project-items/blocked'),
         }
     ),
     # The read `icb habits completed` makes, `--since` and `--until` included.
