@@ -125,7 +125,7 @@ services:
         max-file: "3"
         tag: "redis"
 
-# Reuse existing named volumes (same data, no migration needed)
+# Named outright, so compose does not prefix them with the project name.
 volumes:
   postgres_data:
     name: life-prod-postgres-data

@@ -82,7 +82,7 @@ LN=$(grep -n 'app\.test\.localhost.*PathPrefix' "$DYNAMIC_DIR/test/routing.yml" 
 }
 update_rule "$DYNAMIC_DIR/test/routing.yml" "$LN" "app.test.localhost" "$DEVTEST_RULE"
 
-# Prod: ichrisbirch.com and life.ichrisbirch.com, the two hosts the app answers on
+# Prod: the vue-paths rule for the root and life hosts
 # (match countdowns to skip the api-proxy rule)
 PROD_HOSTS="(Host(${BT}ichrisbirch.com${BT}) || Host(${BT}life.ichrisbirch.com${BT}))"
 LN=$(grep -n 'life\.ichrisbirch\.com.*countdowns' "$DYNAMIC_DIR/prod/routing.yml" | head -1 | cut -d: -f1)

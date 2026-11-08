@@ -1,6 +1,6 @@
 # The life audit trail
 
-Every insert, update and delete to a row of an life table leaves one entry in `life_audit_trail`.
+Every insert, update and delete to a row of a life table leaves one entry in `life_audit_trail`.
 The entry names the table and the row's primary key. It holds each written column's old and new
 value, and who wrote it. `GET /api/v1/admin/record-changes` reads it, filtered by table, row,
 writer and time window.

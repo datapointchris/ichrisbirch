@@ -1,5 +1,5 @@
-# The resources took the app's name, life, as their addresses. Their AWS names are unchanged,
-# so these record the move and an apply changes nothing.
+# Each block maps a resource's earlier address to its current one, so state follows the
+# address without replacing the resource. The AWS-side names are set in the resources themselves.
 
 moved {
   from = aws_security_group.ichrisbirch_webserver

@@ -47,11 +47,11 @@ The active color is in `/var/lib/life/bluegreen-state` on the application host.
 
 **RFC 9728 metadata:** `/.well-known/oauth-protected-resource` is served without authentication, only where `PUBLIC_URL` is set. `docs/authentication-architecture.md` says why the address is configured rather than derived.
 
-**OIDC bearer (a service, running the CLI or calling the API itself):** an `life-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `life/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
+**OIDC bearer (a service, running the CLI or calling the API itself):** a `life-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `life/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
 **Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Login`, so do not reintroduce an `internal/auth` here.
 
-The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Every release writes `$XDG_STATE_HOME/life/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
+The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. The lock is `$XDG_STATE_HOME/life/<client_id>.refresh.lock`, whose path follows the product name alone, because two versions naming different lock files would not exclude each other during an upgrade.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/v1/...`, and Traefik's `api-proxy` router (priority 200) forwards `/api` to FastAPI unchanged. No CORS needed.
 

@@ -1,4 +1,4 @@
-"""Every write to an life table leaves a row in `life_audit_trail`, naming who made it.
+"""Every write to a life table leaves a row in `life_audit_trail`, naming who made it.
 
 A row trigger on each table writes the entry, so every path that reaches the database is audited:
 the ORM, a Core statement, raw SQL, and an `ON DELETE` action Postgres takes itself. The trigger

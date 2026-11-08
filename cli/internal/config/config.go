@@ -121,8 +121,8 @@ func DefaultClientID() string { return goclilogin.ClientID(product) }
 // against, as which client, and where the token and its refresh lock live.
 //
 // StateDir is passed rather than left to goclilogin's default, which would put
-// it under the keyring service name. Naming life's own state directory keeps the
-// lock in one place across releases, so two versions running during an upgrade
+// it under the keyring service name. Naming life's own state directory ties the
+// lock's path to the product name, so two versions running during an upgrade
 // contend for the same file rather than each taking its own.
 func Login(d goclilogin.Deployment) goclilogin.Config {
 	return goclilogin.Config{

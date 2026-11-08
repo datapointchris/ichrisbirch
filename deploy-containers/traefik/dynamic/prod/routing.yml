@@ -38,7 +38,7 @@ http:
       entrypoints:
         - web
 
-    # Vue SPA on the two hosts the app answers on, at higher priority
+    # Vue SPA on the root and life hosts, at higher priority than the catch-all. www has its own router below.
     vue-paths:
       rule: "(Host(`ichrisbirch.com`) || Host(`life.ichrisbirch.com`)) && (PathPrefix(`/countdowns`) || PathPrefix(`/durations`) || PathPrefix(`/events`) || PathPrefix(`/books`) || PathPrefix(`/coffee/shops`) || PathPrefix(`/coffee/beans`) || PathPrefix(`/autofun`) || PathPrefix(`/autotasks`) || PathPrefix(`/money-wasted`) || PathPrefix(`/articles`) || PathPrefix(`/habits`) || PathPrefix(`/box-packing`) || PathPrefix(`/recipes`) || PathPrefix(`/shopping`) || PathPrefix(`/strains`) || PathPrefix(`/tasks`) || PathPrefix(`/today`) || PathPrefix(`/profile`) || PathPrefix(`/admin`) || PathPrefix(`/dashboard`) || PathPrefix(`/fonts`) || PathPrefix(`/icons`) || PathPrefix(`/manifest.webmanifest`) || PathPrefix(`/assets`) || Path(`/`))"
       service: vue

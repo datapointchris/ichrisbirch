@@ -209,7 +209,7 @@ func TestEveryResourceCommandCarriesNotFoundHints(t *testing.T) {
 			for _, hint := range hints {
 				_, command, found := strings.Cut(hint, ": ")
 				if !found || !strings.HasPrefix(command, "life ") {
-					t.Errorf("%s hint %q is not a sentence, a colon, and an life command",
+					t.Errorf("%s hint %q is not a sentence, a colon, and a life command",
 						cmd.CommandPath(), hint)
 				}
 			}
