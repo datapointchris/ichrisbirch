@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
-
-const PROJECTS_APP_URL = 'https://projects.ichrisbirch.com/'
+import { PROJECTS_APP_URL } from '../src/components/sidebarLinks'
 
 // Projects live in the projects app at its own host. No component test covers
 // this: the redirect is Traefik's, and the link is one attribute.
