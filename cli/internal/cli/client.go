@@ -10,8 +10,8 @@ import (
 	"github.com/datapointchris/goclilogin"
 	"golang.org/x/oauth2"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
-	"github.com/datapointchris/ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/life/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/config"
 )
 
 // errNeedsLogin is returned by newAPIClient when there is no stored token. The
@@ -38,7 +38,7 @@ func newAPIClient(ctx context.Context) (*api.Client, error) {
 }
 
 // tokenSource is the config file's token_command where it names one, the
-// client-credentials grant when ICB_CLIENT_SECRET is set, and otherwise the
+// client-credentials grant when LIFE_CLIENT_SECRET is set, and otherwise the
 // token this machine logged in for.
 func tokenSource(ctx context.Context, d goclilogin.Deployment) (oauth2.TokenSource, error) {
 	if d.HandsTokens() {
@@ -55,20 +55,20 @@ func tokenSource(ctx context.Context, d goclilogin.Deployment) (oauth2.TokenSour
 	return source, err
 }
 
-// errTokenCommandFailed names what token_command owes icb and how to see what it
-// printed instead, since the command is the operator's and icb cannot fix it.
+// errTokenCommandFailed names what token_command owes life and how to see what it
+// printed instead, since the command is the operator's and life cannot fix it.
 func errTokenCommandFailed(d goclilogin.Deployment, err error) error {
 	return fmt.Errorf("token_command in %s printed no access_token; it must print an RFC 6749 § 5.1 JSON token response on stdout, so run %q yourself to see what it prints: %w", d.Path, d.TokenCommand, err)
 }
 
 // handleAPIError maps an error from a resource command to a message and exit
 // code: not-logged-in, a token endpoint that refused the refresh, and 401 all
-// point at `icb auth login` (exit 1); everything else is a runtime error (exit 1
+// point at `life auth login` (exit 1); everything else is a runtime error (exit 1
 // via Execute). A service client is never pointed at a login, because none
 // exists for it. Returns the error to return from RunE.
 func handleAPIError(err error) error {
 	if errors.Is(err, errNeedsLogin) {
-		return fmt.Errorf("not logged in — run `icb auth login`")
+		return fmt.Errorf("not logged in — run `life auth login`")
 	}
 	var apiErr *api.APIError
 	// A handed token's remedy is whatever handed it, so it names the command.
@@ -100,10 +100,10 @@ func handleAPIError(err error) error {
 	// request that triggered the refresh, so the URL and the raw OAuth error
 	// description are what reach the terminal unless they are named here.
 	if goclilogin.IsSessionRejected(err) {
-		return fmt.Errorf("session expired — run `icb auth login`")
+		return fmt.Errorf("session expired — run `life auth login`")
 	}
 	if errors.As(err, &apiErr) && apiErr.Unauthorized() {
-		return fmt.Errorf("session rejected by the API — run `icb auth login` to re-authenticate")
+		return fmt.Errorf("session rejected by the API — run `life auth login` to re-authenticate")
 	}
 	if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusConflict && apiErr.Message != "" {
 		return refusal{apiErr}

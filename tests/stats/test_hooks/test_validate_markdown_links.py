@@ -21,7 +21,7 @@ class TestValidateMarkdownLinksSchema:
         """Test ValidateMarkdownLinksHookEvent with broken links."""
         event = ValidateMarkdownLinksHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -49,7 +49,7 @@ class TestValidateMarkdownLinksRunner:
                 stderr='',
             )
 
-            event = run(['docs/guide.md'], 'master', 'ichrisbirch')
+            event = run(['docs/guide.md'], 'master', 'life')
 
             assert isinstance(event, ValidateMarkdownLinksHookEvent)
             assert event.status == 'failed'
@@ -63,6 +63,6 @@ class TestValidateMarkdownLinksRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = run(['README.md', 'main.py', 'docs/guide.md'], 'master', 'ichrisbirch')
+            event = run(['README.md', 'main.py', 'docs/guide.md'], 'master', 'life')
 
             assert set(event.files_checked) == {'README.md', 'docs/guide.md'}

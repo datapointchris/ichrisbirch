@@ -38,7 +38,7 @@ test.describe('AutoTasks Page', () => {
 
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/autotasks')
-    await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
+    await expect(page).toHaveTitle('AutoTasks | Life')
   })
 
   test('creates a new autotask', async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe('AutoTasks Page', () => {
 
   test('sidebar navigation to autotasks works', async ({ page }) => {
     await page.goto('/autotasks')
-    await expect(page).toHaveTitle('AutoTasks | iChrisBirch')
+    await expect(page).toHaveTitle('AutoTasks | Life')
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'AutoTasks' })
     await expect(sidebarLink).toBeVisible()
   })

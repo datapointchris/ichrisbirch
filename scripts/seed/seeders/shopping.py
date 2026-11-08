@@ -12,9 +12,9 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.shopping import ShoppingItem
-from ichrisbirch.models.shopping import ShoppingPurchase
-from ichrisbirch.models.shopping import ShoppingSection
+from life.models.shopping import ShoppingItem
+from life.models.shopping import ShoppingPurchase
+from life.models.shopping import ShoppingSection
 from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_datetime
 

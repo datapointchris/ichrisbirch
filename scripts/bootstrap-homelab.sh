@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Bootstrap script for deploying ichrisbirch on a fresh LXC container
+# Bootstrap script for deploying life on a fresh LXC container
 # with Docker and Cloudflare Tunnel.
 #
 # Usage:
@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-INSTALL_DIR="/srv/ichrisbirch"
+INSTALL_DIR="/srv/life"
 REPO_URL="https://github.com/datapointchris/ichrisbirch.git"
 
 RED='\033[0;31m'
@@ -105,9 +105,9 @@ clone_repository() {
 }
 
 install_cli() {
-  log_info "Installing ichrisbirch CLI..."
-  ln -sf "$INSTALL_DIR/ops/icbops" /usr/local/bin/icbops
-  log_success "CLI installed: icbops"
+  log_info "Installing life CLI..."
+  ln -sf "$INSTALL_DIR/ops/lifeops" /usr/local/bin/lifeops
+  log_success "CLI installed: lifeops"
 }
 
 setup_age_key() {
@@ -180,7 +180,7 @@ setup_cloudflare_tunnel() {
   echo ""
   echo "To set up the tunnel:"
   echo "  1. Go to https://dash.cloudflare.com -> Zero Trust -> Networks -> Tunnels"
-  echo "  2. Create a tunnel named 'ichrisbirch-homelab'"
+  echo "  2. Create a tunnel named 'life-homelab'"
   echo "  3. Copy the tunnel token"
   echo ""
   read -rp "Enter tunnel token (or press Enter to skip): " tunnel_token
@@ -209,12 +209,12 @@ initialize_database() {
   case $db_option in
     1)
       log_info "Will initialize fresh database after containers start"
-      echo "fresh" >/tmp/ichrisbirch_db_init
+      echo "fresh" >/tmp/life_db_init
       ;;
     2)
       read -rp "Enter backup file path: " backup_path
       if [[ -f "$backup_path" ]]; then
-        echo "$backup_path" >/tmp/ichrisbirch_db_restore
+        echo "$backup_path" >/tmp/life_db_restore
         log_info "Will restore from $backup_path after containers start"
       else
         log_error "Backup file not found: $backup_path"
@@ -233,16 +233,16 @@ start_services() {
   log_info "Starting production services..."
   cd "$INSTALL_DIR"
 
-  if ! command -v icbops &>/dev/null; then
+  if ! command -v lifeops &>/dev/null; then
     log_error "CLI not in PATH, using direct path"
-    "$INSTALL_DIR/ops/icbops" prod start
+    "$INSTALL_DIR/ops/lifeops" prod start
   else
-    icbops prod start
+    lifeops prod start
   fi
 }
 
 post_start_database() {
-  if [[ -f /tmp/ichrisbirch_db_init ]]; then
+  if [[ -f /tmp/life_db_init ]]; then
     log_info "Initializing fresh database..."
     # Wait for postgres to be ready
     sleep 10
@@ -251,48 +251,48 @@ post_start_database() {
     local pg_password
     pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
-    docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$pg_password';"
-    docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;"
-    docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO icb_app;"
+    docker exec life-infra-postgres psql -U postgres -c "CREATE ROLE life WITH LOGIN PASSWORD '$pg_password';"
+    docker exec life-infra-postgres psql -U postgres -c "ALTER ROLE life CREATEDB;"
+    docker exec life-infra-postgres psql -U postgres -c "ALTER DATABASE life OWNER TO life;"
 
     log_success "Database role created"
-    rm /tmp/ichrisbirch_db_init
+    rm /tmp/life_db_init
 
-  elif [[ -f /tmp/ichrisbirch_db_restore ]]; then
+  elif [[ -f /tmp/life_db_restore ]]; then
     local backup_path
-    backup_path=$(cat /tmp/ichrisbirch_db_restore)
+    backup_path=$(cat /tmp/life_db_restore)
     log_info "Restoring database from $backup_path..."
 
     # Wait for postgres
     sleep 10
 
     # Stop app services during restore
-    docker stop icb-prod-api icb-prod-vue icb-prod-scheduler 2>/dev/null || true
+    docker stop life-prod-api life-prod-vue life-prod-scheduler 2>/dev/null || true
 
     # Create role if needed
     local pg_password
     pg_password=$(grep '^POSTGRES_PASSWORD=' "$INSTALL_DIR/.env" | cut -d= -f2- | tr -d '"')
 
-    docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
-    docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;" 2>/dev/null || true
+    docker exec life-infra-postgres psql -U postgres -c "CREATE ROLE life WITH LOGIN PASSWORD '$pg_password';" 2>/dev/null || true
+    docker exec life-infra-postgres psql -U postgres -c "ALTER ROLE life CREATEDB;" 2>/dev/null || true
 
     # Drop and recreate database
-    docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();" 2>/dev/null || true
-    docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE IF EXISTS ichrisbirch;"
-    docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
+    docker exec life-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'life' AND pid <> pg_backend_pid();" 2>/dev/null || true
+    docker exec life-infra-postgres psql -U postgres -c "DROP DATABASE IF EXISTS life;"
+    docker exec life-infra-postgres psql -U postgres -c "CREATE DATABASE life OWNER life;"
 
     # Restore. A gzipped dump is plain SQL, which pg_restore refuses.
     if [[ "$backup_path" == *.gz ]]; then
-      gunzip -c "$backup_path" | docker exec -i icb-infra-postgres psql -U postgres -d ichrisbirch --set ON_ERROR_STOP=1
+      gunzip -c "$backup_path" | docker exec -i life-infra-postgres psql -U postgres -d life --set ON_ERROR_STOP=1
     else
-      docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner --exit-on-error <"$backup_path"
+      docker exec -i life-infra-postgres pg_restore -U life -d life --no-owner --exit-on-error <"$backup_path"
     fi
 
     # Start services back up
-    docker start icb-prod-api icb-prod-vue icb-prod-scheduler
+    docker start life-prod-api life-prod-vue life-prod-scheduler
 
     log_success "Database restored"
-    rm /tmp/ichrisbirch_db_restore
+    rm /tmp/life_db_restore
   fi
 }
 
@@ -306,8 +306,8 @@ print_summary() {
   echo ""
   echo "Next steps:"
   echo "  1. Verify age key: sops decrypt secrets/secrets.prod.enc.env > /dev/null"
-  echo "  2. Check services: icbops prod status"
-  echo "  3. View logs: icbops prod logs"
+  echo "  2. Check services: lifeops prod status"
+  echo "  3. View logs: lifeops prod logs"
   echo ""
   if ! systemctl is-active --quiet cloudflared 2>/dev/null; then
     echo -e "${YELLOW}Cloudflare tunnel not configured!${NC}"
@@ -325,7 +325,7 @@ print_summary() {
 main() {
   echo ""
   echo "=========================================="
-  echo "ichrisbirch Homelab Bootstrap"
+  echo "life Homelab Bootstrap"
   echo "=========================================="
   echo ""
 

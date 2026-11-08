@@ -21,7 +21,7 @@
       "code": "B101",
       "col_offset": 0,
       "end_col_offset": 21,
-      "filename": "ichrisbirch/test_file.py",
+      "filename": "life/test_file.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 703,
@@ -39,7 +39,7 @@
       "code": "B101",
       "col_offset": 0,
       "end_col_offset": 24,
-      "filename": "ichrisbirch/test_file.py",
+      "filename": "life/test_file.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 703,

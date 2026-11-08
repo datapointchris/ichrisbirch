@@ -14,7 +14,7 @@ import (
 )
 
 // TestNoDefaultStdoutWrites guards the machine contract: other CLIs parse
-// `icb ... --json`, so one stray line on stdout fails the parse as malformed
+// `life ... --json`, so one stray line on stdout fails the parse as malformed
 // JSON rather than as the diagnostic it actually was.
 //
 // It catches only the writes that pick a stream implicitly — bare fmt.Print*,
@@ -70,7 +70,7 @@ func TestNoDefaultStdoutWrites(t *testing.T) {
 }
 
 // TestUsageError_LeavesStdoutClean is the failure this whole rule exists for: a
-// caller pipes `icb ... --json` somewhere, gets the invocation wrong, and must
+// caller pipes `life ... --json` somewhere, gets the invocation wrong, and must
 // receive nothing at all on stdout rather than a usage message to parse.
 //
 // Driven through run, the path the shipped binary takes, because goclikit.Execute
@@ -84,7 +84,7 @@ func TestUsageError_LeavesStdoutClean(t *testing.T) {
 	} {
 		t.Run(strings.Join(args, " "), func(t *testing.T) {
 			original := os.Args
-			os.Args = append([]string{"icb"}, args...)
+			os.Args = append([]string{"life"}, args...)
 			t.Cleanup(func() { os.Args = original })
 
 			var out, errOut strings.Builder

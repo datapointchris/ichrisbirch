@@ -30,7 +30,7 @@
           href="/"
           class="sidebar__title"
         >
-          iChrisBirch
+          Life
         </a>
       </div>
       <div

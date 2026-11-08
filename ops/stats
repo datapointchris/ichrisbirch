@@ -2,12 +2,12 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2034
 # shellcheck disable=SC2154
-# Stats commands for ichrisbirch CLI
+# Stats commands for life CLI
 # Sourced by main CLI - do not run directly
 # SC2034: Variables may appear unused but are used by sourcing script
 # SC2154: Color variables are defined in main CLI before sourcing
 
-STATS_DATA_DIR="$ICHRISBIRCH_HOME/stats/data"
+STATS_DATA_DIR="$LIFE_HOME/stats/data"
 STATS_EVENTS_FILE="$STATS_DATA_DIR/events/events.jsonl"
 
 function stats-usage() {
@@ -31,49 +31,49 @@ function stats-usage() {
 }
 
 function stats-summary() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.cli.dashboard summary "$STATS_DATA_DIR" "$STATS_EVENTS_FILE"
 }
 
 function stats-snapshot() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.snapshot
 }
 
 function stats-code() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.cli.dashboard code
 }
 
 function stats-tests() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.cli.tests_view "$STATS_EVENTS_FILE" "$STATS_DATA_DIR"
 }
 
 function stats-quality() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.cli.quality_view "$STATS_EVENTS_FILE"
 }
 
 function stats-activity() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   local days="${1:-7}"
   uv run python -m stats.cli.activity_view "$STATS_EVENTS_FILE" "$days"
 }
 
 function stats-events() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   local count="${1:-20}"
   uv run python -m stats.cli.events_view "$STATS_EVENTS_FILE" "$count"
 }
 
 function stats-churn() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   local arg="${1:-30}"
   uv run python -m stats.cli.churn_view "$arg"
 }
 
 function stats-trends() {
-  cd "$ICHRISBIRCH_HOME" || exit
+  cd "$LIFE_HOME" || exit
   uv run python -m stats.cli.trends_view "$STATS_DATA_DIR"
 }

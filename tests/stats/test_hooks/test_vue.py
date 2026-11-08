@@ -42,7 +42,7 @@ class TestVueEslintSchema:
 
         event = VueEslintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -65,7 +65,7 @@ class TestVueEslintSchema:
         """Test VueEslintHookEvent with no issues."""
         event = VueEslintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -97,7 +97,7 @@ class TestVueEslintRunner:
                 stderr='',
             )
 
-            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'life')
 
             assert isinstance(event, VueEslintHookEvent)
             assert event.status == 'passed'
@@ -116,7 +116,7 @@ class TestVueEslintRunner:
                 stderr='',
             )
 
-            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_eslint.run(['frontend/src/App.vue'], 'master', 'life')
 
             assert isinstance(event, VueEslintHookEvent)
             assert event.status == 'failed'
@@ -126,7 +126,7 @@ class TestVueEslintRunner:
 
     def test_vue_eslint_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/TS files."""
-        event = vue_eslint.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_eslint.run(['main.py', 'config.yaml'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -139,7 +139,7 @@ class TestVuePrettierSchema:
         """Test VuePrettierHookEvent with files needing reformatting."""
         event = VuePrettierHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -156,7 +156,7 @@ class TestVuePrettierSchema:
         """Test VuePrettierHookEvent with no files needing reformatting."""
         event = VuePrettierHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -182,7 +182,7 @@ class TestVuePrettierRunner:
                 stderr='',
             )
 
-            event = vue_prettier.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_prettier.run(['frontend/src/App.vue'], 'master', 'life')
 
             assert isinstance(event, VuePrettierHookEvent)
             assert event.status == 'passed'
@@ -197,7 +197,7 @@ class TestVuePrettierRunner:
                 stderr='',
             )
 
-            event = vue_prettier.run(['frontend/src/components/Foo.vue'], 'master', 'ichrisbirch')
+            event = vue_prettier.run(['frontend/src/components/Foo.vue'], 'master', 'life')
 
             assert isinstance(event, VuePrettierHookEvent)
             assert event.status == 'failed'
@@ -206,7 +206,7 @@ class TestVuePrettierRunner:
 
     def test_vue_prettier_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/frontend files."""
-        event = vue_prettier.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_prettier.run(['main.py', 'config.yaml'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -219,7 +219,7 @@ class TestVueTypecheckSchema:
         """Test VueTypecheckHookEvent with type errors."""
         event = VueTypecheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -252,7 +252,7 @@ class TestVueTypecheckSchema:
         """Test VueTypecheckHookEvent with no errors."""
         event = VueTypecheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -280,7 +280,7 @@ class TestVueTypecheckRunner:
                 stderr='',
             )
 
-            event = vue_typecheck.run(['frontend/src/App.vue'], 'master', 'ichrisbirch')
+            event = vue_typecheck.run(['frontend/src/App.vue'], 'master', 'life')
 
             assert isinstance(event, VueTypecheckHookEvent)
             assert event.status == 'passed'
@@ -298,7 +298,7 @@ class TestVueTypecheckRunner:
                 stderr='',
             )
 
-            event = vue_typecheck.run(['frontend/src/stores/books.ts'], 'master', 'ichrisbirch')
+            event = vue_typecheck.run(['frontend/src/stores/books.ts'], 'master', 'life')
 
             assert isinstance(event, VueTypecheckHookEvent)
             assert event.status == 'failed'
@@ -311,7 +311,7 @@ class TestVueTypecheckRunner:
 
     def test_vue_typecheck_runner_skips_non_vue_files(self) -> None:
         """Test runner skips non-Vue/TS files."""
-        event = vue_typecheck.run(['main.py', 'config.yaml'], 'master', 'ichrisbirch')
+        event = vue_typecheck.run(['main.py', 'config.yaml'], 'master', 'life')
 
         assert event.status == 'passed'
         assert event.error_count == 0

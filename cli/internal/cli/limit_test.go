@@ -121,7 +121,7 @@ func limitCommands(t *testing.T) map[string]*pflag.Flag {
 	found := map[string]*pflag.Flag{}
 	walkCommands(NewRootCommand(), func(cmd *cobra.Command) {
 		if flag := cmd.Flags().Lookup("limit"); flag != nil {
-			found[strings.TrimPrefix(cmd.CommandPath(), "icb ")] = flag
+			found[strings.TrimPrefix(cmd.CommandPath(), "life ")] = flag
 		}
 	})
 	if len(found) == 0 {

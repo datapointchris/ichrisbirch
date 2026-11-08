@@ -6,11 +6,11 @@
     "reports": [
       {
         "stats": {"blanks": 6, "code": 24, "comments": 1, "blobs": {}},
-        "name": "ichrisbirch/api/main.py"
+        "name": "life/api/main.py"
       },
       {
         "stats": {"blanks": 17, "code": 69, "comments": 0, "blobs": {}},
-        "name": "ichrisbirch/app/main.py"
+        "name": "life/app/main.py"
       }
     ],
     "children": {},
@@ -23,7 +23,7 @@
     "reports": [
       {
         "stats": {"blanks": 1, "code": 16, "comments": 0, "blobs": {}},
-        "name": "ichrisbirch/app/static/js/messages.js"
+        "name": "life/app/static/js/messages.js"
       }
     ],
     "children": {},
@@ -36,7 +36,7 @@
     "reports": [
       {
         "stats": {"blanks": 3, "code": 27, "comments": 0, "blobs": {}},
-        "name": "ichrisbirch/app/templates/loading.html"
+        "name": "life/app/templates/loading.html"
       }
     ],
     "children": {},
@@ -49,7 +49,7 @@
     "reports": [
       {
         "stats": {"blanks": 2619, "code": 10079, "comments": 60, "blobs": {}},
-        "name": "ichrisbirch/app/static/css/main.css"
+        "name": "life/app/static/css/main.css"
       }
     ],
     "children": {},

@@ -2,7 +2,7 @@ from zoneinfo import ZoneInfo
 
 from apscheduler.triggers.cron import CronTrigger
 
-from ichrisbirch.scheduler.jobs import JobToAdd
+from life.scheduler.jobs import JobToAdd
 
 daily_3pm_trigger = CronTrigger(hour=15, timezone=ZoneInfo('UTC'))
 

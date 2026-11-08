@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // Each refusal here is decided before the client exists, so it is exit 2 even

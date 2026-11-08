@@ -38,7 +38,7 @@ class TestMypySchema:
         """Test MypyHookEvent with errors."""
         event = MypyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -63,7 +63,7 @@ class TestMypySchema:
         """Test MypyHookEvent with no errors."""
         event = MypyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -91,7 +91,7 @@ class TestMypyRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, MypyHookEvent)
             assert event.status == 'passed'
@@ -108,7 +108,7 @@ class TestMypyRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, MypyHookEvent)
             assert event.status == 'failed'

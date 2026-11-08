@@ -62,8 +62,8 @@ which is what makes a CORS or middleware fault visible.
 ## Running tests
 
 ```bash
-./ops/icbops test run
-./ops/icbops test run tests/ichrisbirch/api/endpoints/test_habits.py -v
+./ops/lifeops test run
+./ops/lifeops test run tests/life/api/endpoints/test_habits.py -v
 ```
 
 `test run` exports `ENVIRONMENT=testing` and writes its reports to

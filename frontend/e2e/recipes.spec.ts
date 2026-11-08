@@ -36,7 +36,7 @@ test.describe('Recipes Page', () => {
 
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/recipes')
-    await expect(page).toHaveTitle('Recipes | iChrisBirch')
+    await expect(page).toHaveTitle('Recipes | Life')
     await expect(page.locator('.recipes__header')).toBeVisible()
   })
 
@@ -79,7 +79,7 @@ test.describe('Recipes Page', () => {
 
   test('sidebar navigation to recipes works', async ({ page }) => {
     await page.goto('/recipes')
-    await expect(page).toHaveTitle('Recipes | iChrisBirch')
+    await expect(page).toHaveTitle('Recipes | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Recipes' })
     await expect(sidebarLink).toBeVisible()
@@ -87,7 +87,7 @@ test.describe('Recipes Page', () => {
 
   test('stats page loads', async ({ page }) => {
     await page.goto('/recipes/stats')
-    await expect(page).toHaveTitle('Recipes Stats | iChrisBirch')
+    await expect(page).toHaveTitle('Recipes Stats | Life')
     // Either summary cards render or empty state — both confirm stats view loaded
     const loaded = page.locator('.stats-cards, .stats-empty')
     await expect(loaded.first()).toBeVisible({ timeout: 10000 })

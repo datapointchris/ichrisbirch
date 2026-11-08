@@ -4,7 +4,7 @@ services:
   # Nginx reverse proxy - Production configuration
   nginx:
     image: nginx:alpine
-    container_name: icb-metal-nginx
+    container_name: life-metal-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -26,9 +26,9 @@ services:
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
     image: postgres:16-alpine
-    container_name: icb-metal-postgres
+    container_name: life-metal-postgres
     environment:
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # Use environment variable for security
     # Remove ports mapping for security (only accessible within Docker network)
@@ -49,7 +49,7 @@ services:
       -c random_page_cost=1.1
       -c effective_io_concurrency=200
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -64,7 +64,7 @@ services:
   # Redis Cache Service - Production optimized for performance and persistence
   redis:
     image: redis:7-alpine
-    container_name: icb-metal-redis
+    container_name: life-metal-redis
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     # Production Redis optimizations for high performance
@@ -102,9 +102,9 @@ services:
     build:
       context: .
       target: production
-    container_name: icb-metal-api
+    container_name: life-metal-api
     # Production command without reload, disable access logs (handled by middleware)
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
+    command: uvicorn life.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     environment:
       - ENVIRONMENT=production
       - FASTAPI_DEBUG=False
@@ -136,9 +136,9 @@ services:
     build:
       context: .
       target: production
-    container_name: icb-metal-scheduler
+    container_name: life-metal-scheduler
     # Production scheduler command
-    command: python -m ichrisbirch.wsgi_scheduler
+    command: python -m life.wsgi_scheduler
     environment:
       - ENVIRONMENT=production
       - CONTAINER_LOG_DIR=/app/logs # Container always uses /app/logs
@@ -163,10 +163,10 @@ services:
 # Production volumes with explicit names
 volumes:
   postgres_data:
-    name: icb-metal-postgres-data
+    name: life-metal-postgres-data
     driver: local
   redis_data:
-    name: icb-metal-redis-data
+    name: life-metal-redis-data
     driver: local
 
 # Default network for service communication

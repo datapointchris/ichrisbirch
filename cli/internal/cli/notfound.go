@@ -3,7 +3,7 @@ package cli
 import (
 	"errors"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // notFound reports whether err is the API saying a resource is not there, and

@@ -5,7 +5,7 @@
 # and deployed as separate blue/green projects.
 #
 # Usage:
-#   docker compose --project-name icb-infra -f docker-compose.infra.yml up -d
+#   docker compose --project-name life-infra -f docker-compose.infra.yml up -d
 
 services:
   # Traefik reverse proxy - receives HTTP from Cloudflare Tunnel
@@ -13,7 +13,7 @@ services:
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
     image: traefik:v3.6
-    container_name: icb-infra-traefik
+    container_name: life-infra-traefik
     ports:
       - "80:80"
     volumes:
@@ -48,9 +48,9 @@ services:
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
     image: postgres:16-alpine
-    container_name: icb-infra-postgres
+    container_name: life-infra-postgres
     environment:
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports: []
@@ -71,7 +71,7 @@ services:
       -c random_page_cost=1.1
       -c effective_io_concurrency=200
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -86,7 +86,7 @@ services:
   # Redis Cache Service - Production optimized for performance and persistence
   redis:
     image: redis:7-alpine
-    container_name: icb-infra-redis
+    container_name: life-infra-redis
     ports: []
     networks:
       - default
@@ -122,14 +122,14 @@ services:
 # Reuse existing named volumes (same data, no migration needed)
 volumes:
   postgres_data:
-    name: icb-prod-postgres-data
+    name: life-prod-postgres-data
     driver: local
   redis_data:
-    name: icb-prod-redis-data
+    name: life-prod-redis-data
     driver: local
 
 # Networks for service communication
-# The 'default' network (icb-infra_default) is used by app containers to reach postgres/redis
+# The 'default' network (life-infra_default) is used by app containers to reach postgres/redis
 # The 'proxy' network is shared with app containers for Traefik routing
 networks:
   default:

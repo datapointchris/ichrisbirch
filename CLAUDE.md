@@ -2,30 +2,30 @@
 
 ## Project Overview
 
-iChrisBirch is a personal productivity web application: a FastAPI backend, a Vue 3 SPA and an APScheduler service, sharing PostgreSQL and Redis behind Traefik and orchestrated with Docker Compose.
+Life is a personal productivity web application: a FastAPI backend, a Vue 3 SPA and an APScheduler service, sharing PostgreSQL and Redis behind Traefik and orchestrated with Docker Compose.
 
-`./ops/icbops --help` is the command surface for dev, testing, database, routing and production. Dev is `https://app.docker.localhost/` with the API at `https://api.docker.localhost/`; pytest runs against its own throwaway Postgres and Redis, and the e2e suite inside the checkout's own test stack.
+`./ops/lifeops --help` is the command surface for dev, testing, database, routing and production. Dev is `https://app.docker.localhost/` with the API at `https://api.docker.localhost/`; pytest runs against its own throwaway Postgres and Redis, and the e2e suite inside the checkout's own test stack.
 
 ## Production Environment
 
 **Production runs on a self-hosted server, NOT locally.**
 
-- **Application host**: installed at `/srv/ichrisbirch/`, logs at `/srv/ichrisbirch/logs/`
+- **Application host**: installed at `/srv/life/`, logs at `/srv/life/logs/`
 - **Webhook host**: receives the push notification and runs the deploy; logs at `/opt/webhooks/logs/`
 - **Deployment**: Push to main triggers the webhook → blue/green deploy with zero downtime
-- **Blue/green**: Infrastructure (`icb-infra`) always running; app services alternate between `icb-blue`/`icb-green`. See `docs/blue-green-deployment.md`.
+- **Blue/green**: Infrastructure (`life-infra`) always running; app services alternate between `life-blue`/`life-green`. See `docs/blue-green-deployment.md`.
 
-The two hosts are named by `$ICB_PROD_HOST` and `$ICB_WEBHOOK_HOST`, which each
+The two hosts are named by `$LIFE_PROD_HOST` and `$LIFE_WEBHOOK_HOST`, which each
 operator sets for their own deployment. Reading logs and container status over
 SSH is fine; anything that changes production goes through the deploy pipeline.
-The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application host.
+The active color is in `/var/lib/life/bluegreen-state` on the application host.
 
 ## Architecture
 
-### CLIs — `icbops` (ops) and `icb` (data)
+### CLIs — `lifeops` (ops) and `life` (data)
 
-- **`ops/icbops`** — the bash ops/deploy tool: `./ops/icbops <dev|testing|prod> <verb>`, plus the tools `test run [path]` (pytest), `test e2e [spec]` (Playwright), `routing`, `ssl-manager` and `stats`. `prod deploy-status` shows the live color. `icbops install` symlinks it to `~/.local/bin/icbops`, and run through that link inside a checkout it hands over to that checkout's own `ops/icbops`.
-- **`cli/`** — the `icb` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`icb <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/ichrisbirch/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`icb-cli-<host>`) and the keyring service name (`icb-cli`) are deployed identifiers and keep the old spelling — they are not path-derived.
+- **`ops/lifeops`** — the bash ops/deploy tool: `./ops/lifeops <dev|testing|prod> <verb>`, plus the tools `test run [path]` (pytest), `test e2e [spec]` (Playwright), `routing`, `ssl-manager` and `stats`. `prod deploy-status` shows the live color. `lifeops install` symlinks it to `~/.local/bin/lifeops`, and run through that link inside a checkout it hands over to that checkout's own `ops/lifeops`.
+- **`cli/`** — the `life` Go/cobra resource CLI: a thin REST client over the FastAPI and the programmatic data surface (`life <resource> <verb>`, `--json` on reads). It is its own Go module (`github.com/datapointchris/life/cli`). `cli/README.md` covers build, install and auth, along with the guided-create form (`internal/prompt`) and the `[]prompt.Field` pattern any resource with a closed vocabulary should follow. The Authelia client ids (`life-cli-<host>`) and the keyring service name (`life-cli`) are deployed identifiers: a token is found only under the names it was issued and stored with, so renaming either means every machine logs in again.
 
 ### Vue Frontend
 
@@ -33,25 +33,25 @@ The active color is in `/var/lib/ichrisbirch/bluegreen-state` on the application
 - `useTheme` composable: OKLCH color themes, named themes, accent hue slider, font choice
 - Self-hosted fonts in `frontend/public/fonts/` (woff2)
 
-**Critical:** Every new Vue path or static asset path must be added to `deploy-containers/traefik/vue-paths.txt`, then run `icbops routing generate` to update all three routing files (dev, test, prod).
+**Critical:** Every new Vue path or static asset path must be added to `deploy-containers/traefik/vue-paths.txt`, then run `lifeops routing generate` to update all three routing files (dev, test, prod).
 
 **CORS gotcha:** Wildcard `Access-Control-Allow-Headers: *` does NOT work with `credentials: true` — list headers explicitly in Traefik CORS middleware config (including `X-Request-ID`). CORS and security headers are in separate middlewares to prevent chaining conflicts.
 
 ### Authentication
 
-**Authelia (Production):** ForwardAuth on `ichrisbirch.com` routes, injects `Remote-User`/`Remote-Email` headers for browser sessions. The `ichrisbirch-bearer` router carries a request holding an `Authorization` header past ForwardAuth, so the `icb` CLI targets `https://ichrisbirch.com` and only bearer requests skip the edge. That address is the `api` key of the CLI's config file, and `icbops prod apihealth` and `prod smoke` send `icb auth token` the same way.
+**Authelia (Production):** ForwardAuth on the `ichrisbirch.com` and `life.ichrisbirch.com` routes injects `Remote-User`/`Remote-Email` headers for browser sessions. Each host's bearer router carries a request holding an `Authorization` header past ForwardAuth, so the `life` CLI targets `https://life.ichrisbirch.com` and only bearer requests skip the edge. That address is the `api` key of the CLI's config file, and `lifeops prod apihealth` and `prod smoke` send `life auth token` the same way.
 
-**OIDC bearer (the `icb` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `ichrisbirch/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `icb-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
+**OIDC bearer (the `life` CLI):** the CLI logs in with the device authorization grant, so its access token is an RFC 9068 JWT rather than an edge-authorized opaque token. `life/api/oidc_auth.py` verifies it in-process with PyJWT's `PyJWKClient`: header `typ` is `at+jwt`, RS256 signature against Authelia's JWKS, `iss` matches, `client_id` starts with `life-cli-`, `sub` non-empty, `exp` in the future. Authelia does not carry the audience through the device grant, so `aud` is empty and the `client_id` prefix is what keeps another product's token out. Every rejection returns one opaque 401, and a presented-but-invalid access token never falls through to a weaker strategy.
 
-**API paths:** every resource route is under `/api/v1` (`API_PREFIX` in `ichrisbirch/api/__init__.py`), and nothing between the edge and FastAPI rewrites the path. `/`, `/health` and `/.well-known/oauth-protected-resource` are at the root, and the prod router `api-root` carries the last two. Vue and pytest take the prefix in their base URL and name routes below it; the CLI adds it in `cli/internal/api/client.go`.
+**API paths:** every resource route is under `/api/v1` (`API_PREFIX` in `life/api/__init__.py`), and nothing between the edge and FastAPI rewrites the path. `/`, `/health` and `/.well-known/oauth-protected-resource` are at the root, and the prod router `api-root` carries the last two. Vue and pytest take the prefix in their base URL and name routes below it; the CLI adds it in `cli/internal/api/client.go`.
 
 **RFC 9728 metadata:** `/.well-known/oauth-protected-resource` is served without authentication, only where `PUBLIC_URL` is set. `docs/authentication-architecture.md` says why the address is configured rather than derived.
 
-**OIDC bearer (a service, running the CLI or calling the API itself):** an `icb-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `ichrisbirch/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
+**OIDC bearer (a service, running the CLI or calling the API itself):** an `life-svc-` client is a `ScopedClient`, never a user, and reaches only the routes `life/api/client_scopes.py` lists. `docs/authentication-architecture.md` gives the checks and why the prefix, not `sub`, decides.
 
 **Login and token lifecycle belong to `github.com/datapointchris/goclilogin`**; the CLI holds only the mapping in `config.Login`, so do not reintroduce an `internal/auth` here.
 
-The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Released versions of `icb` already write `$XDG_STATE_HOME/icb/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
+The mapping passes `StateDir` explicitly rather than taking goclilogin's default, which would resolve under the keyring service name. That directory holds the refresh lock and the mode-600 token file used where there is no OS keyring. Every release writes `$XDG_STATE_HOME/life/<client_id>.refresh.lock`, and two versions naming different lock files would not exclude each other during an upgrade.
 
 **Vue (Production):** Same-origin proxy — Vue calls `/api/v1/...`, and Traefik's `api-proxy` router (priority 200) forwards `/api` to FastAPI unchanged. No CORS needed.
 
@@ -69,7 +69,7 @@ The mapping passes `StateDir` explicitly rather than taking goclilogin's default
 ### Outbound HTTP Goes Through One Function
 
 Fetching a page from a third party is `get_page` in
-`ichrisbirch/services/outbound_http.py`. It sends a real browser's TLS fingerprint
+`life/services/outbound_http.py`. It sends a real browser's TLS fingerprint
 through `curl_cffi`, follows redirects, applies a 60-second timeout and returns a
 `FetchedPage`. Sites behind bot protection refuse a plain HTTP client whatever user
 agent it claims. Never fetch an outside URL any other way; add the case to
@@ -109,39 +109,39 @@ The Claude Code CLI that `claude-agent-sdk` starts inherits the API's whole decr
   | Tests | Transactional fixtures (`test_settings`) | Session-scoped fixtures in `conftest.py` |
 
 - Pydantic schemas: `*Create` (POST), base (GET), `*Update` (PATCH), `ConfigDict(from_attributes=True)`. Every `*Update` field may be omitted. A field over a NOT NULL column is written `NotNull[T] = None` (`schemas/not_null.py`), so an explicit null answers 422 rather than reaching the column as a 500. `test_update_schemas_refuse_null.py` walks every `*Update` against its model and fails on one that lets a null through.
-- **Every write is audited in `icb_audit_trail`** by a row trigger on each table, so no write path needs anything. A new table's migration creates its trigger, and `test_every_table_is_audited_but_what_opts_out` names the statement when one is missing. A secret column opts out with `info={'record_changes': False}` and is named in its table's trigger. `docs/icb-audit-trail.md` has the rest.
-- Migrations: Alembic (`ichrisbirch/alembic/`). A migration creates any schema it writes into, as `e1f2a3b4c5d6_add_coffee_tables` does, because nothing creates schemas ahead of alembic. pytest's session setup migrates the test database to head.
+- **Every write is audited in `life_audit_trail`** by a row trigger on each table, so no write path needs anything. A new table's migration creates its trigger, and `test_every_table_is_audited_but_what_opts_out` names the statement when one is missing. A secret column opts out with `info={'record_changes': False}` and is named in its table's trigger. `docs/life-audit-trail.md` has the rest.
+- Migrations: Alembic (`life/alembic/`). A migration creates any schema it writes into, as `e1f2a3b4c5d6_add_coffee_tables` does, because nothing creates schemas ahead of alembic. pytest's session setup migrates the test database to head.
 - **A revision ID comes from `alembic revision`, never by hand.** Many files carry a hand-written sliding sequence (`c8d9e0f1a2b3`, `d9e0f1a2b3c4`), and two branches continuing it from one head pick the same ID. Production, already at that ID, then skips the second migration. `docs/alembic.md` has the rest.
 
 ## Testing
 
-**pytest starts its own Postgres and Redis.** Every session starts a private pair with testcontainers (`PrivateServices` in `tests/environment.py`), on ports Docker picks, migrates it to head and truncates it; the reaper removes both when the session ends, however it ends. The API runs in-process, so pytest needs no stack, and `icbops test run` and a bare `uv run pytest` behave alike. Any number of checkouts run pytest at once. An environment with no Docker daemon provides the servers instead: `TEST_DATABASE_URL` and `TEST_REDIS_URL` each replace the container for its service, and the session migrates and truncates the database it names.
+**pytest starts its own Postgres and Redis.** Every session starts a private pair with testcontainers (`PrivateServices` in `tests/environment.py`), on ports Docker picks, migrates it to head and truncates it; the reaper removes both when the session ends, however it ends. The API runs in-process, so pytest needs no stack, and `lifeops test run` and a bare `uv run pytest` behave alike. Any number of checkouts run pytest at once. An environment with no Docker daemon provides the servers instead: `TEST_DATABASE_URL` and `TEST_REDIS_URL` each replace the container for its service, and the session migrates and truncates the database it names.
 
-**The e2e suite runs inside the checkout's own test stack.** `icbops test e2e [spec]` starts the stack if it is down and runs Playwright in its vue container, whose image is Playwright's. The stack is a compose project named `icb-test-<checkout directory>`; compose scopes its containers (`icb-test-<checkout>-api`), networks and node_modules volume to it, the API and scheduler run its own image (`ichrisbirch:icb-test-<checkout>`), and it publishes no port, so every worktree runs its own beside the others. The browser runs inside because Chromium in the host's network namespace aborts in-flight requests whenever any container on the machine starts or stops (`ERR_NETWORK_CHANGED`). Traefik listens on 8443 inside the stack with network aliases for `api.test.localhost` and `app.test.localhost`, and `playwright.config.ts` maps `*.test.localhost` to `traefik`, because Chromium answers every `*.localhost` name from loopback. So the host cannot browse the test app, run Playwright headed against it, or reach its Postgres by port: `docker exec -it icb-test-<checkout>-postgres psql -U postgres ichrisbirch` is the way in. `testing start` removes every `icb-test-*` stack, image included, whose checkout no longer holds `.git`. Two clones sharing a directory name share a project, so every verb but `testing stop` refuses a stack another checkout started. `docs/testing/environment.md` has the rest.
+**The e2e suite runs inside the checkout's own test stack.** `lifeops test e2e [spec]` starts the stack if it is down and runs Playwright in its vue container, whose image is Playwright's. The stack is a compose project named `life-test-<checkout directory>`; compose scopes its containers (`life-test-<checkout>-api`), networks and node_modules volume to it, the API and scheduler run its own image (`life:life-test-<checkout>`), and it publishes no port, so every worktree runs its own beside the others. The browser runs inside because Chromium in the host's network namespace aborts in-flight requests whenever any container on the machine starts or stops (`ERR_NETWORK_CHANGED`). Traefik listens on 8443 inside the stack with network aliases for `api.test.localhost` and `app.test.localhost`, and `playwright.config.ts` maps `*.test.localhost` to `traefik`, because Chromium answers every `*.localhost` name from loopback. So the host cannot browse the test app, run Playwright headed against it, or reach its Postgres by port: `docker exec -it life-test-<checkout>-postgres psql -U postgres life` is the way in. `testing start` removes every `life-test-*` stack, image included, whose checkout no longer holds `.git`. Two clones sharing a directory name share a project, so every verb but `testing stop` refuses a stack another checkout started. `docs/testing/environment.md` has the rest.
 
 **The stack's database is ephemeral** — its Postgres keeps its data on tmpfs, so every stop or recreate empties it. Every verb that brings the stack up (`testing start`, `testing restart`, `testing rebuild` with any flags, and `test e2e`'s cold start) ends by initializing the database. If the test DB is in a broken state, the fix is `testing stop` then `testing start` (fresh DB with migrations). Never manually manipulate the test database with psql, alembic stamps, or raw SQL. If the CLI can't recover the DB, that's a CLI bug to fix.
 
-**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), which Docker seeds from the image layer. Every `icbops` `up` passes `--renew-anon-volumes`, because compose otherwise hands a recreated container its predecessor's volume and a rebuilt venv never runs. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. A named volume for `.venv` or the uv cache, combined with `uv run`, keeps stale venv state across rebuilds and leaves the API stuck in "health: starting" while uv resyncs at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
+**Test `.venv` is an anonymous Docker volume (matches dev/prod)** (⚠️ MANDATORY): The api/scheduler services in `docker-compose.test.yml` mount `/app/.venv` as an anonymous volume (no `source:`), which Docker seeds from the image layer. Every `lifeops` `up` passes `--renew-anon-volumes`, because compose otherwise hands a recreated container its predecessor's volume and a rebuilt venv never runs. Commands are direct (`uvicorn`, `python -m …`) — **never** `uv run` at container startup. A named volume for `.venv` or the uv cache, combined with `uv run`, keeps stale venv state across rebuilds and leaves the API stuck in "health: starting" while uv resyncs at runtime. Do not reintroduce named volumes for `.venv` or the uv cache in test, dev, or CI compose files — that architectural invariant is what makes the three environments behave the same way.
 
-**If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `icb-test-<checkout>-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
+**If test containers still misbehave — wipe first, investigate second**: Even with anonymous `.venv` volumes, Docker can keep stale state in other named volumes (notably `life-test-<checkout>-vue-node-modules`). Partial-install state in that volume (e.g., npm install interrupted mid-run) produces `ENOTEMPTY: directory not empty` errors in a restart loop that — if it runs long enough — can crash `dockerd` itself. Use the CLI flag FIRST:
 
 ```bash
-./ops/icbops testing rebuild --all --volumes   # down --volumes + rebuild all + up + initialize the database
+./ops/lifeops testing rebuild --all --volumes   # down --volumes + rebuild all + up + initialize the database
 # or for dev:
-./ops/icbops dev rebuild --all --volumes
+./ops/lifeops dev rebuild --all --volumes
 ```
 
-Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon). `./ops/icbops testing status` prints the project name:
+Fallback when the CLI is wedged or docker itself has crashed (restart-looping vue container brought down the daemon). `./ops/lifeops testing status` prints the project name:
 
 ```bash
 sudo systemctl restart docker
-project=icb-test-<checkout>
+project=life-test-<checkout>
 docker rm -f "$project-vue" 2>/dev/null     # kill the loop before restart policy puts docker back in the same state
 docker volume rm "$project-vue-node-modules" 2>/dev/null
 docker ps -a --filter "label=com.docker.compose.project=$project" -q | xargs -r docker rm -f
 docker volume ls --filter "label=com.docker.compose.project=$project" -q | xargs -r docker volume rm
 docker network ls --filter "label=com.docker.compose.project=$project" -q | xargs -r docker network rm
-./ops/icbops testing start
+./ops/lifeops testing start
 ```
 
 Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" state problems. If fresh containers from a clean wipe still fail, THEN investigate.
@@ -150,7 +150,7 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **Python fixtures** (`tests/conftest.py`): Session-scoped (the private Postgres and Redis, table lifecycle, test users), module-scoped (`test_api`, `test_api_logged_in`, `test_api_logged_in_admin`), function-scoped (`*_function` suffix for isolation).
 
-**Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik, which `icbops test e2e` runs inside the test stack). E2E tests ALWAYS run against test containers, never dev.
+**Vue test layers**: `test:build` (TypeScript + Vite), `test:unit` (Vitest — store/composable tests *and* the `@pinia/testing` view integration tests; one script covers both layers), `test:e2e` (Playwright through Traefik, which `lifeops test e2e` runs inside the test stack). E2E tests ALWAYS run against test containers, never dev.
 
 **Component integration tests** (`frontend/src/views/__tests__/`): Mount real Vue components with `createTestingPinia({ initialState, stubActions: true, createSpy: vi.fn })`. Verify rendering, conditional CSS classes, store action wiring, and modal props. Stub child components (modals, subnavs) and mock composables (`useNotifications`, `formatDate`).
 `stubActions: true` stubs every function a setup store returns, pure helpers included, so a helper a view calls while rendering lives at module level and is imported.
@@ -161,25 +161,25 @@ Do not edit the Dockerfile, compose files, or add entrypoint scripts to "fix" st
 
 **E2E selectors — use `data-testid`**: Never couple tests to CSS class names or DOM structure. Use `data-testid` attributes on interactive elements and `page.getByTestId()` in tests. This decouples tests from styling changes. Naming convention: `{entity}-{element}` — e.g., `countdown-add-button`, `countdown-name-input`, `countdown-item`, `add-edit-modal`. The `data-testid` attributes ship to production (negligible cost, enables prod E2E if needed).
 
-**Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `icbops prod build-test`.
+**Critical: Dev/Test vs Production Builds** — Dev and test use bind mounts (code from filesystem, not Docker image). Production uses `COPY . /app`. Docker build issues may NOT be caught in dev/test. Test prod builds with `lifeops prod build-test`.
 
-**Test output files**: each checkout keeps its own, in `.test-reports/`. `icbops test run`, which the pre-commit hook calls, writes `pytest-output.log` (terminal output) and `pytest-report.json` (whose `tests` array holds `nodeid`, `outcome` and `call.longrepr` per test). `icbops test e2e` writes `playwright-report.json`, with traces and screenshots in `frontend/test-results/`, and Vitest writes `vitest-report.json`. When tests fail, read these instead of re-running.
+**Test output files**: each checkout keeps its own, in `.test-reports/`. `lifeops test run`, which the pre-commit hook calls, writes `pytest-output.log` (terminal output) and `pytest-report.json` (whose `tests` array holds `nodeid`, `outcome` and `call.longrepr` per test). `lifeops test e2e` writes `playwright-report.json`, with traces and screenshots in `frontend/test-results/`, and Vitest writes `vitest-report.json`. When tests fail, read these instead of re-running.
 
-**Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`, named `icb-test-<checkout>-vue-node-modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Symptoms: 500 errors on pages that import the new package, while other pages work fine. A new migration reaches pytest without a restart, because its session setup migrates the test database to head. The API container still needs step 1 of the escalation ladder to load changed models.
+**Vue test container `node_modules`** — The test Vue container uses a **named Docker volume** (`vue_test_node_modules`, named `life-test-<checkout>-vue-node-modules`) for `node_modules`, not a bind mount. The container runs `npm install && npm run dev` on startup. When new npm packages are added to `package.json`, the running container won't have them — you must `testing stop` then `testing start` to trigger a fresh `npm install`. Symptoms: 500 errors on pages that import the new package, while other pages work fine. A new migration reaches pytest without a restart, because its session setup migrates the test database to head. The API container still needs step 1 of the escalation ladder to load changed models.
 
 ## Deployment
 
 The Dockerfile is multi-stage (`base` → `development` | `testing` | `production`), so always pass `--target`; the production image runs non-root.
 Production is blue/green: `docker-compose.infra.yml` always runs, `docker-compose.app.yml` deploys as alternating colors, and Traefik reads the git-tracked `routing.yml` plus a generated `services.yml` pointing at the active color. Migrations must be backward-compatible. `docs/blue-green-deployment.md` § "Unsafe Operations" lists the changes that take two deploys, and a column's type is one of them: it changes through a new column, never in place. `varchar` to `text` is the exception, because that cast converts nothing.
-Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `vue-paths.txt` by `icbops routing generate`, with CORS and security headers as separate middlewares per environment. `icbops {dev,testing,prod} docker [service]` prints the merged compose; `./ops/icbops ssl-manager` manages certificates.
+Traefik dynamic config is `deploy-containers/traefik/dynamic/`, generated from `vue-paths.txt` by `lifeops routing generate`, with CORS and security headers as separate middlewares per environment. `lifeops {dev,testing,prod} docker [service]` prints the merged compose; `./ops/lifeops ssl-manager` manages certificates.
 
 ## Conventions
 
-### `icb` CLI — dev vs prod (data access)
+### `life` CLI — dev vs prod (data access)
 
-The `icb` CLI is the programmatic data surface. The installed binary is **not** repo-aware: it targets its config file's `api`, which is **production** (`https://ichrisbirch.com`, Authelia OIDC bearer token), regardless of the working directory. So `icb tasks list` from inside this repo reads **prod**, not the local dev stack.
+The `life` CLI is the programmatic data surface. The installed binary is **not** repo-aware: it targets its config file's `api`, which is **production** (`https://life.ichrisbirch.com`, Authelia OIDC bearer token), regardless of the working directory. So `life tasks list` from inside this repo reads **prod**, not the local dev stack.
 
-To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/api/v1/tasks`. Pass `--api https://api.docker.localhost` if you need `icb` itself pointed at dev.
+To read or write the **local dev** stack, hit the dev API directly (it injects `Remote-User` via the `dev-authelia-sim` middleware, so no token is needed): `curl -sk https://api.docker.localhost/api/v1/tasks`. Pass `--api https://api.docker.localhost` if you need `life` itself pointed at dev.
 
 ### Always "Cooking Technique", never the bare word "technique"
 
@@ -190,11 +190,11 @@ Cooking techniques are part of the Recipes domain and not a separate entity, so 
 ### Must Follow
 
 - **Container code-change escalation ladder** (⚠️ MANDATORY): When edits aren't taking effect in running containers — new/renamed API routes, new dependencies, migrations, schema changes, Vue package.json changes, Python imports — follow THIS sequence in order. Do NOT skip steps. Do NOT substitute manual `docker` subcommands for these CLI steps:
-  1. **`./ops/icbops testing stop && ./ops/icbops testing start`** (~30s). Fixes most issues — accumulated DB state, FastAPI not having re-registered routes, stale module imports. Test containers are ephemeral and should be killed freely.
-  2. **`./ops/icbops testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
+  1. **`./ops/lifeops testing stop && ./ops/lifeops testing start`** (~30s). Fixes most issues — accumulated DB state, FastAPI not having re-registered routes, stale module imports. Test containers are ephemeral and should be killed freely.
+  2. **`./ops/lifeops testing rebuild --volumes`** (~60–90s). Use if step 1 didn't resolve it. Fixes stale `.venv` contents, dependency changes (pyproject.toml additions), anonymous-volume staleness, ENOTEMPTY errors, vue node_modules corruption.
   3. **ONLY NOW** reach for `docker logs`, `docker inspect`, `docker exec`, `docker restart`, or any manual docker subcommand. Fresh containers from step 2 still failing is a real bug; containers that haven't been through steps 1–2 aren't.
 
-  The same ladder applies to dev via `./ops/icbops dev stop && start` then `./ops/icbops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
+  The same ladder applies to dev via `./ops/lifeops dev stop && start` then `./ops/lifeops dev rebuild --volumes`. Doing `docker logs` / `docker exec` / `docker restart` BEFORE exhausting steps 1–2 is the single biggest time-waster in this workflow. If you catch yourself about to type `docker ` anything, STOP and check: have both steps 1 and 2 run since the code edit? If not, do them first.
 
   Ten manual docker subcommands — `exec`, `restart`, `logs`, `images`, `image inspect`, `run --rm`, `volume ls`, `inspect --format` and a `sudo ls` on a volume path — once failed to diagnose what step 2 with `--volumes` then fixed in 90 seconds. Each one feels like progress and all of it is archaeology. The tell that it has gone wrong is proposing a workaround rather than an escalation: baking the venv into the image is a workaround, and the ladder is the escalation.
 - **Pre-commit config is generated.** `.pre-commit-config.yaml` and `.github/workflows/validate.yml` carry a `# forge-toolchain:` stamp; hand edits belong in a `# > custom:` block, which regeneration preserves. Vue hooks trigger only on `frontend/**/*.{vue,ts,tsx,js,jsx}`.
@@ -213,7 +213,7 @@ Cooking techniques are part of the Recipes domain and not a separate entity, so 
 - **A wall clock is resolved before it is compared, and printed without resolving.** The reading is what goes on the page, with the zone named beside it — converting it into the reader's zone moves the number and says nothing about where the event is. Sorting, "has it happened", and "how long until" all need the instant, so they resolve first. Comparing the readings puts a 09:00 in Tokyo after an 08:00 in New York, thirteen hours backwards.
 - **A day never travels as a `datetime`.** The Vue side holds a day as a `YYYY-MM-DD` key. A value with no offset is a reading, which `formatDate` and `dayKeyOf` print as written; one carrying an offset is an instant, and moves into the display zone. If a day-shaped value comes back with a `Z`, the column is the wrong type.
 - **The Go CLI decodes a day as a `string`, never a `time.Time`.** `time.Time`'s JSON decode requires RFC3339 and rejects a bare day, and `client.go` decodes a whole slice in one call — so one dated row fails the entire command. `api.Countdown.DueDate` is the shape to copy.
-- **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors. An override that gives a built service a public `image:` also resets `build:`, or compose builds the Dockerfile and tags it as that public image. `tests/compose-build-tags.bats` resolves every compose set and fails on a build tagged outside `ichrisbirch`.
+- **Docker Compose overrides**: List fields (`ports`, `volumes`, `environment`) **merge by default** across compose files. When a test/dev compose redefines a list that exists in the base compose, use `!override` to replace instead of append (e.g., `ports: !override`). Without this, both port mappings apply and cause "port already allocated" errors. An override that gives a built service a public `image:` also resets `build:`, or compose builds the Dockerfile and tags it as that public image. `tests/compose-build-tags.bats` resolves every compose set and fails on a build tagged outside `life`.
 
 ### Styling & Design Cohesion
 
@@ -247,14 +247,14 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 
 1. Create SQLAlchemy model + Alembic migration
 2. Create Pydantic schemas (Create, response, Update)
-3. Create FastAPI router in `ichrisbirch/api/endpoints/`
-4. Register router in `ichrisbirch/api/main.py`
+3. Create FastAPI router in `life/api/endpoints/`
+4. Register router in `life/api/main.py`
 5. **Create seeder in `scripts/seed/seeders/<name>.py`** — implements `seed(session, scale)` and `clear(session)`, returns `SeedResult`
 6. **Register seeder in `scripts/seed/seeders/__init__.py`** — add to import list and `SEED_ORDER` (after its FK dependencies)
 7. Create test data in `tests/test_data/<name>.py` + register in `tests/test_data/__init__.py`
-8. Write API endpoint tests in `tests/ichrisbirch/api/endpoints/test_<name>.py`
+8. Write API endpoint tests in `tests/life/api/endpoints/test_<name>.py`
 9. **A read answering with a list takes `RowLimit` and `apply_row_limit`** from
-   `ichrisbirch/services/row_limit.py` — `CappedRowLimit` where the subject grows
+   `life/services/row_limit.py` — `CappedRowLimit` where the subject grows
    without end and a number is the right default. Declaring `limit: int | None`
    by hand loses the floor, so a negative reaches SQL as `LIMIT -1`, and a falsy
    test answers `limit=0` with the whole collection. Both are invisible in the
@@ -278,7 +278,7 @@ Every new API endpoint group **must** include a seeder script. No exceptions.
 
 A page is a Pinia store (`createLogger`, `ApiError`, `error: ref<ApiError | null>`), a `<script setup>` view that fetches in `onMounted` and reports through `useNotifications()`, a lazy-loaded route in `frontend/src/router.ts`, and an entry in `components/sidebarLinks.ts`.
 A layout that differs on a phone switches at `@include breakpoints.phone` in SCSS and `usePhoneViewport()` in script, which read one width.
-Add its path to `deploy-containers/traefik/vue-paths.txt` and run `icbops routing generate`.
+Add its path to `deploy-containers/traefik/vue-paths.txt` and run `lifeops routing generate`.
 Unit tests mock the API with `vi.mock`; E2E runs through `app.test.localhost`, never `vue.test.localhost`, so CORS faults surface.
 
 ### Logging
@@ -288,4 +288,4 @@ Docker's logging driver keeps that output, and Grafana Alloy ships it to Loki.
 `LOG_FORMAT` (`console`/`json`), `LOG_LEVEL` and `LOG_COLORS` configure the logger.
 Requests are traced by `X-Request-ID`.
 Vue logs through consola via `createLogger('ModuleName')`, in structlog's key=value shape, and as JSON for Loki in production.
-`./ops/icbops {dev,testing} logs [service]` reads a running environment's logs.
+`./ops/lifeops {dev,testing} logs [service]` reads a running environment's logs.

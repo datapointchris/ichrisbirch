@@ -1,5 +1,5 @@
-from ichrisbirch.models.box import Box
-from ichrisbirch.models.boxitem import BoxItem
+from life.models.box import Box
+from life.models.boxitem import BoxItem
 
 BASE_DATA: list[Box] = [
     Box(

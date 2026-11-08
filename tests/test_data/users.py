@@ -1,4 +1,4 @@
-from ichrisbirch.models import User
+from life.models import User
 
 BASE_DATA: list[User] = [
     User(

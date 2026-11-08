@@ -24,14 +24,14 @@ test.describe('AutoFun Page', () => {
 
   test('loads the page with correct title and tab navigation', async ({ page }) => {
     await page.goto('/autofun')
-    await expect(page).toHaveTitle('AutoFun | iChrisBirch')
+    await expect(page).toHaveTitle('AutoFun | Life')
     await expect(page.getByTestId('autofun-tab-list')).toBeVisible()
     await expect(page.getByTestId('autofun-tab-scheduler')).toBeVisible()
   })
 
   test('sidebar navigation to autofun works', async ({ page }) => {
     await page.goto('/autofun')
-    await expect(page).toHaveTitle('AutoFun | iChrisBirch')
+    await expect(page).toHaveTitle('AutoFun | Life')
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'AutoFun' })
     await expect(sidebarLink).toBeVisible()
   })

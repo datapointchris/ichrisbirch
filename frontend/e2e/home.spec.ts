@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Home Page', () => {
   test('loads the page and displays heading', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle('Home | iChrisBirch')
+    await expect(page).toHaveTitle('Home | Life')
     await expect(page.locator('h1', { hasText: 'Chris Birch' })).toBeVisible()
     await expect(page.locator('h2', { hasText: 'Data Engineer' })).toBeVisible()
   })

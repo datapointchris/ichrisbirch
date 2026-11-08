@@ -7,16 +7,16 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.recipe import RECIPE_CUISINES
-from ichrisbirch.models.recipe import RECIPE_DIFFICULTIES
-from ichrisbirch.models.recipe import RECIPE_MEAL_TYPES
-from ichrisbirch.models.recipe import RECIPE_UNITS
-from ichrisbirch.models.recipe import Recipe
-from ichrisbirch.models.recipe import RecipeCuisine
-from ichrisbirch.models.recipe import RecipeDifficulty
-from ichrisbirch.models.recipe import RecipeIngredient
-from ichrisbirch.models.recipe import RecipeMealType
-from ichrisbirch.models.recipe import RecipeUnit
+from life.models.recipe import RECIPE_CUISINES
+from life.models.recipe import RECIPE_DIFFICULTIES
+from life.models.recipe import RECIPE_MEAL_TYPES
+from life.models.recipe import RECIPE_UNITS
+from life.models.recipe import Recipe
+from life.models.recipe import RecipeCuisine
+from life.models.recipe import RecipeDifficulty
+from life.models.recipe import RecipeIngredient
+from life.models.recipe import RecipeMealType
+from life.models.recipe import RecipeUnit
 from scripts.seed.base import SeedResult
 from scripts.seed.base import random_past_datetime
 

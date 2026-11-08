@@ -6,16 +6,16 @@ import pytest
 from ops import log_viewer
 
 
-def test_parse_prefix_strips_icb_env_prefix():
-    assert log_viewer.parse_prefix('icb-dev-api       | {"event":"test"}') == ('api', '{"event":"test"}')
-    assert log_viewer.parse_prefix('icb-blue-api | {"event":"x"}') == ('api', '{"event":"x"}')
-    assert log_viewer.parse_prefix('icb-test-scheduler  | blah') == ('scheduler', 'blah')
-    assert log_viewer.parse_prefix('icb-infra-traefik | startup') == ('traefik', 'startup')
+def test_parse_prefix_strips_the_environment_prefix():
+    assert log_viewer.parse_prefix('life-dev-api       | {"event":"test"}') == ('api', '{"event":"test"}')
+    assert log_viewer.parse_prefix('life-blue-api | {"event":"x"}') == ('api', '{"event":"x"}')
+    assert log_viewer.parse_prefix('life-test-scheduler  | blah') == ('scheduler', 'blah')
+    assert log_viewer.parse_prefix('life-infra-traefik | startup') == ('traefik', 'startup')
 
 
 def test_parse_prefix_strips_a_test_stack_named_after_a_hyphenated_checkout():
-    assert log_viewer.parse_prefix('icb-test-fast-test-stack-api  | x') == ('api', 'x')
-    assert log_viewer.parse_prefix('icb-test-ichrisbirch-vue | y') == ('vue', 'y')
+    assert log_viewer.parse_prefix('life-test-fast-test-stack-api  | x') == ('api', 'x')
+    assert log_viewer.parse_prefix('life-test-life-vue | y') == ('vue', 'y')
 
 
 def test_parse_prefix_handles_plain_container_name():
@@ -105,7 +105,7 @@ def test_format_val_preserves_scalars_and_json_encodes_containers():
 def test_build_compose_cmd_dev_uses_dev_overlay():
     cwd, *cmd = log_viewer.build_compose_cmd('dev', tail=50, follow=True, services=['api'])
     assert '--project-name' in cmd
-    assert 'icb-dev' in cmd
+    assert 'life-dev' in cmd
     assert 'docker-compose.dev.yml' in cmd
     assert 'logs' in cmd
     assert '--tail=50' in cmd
@@ -114,16 +114,16 @@ def test_build_compose_cmd_dev_uses_dev_overlay():
 
 
 def test_build_compose_cmd_testing_uses_this_checkouts_project(monkeypatch):
-    monkeypatch.setenv('ICB_TEST_PROJECT', 'icb-test-some-checkout')
+    monkeypatch.setenv('LIFE_TEST_PROJECT', 'life-test-some-checkout')
     cwd, *cmd = log_viewer.build_compose_cmd('testing', tail=100, follow=False, services=[])
-    assert cmd[cmd.index('--project-name') + 1] == 'icb-test-some-checkout'
+    assert cmd[cmd.index('--project-name') + 1] == 'life-test-some-checkout'
     assert 'docker-compose.test.yml' in cmd
     assert '--follow' not in cmd
 
 
 def test_build_compose_cmd_testing_refuses_without_a_project(monkeypatch):
-    monkeypatch.delenv('ICB_TEST_PROJECT', raising=False)
-    with pytest.raises(SystemExit, match='icbops testing logs'):
+    monkeypatch.delenv('LIFE_TEST_PROJECT', raising=False)
+    with pytest.raises(SystemExit, match='lifeops testing logs'):
         log_viewer.build_compose_cmd('testing', tail=100, follow=False, services=[])
 
 
@@ -156,7 +156,7 @@ def test_round_trip_structured_to_json_passthrough():
             'request_id': 'abc',
         }
     )
-    service, rest = log_viewer.parse_prefix(f'icb-dev-api | {sample}')
+    service, rest = log_viewer.parse_prefix(f'life-dev-api | {sample}')
     entry = log_viewer.try_parse_json(rest)
     assert service == 'api'
     assert entry is not None

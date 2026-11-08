@@ -35,7 +35,7 @@ test.describe('Strains Page', () => {
 
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page).toHaveTitle('Strains | iChrisBirch')
+    await expect(page).toHaveTitle('Strains | Life')
     await expect(page.getByTestId('strains-header')).toBeVisible()
   })
 
@@ -81,7 +81,7 @@ test.describe('Strains Page', () => {
 
   test('sidebar navigation to strains works', async ({ page }) => {
     await page.goto('/strains')
-    await expect(page).toHaveTitle('Strains | iChrisBirch')
+    await expect(page).toHaveTitle('Strains | Life')
 
     const sidebarLink = page.getByTestId('sidebar-/strains')
     await expect(sidebarLink).toBeVisible()

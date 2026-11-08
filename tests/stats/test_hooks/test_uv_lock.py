@@ -20,7 +20,7 @@ class TestUvLockSchema:
         """Test UvLockHookEvent with resolution info."""
         event = UvLockHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -48,7 +48,7 @@ class TestUvLockRunner:
                 stderr='',
             )
 
-            event = run(['pyproject.toml'], 'master', 'ichrisbirch')
+            event = run(['pyproject.toml'], 'master', 'life')
 
             assert isinstance(event, UvLockHookEvent)
             assert event.status == 'passed'
@@ -57,7 +57,7 @@ class TestUvLockRunner:
 
     def test_uv_lock_runner_skips_non_lock_files(self) -> None:
         """Test runner only checks lock-related files."""
-        event = run(['main.py', 'README.md'], 'master', 'ichrisbirch')
+        event = run(['main.py', 'README.md'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

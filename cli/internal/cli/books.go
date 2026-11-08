@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // bookFlagVars holds the flag targets shared by `books create` and `books edit`.
@@ -30,11 +30,11 @@ func newBooksCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage your books",
 		Long: "Your book catalog: what you own, where each book is in the reading cycle,\n" +
 			"and what is queued next. `list --progress reading` is the reading-now view.",
-		Example: "  icb books list --progress reading  what you are reading right now\n" +
-			"  icb books list --limit 10          the ten to read next\n" +
-			"  icb books search dune              find a book by title, author or tag",
+		Example: "  life books list --progress reading  what you are reading right now\n" +
+			"  life books list --limit 10          the ten to read next\n" +
+			"  life books search dune              find a book by title, author or tag",
 	})
-	goclikit.WithRecoveryHints(cmd, "Search books by title, author, or tags: icb books search <query>")
+	goclikit.WithRecoveryHints(cmd, "Search books by title, author, or tags: life books search <query>")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newBooksListCommand(),
@@ -65,12 +65,12 @@ func newBooksListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the highest-priority books\n" +
 			"of the narrowed set rather than filtering a capped slice.",
-		Example: "  icb books list                      the whole catalog, highest priority first\n" +
-			"  icb books list --progress reading   what you are reading right now\n" +
-			"  icb books list --progress unread --ownership owned\n" +
+		Example: "  life books list                      the whole catalog, highest priority first\n" +
+			"  life books list --progress reading   what you are reading right now\n" +
+			"  life books list --progress unread --ownership owned\n" +
 			"                                      owned but not started — what to pick up next\n" +
-			"  icb books list --limit 10           the ten to read next\n" +
-			"  icb books list --since 2026-01-01   what you have finished this year",
+			"  life books list --limit 10           the ten to read next\n" +
+			"  life books list --since 2026-01-01   what you have finished this year",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			window, err := readWindow(cmd)
@@ -96,7 +96,7 @@ func newBooksSearchCommand() *cobra.Command {
 		Use:     "search <query>",
 		Short:   "Search books by title, author, or tags",
 		Long:    "Comma-separated terms preserve phrases (\"shadow work,Jung\"); otherwise\nwhitespace splits into keywords matched against any field.",
-		Example: "  icb books search Kleppmann\n  icb books search \"shadow work,Jung\"",
+		Example: "  life books search Kleppmann\n  life books search \"shadow work,Jung\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runBookList(cmd, asJSON, func(c *api.Client) ([]api.Book, error) {
@@ -113,7 +113,7 @@ func newBooksShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <book-id>",
 		Short:   "Show a single book",
-		Example: "  icb books show 140",
+		Example: "  life books show 140",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])
@@ -144,7 +144,7 @@ func newBooksISBNCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "isbn <isbn>",
 		Short:   "Look up a book by ISBN",
-		Example: "  icb books isbn 9781449373320",
+		Example: "  life books isbn 9781449373320",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -174,7 +174,7 @@ func newBooksCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create --title <title> --author <author> --tag <tag> [flags]",
 		Short:   "Create a new book",
-		Example: "  icb books create --title \"DDIA\" --author Kleppmann --tag databases --tag systems",
+		Example: "  life books create --title \"DDIA\" --author Kleppmann --tag databases --tag systems",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
@@ -231,7 +231,7 @@ func newBooksEditCommand() *cobra.Command {
 		Use:     "edit <book-id> [flags]",
 		Short:   "Change fields on an existing book",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb books edit 140 --progress reading --read-start 2026-07-01",
+		Example: "  life books edit 140 --progress reading --read-start 2026-07-01",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])
@@ -291,7 +291,7 @@ func newBooksDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <book-id>",
 		Short:   "Delete a book",
-		Example: "  icb books delete 140 --yes",
+		Example: "  life books delete 140 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("book id", args[0])

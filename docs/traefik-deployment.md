@@ -1,6 +1,6 @@
 # Traefik Reverse Proxy Deployment Guide
 
-This guide covers the complete deployment of Traefik reverse proxy for the iChrisBirch application, providing modern HTTPS termination, dynamic load balancing, and browser-trusted certificates for local development.
+This guide covers the complete deployment of Traefik reverse proxy for the Life application, providing modern HTTPS termination, dynamic load balancing, and browser-trusted certificates for local development.
 
 ## 🎯 Overview
 
@@ -9,7 +9,7 @@ This guide covers the complete deployment of Traefik reverse proxy for the iChri
 - **File provider routing** in `deploy-containers/traefik/dynamic/{dev,test,prod}/routing.yml`
 - **Docker provider** for service discovery (container ports) in dev and production; the test stack reads files alone
 - **Browser-trusted HTTPS** with mkcert for local development
-- **Generated routing** from canonical `vue-paths.txt` via `icbops routing generate`
+- **Generated routing** from canonical `vue-paths.txt` via `lifeops routing generate`
 - **Separate CORS and security middlewares** per environment
 
 ## 🏗️ Architecture Overview
@@ -39,8 +39,8 @@ Each environment uses its own proxy network to avoid routing conflicts:
 
 | Environment | Proxy Network | Traefik Constraint |
 | --- | --- | --- |
-| Development | `icb-dev-proxy` | `traefik.environment=development` |
-| Testing | `icb-test-<checkout>_proxy`, one per stack | none: no Docker provider |
+| Development | `life-dev-proxy` | `traefik.environment=development` |
+| Testing | `life-test-<checkout>_proxy`, one per stack | none: no Docker provider |
 | Production | `proxy` | (no constraint needed) |
 
 This allows all environments to run simultaneously. Dev Traefik discovers only containers labeled for development, and a test stack's Traefik sees only its own project's network.
@@ -95,7 +95,7 @@ http:
       tls: {}
 ```
 
-Routing files are generated from `vue-paths.txt` via `icbops routing generate`.
+Routing files are generated from `vue-paths.txt` via `lifeops routing generate`.
 
 ### Middleware Stack
 
@@ -138,7 +138,7 @@ graph TB
 Vue serves all pages at `app.docker.localhost`. The `vue-paths` router matches specific PathPrefix rules (generated from `vue-paths.txt`). Adding a new page:
 
 1. Add the path to `deploy-containers/traefik/vue-paths.txt`
-2. Run `icbops routing generate` to update all three `routing.yml` files
+2. Run `lifeops routing generate` to update all three `routing.yml` files
 3. Traefik's `file.watch=true` picks up the change automatically
 
 ### Dev Auth Simulation
@@ -166,7 +166,7 @@ This middleware is applied to the API router so Vue's cross-origin API calls are
 
 ### Testing Environment
 
-These resolve only inside a checkout's test stack, which publishes no ports. The e2e suite runs there through `./ops/icbops test e2e`. The test stack has no dashboard.
+These resolve only inside a checkout's test stack, which publishes no ports. The e2e suite runs there through `./ops/lifeops test e2e`. The test stack has no dashboard.
 
 - **API**: `https://api.test.localhost:8443/`
 - **App**: `https://app.test.localhost:8443/`
@@ -175,8 +175,8 @@ These resolve only inside a checkout's test stack, which publishes no ports. The
 
 Production uses **Cloudflare Tunnel** for secure external access without exposing ports:
 
-- **App**: <https://ichrisbirch.com/>
-- **API**: <https://ichrisbirch.com/api/v1/>, a bearer request only from outside the browser
+- **App**: <https://life.ichrisbirch.com/>, and the same on <https://ichrisbirch.com/>
+- **API**: <https://life.ichrisbirch.com/api/v1/>, a bearer request only from outside the browser
 
 Cloudflare handles TLS termination; Traefik receives HTTP internally and provides routing, CORS, security headers, and rate limiting.
 
@@ -190,38 +190,38 @@ Cloudflare handles TLS termination; Traefik receives HTTP internally and provide
 
 ```bash
 # Start any environment (uses Traefik automatically)
-icbops dev start               # Development
-icbops testing start          # Testing
-icbops prod start             # Production
+lifeops dev start               # Development
+lifeops testing start          # Testing
+lifeops prod start             # Production
 
 # Status and monitoring
-icbops dev status             # Service status + URLs
-icbops dev health             # Comprehensive health checks
-icbops dev logs               # View service logs
+lifeops dev status             # Service status + URLs
+lifeops dev health             # Comprehensive health checks
+lifeops dev logs               # View service logs
 
 # SSL certificate management
-icbops ssl-manager generate dev    # Generate certificates (prefers mkcert)
-icbops ssl-manager info dev        # Certificate information
-icbops ssl-manager validate dev    # Validate certificates
+lifeops ssl-manager generate dev    # Generate certificates (prefers mkcert)
+lifeops ssl-manager info dev        # Certificate information
+lifeops ssl-manager validate dev    # Validate certificates
 ```
 
 ### Routing and Config Commands
 
 ```bash
 # Generate routing files from vue-paths.txt
-icbops routing generate
+lifeops routing generate
 
 # See fully merged Docker Compose output (debug overrides)
-icbops dev docker [service]
-icbops testing docker [service]
+lifeops dev docker [service]
+lifeops testing docker [service]
 ```
 
 ## SSL certificate management
 
 ```bash
-icbops ssl-manager generate ENV   # Generate certificates
-icbops ssl-manager validate ENV   # Validate existing
-icbops ssl-manager info ENV       # Show certificate info
+lifeops ssl-manager generate ENV   # Generate certificates
+lifeops ssl-manager validate ENV   # Validate existing
+lifeops ssl-manager info ENV       # Show certificate info
 ```
 
 ## 🔒 SSL Certificate Management
@@ -232,10 +232,10 @@ Certificates are generated automatically with appropriate Subject Alternative Na
 
 ```bash
 # Generate certificates for all environments
-icbops ssl-manager generate all
+lifeops ssl-manager generate all
 
 # Generate specific environment
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 ```
 
 ### Certificate Details
@@ -272,13 +272,13 @@ The health check system validates:
 ### Health Check Output
 
 ```bash
-$ icbops dev health
+$ lifeops dev health
 
 Health Check for dev Environment
 ========================================
 
-[✓] Container: icb-dev-traefik (Up 5 minutes)
-[✓] Container: icb-dev-api (Up 5 minutes (healthy))
+[✓] Container: life-dev-traefik (Up 5 minutes)
+[✓] Container: life-dev-api (Up 5 minutes (healthy))
 [✓] DNS: api.docker.localhost found in /etc/hosts (127.0.0.1)
 [✓] API Health: HTTP 200 (OK)
 ```
@@ -291,7 +291,7 @@ Health Check for dev Environment
 
    ```bash
    # Stop conflicting services
-   docker stop $(docker ps -q --filter "name=ichrisbirch")
+   docker stop $(docker ps -q --filter "name=life")
    ```
 
 2. **DNS Resolution**
@@ -305,14 +305,14 @@ Health Check for dev Environment
 
    ```bash
    # Regenerate certificates
-   icbops ssl-manager generate all
+   lifeops ssl-manager generate all
    ```
 
 4. **Container Health**
 
    ```bash
    # Check specific container logs
-   icbops dev logs api
+   lifeops dev logs api
    ```
 
 ### Verification Steps
@@ -326,13 +326,13 @@ Health Check for dev Environment
 2. **Container Status**
 
    ```bash
-   icbops dev status
+   lifeops dev status
    ```
 
 3. **Certificate Validation**
 
    ```bash
-   icbops ssl-manager validate dev
+   lifeops ssl-manager validate dev
    ```
 
 ## 📈 Performance Considerations

@@ -10,7 +10,7 @@
 
 ```bash
 git clone https://github.com/datapointchris/ichrisbirch.git
-cd ichrisbirch/
+cd life/
 
 # Install dependencies
 uv sync
@@ -23,10 +23,10 @@ cp .env.example .env
 pre-commit install
 
 # Generate SSL certificates for local development
-./ops/icbops ssl-manager generate dev
+./ops/lifeops ssl-manager generate dev
 
 # Start development environment
-./ops/icbops dev start
+./ops/lifeops dev start
 ```
 
 ## Access

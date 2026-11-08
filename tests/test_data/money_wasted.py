@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import MoneyWasted
+from life.models import MoneyWasted
 
 BASE_DATA: list[MoneyWasted] = [
     MoneyWasted(

@@ -2,11 +2,11 @@
 
 Supervisor kept the three long-running processes alive when the app ran on bare
 metal. One config per process, each naming a gunicorn or python command under
-`/var/www/ichrisbirch/.venv/`:
+`/var/www/life/.venv/`:
 
-- `app.conf` — `ichrisbirch-app`, gunicorn on `0.0.0.0:8000` with two workers
-- `api.conf` — `ichrisbirch-api`
-- `scheduler.conf` — `ichrisbirch-scheduler`
+- `app.conf` — `life-app`, gunicorn on `0.0.0.0:8000` with two workers
+- `api.conf` — `life-api`
+- `scheduler.conf` — `life-scheduler`
 
 Each set `autostart`, `autorestart`, `stopasgroup` and `killasgroup`, so a
 restart took the whole process group rather than leaving orphaned workers.
@@ -17,7 +17,7 @@ restart took the whole process group rather than leaving orphaned workers.
 way the NGINX script did. It copied `supervisord.conf` to `$ETC/supervisord.conf`
 only when the file differed, which is what kept a needless `supervisord` restart
 off an ordinary config deploy. The three program configs went to
-`$ETC/supervisor/conf.d/` as `ichrisbirch-<name>.conf`, and it touched the four
+`$ETC/supervisor/conf.d/` as `life-<name>.conf`, and it touched the four
 log files under `/var/log/supervisor/` so supervisord would not fail on a
 missing path.
 
@@ -26,7 +26,7 @@ missing path.
 !!! warning "Not the current deploy path"
     Docker supervises these processes now. `api`, `vue` and `scheduler` are
     services in `docker-compose.app.yml` with their own restart policies, and
-    the blue/green deploy swaps `icb-blue` and `icb-green` rather than
+    the blue/green deploy swaps `life-blue` and `life-green` rather than
     restarting a process in place. Nothing reads these supervisor configs.
 
     See [Blue/Green Deployment](../blue-green-deployment.md) for what replaced

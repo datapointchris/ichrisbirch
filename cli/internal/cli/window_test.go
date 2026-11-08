@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // The clock sits at 09:00 on the day New York springs forward, which is 23

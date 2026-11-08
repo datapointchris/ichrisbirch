@@ -29,7 +29,7 @@ class TestCheckYamlSchema:
         """Test CheckYamlHookEvent with issues."""
         event = CheckYamlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -53,7 +53,7 @@ class TestCheckYamlSchema:
         """Test CheckYamlHookEvent with no issues."""
         event = CheckYamlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -81,7 +81,7 @@ class TestCheckYamlRunner:
                 stderr='',
             )
 
-            event = check_yaml.run(['config.yaml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml'], 'master', 'life')
 
             assert isinstance(event, CheckYamlHookEvent)
             assert event.status == 'passed'
@@ -98,7 +98,7 @@ class TestCheckYamlRunner:
                 stderr='',
             )
 
-            event = check_yaml.run(['config.yaml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml'], 'master', 'life')
 
             assert isinstance(event, CheckYamlHookEvent)
             assert event.status == 'failed'
@@ -111,7 +111,7 @@ class TestCheckYamlRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = check_yaml.run(['config.yaml', 'main.py', 'settings.yml'], 'master', 'ichrisbirch')
+            event = check_yaml.run(['config.yaml', 'main.py', 'settings.yml'], 'master', 'life')
 
             assert set(event.files_checked) == {'config.yaml', 'settings.yml'}
 
@@ -123,7 +123,7 @@ class TestCheckTomlSchema:
         """Test CheckTomlHookEvent with issues."""
         event = CheckTomlHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -157,7 +157,7 @@ class TestCheckTomlRunner:
                 stderr='',
             )
 
-            event = check_toml.run(['pyproject.toml'], 'master', 'ichrisbirch')
+            event = check_toml.run(['pyproject.toml'], 'master', 'life')
 
             assert isinstance(event, CheckTomlHookEvent)
             assert event.status == 'failed'
@@ -171,7 +171,7 @@ class TestCheckTomlRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = check_toml.run(['pyproject.toml', 'main.py', 'config.yaml'], 'master', 'ichrisbirch')
+            event = check_toml.run(['pyproject.toml', 'main.py', 'config.yaml'], 'master', 'life')
 
             assert event.files_checked == ['pyproject.toml']
 
@@ -183,7 +183,7 @@ class TestCheckJsonSchema:
         """Test CheckJsonHookEvent with issues."""
         event = CheckJsonHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -217,7 +217,7 @@ class TestCheckJsonRunner:
                 stderr='',
             )
 
-            event = check_json.run(['package.json'], 'master', 'ichrisbirch')
+            event = check_json.run(['package.json'], 'master', 'life')
 
             assert isinstance(event, CheckJsonHookEvent)
             assert event.status == 'failed'
@@ -231,7 +231,7 @@ class TestCheckJsonRunner:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(returncode=0, stdout='', stderr='')
 
-            event = check_json.run(['package.json', 'main.py', 'data.json'], 'master', 'ichrisbirch')
+            event = check_json.run(['package.json', 'main.py', 'data.json'], 'master', 'life')
 
             assert set(event.files_checked) == {'package.json', 'data.json'}
 
@@ -243,7 +243,7 @@ class TestCheckExecutablesShebangsSchema:
         """Test CheckExecutablesShebangsHookEvent with files missing shebangs."""
         event = CheckExecutablesShebangsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -260,7 +260,7 @@ class TestCheckExecutablesShebangsSchema:
         """Test CheckExecutablesShebangsHookEvent with no issues."""
         event = CheckExecutablesShebangsHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -286,7 +286,7 @@ class TestCheckExecutablesShebangsRunner:
                 stderr='',
             )
 
-            event = check_executables_have_shebangs.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_executables_have_shebangs.run(['scripts/deploy.sh'], 'master', 'life')
 
             assert isinstance(event, CheckExecutablesShebangsHookEvent)
             assert event.status == 'passed'
@@ -306,7 +306,7 @@ class TestCheckExecutablesShebangsRunner:
                 stderr='',
             )
 
-            event = check_executables_have_shebangs.run(['scripts/deploy.sh', 'scripts/backup.sh'], 'master', 'ichrisbirch')
+            event = check_executables_have_shebangs.run(['scripts/deploy.sh', 'scripts/backup.sh'], 'master', 'life')
 
             assert isinstance(event, CheckExecutablesShebangsHookEvent)
             assert event.status == 'failed'
@@ -314,7 +314,7 @@ class TestCheckExecutablesShebangsRunner:
 
     def test_check_executables_shebangs_runner_empty_staged(self) -> None:
         """Test runner returns passed event when no files are staged."""
-        event = check_executables_have_shebangs.run([], 'master', 'ichrisbirch')
+        event = check_executables_have_shebangs.run([], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked
@@ -327,7 +327,7 @@ class TestCheckShebangExecutableSchema:
         """Test CheckShebangExecutableHookEvent with files not executable."""
         event = CheckShebangExecutableHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -344,7 +344,7 @@ class TestCheckShebangExecutableSchema:
         """Test CheckShebangExecutableHookEvent with no issues."""
         event = CheckShebangExecutableHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -370,7 +370,7 @@ class TestCheckShebangExecutableRunner:
                 stderr='',
             )
 
-            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'life')
 
             assert isinstance(event, CheckShebangExecutableHookEvent)
             assert event.status == 'passed'
@@ -387,7 +387,7 @@ class TestCheckShebangExecutableRunner:
                 stderr='',
             )
 
-            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'ichrisbirch')
+            event = check_shebang_scripts_are_executable.run(['scripts/deploy.sh'], 'master', 'life')
 
             assert isinstance(event, CheckShebangExecutableHookEvent)
             assert event.status == 'failed'
@@ -395,7 +395,7 @@ class TestCheckShebangExecutableRunner:
 
     def test_check_shebang_executable_runner_empty_staged(self) -> None:
         """Test runner returns passed event when no files are staged."""
-        event = check_shebang_scripts_are_executable.run([], 'master', 'ichrisbirch')
+        event = check_shebang_scripts_are_executable.run([], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

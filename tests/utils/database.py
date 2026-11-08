@@ -87,11 +87,11 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 import tests.test_data
-from ichrisbirch import models
-from ichrisbirch.config import Settings
-from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import create_session
-from ichrisbirch.database.session import get_db_engine
+from life import models
+from life.config import Settings
+from life.config import get_settings
+from life.database.session import create_session
+from life.database.session import get_db_engine
 
 ModelType = TypeVar('ModelType', bound=BaseModel)
 logger = logging.getLogger(__name__)

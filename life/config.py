@@ -1,0 +1,219 @@
+import functools
+import os
+import sys
+
+import dotenv
+import structlog
+
+from life.util import find_project_root
+
+logger = structlog.get_logger()
+
+
+class AISettings:
+    class AnthropicSettings:
+        def __init__(self) -> None:
+            self.oauth_token: str = os.environ.get('AI_ANTHROPIC_OAUTH_TOKEN', '')
+            self.model: str = os.environ.get('AI_ANTHROPIC_DEFAULT_MODEL', 'claude-haiku-4-5')
+
+    class PromptSettings:
+        PROMPT_DIR = find_project_root() / 'life' / 'ai' / 'prompts'
+
+        def __init__(self) -> None:
+            self.article_summary_tags = (self.PROMPT_DIR / 'article_summary_tags.txt').read_text()
+            self.article_insights = (self.PROMPT_DIR / 'article_insights.txt').read_text()
+            self.recipe_suggestions = (self.PROMPT_DIR / 'recipe_suggestions.txt').read_text()
+            self.url_import_classifier = (self.PROMPT_DIR / 'url_import_classifier.txt').read_text()
+
+    def __init__(self) -> None:
+        self.anthropic = self.AnthropicSettings()
+        self.prompts = self.PromptSettings()
+
+
+class AuthSettings:
+    def __init__(self) -> None:
+        self.internal_service_key: str = os.environ['AUTH_INTERNAL_SERVICE_KEY']
+
+
+class OIDCSettings:
+    """Settings for verifying the RFC 9068 access tokens Authelia issues to the `life` CLI.
+
+    `cli_client_id_prefix` is the per-product half of the CLI client naming
+    (`life-cli-macmini`), and it is what stops another product's token being accepted here:
+    Authelia does not populate the audience claim through the device authorization grant, so
+    `aud` comes back empty and cannot carry that isolation.
+
+    `service_client_id_prefix` names the clients a service authenticates as through the
+    client-credentials grant (`life-svc-worker`). Their tokens reach only the routes their
+    scopes list in `life/api/client_scopes.py`, and never resolve to a user.
+
+    `cli_user_email` is the local user a verified CLI token resolves to. The access token
+    carries only `sub`, `client_id` and the standard registered claims — no claims policy is
+    bound to the CLI clients — so there is no email or username on the wire to look up.
+    """
+
+    def __init__(self) -> None:
+        # `or` rather than a get() default: a key present but empty in a .env file is how a
+        # deployment says "use the default", and it must not blank the setting.
+        self.issuer: str = os.environ.get('OIDC_ISSUER') or 'https://auth.ichrisbirch.com'
+        self.cli_client_id_prefix: str = os.environ.get('OIDC_CLI_CLIENT_ID_PREFIX') or 'life-cli-'
+        self.service_client_id_prefix: str = os.environ.get('OIDC_SERVICE_CLIENT_ID_PREFIX') or 'life-svc-'
+        self.cli_user_email: str = os.environ.get('OIDC_CLI_USER_EMAIL') or os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
+
+
+class FastAPISettings:
+    def __init__(self) -> None:
+        self.host: str = os.environ['FASTAPI_HOST']
+        self.port: int = int(os.environ['FASTAPI_PORT'])
+        # The address the edge serves this API at, which its RFC 9728 metadata names.
+        # Unset, the API serves no metadata: a default would describe some other deployment.
+        # A CLI compares the document's resource with its own URL stripped of a trailing
+        # slash, so the slash is stripped here, once, for the path and the document alike.
+        self.public_url: str | None = (os.environ.get('PUBLIC_URL') or '').rstrip('/') or None
+        self.title: str = 'Life API'
+        self.description: str = """## Backend API for Life"""
+        _protocol = os.environ['PROTOCOL']
+        self.allowed_origins: list[str] = [
+            '127.0.0.1',
+            'https://ichrisbirch.com',
+            'https://www.ichrisbirch.com',
+            'https://life.ichrisbirch.com',
+            f'{_protocol}://localhost',
+            f'{_protocol}://localhost:4200',
+            f'{_protocol}://localhost:5500',
+            f'{_protocol}://localhost:6200',
+            f'{_protocol}://localhost:8000',
+        ]
+
+
+class PlaywrightSettings:
+    def __init__(self) -> None:
+        self.timeout = 5_000
+
+
+class PostgresSettings:
+    def __init__(self) -> None:
+        self.host: str = os.environ['POSTGRES_HOST']
+        self.username: str = os.environ['POSTGRES_USERNAME']
+        self.password: str = os.environ['POSTGRES_PASSWORD']
+        self.port: int = int(os.environ['POSTGRES_PORT'])
+        self.database: str = os.environ['POSTGRES_DB']
+
+    @property
+    def db_uri(self) -> str:
+        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+
+
+class RedisSettings:
+    def __init__(self) -> None:
+        self.host: str = os.environ['REDIS_HOST']
+        self.password: str = os.environ['REDIS_PASSWORD']
+        self.port: int = int(os.environ['REDIS_PORT'])
+        self.db: int = int(os.environ['REDIS_DB'])
+
+
+class SQLAlchemySettings:
+    def __init__(self) -> None:
+        self.echo: bool = False
+        self.track_modifications: bool = False
+        self.host: str = os.environ['POSTGRES_HOST']
+        self.username: str = os.environ['POSTGRES_USERNAME']
+        self.password: str = os.environ['POSTGRES_PASSWORD']
+        self.port: int = int(os.environ['POSTGRES_PORT'])
+        self.database: str = os.environ['POSTGRES_DB']
+
+    @property
+    def db_uri(self) -> str:
+        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+
+
+class UsersSettings:
+    def __init__(self) -> None:
+        self.default_regular_user_name = os.environ['USERS_DEFAULT_REGULAR_USER_NAME']
+        self.default_regular_user_email = os.environ['USERS_DEFAULT_REGULAR_USER_EMAIL']
+        self.default_regular_user_password = os.environ['USERS_DEFAULT_REGULAR_USER_PASSWORD']
+
+        self.default_admin_user_name = os.environ['USERS_DEFAULT_ADMIN_USER_NAME']
+        self.default_admin_user_email = os.environ['USERS_DEFAULT_ADMIN_USER_EMAIL']
+        self.default_admin_user_password = os.environ['USERS_DEFAULT_ADMIN_USER_PASSWORD']
+
+
+class Settings:
+    def __init__(self):
+        self.name: str = 'life'
+        self.ENVIRONMENT: str = os.environ['ENVIRONMENT']
+        self.global_timezone = 'US/Eastern'
+        self.protocol = os.environ['PROTOCOL']
+        self.domain: str = os.environ.get('DOMAIN', 'ichrisbirch.com')
+        self.app_id: str = os.environ.get('APP_ID', '')
+        # The blue/green color the deploy started this process as; unset outside production.
+        self.deploy_color: str | None = os.environ.get('DEPLOY_COLOR') or None
+
+        self.ai = AISettings()
+        self.auth = AuthSettings()
+        self.fastapi = FastAPISettings()
+        self.oidc = OIDCSettings()
+        self.playwright = PlaywrightSettings()
+        self.postgres = PostgresSettings()
+        self.redis = RedisSettings()
+        self.sqlalchemy = SQLAlchemySettings()
+        self.users = UsersSettings()
+
+    @property
+    def api_url(self) -> str:
+        """Internal API URL for service-to-service communication."""
+        port = f':{self.fastapi.port}' if self.fastapi.port else ''
+        return f'{self.protocol}://{self.fastapi.host}{port}'
+
+
+ENV_FILE = find_project_root() / '.env'
+
+
+def detect_environment() -> str:
+    """Detect environment with sensible defaults for development.
+
+    Priority:
+    1. Explicit ENVIRONMENT env var (highest priority)
+    2. Auto-detect pytest (before .env to ensure tests use 'testing')
+    3. ENVIRONMENT from .env file if it exists
+    4. Default to 'development'
+    """
+    if env := os.environ.get('ENVIRONMENT'):
+        return env
+
+    if 'pytest' in sys.modules:
+        return 'testing'
+
+    if ENV_FILE.exists():
+        dotenv.load_dotenv(ENV_FILE)
+        if env := os.environ.get('ENVIRONMENT'):
+            return env
+
+    return 'development'
+
+
+# @log_caller
+@functools.cache
+def get_settings():
+    env = detect_environment()
+    os.environ['ENVIRONMENT'] = env
+
+    # A test run is configured by whatever starts it, never by a checkout's .env, which on a
+    # workstation is the development one. The test suite loads its own configuration as it is
+    # imported, and the test stack's compose file passes it to each container.
+    if env == 'testing':
+        if not os.environ.get('POSTGRES_HOST'):
+            raise RuntimeError('environment=testing reads only the process environment, and it has no POSTGRES_HOST.')
+        logger.info('config_loaded_from_environment', environment=env)
+    # The .env is named by path, because python-dotenv's own search climbs past the project
+    # to any parent directory's .env.
+    elif dotenv.load_dotenv(ENV_FILE):
+        logger.info('config_loaded_from_dotenv', environment=env)
+    elif os.environ.get('POSTGRES_HOST'):
+        logger.info('config_loaded_from_environment', environment=env)
+    else:
+        raise FileNotFoundError(
+            f'.env file not found for environment={env}. For production, decrypt secrets: sops decrypt secrets/secrets.prod.enc.env > .env'
+        )
+
+    return Settings()

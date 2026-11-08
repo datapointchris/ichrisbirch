@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Dashboard Page', () => {
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page).toHaveTitle('Dashboard | iChrisBirch')
+    await expect(page).toHaveTitle('Dashboard | Life')
     await expect(page.locator('.vuedash__title', { hasText: 'Dashboard' })).toBeVisible()
   })
 
@@ -34,7 +34,7 @@ test.describe('Dashboard Page', () => {
 
   test('sidebar navigation to dashboard works', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page).toHaveTitle('Dashboard | iChrisBirch')
+    await expect(page).toHaveTitle('Dashboard | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Dashboard' })
     await expect(sidebarLink).toBeVisible()

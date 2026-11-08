@@ -35,7 +35,7 @@ class TestCodespellSchema:
         """Test CodespellHookEvent with issues."""
         event = CodespellHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -59,7 +59,7 @@ class TestCodespellSchema:
         """Test CodespellHookEvent with no issues."""
         event = CodespellHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -87,7 +87,7 @@ class TestCodespellRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, CodespellHookEvent)
             assert event.status == 'passed'
@@ -105,7 +105,7 @@ class TestCodespellRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert isinstance(event, CodespellHookEvent)
             assert event.status == 'failed'
@@ -122,6 +122,6 @@ class TestCodespellRunner:
                 stderr='',
             )
 
-            event = run(['test.py'], 'master', 'ichrisbirch')
+            event = run(['test.py'], 'master', 'life')
 
             assert event.duration_seconds >= 0

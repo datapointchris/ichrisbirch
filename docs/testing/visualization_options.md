@@ -260,7 +260,7 @@ To integrate diagram generation into your workflow:
 Example script structure:
 
 ```text
-ichrisbirch/
+life/
 └── docs/
     ├── diagrams/
     │   ├── generate_fixtures_diagram.py

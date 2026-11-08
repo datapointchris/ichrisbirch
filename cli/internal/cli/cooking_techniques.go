@@ -9,7 +9,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newCookingTechniquesCommand() *cobra.Command {
@@ -18,12 +18,12 @@ func newCookingTechniquesCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage cooking techniques",
 		Long: "The how-and-why writeups behind the recipes — searing, emulsifying, laminating\n" +
 			"— kept separately from any one recipe that uses them.",
-		Example: "  icb cooking-techniques list             every technique, by name\n" +
-			"  icb cooking-techniques search emulsion  find one by name, summary, body or tag\n" +
-			"  icb cooking-techniques categories       the categories and how many each holds",
+		Example: "  life cooking-techniques list             every technique, by name\n" +
+			"  life cooking-techniques search emulsion  find one by name, summary, body or tag\n" +
+			"  life cooking-techniques categories       the categories and how many each holds",
 	})
 	goclikit.WithRecoveryHints(cmd,
-		"Search techniques by name, summary, body, or tags: icb cooking-techniques search <query>")
+		"Search techniques by name, summary, body, or tags: life cooking-techniques search <query>")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading,
 		newCookingTechniquesListCommand(),
@@ -55,9 +55,9 @@ func newCookingTechniquesListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the first names of the\n" +
 			"narrowed set rather than filtering a capped slice.",
-		Example: "  icb cooking-techniques list\n" +
-			"  icb cooking-techniques list --limit 10\n" +
-			"  icb cooking-techniques list --category flavor_development --rating-min 4",
+		Example: "  life cooking-techniques list\n" +
+			"  life cooking-techniques list --limit 10\n" +
+			"  life cooking-techniques list --category flavor_development --rating-min 4",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			f := cmd.Flags()
@@ -66,7 +66,7 @@ func newCookingTechniquesListCommand() *cobra.Command {
 			})
 		},
 	}
-	cmd.Flags().StringVar(&category, "category", "", "Filter by category — icb cooking-techniques categories prints them")
+	cmd.Flags().StringVar(&category, "category", "", "Filter by category — life cooking-techniques categories prints them")
 	cmd.Flags().IntVar(&ratingMin, "rating-min", 0, "Minimum rating (1-5)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output techniques as JSON to stdout")
 	addLimitFlag(cmd, &limit)
@@ -79,7 +79,7 @@ func newCookingTechniquesSearchCommand() *cobra.Command {
 		Use:     "search <query>",
 		Short:   "Search techniques by name, summary, body, or tags",
 		Long:    "Comma- or whitespace-separated terms are matched independently (OR).",
-		Example: "  icb cooking-techniques search emulsion\n  icb cooking-techniques search \"beans,soak\"",
+		Example: "  life cooking-techniques search emulsion\n  life cooking-techniques search \"beans,soak\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTechniqueList(cmd, asJSON, func(c *api.Client) ([]api.CookingTechnique, error) {
@@ -96,7 +96,7 @@ func newCookingTechniquesShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <technique-id>",
 		Short:   "Show a single technique by id",
-		Example: "  icb cooking-techniques show 3",
+		Example: "  life cooking-techniques show 3",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
@@ -117,7 +117,7 @@ func newCookingTechniquesSlugCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "slug <slug>",
 		Short:   "Show a single technique by slug",
-		Example: "  icb cooking-techniques slug 24-hour-bean-soak",
+		Example: "  life cooking-techniques slug 24-hour-bean-soak",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTechniqueDetail(cmd, asJSON, func(c *api.Client) (api.CookingTechnique, error) {
@@ -134,7 +134,7 @@ func newCookingTechniquesCategoriesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "categories",
 		Short:   "List all technique categories with counts",
-		Example: "  icb cooking-techniques categories",
+		Example: "  life cooking-techniques categories",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -179,7 +179,7 @@ func newCookingTechniquesCreateCommand() *cobra.Command {
 		Use:   "create --name <name> --category <category> --summary <summary> --body <body> [flags]",
 		Short: "Create a cooking technique",
 		Long:  "Create a technique. --name, --category, --summary, and --body are required.\n--body is markdown.",
-		Example: "  icb cooking-techniques create --name \"Bloom Spices\" --category flavor_development \\\n" +
+		Example: "  life cooking-techniques create --name \"Bloom Spices\" --category flavor_development \\\n" +
 			"    --summary \"Toast ground spices in fat to unlock fat-soluble aroma.\" \\\n" +
 			"    --body \"## Steps\\n1. Heat fat...\" --tag spices --rating 5",
 		Args: cobra.NoArgs,
@@ -239,7 +239,7 @@ func newCookingTechniquesEditCommand() *cobra.Command {
 		Long: "Update only the fields whose flags you pass. --clear <field> empties a field\n" +
 			"(repeatable) — use it for the rating, which an empty string cannot clear.\n" +
 			"It takes the underscored field name, not the flag spelling.",
-		Example: "  icb cooking-techniques edit 3 --rating 4 --tag legumes\n  icb cooking-techniques edit 3 --clear rating",
+		Example: "  life cooking-techniques edit 3 --rating 4 --tag legumes\n  life cooking-techniques edit 3 --clear rating",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
@@ -291,7 +291,7 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <technique-id>",
 		Short:   "Delete a technique",
-		Example: "  icb cooking-techniques delete 3 --yes",
+		Example: "  life cooking-techniques delete 3 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("technique id", args[0])
@@ -332,7 +332,7 @@ func newCookingTechniquesDeleteCommand() *cobra.Command {
 // two commands stay in lockstep.
 func addTechniqueContentFlags(cmd *cobra.Command, name, category, summary, body, whyItWorks, commonPitfalls, sourceURL, sourceName *string, tags *[]string, rating *int) {
 	cmd.Flags().StringVar(name, "name", "", "Technique name")
-	cmd.Flags().StringVar(category, "category", "", "Category — icb cooking-techniques categories prints them")
+	cmd.Flags().StringVar(category, "category", "", "Category — life cooking-techniques categories prints them")
 	cmd.Flags().StringVar(summary, "summary", "", "One-paragraph summary")
 	cmd.Flags().StringVar(body, "body", "", "Full markdown body")
 	cmd.Flags().StringVar(whyItWorks, "why-it-works", "", "Why-it-works explanation")

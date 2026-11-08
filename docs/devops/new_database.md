@@ -7,7 +7,7 @@ SQLAlchemy cannot create the schemas, neither can alembic, have to create them m
 
 ## Alembic
 
-Run in `ichrisbirch`
+Run in `life`
 
 Create the initial tables from the SQLAlchemy models (purpose of --autogenerate)
 `alembic revision --autogenerate -m 'init_tables'`

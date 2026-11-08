@@ -2,13 +2,13 @@
 
 ## Overview
 
-iChrisBirch is a monorepo with a multi-service architecture: FastAPI backend (API), Vue 3 frontend, and APScheduler service.
+Life is a monorepo with a multi-service architecture: FastAPI backend (API), Vue 3 frontend, and APScheduler service.
 
 ## Directory Structure
 
 ```text
-ichrisbirch/
-├── ichrisbirch/              # Python application code
+life/
+├── life/              # Python application code
 │   ├── api/                  # FastAPI backend (endpoints, middleware, auth)
 │   ├── app/                  # static assets served by the backend
 │   ├── scheduler/            # APScheduler background jobs
@@ -33,7 +33,7 @@ ichrisbirch/
 ├── tests/                    # Python test suite
 │   ├── conftest.py           # Pytest fixtures (session/module/function scoped)
 │   ├── factories/            # factory_boy factories for per-test objects
-│   ├── ichrisbirch/          # Tests mirror source structure
+│   ├── life/          # Tests mirror source structure
 │   └── test_data/            # Fixed BASE_DATA model instances per dataset
 ├── deploy-containers/        # Docker deployment configs
 │   └── traefik/              # Traefik reverse proxy
@@ -42,8 +42,8 @@ ichrisbirch/
 │       └── scripts/          # Certificate management
 ├── docs/                     # MkDocs documentation
 ├── scripts/                  # Utility scripts (backup, restore)
-├── ops/                      # `icbops` bash ops/deploy tool (dev/test/docker/routing/ssl)
-├── cli/                      # `icb` Go resource CLI — REST client over the API
+├── ops/                      # `lifeops` bash ops/deploy tool (dev/test/docker/routing/ssl)
+├── cli/                      # `life` Go resource CLI — REST client over the API
 ├── docker-compose.yml        # Production config
 ├── docker-compose.dev.yml    # Development overrides (incl. Vue + path routing)
 ├── docker-compose.test.yml   # Testing overrides
@@ -62,4 +62,4 @@ ichrisbirch/
 
 ## Configuration
 
-Centralized in `ichrisbirch/config.py` with nested Pydantic settings classes. Environment detection via `ENVIRONMENT` variable (`development`, `testing`, `production`).
+Centralized in `life/config.py` with nested Pydantic settings classes. Environment detection via `ENVIRONMENT` variable (`development`, `testing`, `production`).

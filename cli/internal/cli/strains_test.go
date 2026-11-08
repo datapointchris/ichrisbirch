@@ -7,14 +7,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // unreachableAPI points the client at a closed port with no stored token, so a
 // command that reaches the network fails and one that refuses first does not.
 func unreachableAPI(t *testing.T) {
 	t.Helper()
-	configure(t, "http://127.0.0.1:9", "http://127.0.0.1:9", "icb-cli-test")
+	configure(t, "http://127.0.0.1:9", "http://127.0.0.1:9", "life-cli-test")
 }
 
 // A bad id is refused by the argument parser, before a client is built, so it

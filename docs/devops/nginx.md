@@ -17,7 +17,7 @@ a long-lived WebSocket otherwise dies at the proxy's default.
 `deploy-metal/deploy-nginx.sh` picked its environment from `uname`. Darwin meant
 dev under a `/usr/local` prefix; anything else meant prod with no prefix. It
 then copied `nginx.conf` to `$ETC/nginx/`, copied each site config into
-`sites-available` as `ichrisbirch-<name>.conf`, symlinked those into
+`sites-available` as `life-<name>.conf`, symlinked those into
 `sites-enabled`, and ran `nginx -s reload`.
 
 `--dry-run` printed every path it would write and exited without touching
@@ -29,7 +29,7 @@ anything.
     and security middlewares. Nothing reads these NGINX configs.
 
     Routing changes go through `deploy-containers/traefik/` and
-    `icbops routing generate`. Running `deploy-nginx.sh` against a production
+    `lifeops routing generate`. Running `deploy-nginx.sh` against a production
     host would write config for a server that is not installed.
 
 The files are kept because they record the port layout the container deploy

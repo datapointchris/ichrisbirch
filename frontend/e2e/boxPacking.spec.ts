@@ -36,7 +36,7 @@ test.describe('Box Packing Page', () => {
 
   test('loads the page with correct title', async ({ page }) => {
     await page.goto('/box-packing')
-    await expect(page).toHaveTitle('Box Packing | iChrisBirch')
+    await expect(page).toHaveTitle('Box Packing | Life')
   })
 
   test('creates a new box and verifies it appears', async ({ page }) => {

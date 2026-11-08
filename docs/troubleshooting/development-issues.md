@@ -1,6 +1,6 @@
 # Development Environment Troubleshooting
 
-This document covers issues related to setting up and maintaining the development environment for the iChrisBirch project.
+This document covers issues related to setting up and maintaining the development environment for the Life project.
 
 ## Initial Setup Issues
 
@@ -169,7 +169,7 @@ services:
 Create environment-specific configuration:
 
 ```python
-# ichrisbirch/config.py
+# life/config.py
 import os
 from typing import Literal
 
@@ -237,7 +237,7 @@ code --install-extension ms-python.black-formatter
 uv sync
 
 # Verify package is installed
-uv run python -c "import ichrisbirch; print(ichrisbirch.__file__)"
+uv run python -c "import life; print(life.__file__)"
 
 # Check Python path
 uv run python -c "import sys; print('\n'.join(sys.path))"
@@ -341,10 +341,10 @@ services:
 
 ```bash
 # Bring up the whole dev stack
-./ops/icbops dev start
+./ops/lifeops dev start
 
 # Or one service and its health-check dependencies
-docker compose --project-name icb-dev \
+docker compose --project-name life-dev \
   -f docker-compose.yml -f docker-compose.dev.yml up api
 ```
 
@@ -558,8 +558,8 @@ For new developers, here's a quick setup checklist:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/username/ichrisbirch.git
-cd ichrisbirch
+git clone https://github.com/username/life.git
+cd life
 
 # 2. Copy the environment file and fill it in
 cp .env.example .env
@@ -571,14 +571,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 
 # 5. Start development environment
-./ops/icbops dev start
+./ops/lifeops dev start
 
 # 6. Check it came up
-./ops/icbops dev health
-./ops/icbops dev smoke
+./ops/lifeops dev health
+./ops/lifeops dev smoke
 
 # 7. Run the suite
-./ops/icbops test run
+./ops/lifeops test run
 ```
 
 ## Common Development Commands
@@ -587,30 +587,30 @@ Keep these handy for daily development:
 
 ```bash
 # Start development environment
-./ops/icbops dev start
+./ops/lifeops dev start
 
 # View logs
-./ops/icbops dev logs api
+./ops/lifeops dev logs api
 
 # Run tests
-./ops/icbops test run
+./ops/lifeops test run
 
 # Access application shell
 docker compose exec api bash
 
 # Install new package, then rebuild so the container picks it up
 uv add package-name
-./ops/icbops dev rebuild --volumes
+./ops/lifeops dev rebuild --volumes
 
 # Run database migrations
-./ops/icbops dev db init
+./ops/lifeops dev db init
 
 # Format and lint
-uv run ruff format ichrisbirch/
-uv run ruff check --fix ichrisbirch/
+uv run ruff format life/
+uv run ruff check --fix life/
 
 # Lint code
-uv run pylint ichrisbirch/
+uv run pylint life/
 
 # Stop all services
 docker compose down

@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/life/cli/internal/config"
 )
 
 // loginTimeout is a backstop only — the device code carries its own expiry and
@@ -25,21 +25,21 @@ const loginTimeout = 15 * time.Minute
 func newAuthCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "auth",
-		Short: "Log in and out of the ichrisbirch API",
+		Short: "Log in and out of the life API",
 		Long: "Authenticate this machine against the identity provider using the OAuth 2.0\n" +
 			"device authorization grant. The CLI prints a code and a URL; approve it in\n" +
 			"any browser on any device, including from a different machine over SSH. The\n" +
 			"resulting token is stored in the OS keychain, or in a file only this user\n" +
 			"can read where there is none.\n\n" +
-			"Where icb is pointed comes from one config file. `icb auth status` prints\n" +
-			"its path and its api, issuer and client_id, and `icb auth login <url>` fills\n" +
+			"Where life is pointed comes from one config file. `life auth status` prints\n" +
+			"its path and its api, issuer and client_id, and `life auth login <url>` fills\n" +
 			"in whatever it lacks.\n\n" +
-			"With ICB_CLIENT_SECRET set, icb authenticates as the service client the\n" +
+			"With LIFE_CLIENT_SECRET set, life authenticates as the service client the\n" +
 			"config file's client_id names, through the client-credentials grant. It\n" +
 			"requests a token per run and stores nothing, so login and logout refuse.",
-		Example: "  icb auth status                         who you are, and where icb points\n" +
-			"  icb auth login                          log in to the config file's api\n" +
-			"  icb auth login https://icb.example.com  log in there, filling in the config file",
+		Example: "  life auth status                         who you are, and where life points\n" +
+			"  life auth login                          log in to the config file's api\n" +
+			"  life auth login https://life.example.com  log in there, filling in the config file",
 	})
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupChanging, withAPIFlag(newAuthLoginCommand()), newAuthLogoutCommand())...)
@@ -58,12 +58,12 @@ func newAuthLoginCommand() *cobra.Command {
 			"machine's short hostname. Each is printed with where it came from before\n" +
 			"the login starts, and written to the file once it succeeds. A value already\n" +
 			"in the file is never rewritten.",
-		Example: "  icb auth login\n" +
-			"  icb auth login https://icb.example.com",
+		Example: "  life auth login\n" +
+			"  life auth login https://life.example.com",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if config.IsService() {
-				return fmt.Errorf("%s is set, so icb authenticates as a service client with no login; unset it to log in as a person", config.ClientSecretEnv)
+				return fmt.Errorf("%s is set, so life authenticates as a service client with no login; unset it to log in as a person", config.ClientSecretEnv)
 			}
 			url := apiOverride
 			if len(args) == 1 {
@@ -105,7 +105,7 @@ func newAuthLoginCommand() *cobra.Command {
 			})
 			if err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					return fmt.Errorf("timed out waiting for approval after %s; run `icb auth login` again", loginTimeout)
+					return fmt.Errorf("timed out waiting for approval after %s; run `life auth login` again", loginTimeout)
 				}
 				return err
 			}
@@ -127,7 +127,7 @@ func newAuthLoginCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&clientID, "client-id", "",
-		"Log in as this OAuth client when the config file names none (default icb-cli-<short hostname>)")
+		"Log in as this OAuth client when the config file names none (default life-cli-<short hostname>)")
 	return cmd
 }
 
@@ -135,15 +135,15 @@ func newAuthLogoutCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:     "logout",
 		Short:   "Remove the stored token from this machine's keychain",
-		Example: "  icb auth logout",
+		Example: "  life auth logout",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config.IsService() {
-				return fmt.Errorf("%s is set, so icb authenticates as a service client and stores no token to remove; unset it to log out as a person", config.ClientSecretEnv)
+				return fmt.Errorf("%s is set, so life authenticates as a service client and stores no token to remove; unset it to log out as a person", config.ClientSecretEnv)
 			}
 			// Only the client id finds the token, so a file lacking the other
 			// two keys still logs out. A file naming no client falls back to
-			// icb-cli-<short hostname>, the id login uses when the file names
+			// life-cli-<short hostname>, the id login uses when the file names
 			// none, so a token stored by a login whose file was never written
 			// is still removed. No other API is asked, so logout takes no --api.
 			deployment, err := config.Load(cmd.Context(), "")
@@ -151,7 +151,7 @@ func newAuthLogoutCommand() *cobra.Command {
 				return err
 			}
 			if deployment.HandsTokens() {
-				return fmt.Errorf("%s sets token_command, so icb stores no token and there is nothing to log out of", deployment.Path)
+				return fmt.Errorf("%s sets token_command, so life stores no token and there is nothing to log out of", deployment.Path)
 			}
 			if deployment.ClientID.Value == "" {
 				deployment.ClientID.Value = config.DefaultClientID()
@@ -177,11 +177,11 @@ func newAuthTokenCommand() *cobra.Command {
 		Long: "Print a valid access token to stdout, refreshing it first if it has\n" +
 			"expired. Intended for scripting. Pass it to curl on stdin, as the example\n" +
 			"does, so the token never appears in another process's arguments. Exits\n" +
-			"non-zero if not logged in. With ICB_CLIENT_SECRET set, it requests a new\n" +
+			"non-zero if not logged in. With LIFE_CLIENT_SECRET set, it requests a new\n" +
 			"service token instead, and with token_command in the config file it prints\n" +
 			"the token that command hands.",
-		Example: "  icb auth token\n" +
-			"  printf 'Authorization: Bearer %s\\n' \"$(icb auth token)\" | curl --header @- https://icb.example.com/api/v1/tasks",
+		Example: "  life auth token\n" +
+			"  printf 'Authorization: Bearer %s\\n' \"$(life auth token)\" | curl --header @- https://life.example.com/api/v1/tasks",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, err := config.Load(cmd.Context(), apiOverride)
@@ -190,7 +190,7 @@ func newAuthTokenCommand() *cobra.Command {
 			}
 			source, err := tokenSource(cmd.Context(), deployment)
 			if errors.Is(err, errNeedsLogin) {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Not logged in as %s. Run `icb auth login`.\n", deployment.ClientID.Value)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Not logged in as %s. Run `life auth login`.\n", deployment.ClientID.Value)
 				return exitCode(1)
 			}
 			if err != nil {
@@ -204,7 +204,7 @@ func newAuthTokenCommand() *cobra.Command {
 				return fmt.Errorf("obtain a token for service client %s: %w", deployment.ClientID.Value, err)
 			}
 			if err != nil {
-				return fmt.Errorf("obtain a valid token (refresh may have failed — try `icb auth login`): %w", err)
+				return fmt.Errorf("obtain a valid token (refresh may have failed — try `life auth login`): %w", err)
 			}
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), token.AccessToken)
 			return nil
@@ -219,7 +219,7 @@ type credentialType string
 const (
 	// authorizedUser is the device-grant login a person made on this machine.
 	authorizedUser credentialType = "authorized_user"
-	// serviceAccount is the client-credentials grant ICB_CLIENT_SECRET selects.
+	// serviceAccount is the client-credentials grant LIFE_CLIENT_SECRET selects.
 	serviceAccount credentialType = "service_account"
 	// externalAccount is a token the config file's token_command hands, as
 	// Google names a credential an executable supplies.
@@ -265,7 +265,7 @@ func newAuthStatusCommand() *cobra.Command {
 			"from, the config file's path, and whether a token is stored for the client.\n" +
 			"Exits 1 when the file lacks a value, no token is stored, or the provider\n" +
 			"rejected the session.",
-		Example: "  icb auth status\n  icb auth status --json",
+		Example: "  life auth status\n  life auth status --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, loadErr := config.Load(cmd.Context(), apiOverride)
@@ -399,9 +399,9 @@ func printStatus(out io.Writer, r statusReport, d goclilogin.Deployment, loadErr
 	case r.Type == serviceAccount:
 		_, _ = fmt.Fprintln(out, "Service client (client credentials)")
 	case !r.LoggedIn:
-		_, _ = fmt.Fprintf(out, "Not logged in as %s. Run `icb auth login` to authenticate.\n", r.ClientID)
+		_, _ = fmt.Fprintf(out, "Not logged in as %s. Run `life auth login` to authenticate.\n", r.ClientID)
 	case r.Session == goclilogin.SessionRejected:
-		_, _ = fmt.Fprintf(out, "Session rejected by %s. Run `icb auth login` to authenticate.\n", r.Issuer)
+		_, _ = fmt.Fprintf(out, "Session rejected by %s. Run `life auth login` to authenticate.\n", r.Issuer)
 	default:
 		_, _ = fmt.Fprintln(out, "Logged in")
 	}

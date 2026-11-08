@@ -1,4 +1,4 @@
-# iChrisBirch
+# Life
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
@@ -17,8 +17,8 @@ through a REST API, a browser UI and a command-line client.
 All three share one PostgreSQL database and a Redis cache. Docker Compose runs
 them behind Traefik, which terminates TLS and routes by host.
 
-`cli/` is a separate Go module building `icb`, a REST client over the same API.
-`ops/icbops` is the bash tool that drives local environments and deploys.
+`cli/` is a separate Go module building `life`, a REST client over the same API.
+`ops/lifeops` is the bash tool that drives local environments and deploys.
 It and the scripts it calls run on bash 3.2, the version macOS ships, so they
 use no bash-4 constructs such as `mapfile` or `declare -A`.
 
@@ -27,22 +27,22 @@ use no bash-4 constructs such as `mapfile` or `declare -A`.
 Requires Docker, [uv](https://docs.astral.sh/uv/), Python 3.14 and Node 24.
 
 ```bash
-./ops/icbops dev start       # build and start every service, then migrate and add users
-./ops/icbops dev health      # confirm the containers are up
+./ops/lifeops dev start       # build and start every service, then migrate and add users
+./ops/lifeops dev health      # confirm the containers are up
 ```
 
 That serves the app at `https://app.docker.localhost/`, and the API with its
 Swagger docs at `https://api.docker.localhost/`.
 
-`./ops/icbops dev db seed --scale 1` fills the database with sample data.
+`./ops/lifeops dev db seed --scale 1` fills the database with sample data.
 
 ## Tests
 
 ```bash
 task test                    # every suite but e2e: Python, the CLI and the frontend
 task lint                    # every read-only check; task format rewrites
-./ops/icbops test run        # Python suite, against its own Postgres and Redis
-./ops/icbops test e2e        # Playwright, inside this checkout's test stack
+./ops/lifeops test run        # Python suite, against its own Postgres and Redis
+./ops/lifeops test e2e        # Playwright, inside this checkout's test stack
 cd frontend && npm test      # TypeScript build check plus unit tests
 ```
 

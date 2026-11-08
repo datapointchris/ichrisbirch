@@ -9,7 +9,7 @@ const SUCCESS = '.flash-messages__message--success'
 test.describe('Profile Page', () => {
   test('loads the profile page and displays user info', async ({ page }) => {
     await page.goto('/profile')
-    await expect(page).toHaveTitle('Profile | iChrisBirch')
+    await expect(page).toHaveTitle('Profile | Life')
     await expect(page.locator('h2', { hasText: 'Profile' })).toBeVisible()
     await expect(page.locator('dt', { hasText: 'Name' })).toBeVisible()
     await expect(page.locator('dt', { hasText: 'Email' })).toBeVisible()

@@ -1,0 +1,47 @@
+import structlog
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.blocking import BlockingScheduler
+
+from life.config import Settings
+from life.database.session import create_session
+from life.scheduler.jobs import admin_calendar_zone
+from life.scheduler.jobs import get_jobs_to_add
+
+logger = structlog.get_logger()
+
+
+def get_jobstore(settings: Settings) -> SQLAlchemyJobStore:
+    logger.info('jobstore_creating')
+    jobstore = SQLAlchemyJobStore(url=settings.sqlalchemy.db_uri)
+    logger.info('jobstore_created', jobstore=str(jobstore))
+    return jobstore
+
+
+def create_scheduler(settings: Settings) -> BlockingScheduler:
+    logger.info('scheduler_initializing')
+    with create_session(settings) as session:
+        zone = admin_calendar_zone(session)
+    logger.info('scheduler_calendar_zone', zone=zone.key)
+    scheduler = BlockingScheduler(timezone=zone)
+    logger.info('scheduler_type', class_name=scheduler.__class__.__name__)
+    jobstore = get_jobstore(settings)
+    scheduler.add_jobstore(jobstore, alias=settings.sqlalchemy.database, extend_existing=True)
+    logger.info('jobstore_added', jobstore=str(jobstore))
+    for job in get_jobs_to_add(settings, zone):
+        j = scheduler.add_job(**job.as_dict())
+        logger.info('job_added', job_id=job.id)
+        if j.id == 'make_logs':
+            j.pause()
+            logger.info('job_paused', job_id=j.id)
+
+    try:
+        logger.info('scheduler_starting')
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    finally:
+        logger.info('scheduler_shutting_down')
+        scheduler.shutdown()
+        logger.info('scheduler_shutdown_complete')
+
+    return scheduler

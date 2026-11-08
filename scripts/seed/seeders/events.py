@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.event import Event
+from life.models.event import Event
 from scripts.seed.base import SeedResult
 
 # (name, venue, cost)

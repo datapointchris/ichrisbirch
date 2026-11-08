@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# The {environment × service} URL grid, shared with ops/icbops
+# The {environment × service} URL grid, shared with ops/lifeops
 source "${SCRIPT_DIR}/lib/urls.sh"
 
 # Default values
@@ -39,9 +39,9 @@ print_error() {
 get_urls() {
   case "$ENVIRONMENT" in
     dev)
-      API_URL="$(icb_service_url "$ENVIRONMENT" api)"
-      APP_URL="$(icb_service_url "$ENVIRONMENT" app)"
-      DASHBOARD_URL="$(icb_service_url "$ENVIRONMENT" dashboard)"
+      API_URL="$(life_service_url "$ENVIRONMENT" api)"
+      APP_URL="$(life_service_url "$ENVIRONMENT" app)"
+      DASHBOARD_URL="$(life_service_url "$ENVIRONMENT" dashboard)"
       API_HOST=""
       APP_HOST=""
       ;;
@@ -51,8 +51,8 @@ get_urls() {
       API_URL="http://localhost:80"
       APP_URL="http://localhost:80"
       DASHBOARD_URL=""
-      API_HOST="$(icb_service_host prod api)"
-      APP_HOST="$(icb_service_host prod app)"
+      API_HOST="$(life_service_host prod api)"
+      APP_HOST="$(life_service_host prod app)"
       ;;
     *)
       print_error "Invalid environment: $ENVIRONMENT"
@@ -138,32 +138,32 @@ check_containers() {
   case "$ENVIRONMENT" in
     dev)
       containers=(
-        "icb-dev-traefik"
-        "icb-dev-api"
-        "icb-dev-vue"
-        "icb-dev-postgres"
-        "icb-dev-redis"
-        "icb-dev-scheduler"
+        "life-dev-traefik"
+        "life-dev-api"
+        "life-dev-vue"
+        "life-dev-postgres"
+        "life-dev-redis"
+        "life-dev-scheduler"
       )
       ;;
     test)
-      # Each checkout's stack is its own compose project, which ops/icbops names
-      if [[ -z "${ICB_TEST_PROJECT:-}" ]]; then
-        print_error "ICB_TEST_PROJECT is unset; run this as: icbops testing health"
+      # Each checkout's stack is its own compose project, which ops/lifeops names
+      if [[ -z "${LIFE_TEST_PROJECT:-}" ]]; then
+        print_error "LIFE_TEST_PROJECT is unset; run this as: lifeops testing health"
         exit 1
       fi
       containers=(
-        "${ICB_TEST_PROJECT}-traefik"
-        "${ICB_TEST_PROJECT}-api"
-        "${ICB_TEST_PROJECT}-vue"
-        "${ICB_TEST_PROJECT}-postgres"
-        "${ICB_TEST_PROJECT}-redis"
-        "${ICB_TEST_PROJECT}-scheduler"
+        "${LIFE_TEST_PROJECT}-traefik"
+        "${LIFE_TEST_PROJECT}-api"
+        "${LIFE_TEST_PROJECT}-vue"
+        "${LIFE_TEST_PROJECT}-postgres"
+        "${LIFE_TEST_PROJECT}-redis"
+        "${LIFE_TEST_PROJECT}-scheduler"
       )
       ;;
     prod)
       # Blue/green: check infra + active color containers
-      local bluegreen_state="/var/lib/ichrisbirch/bluegreen-state"
+      local bluegreen_state="/var/lib/life/bluegreen-state"
       local active_color=""
       if [[ -f "$bluegreen_state" ]]; then
         active_color=$(cat "$bluegreen_state")
@@ -171,23 +171,23 @@ check_containers() {
 
       if [[ -n "$active_color" ]]; then
         containers=(
-          "icb-infra-traefik"
-          "icb-infra-postgres"
-          "icb-infra-redis"
-          "icb-${active_color}-api"
-          "icb-${active_color}-vue"
-          "icb-${active_color}-scheduler"
+          "life-infra-traefik"
+          "life-infra-postgres"
+          "life-infra-redis"
+          "life-${active_color}-api"
+          "life-${active_color}-vue"
+          "life-${active_color}-scheduler"
         )
         print_info "Blue/green active color: $active_color"
       else
         # Legacy single-compose
         containers=(
-          "icb-prod-traefik"
-          "icb-prod-api"
-          "icb-prod-vue"
-          "icb-prod-postgres"
-          "icb-prod-redis"
-          "icb-prod-scheduler"
+          "life-prod-traefik"
+          "life-prod-api"
+          "life-prod-vue"
+          "life-prod-postgres"
+          "life-prod-redis"
+          "life-prod-scheduler"
         )
       fi
       ;;
@@ -278,11 +278,11 @@ main() {
   # Check DNS resolution for localhost domains.
   if [ "$ENVIRONMENT" = "dev" ]; then
     local domain_suffix service
-    domain_suffix=$(icb_env_domain "$ENVIRONMENT")
+    domain_suffix=$(life_env_domain "$ENVIRONMENT")
 
     while read -r service; do
       check_dns "${service}.${domain_suffix}"
-    done < <(icb_services)
+    done < <(life_services)
     echo ""
   fi
 

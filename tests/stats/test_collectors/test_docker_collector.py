@@ -28,7 +28,7 @@ class TestDockerSchema:
         """Test DockerCollectEvent schema."""
         event = DockerCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             images=[],
             containers=[],

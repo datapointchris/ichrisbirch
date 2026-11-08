@@ -45,7 +45,7 @@ class TestRuffSchema:
 
         event = RuffCheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -62,7 +62,7 @@ class TestRuffSchema:
         """Test RuffCheckHookEvent with no issues."""
         event = RuffCheckHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -79,7 +79,7 @@ class TestRuffSchema:
         """Test RuffCheckHookEvent can be serialized to JSON."""
         event = RuffCheckHookEvent(
             timestamp=dt.datetime(2025, 12, 31, 7, 36, 12, tzinfo=dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -107,7 +107,7 @@ class TestRuffRunner:
                 stderr='',
             )
 
-            event = ruff_check_run(['test.py'], 'master', 'ichrisbirch')
+            event = ruff_check_run(['test.py'], 'master', 'life')
 
             assert isinstance(event, RuffCheckHookEvent)
             assert event.status == 'passed'
@@ -125,7 +125,7 @@ class TestRuffRunner:
                 stderr='',
             )
 
-            event = ruff_check_run(['test.py'], 'master', 'ichrisbirch')
+            event = ruff_check_run(['test.py'], 'master', 'life')
 
             assert isinstance(event, RuffCheckHookEvent)
             assert event.status == 'failed'
@@ -141,7 +141,7 @@ class TestRuffRunner:
                 stderr='',
             )
 
-            event = ruff_check_run(['test.py'], 'master', 'ichrisbirch')
+            event = ruff_check_run(['test.py'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
@@ -153,12 +153,12 @@ class TestRuffFormatSchema:
         """Test RuffFormatHookEvent with files needing reformatting."""
         event = RuffFormatHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
-            files_reformatted=['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'],
-            files_checked=['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'],
+            files_reformatted=['life/api/main.py', 'life/models/book.py'],
+            files_checked=['life/api/main.py', 'life/models/book.py'],
             duration_seconds=0.5,
         )
 
@@ -170,7 +170,7 @@ class TestRuffFormatSchema:
         """Test RuffFormatHookEvent with no files needing reformatting."""
         event = RuffFormatHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -198,7 +198,7 @@ class TestRuffFormatRunner:
                 stderr='',
             )
 
-            event = ruff_format_run(['test.py'], 'master', 'ichrisbirch')
+            event = ruff_format_run(['test.py'], 'master', 'life')
 
             assert isinstance(event, RuffFormatHookEvent)
             assert event.status == 'passed'
@@ -216,17 +216,17 @@ class TestRuffFormatRunner:
                 stderr='',
             )
 
-            event = ruff_format_run(['ichrisbirch/api/main.py', 'ichrisbirch/models/book.py'], 'master', 'ichrisbirch')
+            event = ruff_format_run(['life/api/main.py', 'life/models/book.py'], 'master', 'life')
 
             assert isinstance(event, RuffFormatHookEvent)
             assert event.status == 'failed'
             assert len(event.files_reformatted) == 2
-            assert 'ichrisbirch/api/main.py' in event.files_reformatted
-            assert 'ichrisbirch/models/book.py' in event.files_reformatted
+            assert 'life/api/main.py' in event.files_reformatted
+            assert 'life/models/book.py' in event.files_reformatted
 
     def test_ruff_format_runner_skips_non_python_files(self) -> None:
         """Test runner skips non-Python files."""
-        event = ruff_format_run(['config.yaml', 'README.md'], 'master', 'ichrisbirch')
+        event = ruff_format_run(['config.yaml', 'README.md'], 'master', 'life')
 
         assert event.status == 'passed'
         assert not event.files_checked

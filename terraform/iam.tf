@@ -16,7 +16,7 @@ data "aws_iam_group" "developer" {
 
 # --- ROLES ---------------------------------------- #
 
-resource "aws_iam_role" "ichrisbirch_webserver" {
+resource "aws_iam_role" "life_webserver" {
   name = "webserver-role"
 
   assume_role_policy = jsonencode({
@@ -52,8 +52,8 @@ resource "aws_iam_policy" "access_webserver_keys" {
           "s3:DeleteObject"
         ]
         Resource = [
-          aws_s3_bucket.ichrisbirch_webserver_keys.arn,
-          format("%s/*", aws_s3_bucket.ichrisbirch_webserver_keys.arn),
+          aws_s3_bucket.life_webserver_keys.arn,
+          format("%s/*", aws_s3_bucket.life_webserver_keys.arn),
         ]
       }
     ]
@@ -76,8 +76,8 @@ resource "aws_iam_policy" "access_backups_bucket" {
           "s3:DeleteObject"
         ]
         Resource = [
-          aws_s3_bucket.ichrisbirch_backups.arn,
-          format("%s/*", aws_s3_bucket.ichrisbirch_backups.arn),
+          aws_s3_bucket.life_backups.arn,
+          format("%s/*", aws_s3_bucket.life_backups.arn),
         ]
       }
     ]
@@ -94,7 +94,7 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
       {
         Effect   = "Allow"
         Action   = "iam:PassRole"
-        Resource = aws_iam_role.ichrisbirch_webserver.arn
+        Resource = aws_iam_role.life_webserver.arn
       }
     ]
   })
@@ -104,21 +104,21 @@ resource "aws_iam_policy" "allow_pass_webserver_role" {
 # --- ROLE POLICY ATTACHMENTS ---------------------------------------- #
 
 resource "aws_iam_role_policy_attachment" "webserver_access_webserver_keys" {
-  role       = aws_iam_role.ichrisbirch_webserver.name
+  role       = aws_iam_role.life_webserver.name
   policy_arn = aws_iam_policy.access_webserver_keys.arn
 }
 
 resource "aws_iam_role_policy_attachment" "webserver_access_backups_bucket" {
-  role       = aws_iam_role.ichrisbirch_webserver.name
+  role       = aws_iam_role.life_webserver.name
   policy_arn = aws_iam_policy.access_backups_bucket.arn
 }
 
 
 # --- INSTANCE PROFILES ---------------------------------------- #
 
-resource "aws_iam_instance_profile" "ichrisbirch_webserver" {
+resource "aws_iam_instance_profile" "life_webserver" {
   name = "webserver-instance-profile"
-  role = aws_iam_role.ichrisbirch_webserver.name
+  role = aws_iam_role.life_webserver.name
 }
 
 

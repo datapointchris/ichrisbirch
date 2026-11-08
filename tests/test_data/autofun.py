@@ -1,4 +1,4 @@
-from ichrisbirch.models.autofun import AutoFun
+from life.models.autofun import AutoFun
 
 BASE_DATA: list[AutoFun] = [
     AutoFun(

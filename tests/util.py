@@ -7,8 +7,8 @@ import httpx2
 from fastapi import status
 from sqlalchemy.sql import select
 
-from ichrisbirch.config import Settings
-from ichrisbirch.database.session import create_session
+from life.config import Settings
+from life.database.session import create_session
 
 logger = logging.getLogger(__name__)
 logger.info('testing util loaded')

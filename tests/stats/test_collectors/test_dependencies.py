@@ -25,7 +25,7 @@ class TestDependenciesSchema:
         """Test DependenciesCollectEvent schema."""
         event = DependenciesCollectEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             dependencies=[Dependency(name='pydantic', version='2.0.0')],
             total_count=1,
@@ -50,7 +50,7 @@ class TestDependenciesRunner:
                 stderr='',
             )
 
-            event = run('master', 'ichrisbirch')
+            event = run('master', 'life')
 
             assert isinstance(event, DependenciesCollectEvent)
             assert event.total_count == 2

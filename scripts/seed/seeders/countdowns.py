@@ -8,7 +8,7 @@ import random
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.countdown import Countdown
+from life.models.countdown import Countdown
 from scripts.seed.base import SeedResult
 
 COUNTDOWNS = [

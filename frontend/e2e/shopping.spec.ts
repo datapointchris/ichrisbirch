@@ -23,7 +23,7 @@ test.describe('Shopping Page', () => {
 
   test('loads the page', async ({ page }) => {
     await page.goto('/shopping')
-    await expect(page).toHaveTitle('Shopping | iChrisBirch')
+    await expect(page).toHaveTitle('Shopping | Life')
   })
 
   test('adds an item, then checking it off moves it to recently bought', async ({ page }) => {

@@ -24,7 +24,7 @@ test.describe('Admin Pages', () => {
 
   test('loads system health page with sections', async ({ page }) => {
     await page.goto('/admin')
-    await expect(page).toHaveTitle('Admin — System | iChrisBirch')
+    await expect(page).toHaveTitle('Admin — System | Life')
     await expect(page.locator('.admin-section').first()).toBeVisible({ timeout: 10000 })
   })
 
@@ -33,13 +33,13 @@ test.describe('Admin Pages', () => {
     await expect(page.getByTestId('admin-subnav-system')).toHaveClass(/subnav__link--active/)
 
     await page.getByTestId('admin-subnav-scheduler').click()
-    await expect(page).toHaveTitle('Admin — Scheduler | iChrisBirch')
+    await expect(page).toHaveTitle('Admin — Scheduler | Life')
 
     await page.getByTestId('admin-subnav-users').click()
-    await expect(page).toHaveTitle('Admin — Users | iChrisBirch')
+    await expect(page).toHaveTitle('Admin — Users | Life')
 
     await page.getByTestId('admin-subnav-config').click()
-    await expect(page).toHaveTitle('Admin — Config | iChrisBirch')
+    await expect(page).toHaveTitle('Admin — Config | Life')
   })
 
   test('opens and closes signups from the users page', async ({ page }) => {

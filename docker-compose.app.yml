@@ -1,11 +1,11 @@
 # Application services for blue/green deployment
 #
-# Deployed as either icb-blue or icb-green project alongside icb-infra.
+# Deployed as either life-blue or life-green project alongside life-infra.
 # Traefik routing is handled by the file provider (routing.yml), not Docker labels.
 #
 # Usage:
-#   DEPLOY_COLOR=blue docker compose --project-name icb-blue -f docker-compose.app.yml up -d
-#   DEPLOY_COLOR=green docker compose --project-name icb-green -f docker-compose.app.yml up -d
+#   DEPLOY_COLOR=blue docker compose --project-name life-blue -f docker-compose.app.yml up -d
+#   DEPLOY_COLOR=green docker compose --project-name life-green -f docker-compose.app.yml up -d
 #
 # Required env vars: DEPLOY_COLOR (blue|green), plus all vars from .env
 
@@ -13,7 +13,7 @@
 # commands. Built by GHA and pushed to ghcr.io (see .github/workflows/release.yml).
 # Blue/green is the docker compose project name; the image tag is color-agnostic.
 x-app-image: &app-image
-  image: ghcr.io/datapointchris/ichrisbirch:latest
+  image: ghcr.io/datapointchris/life:latest
 
 x-logging: &logging
   driver: "json-file"
@@ -25,8 +25,8 @@ services:
   # FastAPI Backend Service — uses the shared Python image from ghcr.io
   api:
     <<: *app-image
-    container_name: icb-${DEPLOY_COLOR}-api
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
+    container_name: life-${DEPLOY_COLOR}-api
+    command: uvicorn life.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     env_file: .env
     environment:
       - ENVIRONMENT=production
@@ -34,7 +34,7 @@ services:
       - FASTAPI_DEBUG=False
       # The address the edge serves this API at. Its RFC 9728 metadata names it,
       # and a CLI logging in refuses that document unless it matches exactly.
-      - PUBLIC_URL=https://ichrisbirch.com
+      - PUBLIC_URL=https://life.ichrisbirch.com
       - LOG_FORMAT=${LOG_FORMAT:-json}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - LOG_COLORS=${LOG_COLORS:-false}
@@ -57,12 +57,12 @@ services:
       - "traefik.enable=false"
     networks:
       - proxy
-      - icb-infra
+      - life-infra
 
   # Vue Frontend Service (Caddy serves built SPA assets)
   vue:
-    image: ghcr.io/datapointchris/ichrisbirch-vue:latest
-    container_name: icb-${DEPLOY_COLOR}-vue
+    image: ghcr.io/datapointchris/life-vue:latest
+    container_name: life-${DEPLOY_COLOR}-vue
     ports: []
     restart: always
     healthcheck:
@@ -81,15 +81,15 @@ services:
       - "traefik.enable=false"
     networks:
       - proxy
-      - icb-infra
+      - life-infra
 
   # Scheduler Service (APScheduler background jobs)
   scheduler:
     <<: *app-image
-    container_name: icb-${DEPLOY_COLOR}-scheduler
+    container_name: life-${DEPLOY_COLOR}-scheduler
     depends_on:
       - api
-    command: python -m ichrisbirch.wsgi_scheduler
+    command: python -m life.wsgi_scheduler
     env_file: .env
     environment:
       - ENVIRONMENT=production
@@ -109,12 +109,12 @@ services:
         max-file: "3"
         tag: "${DEPLOY_COLOR}-scheduler"
     networks:
-      - icb-infra
+      - life-infra
 
 # Connect to infrastructure networks
 networks:
   proxy:
     external: true
-  icb-infra:
-    name: icb-infra_default
+  life-infra:
+    name: life-infra_default
     external: true

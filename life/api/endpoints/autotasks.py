@@ -1,0 +1,100 @@
+import datetime as dt
+
+import structlog
+from fastapi import APIRouter
+from fastapi import HTTPException
+from fastapi import Response
+from fastapi import status
+from sqlalchemy import select
+
+from life import models
+from life import schemas
+from life.api.endpoints.auth import DbSession
+from life.models.autotask import AUTOTASK_ANCHORS
+from life.services.row_limit import RowLimit
+from life.services.row_limit import apply_row_limit
+from life.services.task_queue import new_task
+
+logger = structlog.get_logger()
+router = APIRouter()
+
+
+@router.get('', response_model=list[schemas.AutoTask], status_code=status.HTTP_200_OK)
+def read_many(session: DbSession, limit: RowLimit = None):
+    query = select(models.AutoTask).order_by(models.AutoTask.last_run_date.desc())
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+def refuse_unknown_anchor(anchor: str | None) -> None:
+    if anchor is not None and anchor not in AUTOTASK_ANCHORS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f'Unknown autotask anchor {anchor!r}. Known anchors: {", ".join(AUTOTASK_ANCHORS)}',
+        )
+
+
+@router.post('', response_model=schemas.AutoTask, status_code=status.HTTP_201_CREATED)
+def create(autotask: schemas.AutoTaskCreate, session: DbSession):
+    refuse_unknown_anchor(autotask.anchor)
+    db_obj = models.AutoTask(**autotask.model_dump(exclude_none=True))
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+@router.get('/{id}', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
+def read_one(id: int, session: DbSession):
+    if autotask := session.get(models.AutoTask, id):
+        return autotask
+    else:
+        logger.warning('autotask_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
+
+
+@router.patch('/{id}', response_model=schemas.AutoTask, status_code=status.HTTP_200_OK)
+def update(id: int, autotask_update: schemas.AutoTaskUpdate, session: DbSession):
+    refuse_unknown_anchor(autotask_update.anchor)
+    if db_obj := session.get(models.AutoTask, id):
+        for field, value in autotask_update.model_dump(exclude_unset=True).items():
+            setattr(db_obj, field, value)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+    else:
+        logger.warning('autotask_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
+
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete(id: int, session: DbSession):
+    if autotask := session.get(models.AutoTask, id):
+        session.delete(autotask)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    else:
+        logger.warning('autotask_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')
+
+
+@router.patch('/{id}/run', status_code=status.HTTP_200_OK)
+def run(id: int, session: DbSession):
+    if autotask := session.get(models.AutoTask, id):
+        task = new_task(
+            session,
+            name=autotask.name,
+            category=autotask.category,
+            notes=autotask.notes,
+            window_days=autotask.window_days,
+            autotask_id=autotask.id,
+        )
+        session.add(task)
+        autotask.last_run_date = dt.datetime.now(dt.UTC)
+        autotask.run_count += 1
+        session.commit()
+        session.refresh(autotask)
+        logger.info('autotask_ran', autotask_id=id, task_id=task.id)
+        return autotask
+    else:
+        logger.warning('autotask_not_found', id=id)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'AutoTask {id} not found')

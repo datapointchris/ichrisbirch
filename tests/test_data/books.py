@@ -1,4 +1,4 @@
-from ichrisbirch.models import Book
+from life.models import Book
 
 BASE_DATA: list[Book] = [
     Book(

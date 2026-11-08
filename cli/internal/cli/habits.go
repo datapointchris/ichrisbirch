@@ -14,16 +14,16 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 // habitHints and habitAndCategoryHints are the commands that find a valid id
 // for the two things a habits verb takes.
 var (
-	habitHints = []string{"List every habit: icb habits list"}
+	habitHints = []string{"List every habit: life habits list"}
 
 	habitAndCategoryHints = append(slices.Clone(habitHints),
-		"List the categories a habit can belong to: icb habits categories")
+		"List the categories a habit can belong to: life habits categories")
 )
 
 func newHabitsCommand() *cobra.Command {
@@ -31,9 +31,9 @@ func newHabitsCommand() *cobra.Command {
 		Use:   "habits",
 		Short: "List, inspect, complete, and manage your habits",
 		Long:  "The things you are trying to do every day, grouped into categories, with a\ncompletion recorded each time you do one.",
-		Example: "  icb habits today       which habits are done today and which are still due\n" +
-			"  icb habits complete 5  record that you did habit 5\n" +
-			"  icb habits list        every habit you are tracking",
+		Example: "  life habits today       which habits are done today and which are still due\n" +
+			"  life habits complete 5  record that you did habit 5\n" +
+			"  life habits list        every habit you are tracking",
 	})
 	goclikit.WithRecoveryHints(cmd, habitHints...)
 	splitReadingFromChanging(cmd)
@@ -57,7 +57,7 @@ func newHabitsCommand() *cobra.Command {
 
 // newHabitsTodayCommand is the board you read each morning. It takes no --limit:
 // the set is every habit you are currently tracking, so a cap can only hide one
-// you still owe. `icb overview` is the capped view.
+// you still owe. `life overview` is the capped view.
 func newHabitsTodayCommand() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
@@ -69,7 +69,7 @@ func newHabitsTodayCommand() *cobra.Command {
 			"timezone, so the day ends where you are rather than at UTC midnight, and the\n" +
 			"header names the zone it was read in. A machine whose zone cannot be read falls\n" +
 			"back to the timezone on your profile, which the header then names.",
-		Example: "  icb habits today\n  icb habits today --json",
+		Example: "  life habits today\n  life habits today --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -139,7 +139,7 @@ func printHabitsDay(out io.Writer, board api.HabitsDay) {
 	_, _ = fmt.Fprintf(out, "Habits (%d of %d done today, %s)\n", len(board.Completed), board.CurrentTotal, board.Timezone)
 	rows := habitsDayRows(board)
 	if len(rows) == 0 {
-		_, _ = fmt.Fprintln(out, "No current habits. Start one with `icb habits create --name ... --category ...`.")
+		_, _ = fmt.Fprintln(out, "No current habits. Start one with `life habits create --name ... --category ...`.")
 		return
 	}
 	_, _ = fmt.Fprintln(out)
@@ -154,7 +154,7 @@ func printHabitsDay(out io.Writer, board api.HabitsDay) {
 	}
 	_ = tw.Flush()
 	if len(board.Due) > 0 {
-		_, _ = fmt.Fprintln(out, "\nComplete one with `icb habits complete <id>`.")
+		_, _ = fmt.Fprintln(out, "\nComplete one with `life habits complete <id>`.")
 	}
 }
 
@@ -167,7 +167,7 @@ func newHabitsListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "list",
 		Short:   "List habits",
-		Example: "  icb habits list\n  icb habits list --current",
+		Example: "  life habits list\n  life habits list --current",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -196,7 +196,7 @@ func newHabitsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <habit-id>",
 		Short:   "Show a single habit",
-		Example: "  icb habits show 5",
+		Example: "  life habits show 5",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
@@ -232,7 +232,7 @@ func newHabitsCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "create --name <name> --category <category-id> [flags]",
 		Short:   "Create a new habit",
-		Example: "  icb habits create --name \"Stretch\" --category 2",
+		Example: "  life habits create --name \"Stretch\" --category 2",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if name == "" {
@@ -261,7 +261,7 @@ func newHabitsCreateCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Habit name (required)")
-	cmd.Flags().IntVar(&category, "category", 0, "Category id (required) — icb habits categories prints them")
+	cmd.Flags().IntVar(&category, "category", 0, "Category id (required) — life habits categories prints them")
 	cmd.Flags().BoolVar(&isCurrent, "is-current", true, "Whether the habit is currently tracked")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the created habit as JSON to stdout")
 	return cmd
@@ -278,7 +278,7 @@ func newHabitsEditCommand() *cobra.Command {
 		Use:     "edit <habit-id> [flags]",
 		Short:   "Change fields on an existing habit",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb habits edit 5 --is-current=false",
+		Example: "  life habits edit 5 --is-current=false",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
@@ -315,7 +315,7 @@ func newHabitsEditCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&name, "name", "", "New habit name")
-	cmd.Flags().IntVar(&category, "category", 0, "New category id — icb habits categories prints them")
+	cmd.Flags().IntVar(&category, "category", 0, "New category id — life habits categories prints them")
 	cmd.Flags().BoolVar(&isCurrent, "is-current", true, "Set current-tracking status")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Output the updated habit as JSON to stdout")
 	return cmd
@@ -326,7 +326,7 @@ func newHabitsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <habit-id>",
 		Short:   "Delete a habit",
-		Example: "  icb habits delete 5 --yes",
+		Example: "  life habits delete 5 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
@@ -375,8 +375,8 @@ func newHabitsCompleteCommand() *cobra.Command {
 			"habit, then records a completion carrying its id alongside the name and\n" +
 			"category it had at the time.\n\n" +
 			"--date fills in a day you forgot. A future day is rejected.",
-		Example: "  # done just now\n  icb habits complete 5\n\n" +
-			"  # a day you forgot to record\n  icb habits complete 5 --date 2026-08-21",
+		Example: "  # done just now\n  life habits complete 5\n\n" +
+			"  # a day you forgot to record\n  life habits complete 5 --date 2026-08-21",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("habit id", args[0])
@@ -452,7 +452,7 @@ func newHabitsCategoriesCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "categories",
 		Short:   "List habit categories",
-		Example: "  icb habits categories\n  icb habits categories --current",
+		Example: "  life habits categories\n  life habits categories --current",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -485,7 +485,7 @@ func newHabitsCompletedCommand() *cobra.Command {
 		Use:     "completed",
 		Short:   "List habit completions",
 		Long:    "List completions. With no flags, all are returned; --first/--last give the\nsingle earliest/most-recent; --since/--until bound the day of a completion.",
-		Example: "  icb habits completed --last\n  icb habits completed --since 1w",
+		Example: "  life habits completed --last\n  life habits completed --since 1w",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			window, err := readWindow(cmd)

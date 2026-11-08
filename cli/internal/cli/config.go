@@ -8,7 +8,7 @@ import (
 	"github.com/datapointchris/goclilogin"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/config"
+	"github.com/datapointchris/life/cli/internal/config"
 )
 
 func newConfigCommand() *cobra.Command {
@@ -16,9 +16,9 @@ func newConfigCommand() *cobra.Command {
 		Use:   "config",
 		Short: "Where this machine finds the API",
 		Long: "The API's address, its login server and this machine's client, from one\n" +
-			"config file. `icb auth login <url>` fills in whatever it lacks.",
-		Example: "  icb config show  each setting, and whether the file or a flag set it\n" +
-			"  icb config path  where the file goes, whether or not it exists",
+			"config file. `life auth login <url>` fills in whatever it lacks.",
+		Example: "  life config show  each setting, and whether the file or a flag set it\n" +
+			"  life config path  where the file goes, whether or not it exists",
 	})
 	cmd.AddCommand(withAPIFlag(newConfigShowCommand()), newConfigPathCommand())
 	return cmd
@@ -29,8 +29,8 @@ func newConfigShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show each setting and where it came from",
-		Example: "  icb config show         each setting, and whether the file or a flag set it\n" +
-			"  icb config show --json  the same, for a script",
+		Example: "  life config show         each setting, and whether the file or a flag set it\n" +
+			"  life config show --json  the same, for a script",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			deployment, err := config.Load(cmd.Context(), apiOverride)
@@ -60,7 +60,7 @@ func newConfigPathCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:     "path",
 		Short:   "Print the config file's path",
-		Example: "  icb config path  where the file goes, whether or not it exists",
+		Example: "  life config path  where the file goes, whether or not it exists",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			path := config.Path()

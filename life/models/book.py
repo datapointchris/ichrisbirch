@@ -1,0 +1,92 @@
+import datetime as dt
+
+from sqlalchemy import Date
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Identity
+from sqlalchemy import Integer
+from sqlalchemy import Text
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
+from life.database.base import Base
+
+# from sqlalchemy.orm import relationship
+
+BOOK_OWNERSHIP_VALUES = [
+    'donated',
+    'owned',
+    'rejected',
+    'sold',
+    'to_purchase',
+]
+
+BOOK_PROGRESS_VALUES = [
+    'abandoned',
+    'read',
+    'reading',
+    'unread',
+]
+
+
+class BookOwnership(Base):
+    """Lookup table for book ownership/acquisition status."""
+
+    __tablename__ = 'book_ownership'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+
+
+class BookProgress(Base):
+    """Lookup table for book reading progress."""
+
+    __tablename__ = 'book_progress'
+    name: Mapped[str] = mapped_column(Text, primary_key=True)
+
+
+class Book(Base):
+    __tablename__ = 'books'
+    id: Mapped[int] = mapped_column(Integer, Identity(always=True), primary_key=True)
+    isbn: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    author: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(postgresql.ARRAY(Text), nullable=True)
+    goodreads_url: Mapped[str] = mapped_column(Text, unique=True, nullable=True)
+    priority: Mapped[int] = mapped_column(Integer, nullable=True)
+    purchase_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    purchase_price: Mapped[float] = mapped_column(Float, nullable=True)
+    sell_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    sell_price: Mapped[float] = mapped_column(Float, nullable=True)
+    read_start_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    read_finish_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=True)
+    location: Mapped[str] = mapped_column(Text, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    ownership: Mapped[str] = mapped_column(Text, ForeignKey('book_ownership.name'), server_default='owned', nullable=False)
+    progress: Mapped[str] = mapped_column(Text, ForeignKey('book_progress.name'), server_default='unread', nullable=False)
+    reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # book_box = relationship('Box', back_populates='items')
+
+    def __repr__(self) -> str:
+        return f"""Book(
+        id={self.id!r},
+        isbn={self.isbn!r},
+        title={self.title!r},
+        tags={self.tags!r},
+        goodreads_url={self.goodreads_url!r},
+        priority={self.priority!r},
+        purchase_date={self.purchase_date!r},
+        purchase_price={self.purchase_price!r},
+        sell_date={self.sell_date!r},
+        sell_price={self.sell_price!r},
+        read_start_date={self.read_start_date!r},
+        read_finish_date={self.read_finish_date!r},
+        rating={self.rating!r},
+        location={self.location!r},
+        notes={self.notes!r},
+        ownership={self.ownership!r},
+        progress={self.progress!r},
+        reject_reason={self.reject_reason!r},
+        review={self.review!r}
+        )"""

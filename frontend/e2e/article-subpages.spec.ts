@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Article Insights Page', () => {
   test('loads the page and displays the form', async ({ page }) => {
     await page.goto('/articles/insights')
-    await expect(page).toHaveTitle('Article Insights | iChrisBirch')
+    await expect(page).toHaveTitle('Article Insights | Life')
     await expect(page.locator('h3', { hasText: 'URL' })).toBeVisible()
     await expect(page.locator('#url')).toBeVisible()
     await expect(page.locator('button', { hasText: 'Educate Me!' })).toBeVisible()
@@ -22,7 +22,7 @@ test.describe('Article Insights Page', () => {
 test.describe('Article Bulk Import Page', () => {
   test('loads the page and displays the form', async ({ page }) => {
     await page.goto('/articles/bulk-import')
-    await expect(page).toHaveTitle('Bulk Import Articles | iChrisBirch')
+    await expect(page).toHaveTitle('Bulk Import Articles | Life')
     await expect(page.locator('h2', { hasText: 'Bulk Add New Articles' })).toBeVisible()
     await expect(page.locator('#text')).toBeVisible()
     await expect(page.locator('button', { hasText: 'Add New Articles' })).toBeVisible()

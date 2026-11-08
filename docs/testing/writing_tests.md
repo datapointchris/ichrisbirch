@@ -1,6 +1,6 @@
 # Writing Tests
 
-This document provides guidance on writing effective tests using the ichrisbirch project testing infrastructure.
+This document provides guidance on writing effective tests using the life project testing infrastructure.
 
 ## Test Organization
 
@@ -23,10 +23,10 @@ The project uses several types of tests:
 
 Test files follow a consistent naming pattern:
 
-- API tests: `tests/ichrisbirch/api/endpoints/test_*.py`
-- App tests: `tests/ichrisbirch/app/routes/test_*.py`
-- Model tests: `tests/ichrisbirch/models/test_*.py`
-- Utility tests: `tests/ichrisbirch/test_*.py` or `tests/utils/test_*.py`
+- API tests: `tests/life/api/endpoints/test_*.py`
+- App tests: `tests/life/app/routes/test_*.py`
+- Model tests: `tests/life/models/test_*.py`
+- Utility tests: `tests/life/test_*.py` or `tests/utils/test_*.py`
 - Script tests: `tests/scripts/test_*.py`
 
 ## Basic Test Structure
@@ -81,7 +81,7 @@ def test_api_endpoint(test_api_logged_in):
 The project includes a `ApiCrudTester` utility for testing CRUD operations:
 
 ```python
-from tests.ichrisbirch.api.endpoints.crud_test import ApiCrudTester
+from tests.life.api.endpoints.crud_test import ApiCrudTester
 
 NEW_OBJ = schemas.EventCreate(
     name='Event 4',
@@ -167,7 +167,7 @@ test('creates a new countdown', async ({ page }) => {
 Run Vue E2E tests:
 
 ```bash
-./ops/icbops test e2e                        # Inside this checkout's test stack
+./ops/lifeops test e2e                        # Inside this checkout's test stack
 npm --prefix frontend run test:e2e:ui        # Interactive UI, against the dev stack
 ```
 

@@ -42,16 +42,16 @@ file, or skip because the database is already set up.
 A restore runs `pg_restore` against the infrastructure Postgres:
 
 ```bash
-docker exec -i icb-infra-postgres \
-  pg_restore -U icb_app -d ichrisbirch --no-owner < <dump-file>
+docker exec -i life-infra-postgres \
+  pg_restore -U life -d life --no-owner < <dump-file>
 ```
 
 ## Afterwards
 
 ```bash
-icbops prod deploy-status
-icbops prod health
-icbops prod smoke
+lifeops prod deploy-status
+lifeops prod health
+lifeops prod smoke
 ```
 
 Deploys then happen by pushing to `main`. The webhook host receives the push

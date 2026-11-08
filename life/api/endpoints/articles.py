@@ -1,0 +1,283 @@
+import html as html_escaping
+
+import markdown
+import structlog
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import Response
+from fastapi import status
+from fastapi.concurrency import run_in_threadpool
+from sqlalchemy import cast
+from sqlalchemy import func
+from sqlalchemy import or_
+from sqlalchemy import select
+from sqlalchemy.dialects import postgresql
+
+from life import models
+from life import schemas
+from life.ai.assistants.anthropic import AnthropicAssistant
+from life.api.article_import_worker import enqueue_bulk_import
+from life.api.article_import_worker import get_batch_status
+from life.api.endpoints.auth import DbSession
+from life.api.endpoints.auth import get_current_user
+from life.api.exceptions import FailedDependencyException
+from life.api.exceptions import NotFoundException
+from life.api.time_window import TimeWindowQuery
+from life.config import Settings
+from life.config import get_settings
+from life.services.article_creation import ArticleAlreadyExists
+from life.services.article_creation import summarize_and_create_article
+from life.services.outbound_http import PageFetchError
+from life.services.outbound_http import PageStatusError
+from life.services.row_limit import RowLimit
+from life.services.row_limit import apply_row_limit
+from life.services.time_window import apply_time_window
+from life.services.url_extraction import ArticlePage
+from life.services.url_extraction import CaptionsBlocked
+from life.services.url_extraction import PageUnreadable
+from life.services.url_extraction import VideoHasNoCaptions
+from life.services.url_extraction import read_article_page
+from life.util import clean_url
+
+logger = structlog.get_logger()
+router = APIRouter()
+
+
+# Every way reading a saved URL fails that is not a fault in this app.
+PAGE_ERRORS = (PageFetchError, PageStatusError, PageUnreadable, CaptionsBlocked)
+
+
+def page_error(e: PageFetchError | PageStatusError | PageUnreadable | CaptionsBlocked) -> HTTPException:
+    """Translate a page that could not be read into a response for a request handler.
+
+    The site failing is a failed dependency. A page that answered but is not the
+    article — a redirect to the homepage, a bot check, no readable text — cannot be
+    processed as the article the caller named.
+    """
+    logger.warning('article_page_unreadable', error=str(e))
+    if isinstance(e, PageUnreadable):
+        return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
+    return FailedDependencyException(str(e))
+
+
+def read_page_for_request(url: str) -> ArticlePage:
+    try:
+        return read_article_page(url)
+    except PAGE_ERRORS as e:
+        raise page_error(e) from e
+
+
+@router.get('', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
+def read_many(
+    session: DbSession,
+    window: TimeWindowQuery,
+    favorites: bool | None = None,
+    archived: bool | None = None,
+    unread: bool | None = None,
+    limit: RowLimit = None,
+):
+    """List articles by title, narrowed by the tri-state filters and a window on the last read.
+
+    `favorites=true` answers the favorites due for a re-read: never read, or last
+    read longer ago than `review_days`. A favorite with no `review_days` drops off
+    once read, because a null interval never comes due.
+
+    The window narrows on `last_read_date`, so a never-read article is outside
+    every window — the same answer `unread=false` gives, reached by the same
+    column.
+
+    `limit` caps last, so it takes the first titles of whatever the filters left
+    rather than filtering a capped slice.
+    """
+    query = select(models.Article).order_by(models.Article.title.asc())
+    if favorites is True:
+        # Use PostgreSQL's make_interval for proper SQL date arithmetic
+        is_due_for_review = (models.Article.last_read_date.is_not(None)) & (
+            models.Article.last_read_date + func.make_interval(0, 0, 0, models.Article.review_days) <= func.now()
+        )
+        query = query.where(models.Article.is_favorite.is_(True))
+        query = query.where((models.Article.last_read_date.is_(None)) | is_due_for_review)
+    if favorites is False:
+        query = query.where(models.Article.is_favorite.is_(False))
+    if archived is True:
+        query = query.where(models.Article.is_archived.is_(True))
+    if archived is False:
+        query = query.where(models.Article.is_archived.is_(False))
+    if unread is True:
+        query = query.where(models.Article.last_read_date.is_(None))
+    if unread is False:
+        query = query.where(models.Article.last_read_date.is_not(None))
+    query = apply_time_window(query, models.Article.last_read_date, window, zone=None)
+    return list(session.scalars(apply_row_limit(query, limit)).all())
+
+
+@router.get('/current', response_model=schemas.Article | None, status_code=status.HTTP_200_OK)
+def current(session: DbSession):
+    query = select(models.Article).where(models.Article.is_current.is_(True))
+    return session.scalars(query).first()
+
+
+@router.get('/url', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+def read_one_url(url: str, session: DbSession):
+    url = clean_url(url)
+    if article := session.scalar(select(models.Article).where(models.Article.url == url)):
+        return article
+    raise NotFoundException('article', f'url={url}', logger)
+
+
+@router.post('', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
+def create(article: schemas.ArticleCreate, session: DbSession):
+    obj = models.Article(**article.model_dump())
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    return obj
+
+
+@router.post('/create-from-url', response_model=schemas.Article, status_code=status.HTTP_201_CREATED)
+async def create_from_url(
+    body: schemas.ArticleCreateFromUrl,
+    session: DbSession,
+    settings: Settings = Depends(get_settings),
+):
+    """Create an article from a URL. Automatically fetches content, summarizes via AI, and generates tags."""
+    try:
+        return await summarize_and_create_article(body.url, body.notes, session, settings)
+    except ArticleAlreadyExists as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+    except PAGE_ERRORS as e:
+        raise page_error(e) from e
+
+
+@router.post('/bulk-import', status_code=status.HTTP_202_ACCEPTED)
+def bulk_import(body: schemas.ArticleBulkImport, request: Request, user: models.User = Depends(get_current_user)):
+    """Enqueue URLs for bulk import. Returns batch_id for status polling."""
+    if not body.urls:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='No URLs provided')
+    redis_client = request.app.state.redis_client
+    batch_id = enqueue_bulk_import(redis_client, body.urls, body.notes, actor=user.email)
+    return {'batch_id': batch_id, 'total': len(body.urls), 'status': 'queued'}
+
+
+@router.get('/bulk-import/{batch_id}', status_code=status.HTTP_200_OK)
+def bulk_import_status(batch_id: str, request: Request):
+    """Check status of a bulk article import batch."""
+    redis_client = request.app.state.redis_client
+    batch = get_batch_status(redis_client, batch_id)
+    if batch is None:
+        raise NotFoundException('batch', batch_id, logger)
+    return batch
+
+
+@router.get('/search', response_model=list[schemas.Article], status_code=status.HTTP_200_OK)
+def search(q: str, session: DbSession):
+    """Search for comma-separated list of tags.
+
+    Search terms must be separated and wildcards added.
+    `tags` column must be converted from array to string to perform the like comparison for each search term.
+    Use the OR to search for any of the specified search terms.
+    NOTE: Converting the tags array to text cannot use the GIN index that is set in postgres on the tags column.
+    This is a limitation of the array type in that it can't match partial results and use the index.
+    """
+    logger.debug('article_search', query=q)
+    search_terms = [f'%{term.strip()}%' for term in q.split(',')]
+    logger.debug('article_search_terms', terms=search_terms)
+    conditions = [cast((models.Article.tags), postgresql.TEXT).ilike(term) for term in search_terms]
+    articles = select(models.Article).filter(or_(*conditions)).order_by(models.Article.title.asc())
+    results = session.scalars(articles).all()
+    logger.debug('article_search_results', count=len(results))
+    return list(results)
+
+
+@router.post('/summarize', response_model=schemas.ArticleSummary, status_code=status.HTTP_201_CREATED)
+async def summarize(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
+    """Summarize youtube video or article based on the url.
+
+    Return a summary of the article or video including title, summary, tags. If youtube video, use captions for video summary. If article,
+    use html content for summary. Claude produces the summary and the tags.
+    """
+    logger.debug('article_summarize_request', url=body.url)
+    url = clean_url(body.url)
+    page = await run_in_threadpool(read_page_for_request, url)
+    logger.debug('article_title_retrieved', title=page.title)
+
+    assistant = AnthropicAssistant(
+        name='Article Summary with Tags',
+        system_prompt=settings.ai.prompts.article_summary_tags,
+        settings=settings,
+    )
+    written = await assistant.generate_structured(page.text, schemas.ArticleSummaryAndTags, max_tokens=8192)
+    return schemas.ArticleSummary(title=page.title, summary=written.summary, tags=written.tags)
+
+
+@router.post('/insights', response_model=None, status_code=status.HTTP_200_OK)
+async def insights(body: schemas.ArticleUrl, settings: Settings = Depends(get_settings)):
+    """Summarize youtube video or article based on the url.
+
+    Return a detailed summary, insights, and recommendations. If youtube video, use captions for video summary. If article, use html content
+    for summary. Claude produces the insights.
+    """
+    logger.debug('article_insights_request', url=body.url)
+    url = clean_url(body.url)
+    logger.debug('article_insights_processing', url=url)
+    try:
+        page = await run_in_threadpool(read_article_page, url)
+    except (VideoHasNoCaptions, CaptionsBlocked) as e:
+        # A YouTube caption failure is rendered as the answer, because the form
+        # that calls this treats any non-200 as a script error.
+        logger.error('youtube_captions_error', url=url, error=str(e))
+        lines = []
+        for i, line in enumerate(str(e).strip().split('\n')):
+            if i == 0:
+                lines.append(f'<h3>{html_escaping.escape(line)}</h3>')
+            else:
+                lines.append(f'<p>{html_escaping.escape(line)}</p>')
+        return Response(content=''.join(lines).replace('<p></p>', ''))
+    except PAGE_ERRORS as e:
+        raise page_error(e) from e
+
+    assistant = AnthropicAssistant(name='Article Insights', settings=settings, system_prompt=settings.ai.prompts.article_insights)
+    mkd = await assistant.generate(page.text, max_tokens=8192)
+    full_mkd = f'# {page.title}\n{mkd}'
+
+    # Escaped before rendering, because Python-Markdown passes raw HTML straight
+    # through and both consumers of this endpoint render the result as HTML —
+    # the Vue view binds it with v-html and the GUI calls display_html_response.
+    # The model is summarizing a page the caller supplied, so its output is
+    # attacker-influenced: a page that steers it into emitting a <script> tag
+    # would otherwise execute in the reader's browser. Escaping leaves markdown
+    # syntax untouched, since none of #, *, _, [ or ( is escaped.
+    html = markdown.markdown(html_escaping.escape(full_mkd))
+
+    return Response(html)
+
+
+@router.get('/{id}', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+def read_one(id: int, session: DbSession):
+    if article := session.get(models.Article, id):
+        return article
+    raise NotFoundException('article', id, logger)
+
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete(id: int, session: DbSession):
+    if article := session.get(models.Article, id):
+        session.delete(article)
+        session.commit()
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    raise NotFoundException('article', id, logger)
+
+
+@router.patch('/{id}', response_model=schemas.Article, status_code=status.HTTP_200_OK)
+def update(id: int, update: schemas.ArticleUpdate, session: DbSession):
+    update_data = update.model_dump(exclude_unset=True)
+    logger.debug('article_update', article_id=id, update_data=update_data)
+    if article := session.get(models.Article, id):
+        for attr, value in update_data.items():
+            setattr(article, attr, value)
+        session.commit()
+        session.refresh(article)
+        return article
+    raise NotFoundException('article', id, logger)

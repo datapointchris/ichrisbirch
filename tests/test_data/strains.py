@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import Strain
+from life.models import Strain
 
 # Three rows, because ApiCrudTester defaults expected_length=3.
 #

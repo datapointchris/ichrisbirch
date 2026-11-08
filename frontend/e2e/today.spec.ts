@@ -25,7 +25,7 @@ test.describe('Today Page', () => {
 
   test('loads the page', async ({ page }) => {
     await page.goto('/today')
-    await expect(page).toHaveTitle('Today | iChrisBirch')
+    await expect(page).toHaveTitle('Today | Life')
   })
 
   test('adds a task, then completing the first task moves it to done today and tapping it reopens it', async ({ page }) => {

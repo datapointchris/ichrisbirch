@@ -1,5 +1,5 @@
-from ichrisbirch.models import Recipe
-from ichrisbirch.models import RecipeIngredient
+from life.models import Recipe
+from life.models import RecipeIngredient
 
 # Lookup tables (units, cuisines, meal types, difficulties) are populated by the
 # initial migration — no need to insert them here.

@@ -8,7 +8,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newAutotasksCommand() *cobra.Command {
@@ -17,10 +17,10 @@ func newAutotasksCommand() *cobra.Command {
 		Short: "Inspect your recurring task templates",
 		Long: "The templates behind your recurring tasks: what respawns, how often, and when\n" +
 			"each last ran. Read-only — the scheduler is what creates and completes them.",
-		Example: "  icb autotasks list     every template, most recently run first\n" +
-			"  icb autotasks show 2   one template and its schedule",
+		Example: "  life autotasks list     every template, most recently run first\n" +
+			"  life autotasks show 2   one template and its schedule",
 	})
-	goclikit.WithRecoveryHints(cmd, "List every autotask: icb autotasks list")
+	goclikit.WithRecoveryHints(cmd, "List every autotask: life autotasks list")
 	cmd.AddCommand(
 		newAutotasksListCommand(),
 		newAutotasksShowCommand(),
@@ -38,7 +38,7 @@ func newAutotasksListCommand() *cobra.Command {
 		Short: "List recurring task templates",
 		Long: "Templates come back most recently run first, so --limit takes the ones that\n" +
 			"fired last rather than an arbitrary slice.",
-		Example: "  icb autotasks list\n  icb autotasks list --limit 5\n  icb autotasks list --json",
+		Example: "  life autotasks list\n  life autotasks list --limit 5\n  life autotasks list --json",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -66,7 +66,7 @@ func newAutotasksShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <autotask-id>",
 		Short:   "Show a single recurring task template",
-		Example: "  icb autotasks show 2",
+		Example: "  life autotasks show 2",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("autotask id", args[0])

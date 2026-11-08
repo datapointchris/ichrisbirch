@@ -1,6 +1,6 @@
 # Docker Configuration Troubleshooting
 
-This document covers common Docker-related issues encountered during development and deployment of the iChrisBirch project, including build failures, networking problems, and container orchestration issues.
+This document covers common Docker-related issues encountered during development and deployment of the Life project, including build failures, networking problems, and container orchestration issues.
 
 ## Multi-Stage Build Issues
 
@@ -22,7 +22,7 @@ The root `Dockerfile` builds at `/app` in every stage, and `production` copies
 `/app` wholesale out of `production-builder`:
 
 ```dockerfile
-COPY --from=production-builder --chown=ichrisbirch:ichrisbirch /app /app
+COPY --from=production-builder --chown=life:life /app /app
 ```
 
 Both sides are `/app`, so the paths inside `.venv` stay correct. Changing
@@ -90,7 +90,7 @@ docker compose exec api nc -zv postgres 5432
 
 **Problem:** Containers on one Docker network can reach their gateway but NOT the internet (ping `1.1.1.1` times out, `wget https://registry.npmjs.org` hangs). Containers on OTHER Docker networks on the same host work fine. DNS resolves correctly.
 
-**Symptoms specific to this repo:** a test stack's `icb-test-<checkout>-vue` can't finish `npm install` (times out fetching packages) while `icb-dev-vue` works. Every checkout's stack creates its own networks, so a new worktree is the usual place to meet this. Testing containers show "health: starting" indefinitely.
+**Symptoms specific to this repo:** a test stack's `life-test-<checkout>-vue` can't finish `npm install` (times out fetching packages) while `life-dev-vue` works. Every checkout's stack creates its own networks, so a new worktree is the usual place to meet this. Testing containers show "health: starting" indefinitely.
 
 **Cause (Arch Linux and similar):** The Linux kernel can have BOTH netfilter backends loaded simultaneously — `nftables` (modern) and `xt_tables` (legacy). Both evaluate packets at each netfilter hook. Docker writes MASQUERADE and FORWARD rules to its currently-configured backend (usually nft on modern systems), but if orphan rules exist in the OTHER backend referencing dead bridge IDs, they can drop traffic for newer Docker networks before nft's rules can NAT them.
 
@@ -121,7 +121,7 @@ sudo iptables-legacy -t nat -F
 sudo iptables-legacy -X
 sudo iptables-legacy -t nat -X
 sudo systemctl restart docker
-./ops/icbops testing rebuild --all --volumes
+./ops/lifeops testing rebuild --all --volumes
 ```
 
 **Permanent prevention:** blacklist the legacy kernel modules so they never reload:
@@ -241,7 +241,7 @@ services:
 services:
   api:
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-ichrisbirch}
+      - POSTGRES_DB=${POSTGRES_DB:-life}
       - DEBUG=${DEBUG:-false}
 ```
 
@@ -249,7 +249,7 @@ services:
 
 ```python
 # In your application startup
-from ichrisbirch.config import settings
+from life.config import settings
 
 # Let it fail fast if misconfigured
 assert settings.database_url, "DATABASE_URL must be set"
@@ -339,15 +339,15 @@ sudo systemctl reset-failed docker.service docker.socket
 sudo systemctl start docker
 
 # 2. IMMEDIATELY kill the looping container (before restart policy puts docker back in the same loop)
-project=icb-test-<checkout>
+project=life-test-<checkout>
 docker rm -f "$project-vue" 2>/dev/null
 docker volume rm "$project-vue-node-modules" 2>/dev/null
 
 # 3. Clean rebuild
-./ops/icbops testing rebuild --all --volumes
+./ops/lifeops testing rebuild --all --volumes
 ```
 
-**Prevention:** Every dev and test service uses `restart: on-failure:3`, so Docker gives up after three failed starts. A checkout removed from under a running test stack fails the same way: its bind mount is gone, so every start finds no `/app`. The next `testing start` in any checkout removes that stack's containers, volumes and networks. The cost is that Docker never restarts an `on-failure` container when the daemon starts, so after a reboot the dev stack stays down until `icbops dev start`.
+**Prevention:** Every dev and test service uses `restart: on-failure:3`, so Docker gives up after three failed starts. A checkout removed from under a running test stack fails the same way: its bind mount is gone, so every start finds no `/app`. The next `testing start` in any checkout removes that stack's containers, volumes and networks. The cost is that Docker never restarts an `on-failure` container when the daemon starts, so after a reboot the dev stack stays down until `lifeops dev start`.
 
 ## Service Orchestration Issues
 
@@ -427,7 +427,7 @@ docker inspect $(docker compose ps -q api)
 docker network ls
 
 # Inspect network configuration
-docker network inspect ichrisbirch_default
+docker network inspect life_default
 
 # Test connectivity between services
 docker compose exec api ping postgres
@@ -458,7 +458,7 @@ docker run -it <intermediate-id> bash
 production build, a virtualenv copied to a path other than the one it was
 created at.
 
-**Fix:** For dev and test, `icbops testing rebuild --volumes`, which re-seeds
+**Fix:** For dev and test, `lifeops testing rebuild --volumes`, which re-seeds
 the anonymous volume from the image layer. For a build, check that every stage
 copying `.venv` uses the same `WORKDIR`.
 

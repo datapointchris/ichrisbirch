@@ -18,8 +18,8 @@ const mockApi = vi.mocked(api)
 const testSystemHealth = {
   server: { environment: 'testing', api_url: 'http://api:8000', server_time: '2026-03-15T12:00:00' },
   docker: [
-    { name: 'icb-dev-api', status: 'running', started_at: '2026-03-15T10:00:00Z', image: 'ichrisbirch:dev' },
-    { name: 'icb-dev-postgres', status: 'running', started_at: '2026-03-15T10:00:00Z', image: 'postgres:16' },
+    { name: 'life-dev-api', status: 'running', started_at: '2026-03-15T10:00:00Z', image: 'life:dev' },
+    { name: 'life-dev-postgres', status: 'running', started_at: '2026-03-15T10:00:00Z', image: 'postgres:16' },
   ],
   database: {
     tables: [{ schema_name: 'public', table_name: 'tasks', row_count: 42 }],

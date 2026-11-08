@@ -1,4 +1,4 @@
-from ichrisbirch.models import CookingTechnique
+from life.models import CookingTechnique
 
 # Category lookup table is populated by the initial migration — no need to insert it here.
 

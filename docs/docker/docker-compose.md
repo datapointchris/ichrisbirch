@@ -6,20 +6,20 @@ all.
 
 ## What each environment composes
 
-| Environment | Files                | Project name                          |
-| ----------- | -------------------- | ------------------------------------- |
-| Development | base + `dev`         | `icb-dev`                             |
-| Testing     | base + `test`        | `icb-test-<checkout directory>`       |
-| CI          | base + `test` + `ci` | `icb-test-ichrisbirch`                |
-| Production  | `infra`, then `app`  | `icb-infra`, `icb-blue` / `icb-green` |
+| Environment | Files                | Project name                             |
+| ----------- | -------------------- | ---------------------------------------- |
+| Development | base + `dev`         | `life-dev`                               |
+| Testing     | base + `test`        | `life-test-<checkout directory>`         |
+| CI          | base + `test` + `ci` | `life-test-<repository name>`            |
+| Production  | `infra`, then `app`  | `life-infra`, `life-blue` / `life-green` |
 
-`ops/icbops` holds these combinations as `COMPOSE_DEV`, `COMPOSE_TEST`,
+`ops/lifeops` holds these combinations as `COMPOSE_DEV`, `COMPOSE_TEST`,
 `COMPOSE_INFRA` and a `compose_app` function. Read them there rather than
 assembling `-f` flags by hand.
 
-The base file is also runnable on its own, as project `icb-prod`. That is the
-single-color path blue/green replaced. `icbops prod start` falls back to it
-only when `/var/lib/ichrisbirch/bluegreen-state` names no active color.
+The base file is also runnable on its own, as project `life-prod`. That is the
+single-color path blue/green replaced. `lifeops prod start` falls back to it
+only when `/var/lib/life/bluegreen-state` names no active color.
 `prod rebuild` refuses to run it at all, because rebuilding in place means
 downtime.
 
@@ -27,15 +27,15 @@ downtime.
 
 Compose merges later files over earlier ones, and a field's type decides how.
 
-| Field                | How an override combines with the base |
-| -------------------- | -------------------------------------- |
-| `ports`              | Appended                               |
-| `volumes`            | Appended                               |
-| `environment`        | Merged per key                         |
-| `labels`             | Merged per key                         |
-| `command`            | Replaced whole                         |
-| `entrypoint`         | Replaced whole                         |
-| `healthcheck.test`   | Replaced whole                         |
+| Field              | How an override combines with the base |
+| ------------------ | -------------------------------------- |
+| `ports`            | Appended                               |
+| `volumes`          | Appended                               |
+| `environment`      | Merged per key                         |
+| `labels`           | Merged per key                         |
+| `command`          | Replaced whole                         |
+| `entrypoint`       | Replaced whole                         |
+| `healthcheck.test` | Replaced whole                         |
 
 A dev override adding a port leaves the base's mapping in place and both bind.
 That reads as `port already allocated` on a stack that looks correctly
@@ -60,7 +60,7 @@ So `!override` belongs on `ports` and `volumes` and nowhere else. Putting it on
 override did not name is gone. Those merge per key already, so there was
 nothing to suppress.
 
-`icbops {dev,testing,prod} docker [service]` prints the resolved result.
+`lifeops {dev,testing,prod} docker [service]` prints the resolved result.
 Read that rather than reasoning from the override file, because a field the
 base already set looks like the override's doing.
 
@@ -91,13 +91,13 @@ Traefik's routers and middlewares are files, at
 `deploy-containers/traefik/dynamic/{env}/routing.yml`. Compose labels declare
 only the service ports Traefik forwards to. Vue path prefixes are generated
 into those routing files from `deploy-containers/traefik/vue-paths.txt` by
-`icbops routing generate`, so a new Vue route needs an entry there or Traefik
+`lifeops routing generate`, so a new Vue route needs an entry there or Traefik
 sends the path to the API.
 
 ## Development
 
 Dev mounts `.:/app`, so the API reloads on save. `uvicorn` runs with `--reload`
-scoped to `ichrisbirch/api`, `ichrisbirch/models` and `ichrisbirch/schemas` —
+scoped to `life/api`, `life/models` and `life/schemas` —
 an edit outside those directories needs a restart.
 
 ### The Vue mount overlaps a bind mount with a named volume
@@ -125,7 +125,7 @@ directory ends up owned by `root:root`:
 
 A partial install left in the named volume produces `ENOTEMPTY` in a restart
 loop, and a loop left running long enough has taken down `dockerd` itself.
-`icbops testing rebuild --all --volumes` wipes the volume and starts clean.
+`lifeops testing rebuild --all --volumes` wipes the volume and starts clean.
 [Docker troubleshooting](../troubleshooting/docker-issues.md#container-crash-loop-that-crashes-dockerd)
 has the recovery for a daemon that has already crashed.
 
@@ -134,7 +134,7 @@ has the recovery for a daemon that has already crashed.
 Every checkout gets its own test stack, and the e2e suite runs inside it.
 pytest uses none of it: each session starts its own Postgres and Redis.
 
-`ops/icbops` passes `--project-name icb-test-<checkout directory>`, and
+`ops/lifeops` passes `--project-name life-test-<checkout directory>`, and
 `docker-compose.test.yml` scopes everything else to that name:
 
 - **Container names** are `${COMPOSE_PROJECT_NAME}-<service>`.
@@ -154,27 +154,27 @@ and `full_page_writes` off. Tests do not need durability. Dropping it is most
 of the speed difference.
 
 The database therefore empties whenever that container stops or is recreated.
-Every `icbops` verb that brings the stack up initializes it afterwards. A bare
+Every `lifeops` verb that brings the stack up initializes it afterwards. A bare
 `docker compose up` does not, which leaves an empty database behind healthy
 containers:
 
 ```bash
-./ops/icbops test e2e          # starts the stack if needed, then runs Playwright in it
-./ops/icbops testing start     # leaves it up for repeated runs
+./ops/lifeops test e2e          # starts the stack if needed, then runs Playwright in it
+./ops/lifeops testing start     # leaves it up for repeated runs
 ```
 
 [Test Environment Configuration](../testing/environment.md) covers both suites.
 
 ## CI
 
-CI layers a third file over base and test. `icbops` adds it when `CI=true`,
-which GitHub sets on every job. The e2e job runs `./ops/icbops testing start`
-and `./ops/icbops test e2e`, the same commands a workstation runs, so the
-project is `icb-test-ichrisbirch`, after the runner's checkout directory.
+CI layers a third file over base and test. `lifeops` adds it when `CI=true`,
+which GitHub sets on every job. The e2e job runs `./ops/lifeops testing start`
+and `./ops/lifeops test e2e`, the same commands a workstation runs, so the
+project is `life-test-<repository name>`, after the runner's checkout directory.
 
 The file changes one thing. **The API's Docker socket is dropped.** The API
 mounts it to report container status on the admin dashboard, through
-`get_docker_containers()` in `ichrisbirch/api/endpoints/admin.py`. A runner
+`get_docker_containers()` in `life/api/endpoints/admin.py`. A runner
 has no reason to hand that in.
 
 Do not add a named volume for `.venv` or the uv cache to any of these files.
@@ -185,8 +185,8 @@ anonymous `/app/.venv` volume is what keeps dev, test and CI behaving alike.
 ## Production
 
 `docker-compose.infra.yml` runs Traefik, Postgres and Redis as project
-`icb-infra`, and stays up across deploys. `docker-compose.app.yml` runs the API,
-Vue and scheduler as `icb-blue` or `icb-green`.
+`life-infra`, and stays up across deploys. `docker-compose.app.yml` runs the API,
+Vue and scheduler as `life-blue` or `life-green`.
 
 Neither builds anything. Both name images from
 `ghcr.io/datapointchris/`, which `.github/workflows/release.yml` pushes. The

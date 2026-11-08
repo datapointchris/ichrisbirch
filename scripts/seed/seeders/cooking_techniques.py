@@ -5,10 +5,10 @@ from __future__ import annotations
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from ichrisbirch.models.recipe import COOKING_TECHNIQUE_CATEGORIES
-from ichrisbirch.models.recipe import CookingTechnique
-from ichrisbirch.models.recipe import CookingTechniqueCategory
-from ichrisbirch.util import slugify
+from life.models.recipe import COOKING_TECHNIQUE_CATEGORIES
+from life.models.recipe import CookingTechnique
+from life.models.recipe import CookingTechniqueCategory
+from life.util import slugify
 from scripts.seed.base import SeedResult
 
 COOKING_TECHNIQUE_BLUEPRINTS: list[dict] = [

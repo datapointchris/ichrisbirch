@@ -18,10 +18,10 @@ from dataclasses import field
 from sqlalchemy import select
 from sqlalchemy import text
 
-from ichrisbirch import models
-from ichrisbirch.api.main import create_api
-from ichrisbirch.database.base import Base
-from ichrisbirch.database.session import get_db_engine
+from life import models
+from life.api.main import create_api
+from life.database.base import Base
+from life.database.session import get_db_engine
 from tests.conftest import SEQUENCES_TO_RESET
 from tests.utils.database import create_session
 from tests.utils.database import get_test_login_users
@@ -410,7 +410,7 @@ def main():
         estimate_optimization_impact()
     except Exception as e:
         print(f'\nError: {e}')
-        print('Ensure the test database is running: ./ops/icbops testing start')
+        print('Ensure the test database is running: ./ops/lifeops testing start')
         raise
 
 

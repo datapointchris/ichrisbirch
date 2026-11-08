@@ -1,19 +1,19 @@
 # Test overrides — only what differs from base (docker-compose.yml)
-# Verify merged result: icbops testing docker
+# Verify merged result: lifeops testing docker
 #
-# Every checkout runs this file as its own compose project, which `icbops`
-# names `icb-test-<checkout directory>`. Compose scopes the networks and
+# Every checkout runs this file as its own compose project, which `lifeops`
+# names `life-test-<checkout directory>`. Compose scopes the networks and
 # volumes to the project, and each container name starts with it. Nothing is
 # published to the host, so any number of these run side by side.
 #
-# The e2e browser runs inside the vue container, which is where `icbops test
+# The e2e browser runs inside the vue container, which is where `lifeops test
 # e2e` starts it. A browser on the host shares the host's network namespace,
 # and every container that starts or stops anywhere on the machine aborts its
 # in-flight requests with ERR_NETWORK_CHANGED.
 #
 # `on-failure:3` stops a service after three failed starts, so a removed
 # checkout or a corrupt volume cannot restart-loop. Docker never restarts
-# these when the daemon starts, and `icbops testing start` starts them.
+# these when the daemon starts, and `lifeops testing start` starts them.
 #
 # Every health check probes each second during its start period, so a service
 # reads healthy within a second of being ready. Its interval, which governs
@@ -24,7 +24,7 @@
 # checkout last built. Its configuration is the suite's committed one, in place
 # of the checkout's .env.
 x-test-app: &test-app
-  image: ichrisbirch:${COMPOSE_PROJECT_NAME}
+  image: life:${COMPOSE_PROJECT_NAME}
   build:
     context: .
     target: testing
@@ -75,7 +75,7 @@ services:
   postgres:
     container_name: ${COMPOSE_PROJECT_NAME}-postgres
     environment: !override
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - PGDATA=/tmp/postgres
@@ -83,7 +83,7 @@ services:
       - /tmp/postgres
     volumes: !override []
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -139,7 +139,7 @@ services:
     <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-api
     command: >
-      uvicorn ichrisbirch.wsgi_api:api
+      uvicorn life.wsgi_api:api
       --host 0.0.0.0
       --port 8000
       --log-level debug
@@ -174,7 +174,7 @@ services:
   scheduler:
     <<: *test-app
     container_name: ${COMPOSE_PROJECT_NAME}-scheduler
-    command: python -m ichrisbirch.wsgi_scheduler
+    command: python -m life.wsgi_scheduler
     environment: !override
       - ENVIRONMENT=testing
       - LOG_FORMAT=${LOG_FORMAT:-json}
@@ -213,7 +213,7 @@ services:
     command: sh -c "npm install && npm run dev"
     environment: !override
       - VITE_API_URL=https://api.test.localhost:8443/api/v1
-      - ICB_TEST_STACK=true
+      - LIFE_TEST_STACK=true
       - NPM_CONFIG_UPDATE_NOTIFIER=false
     restart: on-failure:3
     healthcheck:

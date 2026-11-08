@@ -29,8 +29,8 @@ const testSystemHealth: SystemHealth = {
     server_time: '2026-03-29T12:00:00Z',
   },
   docker: [
-    { name: 'icb-test-api', status: 'running', started_at: '2026-03-29T10:00:00Z', image: 'ichrisbirch:test' },
-    { name: 'icb-test-vue', status: 'exited', started_at: null, image: 'ichrisbirch:test' },
+    { name: 'life-test-api', status: 'running', started_at: '2026-03-29T10:00:00Z', image: 'life:test' },
+    { name: 'life-test-vue', status: 'exited', started_at: null, image: 'life:test' },
   ],
   database: {
     tables: [
@@ -178,8 +178,8 @@ describe('AdminSystemView', () => {
 
   it('renders docker container rows with status classes', () => {
     const wrapper = createSystemWrapper({ systemHealth: testSystemHealth })
-    expect(wrapper.text()).toContain('icb-test-api')
-    expect(wrapper.text()).toContain('icb-test-vue')
+    expect(wrapper.text()).toContain('life-test-api')
+    expect(wrapper.text()).toContain('life-test-vue')
     expect(wrapper.find('.admin-status--ok').text()).toBe('running')
     expect(wrapper.find('.admin-status--error').text()).toBe('exited')
   })

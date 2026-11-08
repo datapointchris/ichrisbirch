@@ -314,7 +314,7 @@ router.beforeEach((to, from) => {
 
 router.beforeEach(async (to) => {
   const title = to.meta.title as string
-  document.title = title ? `${title} | iChrisBirch` : 'iChrisBirch'
+  document.title = title ? `${title} | Life` : 'Life'
 
   if (to.matched.some((record) => record.meta.requiresAdmin)) {
     const { useAuthStore } = await import('@/stores/auth')

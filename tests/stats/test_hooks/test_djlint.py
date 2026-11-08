@@ -20,14 +20,14 @@ class TestDjlintSchema:
     def test_djlint_issue_schema(self) -> None:
         """Test that DjlintIssue captures all fields."""
         issue = DjlintIssue(
-            path='ichrisbirch/app/templates/base.html',
+            path='life/app/templates/base.html',
             line=2,
             column=0,
             code='H005',
             message='Html tag should have lang attribute.',
         )
 
-        assert issue.path == 'ichrisbirch/app/templates/base.html'
+        assert issue.path == 'life/app/templates/base.html'
         assert issue.line == 2
         assert issue.column == 0
         assert issue.code == 'H005'
@@ -37,20 +37,20 @@ class TestDjlintSchema:
         """Test DjlintHookEvent with issues."""
         event = DjlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
             issues=[
                 DjlintIssue(
-                    path='ichrisbirch/app/templates/base.html',
+                    path='life/app/templates/base.html',
                     line=2,
                     column=0,
                     code='H005',
                     message='Html tag should have lang attribute.',
                 )
             ],
-            files_checked=['ichrisbirch/app/templates/base.html'],
+            files_checked=['life/app/templates/base.html'],
             duration_seconds=0.5,
         )
 
@@ -62,12 +62,12 @@ class TestDjlintSchema:
         """Test DjlintHookEvent with no issues."""
         event = DjlintHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
             issues=[],
-            files_checked=['ichrisbirch/app/templates/base.html'],
+            files_checked=['life/app/templates/base.html'],
             duration_seconds=0.5,
         )
 
@@ -90,7 +90,7 @@ class TestDjlintRunner:
                 stderr='',
             )
 
-            event = run(['template.html'], 'master', 'ichrisbirch')
+            event = run(['template.html'], 'master', 'life')
 
             assert isinstance(event, DjlintHookEvent)
             assert event.status == 'passed'
@@ -108,15 +108,15 @@ class TestDjlintRunner:
                 stderr='',
             )
 
-            event = run(['base.html', 'index.html'], 'master', 'ichrisbirch')
+            event = run(['base.html', 'index.html'], 'master', 'life')
 
             assert isinstance(event, DjlintHookEvent)
             assert event.status == 'failed'
             assert len(event.issues) == 5
             assert event.issues[0].code == 'H005'
-            assert event.issues[0].path == 'ichrisbirch/app/templates/base.html'
+            assert event.issues[0].path == 'life/app/templates/base.html'
             assert event.issues[0].line == 2
-            assert event.issues[2].path == 'ichrisbirch/app/templates/tasks/index.html'
+            assert event.issues[2].path == 'life/app/templates/tasks/index.html'
             assert event.issues[2].code == 'H006'
 
     def test_djlint_runner_measures_duration(self) -> None:
@@ -128,13 +128,13 @@ class TestDjlintRunner:
                 stderr='',
             )
 
-            event = run(['template.html'], 'master', 'ichrisbirch')
+            event = run(['template.html'], 'master', 'life')
 
             assert event.duration_seconds >= 0
 
     def test_djlint_runner_handles_empty_files_list(self) -> None:
         """Test runner handles empty files list gracefully."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, DjlintHookEvent)
         assert event.status == 'passed'
@@ -151,7 +151,7 @@ class TestDjlintRunner:
                 stderr='',
             )
 
-            event = run(['template.html', 'main.py', 'page.jinja', 'config.yaml', 'form.jinja2'], 'master', 'ichrisbirch')
+            event = run(['template.html', 'main.py', 'page.jinja', 'config.yaml', 'form.jinja2'], 'master', 'life')
 
             # Should only check .html, .jinja, .jinja2 files
             assert set(event.files_checked) == {'template.html', 'page.jinja', 'form.jinja2'}

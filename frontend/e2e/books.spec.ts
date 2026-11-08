@@ -35,7 +35,7 @@ test.describe('Books Page', () => {
 
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/books')
-    await expect(page).toHaveTitle('Books | iChrisBirch')
+    await expect(page).toHaveTitle('Books | Life')
     await expect(page.locator('.books__header')).toBeVisible()
   })
 
@@ -70,7 +70,7 @@ test.describe('Books Page', () => {
 
   test('sidebar navigation to books works', async ({ page }) => {
     await page.goto('/books')
-    await expect(page).toHaveTitle('Books | iChrisBirch')
+    await expect(page).toHaveTitle('Books | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Books' })
     await expect(sidebarLink).toBeVisible()

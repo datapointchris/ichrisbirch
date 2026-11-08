@@ -1,6 +1,6 @@
 # SSL Certificate Troubleshooting
 
-This guide covers common SSL certificate issues and solutions for the iChrisBirch application using Traefik and mkcert.
+This guide covers common SSL certificate issues and solutions for the Life application using Traefik and mkcert.
 
 ## 🔒 Overview
 
@@ -40,10 +40,10 @@ sudo cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
 mkcert -install
 
 # Regenerate certificates with mkcert
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 
 # Restart environment to use new certificates
-icbops dev restart
+lifeops dev restart
 ```
 
 **Prevention**: Always use mkcert for local development to avoid browser warnings
@@ -76,10 +76,10 @@ mkcert -install
 mkcert -CAROOT
 
 # Regenerate certificates
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 
 # Verify certificate information
-icbops ssl-manager info dev
+lifeops ssl-manager info dev
 ```
 
 **Prevention**: Always prefer mkcert over OpenSSL for local development certificates
@@ -101,10 +101,10 @@ ERR_CERT_COMMON_NAME_INVALID
 
 ```bash
 # Check which domains are covered by current certificate
-icbops ssl-manager info dev
+lifeops ssl-manager info dev
 
 # Regenerate with proper SANs (automatically includes all required domains)
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 ```
 
 **Prevention**: The ssl-manager script automatically includes all required domains when generating certificates
@@ -126,13 +126,13 @@ SSL_ERROR_EXPIRED_CERT
 
 ```bash
 # Check certificate expiration
-icbops ssl-manager info dev
+lifeops ssl-manager info dev
 
 # Regenerate certificates (mkcert certificates last 2+ years)
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 
 # Restart to use new certificates
-icbops dev restart
+lifeops dev restart
 ```
 
 **Prevention**: mkcert certificates have much longer validity (2+ years) compared to OpenSSL (365 days)
@@ -228,7 +228,7 @@ chmod 644 deploy-containers/traefik/certs/*.crt
 chmod 600 deploy-containers/traefik/certs/*.key
 
 # Restart Traefik
-icbops dev restart
+lifeops dev restart
 ```
 
 **Prevention**: The ssl-manager script sets proper permissions automatically
@@ -252,13 +252,13 @@ unable to load X509 key pair: open /etc/traefik/certs/dev.crt: no such file or d
 ls -la deploy-containers/traefik/certs/
 
 # Generate missing certificates
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 
 # Verify certificate files
-icbops ssl-manager validate dev
+lifeops ssl-manager validate dev
 
 # Restart environment
-icbops dev restart
+lifeops dev restart
 ```
 
 **Prevention**: Always run certificate generation before starting environments
@@ -311,33 +311,33 @@ certmgr.msc  # Run this to open Certificate Manager
 
 ```bash
 # Generate certificates for development (prefers mkcert)
-icbops ssl-manager generate dev
+lifeops ssl-manager generate dev
 
 # Generate certificates for all environments
-icbops ssl-manager generate all
+lifeops ssl-manager generate all
 
 # Force OpenSSL generation (for testing)
-FORCE_OPENSSL=1 icbops ssl-manager generate dev
+FORCE_OPENSSL=1 lifeops ssl-manager generate dev
 ```
 
 ### Validate Certificates
 
 ```bash
 # Validate specific environment certificates
-icbops ssl-manager validate dev
+lifeops ssl-manager validate dev
 
 # Validate all environment certificates
-icbops ssl-manager validate all
+lifeops ssl-manager validate all
 ```
 
 ### Certificate Information
 
 ```bash
 # Show detailed certificate information
-icbops ssl-manager info dev
+lifeops ssl-manager info dev
 
 # Show certificate information for all environments
-icbops ssl-manager info all
+lifeops ssl-manager info all
 ```
 
 ## 🚀 Best Practices
@@ -346,7 +346,7 @@ icbops ssl-manager info all
 
 1. **Install mkcert first**: Always install mkcert before generating certificates
 2. **Install CA**: Run `mkcert -install` to trust the local Certificate Authority
-3. **Generate certificates**: Use `icbops ssl-manager generate dev`
+3. **Generate certificates**: Use `lifeops ssl-manager generate dev`
 4. **Verify browser trust**: Test <https://api.docker.localhost/> in browser
 5. **Document for team**: Ensure all developers follow the same setup
 
@@ -361,11 +361,11 @@ icbops ssl-manager info all
 ### Troubleshooting Workflow
 
 1. **Check certificate existence**: `ls deploy-containers/traefik/certs/`
-2. **Validate certificates**: `icbops ssl-manager validate dev`
-3. **Check certificate info**: `icbops ssl-manager info dev`
+2. **Validate certificates**: `lifeops ssl-manager validate dev`
+3. **Check certificate info**: `lifeops ssl-manager info dev`
 4. **Test browser access**: Visit <https://api.docker.localhost/>
-5. **Check Traefik logs**: `icbops dev logs traefik`
-6. **Regenerate if needed**: `icbops ssl-manager generate dev`
+5. **Check Traefik logs**: `lifeops dev logs traefik`
+6. **Regenerate if needed**: `lifeops ssl-manager generate dev`
 
 ### Security Considerations
 

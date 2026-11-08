@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from ichrisbirch.models.autotask import AUTOTASK_FREQUENCIES
-from ichrisbirch.models.autotask import AutoTask
+from life.models.autotask import AUTOTASK_FREQUENCIES
+from life.models.autotask import AutoTask
 from scripts.seed.seeders import autotasks
 
 pytestmark = [pytest.mark.seed, pytest.mark.integration]

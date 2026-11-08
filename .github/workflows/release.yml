@@ -61,11 +61,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ichrisbirch
+          - image: life
             dockerfile: Dockerfile
             target: production
             build_args: ""
-          - image: ichrisbirch-vue
+          - image: life-vue
             dockerfile: frontend/Dockerfile
             target: ""
             build_args: |
@@ -184,8 +184,8 @@ jobs:
           go-version-file: cli/go.mod
           cache-dependency-path: cli/go.sum
 
-      # The archive name is `icb_<version>_<os>_<arch>`. goselfupdate, which
-      # `icb update` runs, matches the OS and the Go arch as delimited words in
+      # The archive name is `life_<version>_<os>_<arch>`. goselfupdate, which
+      # `life update` runs, matches the OS and the Go arch as delimited words in
       # an asset's name, so the underscores are what make an asset findable.
       # CGO off so the binary runs on a machine without the build host's libc.
       - name: Build and archive
@@ -200,15 +200,15 @@ jobs:
           version_num="${version#v}"
           mkdir -p ../dist
           go build -trimpath \
-            -ldflags "-s -w -X github.com/datapointchris/ichrisbirch/cli/internal/cli.version=${version}" \
-            -o ../dist/icb .
-          tar -czf "../dist/icb_${version_num}_${GOOS}_${GOARCH}.tar.gz" -C ../dist icb
-          rm ../dist/icb
+            -ldflags "-s -w -X github.com/datapointchris/life/cli/internal/cli.version=${version}" \
+            -o ../dist/life .
+          tar -czf "../dist/life_${version_num}_${GOOS}_${GOARCH}.tar.gz" -C ../dist life
+          rm ../dist/life
 
       # The release job attaches these to the GitHub release in this run, so a day outlives every use.
       - uses: actions/upload-artifact@v7
         with:
-          name: icb-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: life-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*.tar.gz
           if-no-files-found: error
           retention-days: 1
@@ -227,7 +227,7 @@ jobs:
 
       - uses: actions/download-artifact@v8
         with:
-          pattern: icb-*
+          pattern: life-*
           path: dist
           merge-multiple: true
 

@@ -36,7 +36,7 @@ test.describe('Events Page', () => {
 
   test('loads the page and displays the event list', async ({ page }) => {
     await page.goto('/events')
-    await expect(page).toHaveTitle('Events | iChrisBirch')
+    await expect(page).toHaveTitle('Events | Life')
   })
 
   test('creates a new event and verifies it appears in the list', async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe('Events Page', () => {
 
   test('sidebar navigation to events works', async ({ page }) => {
     await page.goto('/events')
-    await expect(page).toHaveTitle('Events | iChrisBirch')
+    await expect(page).toHaveTitle('Events | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Events' })
     await expect(sidebarLink).toBeVisible()

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Blue/green deployment script for ichrisbirch
+# Blue/green deployment script for life
 #
 # Deploys the opposite color from what's currently live, verifies health and
 # smoke tests, then atomically switches Traefik routing. If anything fails
 # before the switch, the live containers are never touched.
 #
 # Images are built by GHA (.github/workflows/release.yml) and pushed to
-# ghcr.io/datapointchris/{ichrisbirch,ichrisbirch-vue}:latest. This script
+# ghcr.io/datapointchris/{life,life-vue}:latest. This script
 # pulls them — it does not build locally.
 #
 # Flow:
@@ -26,15 +26,15 @@
 
 set -euo pipefail
 
-INSTALL_DIR="/srv/ichrisbirch"
+INSTALL_DIR="/srv/life"
 LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-LOCK_FILE="/var/lock/ichrisbirch-deploy.lock"
-STATE_DIR="/var/lib/ichrisbirch"
+LOCK_FILE="/var/lock/life-deploy.lock"
+STATE_DIR="/var/lib/life"
 STATE_FILE="${STATE_DIR}/bluegreen-state"
-COMPOSE_INFRA="docker compose --project-name icb-infra -f docker-compose.infra.yml"
+COMPOSE_INFRA="docker compose --project-name life-infra -f docker-compose.infra.yml"
 GRACE_PERIOD=30
 
 mkdir -p "$LOG_DIR"
@@ -59,12 +59,12 @@ DEPLOY_COLOR=""
 # verb reaps what the compose file no longer mentions. The MCP server was retired
 # on 2026-07-24 and icb-blue-mcp was still up two weeks later, restart=always,
 # invisible to every deploy since. Scoped to one color's project, so it can only
-# ever touch that color — icb-infra is a different project and is not reachable
+# ever touch that color — life-infra is a different project and is not reachable
 # from here.
 compose_app() {
   local color="$1"
   shift
-  DEPLOY_COLOR="$color" docker compose --project-name "icb-${color}" -f docker-compose.app.yml "$@"
+  DEPLOY_COLOR="$color" docker compose --project-name "life-${color}" -f docker-compose.app.yml "$@"
 }
 
 compose_app_up() {
@@ -110,7 +110,7 @@ cleanup() {
       local truncated_output="${FAILURE_OUTPUT: -500}"
       context="*Error Output:*\n\`\`\`${truncated_output}\`\`\`"
     fi
-    context+="\n\n*Logs:* \`/srv/ichrisbirch/logs/\`"
+    context+="\n\n*Logs:* \`/srv/life/logs/\`"
 
     notify_slack "failure" "$message" "$context"
   fi
@@ -241,8 +241,8 @@ ensure_infra_running() {
 
   while [[ $waited -lt $max_wait ]]; do
     local pg_health redis_health
-    pg_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-postgres 2>/dev/null || echo "missing")
-    redis_health=$(docker inspect --format='{{.State.Health.Status}}' icb-infra-redis 2>/dev/null || echo "missing")
+    pg_health=$(docker inspect --format='{{.State.Health.Status}}' life-infra-postgres 2>/dev/null || echo "missing")
+    redis_health=$(docker inspect --format='{{.State.Health.Status}}' life-infra-redis 2>/dev/null || echo "missing")
 
     if [[ "$pg_health" == "healthy" && "$redis_health" == "healthy" ]]; then
       log_info "infra_healthy" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
@@ -298,7 +298,7 @@ wait_for_healthy() {
   local max_wait=90
   local interval=5
   local waited=0
-  local services="icb-${DEPLOY_COLOR}-api icb-${DEPLOY_COLOR}-vue"
+  local services="life-${DEPLOY_COLOR}-api life-${DEPLOY_COLOR}-vue"
 
   log_info "waiting_for_healthy" "color" "$DEPLOY_COLOR" "max_wait" "$max_wait" | tee -a "$LOG_FILE"
 
@@ -326,7 +326,7 @@ wait_for_healthy() {
 
   # Log container statuses for debugging
   local container_statuses
-  container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep "icb-${DEPLOY_COLOR}" || echo "no containers")
+  container_statuses=$(docker ps --format '{{.Names}}: {{.Status}}' | grep "life-${DEPLOY_COLOR}" || echo "no containers")
   FAILURE_OUTPUT="Containers not healthy after ${max_wait}s. Status: $container_statuses"
   log_error "containers_not_healthy" "color" "$DEPLOY_COLOR" "waited_seconds" "$waited" | tee -a "$LOG_FILE"
   exit 1
@@ -338,7 +338,7 @@ run_migrations() {
   cd "$INSTALL_DIR"
 
   local migration_output
-  if migration_output=$(docker exec -w /app/ichrisbirch "icb-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
+  if migration_output=$(docker exec -w /app/life "life-${DEPLOY_COLOR}-api" alembic upgrade head 2>&1); then
     log_info "migrations_completed" "color" "$DEPLOY_COLOR" "output" "$migration_output" | tee -a "$LOG_FILE"
   else
     FAILURE_OUTPUT="$migration_output"
@@ -353,7 +353,7 @@ run_smoke_tests() {
 
   # Verify Vue SPA serves correctly
   local vue_output
-  if ! vue_output=$(docker exec "icb-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ 2>&1); then
+  if ! vue_output=$(docker exec "life-${DEPLOY_COLOR}-vue" wget -qO- http://127.0.0.1:80/ 2>&1); then
     FAILURE_OUTPUT="Vue not serving SPA: $vue_output"
     log_error "vue_smoke_failed" "color" "$DEPLOY_COLOR" "output" "${vue_output:0:200}" | tee -a "$LOG_FILE"
     exit 1
@@ -372,7 +372,7 @@ run_smoke_tests() {
   log_info "smoke_using_admin" "email" "$admin_email" | tee -a "$LOG_FILE"
 
   local smoke_output http_code
-  smoke_output=$(docker exec "icb-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
+  smoke_output=$(docker exec "life-${DEPLOY_COLOR}-api" curl -s -w '\n%{http_code}' \
     -X POST http://localhost:8000/api/v1/admin/smoke-tests \
     -H "Remote-User: ${admin_email}" \
     -H "Remote-Email: ${admin_email}" 2>&1)

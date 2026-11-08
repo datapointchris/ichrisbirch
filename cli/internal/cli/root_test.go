@@ -35,7 +35,7 @@ func TestExitCodeFor(t *testing.T) {
 func runLine(t *testing.T, args ...string) error {
 	t.Helper()
 	original := os.Args
-	os.Args = append([]string{"icb"}, args...)
+	os.Args = append([]string{"life"}, args...)
 	t.Cleanup(func() { os.Args = original })
 
 	root := NewRootCommand()

@@ -8,7 +8,7 @@
 # Shared image build configuration - all app services use the same image
 # This reduces disk space from ~3.4GB (4 images) to ~850MB (1 image)
 x-app-build: &app-build
-  image: ichrisbirch:production
+  image: life:production
   build:
     context: .
     target: production
@@ -18,7 +18,7 @@ services:
   # Note: v3.6+ required for Docker 29+ API compatibility (auto-negotiation)
   traefik:
     image: traefik:v3.6
-    container_name: icb-prod-traefik
+    container_name: life-prod-traefik
     ports:
       - "80:80"
     volumes:
@@ -55,9 +55,9 @@ services:
   # PostgreSQL Database Service - Production optimized for performance and reliability
   postgres:
     image: postgres:16-alpine
-    container_name: icb-prod-postgres
+    container_name: life-prod-postgres
     environment:
-      - POSTGRES_DB=ichrisbirch
+      - POSTGRES_DB=life
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # Use environment variable for security
     # Remove ports mapping for security (only accessible within Docker network)
@@ -80,7 +80,7 @@ services:
       -c random_page_cost=1.1
       -c effective_io_concurrency=200
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ichrisbirch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,7 +95,7 @@ services:
   # Redis Cache Service - Production optimized for performance and persistence
   redis:
     image: redis:7-alpine
-    container_name: icb-prod-redis
+    container_name: life-prod-redis
     # Remove external ports for security (only accessible within Docker network)
     ports: []
     networks:
@@ -133,9 +133,9 @@ services:
   # FastAPI Backend Service - Production configuration
   api:
     <<: *app-build
-    container_name: icb-prod-api
+    container_name: life-prod-api
     # Production command without reload, disable access logs (handled by middleware)
-    command: uvicorn ichrisbirch.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
+    command: uvicorn life.wsgi_api:api --host 0.0.0.0 --port 8000 --workers 4 --no-access-log
     env_file: .env
     environment:
       - ENVIRONMENT=production
@@ -173,13 +173,13 @@ services:
 
   # Vue Frontend Service - Production (Caddy serves built SPA assets)
   vue:
-    image: ichrisbirch-vue:production
+    image: life-vue:production
     build:
       context: .
       dockerfile: frontend/Dockerfile
       args:
         VITE_API_URL: "/api/v1"
-    container_name: icb-prod-vue
+    container_name: life-prod-vue
     ports: []
     networks:
       - proxy
@@ -204,9 +204,9 @@ services:
   # Scheduler Service - Production configuration
   scheduler:
     <<: *app-build
-    container_name: icb-prod-scheduler
+    container_name: life-prod-scheduler
     # Production scheduler command
-    command: python -m ichrisbirch.wsgi_scheduler
+    command: python -m life.wsgi_scheduler
     env_file: .env
     environment:
       - ENVIRONMENT=production
@@ -237,10 +237,10 @@ services:
 # Production volumes with explicit names (prevents project-name prefix issues)
 volumes:
   postgres_data:
-    name: icb-prod-postgres-data
+    name: life-prod-postgres-data
     driver: local
   redis_data:
-    name: icb-prod-redis-data
+    name: life-prod-redis-data
     driver: local
 
 # Networks for service communication

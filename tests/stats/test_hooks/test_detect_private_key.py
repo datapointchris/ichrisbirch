@@ -21,7 +21,7 @@ class TestDetectPrivateKeySchema:
         """Test DetectPrivateKeyHookEvent with detected keys."""
         event = DetectPrivateKeyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='failed',
             exit_code=1,
@@ -42,7 +42,7 @@ class TestDetectPrivateKeySchema:
         """Test DetectPrivateKeyHookEvent with no issues."""
         event = DetectPrivateKeyHookEvent(
             timestamp=dt.datetime.now(dt.UTC),
-            project='ichrisbirch',
+            project='life',
             branch='master',
             status='passed',
             exit_code=0,
@@ -70,7 +70,7 @@ class TestDetectPrivateKeyRunner:
                 stderr='',
             )
 
-            event = run(['README.md'], 'master', 'ichrisbirch')
+            event = run(['README.md'], 'master', 'life')
 
             assert isinstance(event, DetectPrivateKeyHookEvent)
             assert event.status == 'passed'
@@ -88,7 +88,7 @@ class TestDetectPrivateKeyRunner:
                 stderr='',
             )
 
-            event = run(['certs/dev.key', 'certs/test.key'], 'master', 'ichrisbirch')
+            event = run(['certs/dev.key', 'certs/test.key'], 'master', 'life')
 
             assert isinstance(event, DetectPrivateKeyHookEvent)
             assert event.status == 'failed'
@@ -98,7 +98,7 @@ class TestDetectPrivateKeyRunner:
 
     def test_runner_empty_files_returns_passed(self) -> None:
         """Test runner returns passed event when no files provided."""
-        event = run([], 'master', 'ichrisbirch')
+        event = run([], 'master', 'life')
 
         assert isinstance(event, DetectPrivateKeyHookEvent)
         assert event.status == 'passed'

@@ -9,7 +9,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newPatternsCommand() *cobra.Command {
@@ -17,11 +17,11 @@ func newPatternsCommand() *cobra.Command {
 		Use:   "patterns",
 		Short: "Capture and review the observations you want to correlate",
 		Long:  "Fragments noticed in passing — what you ate, how you slept, when the\nheadache started. Not tasks and not journal entries: the point is having\nenough of them, over enough time, to see what goes with what.",
-		Example: "  icb patterns list --since 2w          what you noted in the last two weeks\n" +
-			"  icb patterns list --search heartburn  every note that mentions it\n" +
-			"  icb patterns show 12                  one pattern in full",
+		Example: "  life patterns list --since 2w          what you noted in the last two weeks\n" +
+			"  life patterns list --search heartburn  every note that mentions it\n" +
+			"  life patterns show 12                  one pattern in full",
 	})
-	goclikit.WithRecoveryHints(cmd, "List every pattern: icb patterns list")
+	goclikit.WithRecoveryHints(cmd, "List every pattern: life patterns list")
 	splitReadingFromChanging(cmd)
 	cmd.AddCommand(inGroup(groupReading, newPatternsListCommand(), newPatternsShowCommand())...)
 	cmd.AddCommand(inGroup(groupChanging, newPatternsCreateCommand(), newPatternsEditCommand(), newPatternsDeleteCommand())...)
@@ -38,11 +38,11 @@ func newPatternsListCommand() *cobra.Command {
 		Use:   "list [flags]",
 		Short: "List patterns, newest first",
 		Long:  "--since/--until bound when a pattern was recorded, and either works without the other.",
-		Example: "  icb patterns list\n" +
-			"  icb patterns list --search heartburn\n" +
-			"  icb patterns list --since 2026-10-01 --until 2026-10-31\n" +
-			"  icb patterns list --since 2w\n" +
-			"  icb patterns list --limit 20 --json",
+		Example: "  life patterns list\n" +
+			"  life patterns list --search heartburn\n" +
+			"  life patterns list --since 2026-10-01 --until 2026-10-31\n" +
+			"  life patterns list --since 2w\n" +
+			"  life patterns list --limit 20 --json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			window, err := readWindow(cmd)
@@ -77,7 +77,7 @@ func newPatternsShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <pattern-id>",
 		Short:   "Show a single pattern",
-		Example: "  icb patterns show 12",
+		Example: "  life patterns show 12",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])
@@ -114,7 +114,7 @@ func newPatternsCreateCommand() *cobra.Command {
 		// The message is positional rather than a flag because capture happens
 		// mid-flow: anything longer than the thought itself does not get typed.
 		Long:    "The timestamp is the server's unless --at is given, so capturing is one argument.",
-		Example: "  icb patterns create \"coffee at 3pm, wired until midnight\"\n  icb patterns create \"ate late\" --at 2026-08-06T21:30:00Z",
+		Example: "  life patterns create \"coffee at 3pm, wired until midnight\"\n  life patterns create \"ate late\" --at 2026-08-06T21:30:00Z",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			in := api.PatternCreateInput{Message: args[0]}
@@ -154,7 +154,7 @@ func newPatternsEditCommand() *cobra.Command {
 		Use:     "edit <pattern-id> [flags]",
 		Short:   "Change fields on an existing pattern",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb patterns edit 12 --message \"coffee at 3pm, not 4\"",
+		Example: "  life patterns edit 12 --message \"coffee at 3pm, not 4\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])
@@ -201,7 +201,7 @@ func newPatternsDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <pattern-id>",
 		Short:   "Delete a pattern",
-		Example: "  icb patterns delete 12 --yes",
+		Example: "  life patterns delete 12 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("pattern id", args[0])

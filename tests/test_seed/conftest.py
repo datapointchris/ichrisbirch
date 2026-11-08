@@ -7,7 +7,7 @@ import random
 import pytest
 from faker import Faker
 
-from ichrisbirch.database.session import create_session
+from life.database.session import create_session
 from tests.utils.database import test_settings
 
 

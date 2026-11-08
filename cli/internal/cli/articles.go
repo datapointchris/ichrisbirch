@@ -11,7 +11,7 @@ import (
 	"github.com/datapointchris/goclikit"
 	"github.com/spf13/cobra"
 
-	"github.com/datapointchris/ichrisbirch/cli/internal/api"
+	"github.com/datapointchris/life/cli/internal/api"
 )
 
 func newArticlesCommand() *cobra.Command {
@@ -20,15 +20,15 @@ func newArticlesCommand() *cobra.Command {
 		Short: "List, inspect, search, and manage your saved articles",
 		Long: "Your saved-article reading list: what is unread, what is archived, and the\n" +
 			"favorites due for a re-read.",
-		Example: "  icb articles list --unread  what is still waiting to be read\n" +
-			"  icb articles show 42        one article in full\n" +
-			"  icb articles current        the article being read now",
+		Example: "  life articles list --unread  what is still waiting to be read\n" +
+			"  life articles show 42        one article in full\n" +
+			"  life articles current        the article being read now",
 	})
 	// Search matches tags only, so it cannot stand alone as the way to find an
 	// article whose tags you do not know.
 	goclikit.WithRecoveryHints(cmd,
-		"List every article: icb articles list",
-		"Search articles by tag: icb articles search <tag>",
+		"List every article: life articles list",
+		"Search articles by tag: life articles search <tag>",
 	)
 	splitReadingFromChanging(cmd)
 	cmd.AddGroup(&cobra.Group{ID: groupArticleImports, Title: "Import commands:"})
@@ -53,17 +53,17 @@ func newArticleImportsCommand() *cobra.Command {
 	cmd := goclikit.AsNamespace(&cobra.Command{
 		Use:   "imports",
 		Short: "Follow a bulk-import batch by the id `import` printed",
-		Long: "`icb articles import` queues its URLs as one batch and returns at once.\n" +
+		Long: "`life articles import` queues its URLs as one batch and returns at once.\n" +
 			"The articles are fetched and summarized in the background, and the batch\n" +
 			"id it printed is how you follow them here.",
 		Example: "  # how far that batch got, and which URLs failed\n" +
-			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
+			"  life articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7",
 	})
 	// A batch id is Redis-backed and expires 24 hours after its import, so a
 	// 404 here is usually age rather than a wrong id. No command lists batches,
 	// so the hint points at what the import saved.
 	goclikit.WithRecoveryHints(cmd,
-		"A batch is kept for 24 hours — see what the import saved: icb articles list",
+		"A batch is kept for 24 hours — see what the import saved: life articles list",
 	)
 	cmd.AddCommand(newArticleImportsStatusCommand())
 	return cmd
@@ -75,9 +75,9 @@ func newArticlesImportCommand() *cobra.Command {
 		Use:   "import <url> [url...]",
 		Short: "Bulk-import articles from URLs (async)",
 		Long: "Enqueue one or more URLs for background fetch and AI-summarize. Returns a\n" +
-			"batch id — poll it with `icb articles imports status <batch-id>`.",
-		Example: "  icb articles import https://a.com/post https://b.com/post\n" +
-			"  icb articles import https://a.com/post --json",
+			"batch id — poll it with `life articles imports status <batch-id>`.",
+		Example: "  life articles import https://a.com/post https://b.com/post\n" +
+			"  life articles import https://a.com/post --json",
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -92,7 +92,7 @@ func newArticlesImportCommand() *cobra.Command {
 				return encodeJSON(cmd.OutOrStdout(), batch)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Queued %d URL(s) as batch %s (status: %s)\n", batch.Total, batch.BatchID, batch.Status)
-			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Poll with: icb articles imports status %s\n", batch.BatchID)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Poll with: life articles imports status %s\n", batch.BatchID)
 			return nil
 		},
 	}
@@ -108,9 +108,9 @@ func newArticleImportsStatusCommand() *cobra.Command {
 		Long: "Prints how many of the batch's URLs are processed, each article saved, and\n" +
 			"each URL that failed with its error.",
 		Example: "  # is that batch done yet\n" +
-			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7\n\n" +
+			"  life articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7\n\n" +
 			"  # the same, for a script polling it\n" +
-			"  icb articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7 --json",
+			"  life articles imports status 3297f0e3-85d6-43d7-8a19-cdb0e3cc84a7 --json",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -181,11 +181,11 @@ func newArticlesListCommand() *cobra.Command {
 			"\n" +
 			"--limit caps what the filters left, so it takes the first titles of the\n" +
 			"narrowed set rather than filtering a capped slice.",
-		Example: "  icb articles list\n" +
-			"  icb articles list --unread\n" +
-			"  icb articles list --unread --limit 5\n" +
-			"  icb articles list --archived=false\n" +
-			"  icb articles list --since 2026-08-01 --until 2026-08-31",
+		Example: "  life articles list\n" +
+			"  life articles list --unread\n" +
+			"  life articles list --unread --limit 5\n" +
+			"  life articles list --archived=false\n" +
+			"  life articles list --since 2026-08-01 --until 2026-08-31",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			window, err := readWindow(cmd)
@@ -214,7 +214,7 @@ func newArticlesSearchCommand() *cobra.Command {
 		Use:     "search <tag>",
 		Short:   "Search articles by tag",
 		Long:    "Comma-separated terms are matched independently (\"python,databases\" finds\narticles tagged with either).",
-		Example: "  icb articles search databases\n  icb articles search \"python,systems\"",
+		Example: "  life articles search databases\n  life articles search \"python,systems\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runArticleList(cmd, asJSON, func(c *api.Client) ([]api.Article, error) {
@@ -231,7 +231,7 @@ func newArticlesShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "show <article-id>",
 		Short:   "Show a single article",
-		Example: "  icb articles show 42",
+		Example: "  life articles show 42",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
@@ -262,7 +262,7 @@ func newArticlesCurrentCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "current",
 		Short:   "Show the current article (the one being read)",
-		Example: "  icb articles current",
+		Example: "  life articles current",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, err := newAPIClient(cmd.Context())
@@ -298,8 +298,8 @@ func newArticlesCreateCommand() *cobra.Command {
 		Use:   "create --url <url> [--notes <notes>]",
 		Short: "Save an article from a URL",
 		Long:  "Fetch the URL and AI-summarize it into a new article (title, summary, tags\nare generated server-side).",
-		Example: "  icb articles create --url https://example.com/post\n" +
-			"  icb articles create --url https://example.com/post --notes \"for the DB deep-dive\"",
+		Example: "  life articles create --url https://example.com/post\n" +
+			"  life articles create --url https://example.com/post --notes \"for the DB deep-dive\"",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if articleURL == "" {
@@ -347,7 +347,7 @@ func newArticlesEditCommand() *cobra.Command {
 		Use:     "edit <article-id> [flags]",
 		Short:   "Change fields on an existing article",
 		Long:    "Update only the fields whose flags you pass.",
-		Example: "  icb articles edit 42 --favorite --review-days 30\n  icb articles edit 42 --tag python --tag databases",
+		Example: "  life articles edit 42 --favorite --review-days 30\n  life articles edit 42 --tag python --tag databases",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
@@ -433,7 +433,7 @@ func newArticlesReadCommand() *cobra.Command {
 		Use:     "read <article-id>",
 		Short:   "Mark an article read (archive it, bump read count, stamp now)",
 		Long:    "Fetch the article for its current read count, then archive it, increment the\nread count, and set the last-read date to now.",
-		Example: "  icb articles read 42",
+		Example: "  life articles read 42",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])
@@ -476,7 +476,7 @@ func newArticlesDeleteCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "delete <article-id>",
 		Short:   "Delete an article",
-		Example: "  icb articles delete 42 --yes",
+		Example: "  life articles delete 42 --yes",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id, err := parseIntArg("article id", args[0])

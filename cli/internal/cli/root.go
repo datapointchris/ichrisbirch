@@ -1,4 +1,4 @@
-// Package cli wires the icb command tree.
+// Package cli wires the life command tree.
 package cli
 
 import (
@@ -87,26 +87,26 @@ func (e exitCode) Error() string { return "" }
 
 func NewRootCommand() *cobra.Command {
 	root := goclikit.AsNamespace(&cobra.Command{
-		Use:   "icb",
-		Short: "The ichrisbirch data CLI",
-		Long: "icb reads and edits the ichrisbirch personal-productivity apps, grouped below.\n" +
+		Use:   "life",
+		Short: "The life data CLI",
+		Long: "life reads and edits the life personal-productivity apps, grouped below.\n" +
 			"\n" +
-			"Start with `icb overview` for what is outstanding in every app at once.\n" +
+			"Start with `life overview` for what is outstanding in every app at once.\n" +
 			"Each section stops at ten rows, so the one that caught your eye continues\n" +
-			"under its own noun: `icb tasks list`, `icb books list`.\n" +
+			"under its own noun: `life tasks list`, `life books list`.\n" +
 			"\n" +
-			"The noun comes first and the verb last: `icb books list` becomes\n" +
-			"`icb books edit`. Every read verb takes --json. Run any partial command\n" +
-			"bare to see what comes next. Authenticate once with `icb auth login <url>`;\n" +
-			"`icb auth status` shows where icb is pointed.",
-		Example: "  icb overview\n" +
-			"  icb tasks list --limit 5\n" +
-			"  icb habits complete 5\n" +
-			"  icb tasks create --name \"Renew registration\" --category chore --window-days 14",
+			"The noun comes first and the verb last: `life books list` becomes\n" +
+			"`life books edit`. Every read verb takes --json. Run any partial command\n" +
+			"bare to see what comes next. Authenticate once with `life auth login <url>`;\n" +
+			"`life auth status` shows where life is pointed.",
+		Example: "  life overview\n" +
+			"  life tasks list --limit 5\n" +
+			"  life habits complete 5\n" +
+			"  life tasks create --name \"Renew registration\" --category chore --window-days 14",
 		Version:       version,
 		SilenceUsage:  true, // usage is shown deliberately, not on every runtime error
 		SilenceErrors: true, // Execute prints errors itself, to stderr
-		// ArbitraryArgs lets an unknown top-level command (`icb nope`) reach the
+		// ArbitraryArgs lets an unknown top-level command (`life nope`) reach the
 		// namespace's own refusal, marked as a usage error (exit 2). Cobra's
 		// default root validator (legacyArgs) instead returns its own unmarked
 		// "unknown command" error (exit 1). Subcommands, having a parent, are

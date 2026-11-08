@@ -4,7 +4,7 @@ import datetime as dt
 
 import factory
 
-from ichrisbirch.models.money_wasted import MoneyWasted
+from life.models.money_wasted import MoneyWasted
 
 from .base import get_factory_session
 

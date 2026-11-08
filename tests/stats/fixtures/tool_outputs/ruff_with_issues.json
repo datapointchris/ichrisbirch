@@ -6,7 +6,7 @@
       "column": 17,
       "row": 218
     },
-    "filename": "/Users/chris/code/ichrisbirch/scripts/stats/file_history.py",
+    "filename": "/Users/chris/code/life/scripts/stats/file_history.py",
     "fix": {
       "applicability": "unsafe",
       "edits": [
@@ -39,7 +39,7 @@
       "column": 17,
       "row": 228
     },
-    "filename": "/Users/chris/code/ichrisbirch/scripts/stats/file_history.py",
+    "filename": "/Users/chris/code/life/scripts/stats/file_history.py",
     "fix": {
       "applicability": "unsafe",
       "edits": [

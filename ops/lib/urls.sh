@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 #
-# The {environment × service} URL grid, sourced by ops/icbops and
+# The {environment × service} URL grid, sourced by ops/lifeops and
 # ops/health-check.sh. Both need the same hostnames, so both derive them here.
 # The test stack has no row: it publishes no ports, so no host tool reaches it.
 #
@@ -17,7 +17,7 @@
 #   The domain, on stdout
 # Returns:
 #   1 for an unknown environment, having written nothing
-icb_env_domain() {
+life_env_domain() {
   case "$1" in
     dev) echo 'docker.localhost' ;;
     prod) echo "${DOMAIN:-ichrisbirch.com}" ;;
@@ -26,8 +26,8 @@ icb_env_domain() {
 }
 
 # The hostname a service answers on in one environment. Production breaks the
-# subdomain pattern: the Vue app and the API share the bare domain, and there
-# is no Traefik dashboard. The API's resource routes are under /api/v1 on
+# subdomain pattern: the Vue app and the API share life.<domain>, which the bare
+# domain also serves, and there is no Traefik dashboard. The API's resource routes are under /api/v1 on
 # every host, and /health is at its root.
 # Arguments:
 #   $1 - environment: dev or prod
@@ -36,11 +36,11 @@ icb_env_domain() {
 #   The hostname, on stdout
 # Returns:
 #   1 for an unknown environment or for prod:dashboard, having written nothing
-icb_service_host() {
+life_service_host() {
   local environment="$1" service="$2" domain
-  domain=$(icb_env_domain "$environment") || return 1
+  domain=$(life_env_domain "$environment") || return 1
   case "${environment}:${service}" in
-    prod:app | prod:api) echo "$domain" ;;
+    prod:app | prod:api) echo "life.${domain}" ;;
     prod:dashboard) return 1 ;;
     *) echo "${service}.${domain}" ;;
   esac
@@ -53,10 +53,10 @@ icb_service_host() {
 # Outputs:
 #   The https URL, on stdout
 # Returns:
-#   1 wherever icb_service_host does, having written nothing
-icb_service_url() {
+#   1 wherever life_service_host does, having written nothing
+life_service_url() {
   local host
-  host=$(icb_service_host "$1" "$2") || return 1
+  host=$(life_service_host "$1" "$2") || return 1
   echo "https://${host}"
 }
 
@@ -66,6 +66,6 @@ icb_service_url() {
 # is sourced into.
 # Outputs:
 #   One service name per line, on stdout
-icb_services() {
+life_services() {
   printf '%s\n' api app dashboard
 }

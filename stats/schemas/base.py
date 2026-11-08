@@ -12,7 +12,7 @@ class BaseEvent(BaseModel):
 
     All events capture:
     - timestamp: When the event occurred (UTC)
-    - project: Project name (e.g., "ichrisbirch")
+    - project: Project name (e.g., "life")
     - branch: Git branch name
     """
 

@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch import models
+from life import models
 
 BASE_DATA: list[models.Duration] = [
     models.Duration(

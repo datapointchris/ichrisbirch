@@ -1,0 +1,26 @@
+import datetime as dt
+import os
+
+import structlog
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import status
+
+from life import schemas
+from life.config import Settings
+from life.config import get_settings
+
+logger = structlog.get_logger()
+
+router = APIRouter()
+
+
+@router.get('', response_model=schemas.ServerStats, status_code=status.HTTP_200_OK)
+def health(settings: Settings = Depends(get_settings)) -> schemas.ServerStats:
+    return schemas.ServerStats(
+        name=settings.fastapi.title,
+        environment=os.getenv('ENVIRONMENT', 'NOT SET'),
+        api_url=os.getenv('API_URL', 'NOT SET'),
+        log_level=os.getenv('LOG_LEVEL', 'NOT SET'),
+        server_time=dt.datetime.now(dt.UTC).isoformat(),
+    )

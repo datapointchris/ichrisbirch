@@ -24,7 +24,7 @@ test.describe('Coffee Shops Page', () => {
 
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/coffee/shops')
-    await expect(page).toHaveTitle('Coffee Shops | iChrisBirch')
+    await expect(page).toHaveTitle('Coffee Shops | Life')
   })
 
   test('adds a shop, then deletes it', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('Coffee Shops Page', () => {
 test.describe('Coffee Beans Page', () => {
   test('loads the page and displays the title', async ({ page }) => {
     await page.goto('/coffee/beans')
-    await expect(page).toHaveTitle('Coffee Beans | iChrisBirch')
+    await expect(page).toHaveTitle('Coffee Beans | Life')
     await expect(page.getByTestId('add-bean-button')).toBeVisible({ timeout: 10000 })
     await expect(page.locator(ERROR)).not.toBeVisible()
   })

@@ -81,7 +81,7 @@ class TestMain:
             patch('stats.pre_commit_capture.get_staged_files') as mock_staged,
         ):
             mock_config.return_value = {
-                'project': 'ichrisbirch',
+                'project': 'life',
                 'events_path': '/tmp/events.jsonl',
                 'capture': {'hooks': ['ruff_check']},
             }
@@ -103,7 +103,7 @@ class TestMain:
                 patch('stats.hooks.ruff_check.run') as mock_ruff_run,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'capture': {'hooks': ['ruff_check']},
                 }
@@ -111,7 +111,7 @@ class TestMain:
                 mock_branch.return_value = 'master'
                 mock_ruff_run.return_value = RuffCheckHookEvent(
                     timestamp=dt.datetime.now(dt.UTC),
-                    project='ichrisbirch',
+                    project='life',
                     branch='master',
                     status='passed',
                     exit_code=0,
@@ -124,7 +124,7 @@ class TestMain:
 
                 assert result == 0
                 assert events_path.exists()
-                mock_ruff_run.assert_called_once_with(['test.py'], 'master', 'ichrisbirch')
+                mock_ruff_run.assert_called_once_with(['test.py'], 'master', 'life')
 
     def test_main_skips_unknown_hooks(self, capsys) -> None:
         """Test main skips unknown hooks with a warning."""
@@ -137,7 +137,7 @@ class TestMain:
                 patch('stats.pre_commit_capture.get_branch') as mock_branch,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'capture': {'hooks': ['nonexistent_hook']},
                 }
@@ -164,7 +164,7 @@ class TestMain:
                 patch('stats.hooks.mypy.run') as mock_mypy_run,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'capture': {'hooks': ['ruff_check', 'mypy']},
                 }
@@ -172,7 +172,7 @@ class TestMain:
                 mock_branch.return_value = 'master'
                 mock_ruff_run.return_value = RuffCheckHookEvent(
                     timestamp=dt.datetime.now(dt.UTC),
-                    project='ichrisbirch',
+                    project='life',
                     branch='master',
                     status='passed',
                     exit_code=0,
@@ -182,7 +182,7 @@ class TestMain:
                 )
                 mock_mypy_run.return_value = MypyHookEvent(
                     timestamp=dt.datetime.now(dt.UTC),
-                    project='ichrisbirch',
+                    project='life',
                     branch='master',
                     status='passed',
                     exit_code=0,
@@ -211,7 +211,7 @@ class TestMain:
                 patch('stats.hooks.ruff_check.run') as mock_ruff_run,
             ):
                 mock_config.return_value = {
-                    'project': 'ichrisbirch',
+                    'project': 'life',
                     'events_path': str(events_path),
                     'capture': {'hooks': ['ruff_check']},
                 }
@@ -221,7 +221,7 @@ class TestMain:
                 mock_ruff_run.return_value = [
                     RuffCheckHookEvent(
                         timestamp=dt.datetime.now(dt.UTC),
-                        project='ichrisbirch',
+                        project='life',
                         branch='master',
                         status='passed',
                         exit_code=0,
@@ -231,7 +231,7 @@ class TestMain:
                     ),
                     RuffCheckHookEvent(
                         timestamp=dt.datetime.now(dt.UTC),
-                        project='ichrisbirch',
+                        project='life',
                         branch='master',
                         status='passed',
                         exit_code=0,

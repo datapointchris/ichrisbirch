@@ -5,8 +5,8 @@ neither Syncthing nor git — so entries are stranded on whichever machine wrote
 them and this file is the only copy. Run this once per machine that has one,
 after the patterns endpoint is deployed.
 
-Goes through `icb` rather than the database, so it targets whatever environment
-`icb` is authenticated against and takes the same path any other write does.
+Goes through `life` rather than the database, so it targets whatever environment
+`life` is authenticated against and takes the same path any other write does.
 
     uv run python scripts/import_dotfiles_patterns.py --dry-run
     uv run python scripts/import_dotfiles_patterns.py
@@ -58,7 +58,7 @@ def instant(raw: str) -> dt.datetime:
 
 
 def existing_keys() -> set[tuple[str, dt.datetime]]:
-    result = subprocess.run(['icb', 'patterns', 'list', '--json'], capture_output=True, text=True, check=True)
+    result = subprocess.run(['life', 'patterns', 'list', '--json'], capture_output=True, text=True, check=True)
     return {(p['message'], instant(p['recorded_at'])) for p in json.loads(result.stdout or '[]')}
 
 
@@ -88,7 +88,7 @@ def main() -> int:
             imported += 1
             continue
         subprocess.run(
-            ['icb', 'patterns', 'create', entry['message'], '--at', recorded_at],
+            ['life', 'patterns', 'create', entry['message'], '--at', recorded_at],
             check=True,
             capture_output=True,
         )

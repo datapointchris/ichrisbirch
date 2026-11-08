@@ -1,4 +1,4 @@
-// Package api is the icb CLI's typed client for the ichrisbirch FastAPI. It
+// Package api is the life CLI's typed client for the life FastAPI. It
 // depends on the wire contract (the JSON shapes the API returns), not the
 // server's internal Python models, so the two can evolve independently as long
 // as the JSON is stable. Every request carries the access token supplied by the
@@ -20,7 +20,7 @@ import (
 // passed to get or send is below it.
 const prefix = "/api/v1"
 
-// Client talks to the ichrisbirch API at baseURL. The http.Client is expected to
+// Client talks to the life API at baseURL. The http.Client is expected to
 // inject the Authorization: Bearer header itself (via an oauth2 token-source
 // transport), so the api package never handles tokens directly.
 type Client struct {
@@ -54,7 +54,7 @@ func (e *APIError) Error() string {
 }
 
 // Unauthorized reports whether the error is a 401 — the CLI translates this into
-// a "run `icb auth login`" hint rather than a raw API error.
+// a "run `life auth login`" hint rather than a raw API error.
 func (e *APIError) Unauthorized() bool { return e.StatusCode == http.StatusUnauthorized }
 
 // Forbidden reports whether the error is a 403.
@@ -94,7 +94,7 @@ func (c *Client) send(ctx context.Context, method, path string, body, out any) e
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("reach ichrisbirch API at %s: %w", c.baseURL, err)
+		return fmt.Errorf("reach life API at %s: %w", c.baseURL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 

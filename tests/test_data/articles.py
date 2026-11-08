@@ -1,6 +1,6 @@
 import datetime as dt
 
-from ichrisbirch.models import Article
+from life.models import Article
 
 BASE_DATA: list[Article] = [
     Article(

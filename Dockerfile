@@ -91,7 +91,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean
 
 # A uid no other app uses, so files it writes on a host or a k3s volume read as
-# ichrisbirch's, never as a person's. Its host declares the same account.
+# ichrisbirch's, never as a person's. Its host declares the same account by
+# name, and a host cannot rename an account in place, so both keep this one.
 RUN groupadd --system --gid 10300 ichrisbirch && \
     useradd --system --uid 10300 --gid ichrisbirch --shell /usr/sbin/nologin --create-home ichrisbirch
 

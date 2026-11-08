@@ -606,7 +606,7 @@ describe('useHabitsStore', () => {
   // --- Computed: todoHabits ---
 
   // Which habits a day's completions tick off is decided in
-  // `ichrisbirch/services/habit_day.py`, and `tests/ichrisbirch/services/
+  // `life/services/habit_day.py`, and `tests/life/services/
   // test_habit_day.py` is where those rules are tested. The store groups the two
   // halves it is handed and adds nothing.
   it('groups the two halves of the board the server sent', () => {

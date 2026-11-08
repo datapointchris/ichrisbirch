@@ -34,7 +34,7 @@ test.describe('Countdowns Page', () => {
 
   test('loads the page and displays the countdown list', async ({ page }) => {
     await page.goto('/countdowns')
-    await expect(page).toHaveTitle('Countdowns | iChrisBirch')
+    await expect(page).toHaveTitle('Countdowns | Life')
   })
 
   test('creates a new countdown and verifies it appears in the list', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Countdowns Page', () => {
 
   test('sidebar navigation to countdowns works', async ({ page }) => {
     await page.goto('/countdowns')
-    await expect(page).toHaveTitle('Countdowns | iChrisBirch')
+    await expect(page).toHaveTitle('Countdowns | Life')
 
     const sidebarLink = page.locator('.nav-link--active', { hasText: 'Countdowns' })
     await expect(sidebarLink).toBeVisible()

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The ichrisbirch application uses **structlog**, rendered through the stdlib root logger. All logs go to stderr, including records from stdlib loggers such as alembic's, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
+The life application uses **structlog**, rendered through the stdlib root logger. All logs go to stderr, including records from stdlib loggers such as alembic's, and Docker handles persistence via its logging driver. This is the industry-standard approach for containerized applications.
 
-**Configuration**: `ichrisbirch/logger.py`
+**Configuration**: `life/logger.py`
 
 ```python
 LOG_FORMAT = os.environ.get('LOG_FORMAT', 'console')
@@ -88,7 +88,7 @@ Vue SPA (browser)                       FastAPI Process
 
 ### Middleware Implementation
 
-**FastAPI**: `ichrisbirch/api/middleware.py`
+**FastAPI**: `life/api/middleware.py`
 
 ```python
 class RequestTracingMiddleware(BaseHTTPMiddleware):
@@ -102,7 +102,7 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
 ### Scheduler Job Correlation
 
 Scheduler jobs are not request-scoped, so they get their own correlation token.
-The `@job_logger` decorator in `ichrisbirch/scheduler/jobs.py` generates a
+The `@job_logger` decorator in `life/scheduler/jobs.py` generates a
 per-invocation `job_run_id` (8-hex), binds it into structlog contextvars for
 the lifetime of the job, and persists it on the `SchedulerJobRun` row written
 at the end. Every log line a job emits carries the `job_run_id`, so a single
@@ -117,12 +117,12 @@ Use the CLI to view colored logs that persist across container restarts:
 
 ```bash
 # All services
-./ops/icbops dev logs
+./ops/lifeops dev logs
 
 # Specific service
-./ops/icbops dev logs api
-./ops/icbops dev logs scheduler
-./ops/icbops dev logs vue
+./ops/lifeops dev logs api
+./ops/lifeops dev logs scheduler
+./ops/lifeops dev logs vue
 ```
 
 The logs command uses a watch loop that automatically reconnects when containers restart, and supports filter flags described in [CLI Usage](cli-traefik-usage.md).
@@ -131,30 +131,30 @@ The logs command uses a watch loop that automatically reconnects when containers
 
 ```bash
 # View test environment logs
-./ops/icbops testing logs
+./ops/lifeops testing logs
 
 # Specific service
-./ops/icbops testing logs api
+./ops/lifeops testing logs api
 ```
 
 ### Production
 
 ```bash
 # View production logs
-./ops/icbops prod logs
+./ops/lifeops prod logs
 
 # Specific service
-./ops/icbops prod logs api
+./ops/lifeops prod logs api
 ```
 
 ### Direct Docker Commands
 
 ```bash
 # Follow logs for a specific container
-docker logs -f icb-dev-api
+docker logs -f life-dev-api
 
 # View recent logs
-docker logs --tail 100 icb-dev-api
+docker logs --tail 100 life-dev-api
 ```
 
 ## Log Persistence
@@ -165,7 +165,7 @@ Docker handles log persistence via its logging driver. By default, Docker uses t
 
 ```bash
 # Find log file location
-docker inspect icb-dev-api --format='{{.LogPath}}'
+docker inspect life-dev-api --format='{{.LogPath}}'
 
 # View raw log file (requires sudo)
 sudo cat /var/lib/docker/containers/<container-id>/<container-id>-json.log
@@ -187,7 +187,7 @@ Docker manages log rotation. Configure in Docker daemon settings if needed:
 
 ## Structlog Configuration
 
-**Configuration**: `configure_structlog` in `ichrisbirch/logger.py`
+**Configuration**: `configure_structlog` in `life/logger.py`
 
 The structlog configuration includes:
 
@@ -216,7 +216,7 @@ processors = [
 
 Noisy third-party loggers are raised to a quieter level. The loggers and their
 levels are the `third_party_levels` mapping in `configure_stdlib_logging`, in
-`ichrisbirch/logger.py`, and that mapping is the list.
+`life/logger.py`, and that mapping is the list.
 
 `httpx2` and `httpcore2` cover the app's own requests. `claude_agent_sdk` is
 raised to `WARNING`, because it logs the path of the Claude Code CLI it starts

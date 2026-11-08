@@ -1,6 +1,6 @@
 # Homelab Production Deployment
 
-This document covers deploying ichrisbirch to a Proxmox homelab environment with Docker and Cloudflare Tunnel.
+This document covers deploying life to a Proxmox homelab environment with Docker and Cloudflare Tunnel.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ Internet → Cloudflare (SSL/CDN) → Cloudflare Tunnel → Traefik (port 80) �
 ## Current Status
 
 - **Infrastructure**: A self-hosted Linux container running Docker
-- **Database**: PostgreSQL, in the always-running `icb-infra` project
+- **Database**: PostgreSQL, in the always-running `life-infra` project
 - **Containers**: All services running (postgres, redis, api, app, scheduler, traefik)
 - **External Access**: Via Cloudflare Tunnel
 
@@ -65,10 +65,10 @@ apt install -y age
 # Clone repository
 cd /srv
 git clone https://github.com/datapointchris/ichrisbirch.git
-cd ichrisbirch
+cd life
 
 # Install CLI
-sudo ln -sf /srv/ichrisbirch/ops/icbops /usr/local/bin/icbops
+sudo ln -sf /srv/life/ops/lifeops /usr/local/bin/lifeops
 
 # Copy the age private key that decrypts secrets/secrets.prod.enc.env
 mkdir -p ~/.config/sops/age
@@ -96,7 +96,7 @@ mkdir -p ~/.config/sops/age
 
 1. In Cloudflare: **Zero Trust** → **Networks** → **Tunnels**
 2. Click **"Create a tunnel"** → select **"Cloudflared"**
-3. Name it `ichrisbirch-homelab`
+3. Name it `life-homelab`
 4. Copy the tunnel token (long string starting with `eyJ...`)
 
 ### Step 4: Install cloudflared
@@ -137,17 +137,17 @@ Production uses **blue/green deployment** for zero-downtime deploys. See [Blue/G
 
 ### How It Works
 
-Infrastructure (Traefik, PostgreSQL, Redis) runs in `icb-infra` and is always up. App services deploy as alternating `icb-blue` / `icb-green` projects. Traefik switches routing via a file provider config — no restart needed.
+Infrastructure (Traefik, PostgreSQL, Redis) runs in `life-infra` and is always up. App services deploy as alternating `life-blue` / `life-green` projects. Traefik switches routing via a file provider config — no restart needed.
 
 Pushing to `main` triggers the webhook, which runs `scripts/deploy-homelab.sh`. The script builds the new color, verifies health + smoke tests, then switches traffic. If anything fails, the old color keeps serving.
 
 ### Start Services
 
 ```bash
-cd /srv/ichrisbirch
+cd /srv/life
 
 # Start production (blue/green aware — starts infra + active color)
-icbops prod start
+lifeops prod start
 ```
 
 This will:
@@ -160,19 +160,19 @@ This will:
 
 ```bash
 # Check deployment state (which color is active)
-icbops prod deploy-status
+lifeops prod deploy-status
 
 # Check container status
-icbops prod status
+lifeops prod status
 
 # View logs
-icbops prod logs
+lifeops prod logs
 
 # Test health endpoints
-icbops prod health
+lifeops prod health
 
 # Run smoke tests
-icbops prod smoke
+lifeops prod smoke
 
 # Check tunnel status
 sudo systemctl status cloudflared
@@ -183,22 +183,22 @@ sudo systemctl status cloudflared
 If a problem is discovered after a deploy:
 
 ```bash
-icbops prod rollback    # Switch traffic back to previous color
+lifeops prod rollback    # Switch traffic back to previous color
 ```
 
 ### Access URLs
 
 Once tunnel is configured:
 
-- **App**: <https://ichrisbirch.com> (also <www.ichrisbirch.com>)
-- **API**: <https://ichrisbirch.com/api/v1>
+- **App**: <https://life.ichrisbirch.com> (also <https://ichrisbirch.com> and <www.ichrisbirch.com>)
+- **API**: <https://life.ichrisbirch.com/api/v1>, and the same path on the root
 
 ## Configuration
 
 Production settings live in `secrets/secrets.prod.enc.env`, encrypted with SOPS and age.
 The deploy pulls `main`, then decrypts that file to `.env`.
 The app containers read `.env` through `env_file`.
-`icbops prod` commands decrypt it into their own environment instead.
+`lifeops prod` commands decrypt it into their own environment instead.
 
 To change a setting, run `sops secrets/secrets.prod.enc.env`, then commit and push.
 `POSTGRES_HOST` and `REDIS_HOST` point at the `postgres` and `redis` services in `docker-compose.infra.yml`.
@@ -206,17 +206,17 @@ To change a setting, run `sops secrets/secrets.prod.enc.env`, then commit and pu
 ## CLI Commands
 
 ```bash
-icbops prod start          # Start infra + active color
-icbops prod stop           # Stop active color + infra
-icbops prod restart        # Restart active color + infra
-icbops prod status         # Show container status
-icbops prod health         # Run health checks
-icbops prod smoke          # Run smoke tests against all endpoints
-icbops prod deploy-status  # Show blue/green state and routing
-icbops prod rollback       # Switch traffic back to previous color
-icbops prod logs           # View container logs
-icbops prod logs deploy    # View deployment event logs
-icbops prod logs build     # View latest Docker build log
+lifeops prod start          # Start infra + active color
+lifeops prod stop           # Stop active color + infra
+lifeops prod restart        # Restart active color + infra
+lifeops prod status         # Show container status
+lifeops prod health         # Run health checks
+lifeops prod smoke          # Run smoke tests against all endpoints
+lifeops prod deploy-status  # Show blue/green state and routing
+lifeops prod rollback       # Switch traffic back to previous color
+lifeops prod logs           # View container logs
+lifeops prod logs deploy    # View deployment event logs
+lifeops prod logs build     # View latest Docker build log
 ```
 
 ## Troubleshooting
@@ -238,23 +238,23 @@ sudo systemctl restart cloudflared
 curl -I http://localhost:80
 
 # Check container status
-icbops prod status
+lifeops prod status
 
 # View Traefik logs
-docker logs icb-prod-traefik
+docker logs life-prod-traefik
 ```
 
 ### Database Role Does Not Exist
 
-If you see `FATAL: role "icb_app" does not exist`:
+If you see `FATAL: role "life" does not exist`:
 
 ```bash
 # Create the role (get password from decrypted .env)
-PG_PASS=$(grep '^POSTGRES_PASSWORD=' /srv/ichrisbirch/.env | cut -d= -f2- | tr -d '"')
+PG_PASS=$(grep '^POSTGRES_PASSWORD=' /srv/life/.env | cut -d= -f2- | tr -d '"')
 
-docker exec icb-infra-postgres psql -U postgres -c "CREATE ROLE icb_app WITH LOGIN PASSWORD '$PG_PASS';"
-docker exec icb-infra-postgres psql -U postgres -c "ALTER ROLE icb_app CREATEDB;"
-docker exec icb-infra-postgres psql -U postgres -c "ALTER DATABASE ichrisbirch OWNER TO icb_app;"
+docker exec life-infra-postgres psql -U postgres -c "CREATE ROLE life WITH LOGIN PASSWORD '$PG_PASS';"
+docker exec life-infra-postgres psql -U postgres -c "ALTER ROLE life CREATEDB;"
+docker exec life-infra-postgres psql -U postgres -c "ALTER DATABASE life OWNER TO life;"
 ```
 
 ### Database Restore from Backup
@@ -263,21 +263,21 @@ If you need to restore from a `.dump` or `.sql.gz` file:
 
 ```bash
 # Stop app services first
-docker stop icb-<color>-api icb-<color>-vue icb-<color>-scheduler
+docker stop life-<color>-api life-<color>-vue life-<color>-scheduler
 
 # Terminate existing connections and recreate database
-docker exec icb-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'ichrisbirch' AND pid <> pg_backend_pid();"
-docker exec icb-infra-postgres psql -U postgres -c "DROP DATABASE ichrisbirch;"
-docker exec icb-infra-postgres psql -U postgres -c "CREATE DATABASE ichrisbirch OWNER icb_app;"
+docker exec life-infra-postgres psql -U postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'life' AND pid <> pg_backend_pid();"
+docker exec life-infra-postgres psql -U postgres -c "DROP DATABASE life;"
+docker exec life-infra-postgres psql -U postgres -c "CREATE DATABASE life OWNER life;"
 
 # Restore from dump
-cat /path/to/backup.dump | docker exec -i icb-infra-postgres pg_restore -U icb_app -d ichrisbirch --no-owner --exit-on-error
+cat /path/to/backup.dump | docker exec -i life-infra-postgres pg_restore -U life -d life --no-owner --exit-on-error
 
 # A gzipped plain SQL dump restores through psql instead
-gunzip -c /path/to/backup.sql.gz | docker exec -i icb-infra-postgres psql -U postgres -d ichrisbirch --set ON_ERROR_STOP=1
+gunzip -c /path/to/backup.sql.gz | docker exec -i life-infra-postgres psql -U postgres -d life --set ON_ERROR_STOP=1
 
 # Start services
-docker start icb-<color>-api icb-<color>-vue icb-<color>-scheduler
+docker start life-<color>-api life-<color>-vue life-<color>-scheduler
 ```
 
 ### SSL/Protocol Errors
@@ -300,7 +300,7 @@ It should be `http`. If it is `https`, change it with `sops secrets/secrets.prod
 Docker Compose prefixes volumes with the project name. If you rebuild with a different project name,
 you may get new empty volumes.
 
-The CLI uses `--project-name icb-prod`, creating volumes like `icb-prod-postgres-data`.
+The CLI uses `--project-name life-prod`, creating volumes like `life-prod-postgres-data`.
 
 If your data is in differently-named volumes, check:
 
@@ -312,16 +312,16 @@ You may need to copy data between volumes or update the project name.
 
 ## Container Info
 
-- **Application host**: runs every container below; addressed as `$ICB_PROD_HOST`
-- **Webhook host**: receives the push notification and runs the deploy; addressed as `$ICB_WEBHOOK_HOST`
-- **Infrastructure** (project `icb-infra`, always running):
-  - `icb-infra-traefik` (port 80, receives tunnel traffic)
-  - `icb-infra-postgres` (5432, Docker internal)
-  - `icb-infra-redis` (6379, Docker internal)
-- **App Services** (project `icb-blue` or `icb-green`, alternates per deploy):
-  - `icb-{color}-api` (8000, Docker internal)
-  - `icb-{color}-app` (5000, Docker internal)
-  - `icb-{color}-vue` (80, Docker internal)
-  - `icb-{color}-scheduler` (no port)
+- **Application host**: runs every container below; addressed as `$LIFE_PROD_HOST`
+- **Webhook host**: receives the push notification and runs the deploy; addressed as `$LIFE_WEBHOOK_HOST`
+- **Infrastructure** (project `life-infra`, always running):
+  - `life-infra-traefik` (port 80, receives tunnel traffic)
+  - `life-infra-postgres` (5432, Docker internal)
+  - `life-infra-redis` (6379, Docker internal)
+- **App Services** (project `life-blue` or `life-green`, alternates per deploy):
+  - `life-{color}-api` (8000, Docker internal)
+  - `life-{color}-app` (5000, Docker internal)
+  - `life-{color}-vue` (80, Docker internal)
+  - `life-{color}-scheduler` (no port)
 - **System Services**:
   - cloudflared (tunnel daemon, systemd service)

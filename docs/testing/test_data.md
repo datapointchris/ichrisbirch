@@ -1,6 +1,6 @@
 # Test Data Management
 
-This document explains how test data is organized, managed, and used in the ichrisbirch project testing infrastructure.
+This document explains how test data is organized, managed, and used in the life project testing infrastructure.
 
 ## Test Data Structure
 
@@ -18,7 +18,7 @@ Test data is defined using direct model instantiation:
 
 ```python
 from datetime import datetime
-from ichrisbirch.models import Event
+from life.models import Event
 
 BASE_DATA: list[Event] = [
     Event(

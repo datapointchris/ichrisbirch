@@ -1,6 +1,6 @@
 # Database Troubleshooting
 
-This document covers database-related issues encountered during development, testing, and deployment of the iChrisBirch project.
+This document covers database-related issues encountered during development, testing, and deployment of the Life project.
 
 ## Connection Issues
 
@@ -11,8 +11,8 @@ This document covers database-related issues encountered during development, tes
 **Error Messages:**
 
 - `psycopg.OperationalError: connection to server at "localhost" (127.0.0.1) port 5432 refused`
-- `FATAL: database "ichrisbirch" does not exist`
-- `FATAL: role "icb_app" does not exist`
+- `FATAL: database "life" does not exist`
+- `FATAL: role "life" does not exist`
 
 **Common Causes and Solutions:**
 
@@ -50,9 +50,9 @@ services:
 
 ```sql
 -- Connect as superuser and create database/user
-CREATE USER icb_app WITH PASSWORD 'password';
-CREATE DATABASE ichrisbirch OWNER icb_app;
-GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
+CREATE USER life WITH PASSWORD 'password';
+CREATE DATABASE life OWNER life;
+GRANT ALL PRIVILEGES ON DATABASE life TO life;
 ```
 
 ### Schema and Table Issues
@@ -61,7 +61,7 @@ GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
 
 **Error Messages:**
 
-- `psycopg.errors.InvalidSchemaName: schema "ichrisbirch_test" does not exist`
+- `psycopg.errors.InvalidSchemaName: schema "life_test" does not exist`
 - `sqlalchemy.exc.ProgrammingError: (psycopg.errors.UndefinedTable) relation "users" does not exist`
 
 **Resolution:**
@@ -69,7 +69,7 @@ GRANT ALL PRIVILEGES ON DATABASE ichrisbirch TO icb_app;
 ### 1. Run Database Migrations
 
 ```bash
-./ops/icbops dev db init
+./ops/lifeops dev db init
 ```
 
 Testing needs no equivalent. pytest's session setup migrates the test database
@@ -91,7 +91,7 @@ does not, and the fix belongs in that migration.
 ### 3. Reset a Corrupt Test Database
 
 ```bash
-./ops/icbops testing stop && ./ops/icbops testing start
+./ops/lifeops testing stop && ./ops/lifeops testing start
 ```
 
 The test Postgres keeps its data on tmpfs, so stopping the container empties it
@@ -123,7 +123,7 @@ uv run alembic upgrade head
 ```bash
 # Error: Can't locate revision identified by 'abc123'
 # Resolution: Check migration file exists and revision ID is correct
-ls ichrisbirch/alembic/versions/
+ls life/alembic/versions/
 ```
 
 #### 3. Manual Schema Changes
@@ -143,7 +143,7 @@ uv run alembic revision --autogenerate -m "sync with manual changes"
 **Resolution:**
 
 ```bash
-./ops/icbops testing stop && ./ops/icbops testing start
+./ops/lifeops testing stop && ./ops/lifeops testing start
 ```
 
 That empties the tmpfs database, brings it back up and initializes it. pytest
@@ -152,7 +152,7 @@ then migrates it to head at session setup.
 Dev is the persistent side, so it drifts rather than the test database:
 
 ```bash
-./ops/icbops dev db init
+./ops/lifeops dev db init
 ```
 
 ## Performance Issues
@@ -172,7 +172,7 @@ SELECT pg_reload_conf();
 -- Check for missing indexes
 SELECT schemaname, tablename, attname, n_distinct, correlation
 FROM pg_stats
-WHERE schemaname = 'ichrisbirch_test'
+WHERE schemaname = 'life_test'
 ORDER BY n_distinct DESC;
 ```
 
@@ -237,9 +237,9 @@ engine = create_engine(
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from ichrisbirch.config import get_settings
-from ichrisbirch.database.session import create_session
-from ichrisbirch.database.session import get_db_engine
+from life.config import get_settings
+from life.database.session import create_session
+from life.database.session import get_db_engine
 
 # Good: Automatic cleanup
 def habits_in_category(category_id: int):
@@ -283,8 +283,8 @@ SELECT * FROM habits WHERE user_id NOT IN (SELECT id FROM users);
 
 ```python
 # Ensure user exists before creating habit
-from ichrisbirch.database import get_sqlalchemy_session
-from ichrisbirch.models import User, Habit
+from life.database import get_sqlalchemy_session
+from life.models import User, Habit
 
 def create_habit(user_id: int, habit_data: dict):
     with get_sqlalchemy_session() as session:
@@ -322,25 +322,25 @@ SELECT conname, contype FROM pg_constraint WHERE contype = 'f';
 
 ```bash
 # Backup database before repairs
-docker compose exec postgres pg_dump -U icb_app ichrisbirch > backup.sql
+docker compose exec postgres pg_dump -U life life > backup.sql
 
 # Run integrity checks
-docker compose exec postgres psql -U icb_app -d ichrisbirch -c "
+docker compose exec postgres psql -U life -d life -c "
 VACUUM ANALYZE;
-REINDEX DATABASE ichrisbirch;
+REINDEX DATABASE life;
 "
 ```
 
 ### Database Reset: Stale Connections
 
-**Problem:** API returns 500 with `relation "users" does not exist` (or similar) after running `db reset` — applies to both `icbops dev db reset` and `icbops testing db reset`.
+**Problem:** API returns 500 with `relation "users" does not exist` (or similar) after running `db reset` — applies to both `lifeops dev db reset` and `lifeops testing db reset`.
 
 **Cause:** `db reset` drops every non-system schema with `CASCADE` and recreates everything from alembic migrations. The running API container's SQLAlchemy connection pool holds connections that still point at the old, now-dropped schema objects.
 
 **Resolution:**
 
-- **Testing:** Between test runs, pytest automatically truncates tables (preserving schema), which keeps the API container's connections valid. A new migration needs no reset, because every start, rebuild and pytest session migrates the test database to head. Only use `icbops testing db reset` when the schema is corrupt or a migration was edited after it was applied — and restart the containers afterward (`icbops testing stop && icbops testing start`).
-- **Dev:** After `icbops dev db reset`, restart the API container so the pool re-establishes (`icbops dev restart`, or `docker restart icb-dev-api`).
+- **Testing:** Between test runs, pytest automatically truncates tables (preserving schema), which keeps the API container's connections valid. A new migration needs no reset, because every start, rebuild and pytest session migrates the test database to head. Only use `lifeops testing db reset` when the schema is corrupt or a migration was edited after it was applied — and restart the containers afterward (`lifeops testing stop && lifeops testing start`).
+- **Dev:** After `lifeops dev db reset`, restart the API container so the pool re-establishes (`lifeops dev restart`, or `docker restart life-dev-api`).
 
 ## Environment-Specific Issues
 
@@ -414,17 +414,17 @@ DATABASE_URL = "postgresql://user:pass@host:5432/db?sslmode=require&sslcert=clie
 ```bash
 # Create backup with custom format
 docker compose exec postgres pg_dump \
-  -U icb_app \
-  -d ichrisbirch \
-  -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).dump \
+  -U life \
+  -d life \
+  -f /backup/life_$(date +%Y%m%d_%H%M%S).dump \
   --format=custom \
   --verbose
 
 # Create SQL backup
 docker compose exec postgres pg_dump \
-  -U icb_app \
-  -d ichrisbirch \
-  -f /backup/ichrisbirch_$(date +%Y%m%d_%H%M%S).sql \
+  -U life \
+  -d life \
+  -f /backup/life_$(date +%Y%m%d_%H%M%S).sql \
   --verbose
 ```
 
@@ -433,17 +433,17 @@ docker compose exec postgres pg_dump \
 ```bash
 # Restore from custom format
 docker compose exec postgres pg_restore \
-  -U icb_app \
-  -d ichrisbirch_restored \
+  -U life \
+  -d life_restored \
   --clean --create \
   --verbose \
-  /backup/ichrisbirch_20231201_120000.dump
+  /backup/life_20231201_120000.dump
 
 # Restore from SQL
 docker compose exec postgres psql \
-  -U icb_app \
-  -d ichrisbirch_restored \
-  -f /backup/ichrisbirch_20231201_120000.sql
+  -U life \
+  -d life_restored \
+  -f /backup/life_20231201_120000.sql
 ```
 
 ## Monitoring and Diagnosis
@@ -455,8 +455,8 @@ Create a database health check script:
 ```python
 # scripts/db_health_check.py
 import sys
-from ichrisbirch.config import settings
-from ichrisbirch.database import get_sqlalchemy_session
+from life.config import settings
+from life.database import get_sqlalchemy_session
 from sqlalchemy import text
 
 def check_database_health():

@@ -54,10 +54,12 @@ replace_line() {
   mv "${file}.tmp" "$file"
 }
 
-# Find the vue-paths rule line and replace it
+# Find the vue-paths rule line and replace it. $3 is one host, or a matcher
+# already written, such as two Host() joined by ||.
 update_rule() {
   local file="$1" line_num="$2" host="$3" rule="$4"
-  local full_line="      rule: \"Host(${BT}${host}${BT}) && (${rule})\""
+  [[ "$host" == *"("* ]] || host="Host(${BT}${host}${BT})"
+  local full_line="      rule: \"${host} && (${rule})\""
   replace_line "$file" "$line_num" "$full_line"
   echo "  $(basename "$(dirname "$file")")/$(basename "$file"):${line_num}"
 }
@@ -80,13 +82,15 @@ LN=$(grep -n 'app\.test\.localhost.*PathPrefix' "$DYNAMIC_DIR/test/routing.yml" 
 }
 update_rule "$DYNAMIC_DIR/test/routing.yml" "$LN" "app.test.localhost" "$DEVTEST_RULE"
 
-# Prod: ichrisbirch.com (non-www — match countdowns to skip the api-proxy rule)
-LN=$(grep -n 'ichrisbirch\.com.*countdowns' "$DYNAMIC_DIR/prod/routing.yml" | grep -v 'www\.' | head -1 | cut -d: -f1)
+# Prod: ichrisbirch.com and life.ichrisbirch.com, the two hosts the app answers on
+# (match countdowns to skip the api-proxy rule)
+PROD_HOSTS="(Host(${BT}ichrisbirch.com${BT}) || Host(${BT}life.ichrisbirch.com${BT}))"
+LN=$(grep -n 'life\.ichrisbirch\.com.*countdowns' "$DYNAMIC_DIR/prod/routing.yml" | head -1 | cut -d: -f1)
 [[ -z "$LN" ]] && {
   echo "ERROR: vue-paths rule not found in prod/routing.yml" >&2
   exit 1
 }
-update_rule "$DYNAMIC_DIR/prod/routing.yml" "$LN" "ichrisbirch.com" "$PROD_RULE"
+update_rule "$DYNAMIC_DIR/prod/routing.yml" "$LN" "$PROD_HOSTS" "$PROD_RULE"
 
 # Prod: www.ichrisbirch.com
 LN=$(grep -n 'www\.ichrisbirch\.com.*PathPrefix' "$DYNAMIC_DIR/prod/routing.yml" | head -1 | cut -d: -f1)

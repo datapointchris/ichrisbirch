@@ -44,7 +44,7 @@ output "aws_account_id" {
 # }
 #
 # output "dynamodb_terraform_state_locking_table_id" {
-#   value = aws_dynamodb_table.ichrisbirch_terraform_state_locking.id
+#   value = aws_dynamodb_table.life_terraform_state_locking.id
 # }
 
 
@@ -57,7 +57,7 @@ output "internet_gateway_id" {
 }
 
 # output "network_interface_ichrisbirch_webserver_id" {
-#   value = aws_network_interface.ichrisbirch_webserver.id
+#   value = aws_network_interface.life_webserver.id
 # }
 
 output "prod_private_route_table_id" {
@@ -85,7 +85,7 @@ output "prod_vpc_id" {
 }
 
 output "security_group_ichrisbirch_webserver_id" {
-  value = aws_security_group.ichrisbirch_webserver.id
+  value = aws_security_group.life_webserver.id
 }
 
 
@@ -94,31 +94,31 @@ output "security_group_ichrisbirch_webserver_id" {
 # ------------------------------------------------------------------ #
 
 # output "webserver_ami_id" {
-#   value = data.aws_ami.ichrisbirch_webserver.id
+#   value = data.aws_ami.life_webserver.id
 # }
 #
 # output "webserver_availability_zone" {
-#   value = aws_instance.ichrisbirch_webserver.availability_zone
+#   value = aws_instance.life_webserver.availability_zone
 # }
 #
 # output "webserver_elastic_ip" {
-#   value = aws_eip.ichrisbirch_elastic_ip.public_ip
+#   value = aws_eip.life_elastic_ip.public_ip
 # }
 #
 # output "webserver_iam_instance_profile" {
-#   value = aws_instance.ichrisbirch_webserver.iam_instance_profile
+#   value = aws_instance.life_webserver.iam_instance_profile
 # }
 #
 # output "webserver_id" {
-#   value = aws_instance.ichrisbirch_webserver.id
+#   value = aws_instance.life_webserver.id
 # }
 #
 # output "webserver_instance_type" {
-#   value = aws_instance.ichrisbirch_webserver.instance_type
+#   value = aws_instance.life_webserver.instance_type
 # }
 #
 # output "webserver_key_name" {
-#   value = aws_instance.ichrisbirch_webserver.key_name
+#   value = aws_instance.life_webserver.key_name
 # }
 #
 # output "webserver_route_table_id" {
@@ -126,11 +126,11 @@ output "security_group_ichrisbirch_webserver_id" {
 # }
 #
 # output "webserver_security_groups" {
-#   value = join(", ", aws_instance.ichrisbirch_webserver.vpc_security_group_ids[*])
+#   value = join(", ", aws_instance.life_webserver.vpc_security_group_ids[*])
 # }
 #
 # output "webserver_subnet_id" {
-#   value = aws_instance.ichrisbirch_webserver.subnet_id
+#   value = aws_instance.life_webserver.subnet_id
 # }
 
 
@@ -141,7 +141,7 @@ output "security_group_ichrisbirch_webserver_id" {
 # ---------- ROLES ---------- #
 
 output "iam_role_ichrisbirch_webserver_arn" {
-  value = aws_iam_role.ichrisbirch_webserver.arn
+  value = aws_iam_role.life_webserver.arn
 }
 
 # ---------- POLICIES ---------- #
@@ -157,7 +157,7 @@ output "iam_policy_allow_pass_webserver_role_arn" {
 # ---------- IAM INSTANCE PROFILES ---------- #
 
 output "iam_instance_profile_ichrisbirch_webserver_arn" {
-  value = aws_iam_instance_profile.ichrisbirch_webserver.arn
+  value = aws_iam_instance_profile.life_webserver.arn
 }
 
 
