@@ -25,10 +25,6 @@ from ichrisbirch.models import Habit  # noqa
 from ichrisbirch.models import HabitCategory  # noqa
 from ichrisbirch.models import HabitCompleted  # noqa
 from ichrisbirch.models import MoneyWasted  # noqa
-from ichrisbirch.models import Project  # noqa
-from ichrisbirch.models import ProjectItem  # noqa
-from ichrisbirch.models import ProjectItemDependency  # noqa
-from ichrisbirch.models import ProjectItemMembership  # noqa
 from ichrisbirch.models import SchedulerJobRun  # noqa
 from ichrisbirch.models import ShoppingItem
 from ichrisbirch.models import ShoppingPurchase

@@ -2,7 +2,7 @@
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-A personal productivity web application. It tracks tasks, projects, habits,
+A personal productivity web application. It tracks tasks, habits,
 books, articles, events, countdowns and recipes, and exposes each of them
 through a REST API, a browser UI and a command-line client.
 

@@ -24,13 +24,6 @@ from ichrisbirch.models.habitcategory import HabitCategory
 from ichrisbirch.models.habitcompleted import HabitCompleted
 from ichrisbirch.models.money_wasted import MoneyWasted
 from ichrisbirch.models.pattern import Pattern
-from ichrisbirch.models.project import Project
-from ichrisbirch.models.project import ProjectItem
-from ichrisbirch.models.project import ProjectItemDependency
-from ichrisbirch.models.project import ProjectItemMembership
-from ichrisbirch.models.project import ProjectItemTask
-from ichrisbirch.models.project import ProjectKind
-from ichrisbirch.models.project import ProjectStatus
 from ichrisbirch.models.recipe import CookingTechnique
 from ichrisbirch.models.recipe import CookingTechniqueCategory
 from ichrisbirch.models.recipe import Recipe
@@ -81,13 +74,6 @@ __all__ = [
     'HabitCompleted',
     'MoneyWasted',
     'Pattern',
-    'Project',
-    'ProjectItem',
-    'ProjectItemDependency',
-    'ProjectItemMembership',
-    'ProjectItemTask',
-    'ProjectKind',
-    'ProjectStatus',
     'CookingTechnique',
     'CookingTechniqueCategory',
     'Recipe',
