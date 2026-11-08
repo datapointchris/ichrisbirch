@@ -105,10 +105,23 @@ cleanup() {
       compose_app_down "$DEPLOY_COLOR" 2>/dev/null || true
     fi
 
+    local serving="${LIVE_COLOR:-unknown} (still serving)"
+
+    # MIGRATION: the deploy the cutover handed to failed before its switch, so
+    # the old stack goes back up and the next release runs the cutover again.
+    if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" && "$TRAFFIC_SWITCHED" != "true" ]]; then
+      if "${SCRIPT_DIR}/cutover-to-life.sh" --roll-back; then
+        serving="${LIVE_COLOR:-unknown} (serving again on the old stack)"
+      else
+        log_error "cutover_roll_back_failed" "site" "down" | tee -a "$LOG_FILE"
+        serving="none: the cutover's roll back failed and the site is DOWN"
+      fi
+    fi
+
     local message="*Commit:* \`${NEW_SHA:0:7}\`"
     message+="\n*Step Failed:* ${FAILURE_STEP:-unknown}"
     message+="\n*Exit Code:* $exit_code"
-    message+="\n*Live Color:* ${LIVE_COLOR:-unknown} (still serving)"
+    message+="\n*Live Color:* ${serving}"
     message+="\n\n*Commit:* $commit_msg"
 
     local context=""
@@ -117,12 +130,6 @@ cleanup() {
       context="*Error Output:*\n\`\`\`${truncated_output}\`\`\`"
     fi
     context+="\n\n*Logs:* \`/srv/life/logs/\`"
-
-    # MIGRATION: the deploy the cutover handed to failed before its switch, so
-    # the old stack goes back up and the next release runs the cutover again.
-    if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" && "$TRAFFIC_SWITCHED" != "true" ]]; then
-      "${SCRIPT_DIR}/cutover-to-life.sh" --roll-back || log_error "cutover_roll_back_failed" | tee -a "$LOG_FILE"
-    fi
 
     notify_slack "failure" "$message" "$context"
   fi

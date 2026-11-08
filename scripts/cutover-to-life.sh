@@ -24,6 +24,9 @@ NEW_DIR=/srv/life
 OLD_STATE_DIR=/var/lib/ichrisbirch
 NEW_STATE_DIR=/var/lib/life
 LOCK_FILE=/var/lock/life-deploy.lock
+# The lock the old layout's deploy takes, held too so no deploy of it runs under the move.
+OLD_LOCK_FILE=/var/lock/ichrisbirch-deploy.lock
+OLD_LOCK_HELD=false
 OLD_DATABASE=ichrisbirch
 NEW_DATABASE=life
 OLD_ROLE=icb_app
@@ -40,9 +43,13 @@ FROM pg_stat_user_tables ORDER BY schemaname, relname
 
 source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/bash-lib/logging.sh"
 
-# The checkout holds the log, and it moves partway through.
+# The checkout holds the log and this script, and it moves partway through.
+checkout() {
+  if [[ -d "$NEW_DIR/.git" ]]; then echo "$NEW_DIR"; else echo "$OLD_DIR"; fi
+}
+
 log_file() {
-  if [[ -d "$NEW_DIR/logs" ]]; then echo "$NEW_DIR/logs/deploy.log"; else echo "$OLD_DIR/logs/deploy.log"; fi
+  echo "$(checkout)/logs/deploy.log"
 }
 
 say() {
@@ -116,10 +123,18 @@ roll_back() {
 on_exit() {
   local code=$?
   if [[ "$HANDED_OVER" != true && "$code" -ne 0 && -n "$STEP" && "$STEP" != preflight ]]; then
-    roll_back || say error "cutover_roll_back_failed"
-    notify_slack "failure" "*Cutover to life failed at:* ${STEP}\n*Live color:* $(live_color) (serving again)" \
-      "*Logs:* \`${OLD_DIR}/logs/deploy.log\`"
+    # Its own process, so errexit stops the rollback at the first step that fails.
+    local state
+    if "$(checkout)/scripts/cutover-to-life.sh" --roll-back; then
+      state="$(live_color) (serving again)"
+    else
+      say error "cutover_roll_back_failed" "step" "$STEP" "site" "down"
+      state="none: the roll back failed and the site is DOWN"
+    fi
+    notify_slack "failure" "*Cutover to life failed at:* ${STEP}\n*Live color:* ${state}" \
+      "*Logs:* \`$(log_file)\`"
   fi
+  if [[ "$OLD_LOCK_HELD" == true ]]; then rmdir "$OLD_LOCK_FILE" 2>/dev/null || true; fi
   [[ "$HANDED_OVER" == true ]] || rmdir "$LOCK_FILE" 2>/dev/null || true
 }
 
@@ -227,6 +242,9 @@ main() {
     exit 0
   fi
   trap on_exit EXIT
+  STEP=preflight
+  mkdir "$OLD_LOCK_FILE" 2>/dev/null || fail "a deploy of the old layout holds $OLD_LOCK_FILE"
+  OLD_LOCK_HELD=true
   preflight
   say info "cutover_started" "from" "$OLD_DIR" "to" "$NEW_DIR"
   decrypt_and_pull
@@ -237,6 +255,9 @@ main() {
   compare_row_counts
   say info "cutover_handed_to_deploy" "seconds_since_site_stopped" "$(($(date +%s) - SITE_STOPPED_AT))"
   HANDED_OVER=true
+  # The old checkout is gone, so no deploy of the old layout can start from here on.
+  rmdir "$OLD_LOCK_FILE"
+  OLD_LOCK_HELD=false
   export CUTOVER_SITE_STOPPED_AT="$SITE_STOPPED_AT" CUTOVER_HOLDS_LOCK=1
   exec "$NEW_DIR/scripts/deploy-homelab.sh"
 }
