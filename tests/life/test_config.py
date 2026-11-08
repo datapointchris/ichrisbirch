@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from sqlalchemy.engine import make_url
 
 from life import config
 from life.config import AISettings
@@ -54,6 +55,8 @@ def test_private_services_point_settings_at_the_named_servers(monkeypatch: pytes
     for database in (settings.postgres, settings.sqlalchemy):
         named = (database.host, database.port, database.username, database.password, database.database)
         assert named == ('db.internal', 6543, 'ci@user', 'p/ss', 'life_ci')
+        url = make_url(database.db_uri)
+        assert (url.host, url.username, url.password) == ('db.internal', 'ci@user', 'p/ss')
     assert (settings.redis.host, settings.redis.port, settings.redis.password, settings.redis.db) == ('cache.internal', 6380, 'r@dis', 3)
     assert services.started == []
     assert initialized == [settings]

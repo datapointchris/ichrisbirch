@@ -4,6 +4,7 @@ import sys
 
 import dotenv
 import structlog
+from sqlalchemy.engine import URL
 
 from life.util import find_project_root
 
@@ -91,6 +92,12 @@ class PlaywrightSettings:
         self.timeout = 5_000
 
 
+def postgres_url(username: str, password: str, host: str, port: int, database: str) -> str:
+    """The connection URL, with the credentials escaped so the server receives them exactly as configured."""
+    url = URL.create('postgresql+psycopg', username=username, password=password, host=host, port=port, database=database)
+    return url.render_as_string(hide_password=False)
+
+
 class PostgresSettings:
     def __init__(self) -> None:
         self.host: str = os.environ['POSTGRES_HOST']
@@ -101,7 +108,7 @@ class PostgresSettings:
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+        return postgres_url(self.username, self.password, self.host, self.port, self.database)
 
 
 class RedisSettings:
@@ -124,7 +131,7 @@ class SQLAlchemySettings:
 
     @property
     def db_uri(self) -> str:
-        return f'postgresql+psycopg://{self.username}:{self.password}@{self.host}:{self.port}/{self.database}'
+        return postgres_url(self.username, self.password, self.host, self.port, self.database)
 
 
 class UsersSettings:

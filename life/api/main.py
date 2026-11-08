@@ -184,8 +184,8 @@ def create_api(settings: Settings) -> FastAPI:
     logger.info('api_initializing')
     logger.info('settings_loaded', settings_type=type(settings).__name__)
     logger.debug('api_config', api_url=settings.api_url)
-    logger.debug('postgres_config', port=settings.postgres.port, uri=settings.postgres.db_uri)
-    logger.debug('sqlalchemy_config', port=settings.sqlalchemy.port, uri=settings.sqlalchemy.db_uri)
+    for name, database in (('postgres_config', settings.postgres), ('sqlalchemy_config', settings.sqlalchemy)):
+        logger.debug(name, host=database.host, port=database.port, database=database.database, username=database.username)
 
     api.add_middleware(ResponseLoggerMiddleware)
     logger.info('middleware_added', middleware='ResponseLoggerMiddleware')
