@@ -26,13 +26,6 @@
 
 set -euo pipefail
 
-# MIGRATION: a host still on the ichrisbirch layout moves to life's first, and
-# the cutover runs this script again from its new path. This check comes before
-# anything creates /srv/life, because a move into an existing directory nests.
-if [[ -d /srv/ichrisbirch/.git && ! -e /srv/life ]]; then
-  exec "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/cutover-to-life.sh"
-fi
-
 INSTALL_DIR="/srv/life"
 LOG_DIR="${INSTALL_DIR}/logs"
 LOG_FILE="${LOG_DIR}/deploy.log"
@@ -60,7 +53,6 @@ FAILURE_STEP=""
 FAILURE_OUTPUT=""
 LIVE_COLOR=""
 DEPLOY_COLOR=""
-TRAFFIC_SWITCHED=false
 LOCK_HELD=false
 
 # --remove-orphans on every up and down, because removing a service from
@@ -105,23 +97,10 @@ cleanup() {
       compose_app_down "$DEPLOY_COLOR" 2>/dev/null || true
     fi
 
-    local serving="${LIVE_COLOR:-unknown} (still serving)"
-
-    # MIGRATION: the deploy the cutover handed to failed before its switch, so
-    # the old stack goes back up and the next release runs the cutover again.
-    if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" && "$TRAFFIC_SWITCHED" != "true" ]]; then
-      if "${SCRIPT_DIR}/cutover-to-life.sh" --roll-back; then
-        serving="${LIVE_COLOR:-unknown} (serving again on the old stack)"
-      else
-        log_error "cutover_roll_back_failed" "site" "down" | tee -a "$LOG_FILE"
-        serving="none: the cutover's roll back failed and the site is DOWN"
-      fi
-    fi
-
     local message="*Commit:* \`${NEW_SHA:0:7}\`"
     message+="\n*Step Failed:* ${FAILURE_STEP:-unknown}"
     message+="\n*Exit Code:* $exit_code"
-    message+="\n*Live Color:* ${serving}"
+    message+="\n*Live Color:* ${LIVE_COLOR:-unknown} (still serving)"
     message+="\n\n*Commit:* $commit_msg"
 
     local context=""
@@ -143,12 +122,6 @@ cleanup() {
 trap cleanup EXIT
 
 acquire_lock() {
-  # MIGRATION: the cutover took the lock before it stopped the site, and hands it here.
-  if [[ "${CUTOVER_HOLDS_LOCK:-}" == 1 ]]; then
-    log_info "lock_held_by_cutover" | tee -a "$LOG_FILE"
-    LOCK_HELD=true
-    return 0
-  fi
   if ! mkdir "$LOCK_FILE" 2>/dev/null; then
     log_warn "deploy_already_running" "lock" "$LOCK_FILE" | tee -a "$LOG_FILE"
     # Not a failure — another deploy is handling it
@@ -493,33 +466,6 @@ cleanup_docker() {
   log_info "docker_cleanup_completed" | tee -a "$LOG_FILE"
 }
 
-# MIGRATION: the cutover to life's names stopped the stack it replaced and kept
-# its volumes until the database copied from them was verified. A deploy that
-# has switched traffic removes them, and a failed removal leaves them for the
-# next deploy. The older ichrisbirch-* volumes are not the cutover's, and stay.
-retire_former_stack() {
-  local former='name=^icb-(infra|blue|green)-'
-  if [[ -n "$(docker ps -q --filter "$former")" ]]; then
-    log_warn "former_stack_still_running" | tee -a "$LOG_FILE"
-    return 0
-  fi
-  local -a containers
-  mapfile -t containers < <(docker ps -aq --filter "$former")
-  if [[ ${#containers[@]} -eq 0 && -z "$(docker volume ls -q --filter 'name=^icb-prod-')" ]]; then
-    return 0
-  fi
-  [[ ${#containers[@]} -eq 0 ]] || docker rm "${containers[@]}" >/dev/null || true
-  docker network rm icb-infra_default >/dev/null 2>&1 || true
-  docker volume rm icb-prod-postgres-data icb-prod-redis-data >/dev/null 2>&1 || true
-  local left
-  left="$(docker volume ls -q --filter 'name=^icb-prod-' | wc -l)"
-  if [[ "$left" -eq 0 ]]; then
-    log_info "former_stack_removed" "containers" "${#containers[@]}" | tee -a "$LOG_FILE"
-  else
-    log_warn "former_stack_volumes_left" "containers" "${#containers[@]}" "volumes_left" "$left" | tee -a "$LOG_FILE"
-  fi
-}
-
 main() {
   DEPLOY_STARTED=true
   DEPLOY_START_TIME=$(date +%s)
@@ -547,13 +493,8 @@ main() {
   # === POINT OF NO RETURN ===
   # Everything above verified successfully. Now switch traffic.
   switch_traffic
-  TRAFFIC_SWITCHED=true
-  if [[ -n "${CUTOVER_SITE_STOPPED_AT:-}" ]]; then
-    log_info "site_restored" "cutover_downtime_seconds" "$(($(date +%s) - CUTOVER_SITE_STOPPED_AT))" | tee -a "$LOG_FILE"
-  fi
   update_state
   stop_old_containers
-  retire_former_stack
   cleanup_docker
 
   DEPLOY_SUCCESS=true
