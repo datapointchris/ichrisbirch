@@ -457,51 +457,6 @@ stop_old_containers() {
   log_info "old_containers_stopped" "color" "$LIVE_COLOR" | tee -a "$LOG_FILE"
 }
 
-# MIGRATION: production ran as ichrisbirch before it took the name life. A
-# deploy that has switched traffic removes the images those names left, the
-# volumes of that era no container mounts, and points the checkout at the
-# renamed repository. Whatever a run cannot remove waits for the next deploy.
-retire_former_names() {
-  local -a images=(
-    ghcr.io/datapointchris/ichrisbirch:latest
-    ghcr.io/datapointchris/ichrisbirch-vue:latest
-    icb-prod-vue:latest
-    ichrisbirch-vue:blue
-    ichrisbirch-vue:green
-    ichrisbirch-vue:production
-    ichrisbirch:green
-    ichrisbirch:production
-  )
-  local -a volumes=(
-    ichrisbirch-postgres-data
-    ichrisbirch-prod_postgres_data
-    ichrisbirch_postgres_data
-    ichrisbirch-redis-data
-    ichrisbirch-prod_redis_data
-    ichrisbirch_redis_data
-  )
-  local image volume images_left=0 volumes_mounted=0 volumes_left=0
-  for image in "${images[@]}"; do
-    docker image inspect "$image" >/dev/null 2>&1 || continue
-    docker image rm "$image" >/dev/null 2>&1 || images_left=$((images_left + 1))
-  done
-  for volume in "${volumes[@]}"; do
-    docker volume inspect "$volume" >/dev/null 2>&1 || continue
-    if [[ -n "$(docker ps -aq --filter "volume=${volume}")" ]]; then
-      volumes_mounted=$((volumes_mounted + 1))
-      continue
-    fi
-    docker volume rm "$volume" >/dev/null 2>&1 || volumes_left=$((volumes_left + 1))
-  done
-  git -C "$INSTALL_DIR" remote set-url origin https://github.com/datapointchris/life.git \
-    || log_warn "former_remote_left" | tee -a "$LOG_FILE"
-  if [[ $((images_left + volumes_mounted + volumes_left)) -eq 0 ]]; then
-    log_info "former_names_retired" "origin" "$(git -C "$INSTALL_DIR" remote get-url origin)" | tee -a "$LOG_FILE"
-  else
-    log_warn "former_names_left" "images" "$images_left" "volumes_mounted" "$volumes_mounted" "volumes" "$volumes_left" | tee -a "$LOG_FILE"
-  fi
-}
-
 cleanup_docker() {
   # Reaps dangling images created when :latest re-tagged to a new SHA.
   # Build cache prune dropped — images are built on GHA, no cache on host.
@@ -540,7 +495,6 @@ main() {
   switch_traffic
   update_state
   stop_old_containers
-  retire_former_names
   cleanup_docker
 
   DEPLOY_SUCCESS=true
