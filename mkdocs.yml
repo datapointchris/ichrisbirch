@@ -152,6 +152,7 @@ nav:
       - CSS BEM: css_bem.md
       - HTML5 Semantic: html5_semantic.md
   - Testing:
+      - Contents: testing/index.md
       - Overview: testing/overview.md
       - Testing Guide: testing/testing.md
       - Environment: testing/environment.md
