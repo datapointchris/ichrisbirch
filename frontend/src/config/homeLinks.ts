@@ -5,7 +5,7 @@ export interface HomeLink {
 }
 
 export const PROJECT_LINKS: HomeLink[] = [
-  { label: 'Code', url: 'https://github.com/datapointchris/ichrisbirch', icon: 'fa-brands fa-github' },
+  { label: 'Code', url: 'https://github.com/datapointchris/life', icon: 'fa-brands fa-github' },
   { label: 'Docs', url: 'https://docs.ichrisbirch.com', icon: 'fa-regular fa-folder-open' },
 ]
 

@@ -72,7 +72,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://www.ichrisbirch.com"
 Documentation = "https://docs.ichrisbirch.com"
-Repository = "https://github.com/datapointchris/ichrisbirch"
+Repository = "https://github.com/datapointchris/life"
 
 [project.entry-points."mkdocs.plugins"]
 code_sync = "mkdocs_plugins.code_sync.plugin:CodeSyncPlugin"

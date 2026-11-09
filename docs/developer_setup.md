@@ -9,7 +9,7 @@
 ## Setup
 
 ```bash
-git clone https://github.com/datapointchris/ichrisbirch.git
+git clone https://github.com/datapointchris/life.git
 cd life/
 
 # Install dependencies

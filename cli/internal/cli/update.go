@@ -13,7 +13,7 @@ import (
 // releaseRepository is the owner/name whose releases this binary updates from.
 // The release build sets it to the repository it ran in, so a binary always
 // updates from the repository that built it.
-var releaseRepository = "datapointchris/ichrisbirch"
+var releaseRepository = "datapointchris/life"
 
 // newUpdateCommand replaces this binary with the newest published release.
 //

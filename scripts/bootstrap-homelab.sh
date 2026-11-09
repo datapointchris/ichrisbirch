@@ -4,7 +4,7 @@
 # with Docker and Cloudflare Tunnel.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/datapointchris/ichrisbirch/main/scripts/bootstrap-homelab.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/datapointchris/life/main/scripts/bootstrap-homelab.sh | bash
 #
 # Or clone first and run:
 #   ./scripts/bootstrap-homelab.sh
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 INSTALL_DIR="/srv/life"
-REPO_URL="https://github.com/datapointchris/ichrisbirch.git"
+REPO_URL="https://github.com/datapointchris/life.git"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

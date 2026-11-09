@@ -1,9 +1,9 @@
 # Shared docs standard — theme, features, and markdown_extensions below are the
-# canonical set kept identical across datapointchris/{docs,ichrisbirch,dotfiles}.
+# canonical set kept identical across datapointchris/{docs,life,dotfiles}.
 # Only site_name/repo/nav/site_url and repo-specific plugins differ per repo.
 site_name: Life
-repo_name: datapointchris/ichrisbirch
-repo_url: https://github.com/datapointchris/ichrisbirch
+repo_name: datapointchris/life
+repo_url: https://github.com/datapointchris/life
 
 theme:
   name: material

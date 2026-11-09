@@ -26,7 +26,7 @@ For a fresh LXC container, use the bootstrap script:
 
 ```bash
 # As root on the LXC container
-curl -fsSL https://raw.githubusercontent.com/datapointchris/ichrisbirch/master/scripts/bootstrap-homelab.sh | bash
+curl -fsSL https://raw.githubusercontent.com/datapointchris/life/main/scripts/bootstrap-homelab.sh | bash
 ```
 
 Or if you've already cloned the repo:
@@ -64,7 +64,7 @@ apt install -y age
 
 # Clone repository
 cd /srv
-git clone https://github.com/datapointchris/ichrisbirch.git
+git clone https://github.com/datapointchris/life.git
 cd life
 
 # Install CLI

@@ -5,7 +5,7 @@ Production runs in a Proxmox LXC container with Docker and a Cloudflare Tunnel.
 
 ```bash
 # as root on the container
-curl -fsSL https://raw.githubusercontent.com/datapointchris/ichrisbirch/main/scripts/bootstrap-homelab.sh | bash
+curl -fsSL https://raw.githubusercontent.com/datapointchris/life/main/scripts/bootstrap-homelab.sh | bash
 ```
 
 [Homelab Production Deployment](../homelab-deployment.md) covers the LXC

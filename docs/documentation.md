@@ -6,7 +6,7 @@ Config file: `mkdocs.yml`
 Directory: `docs/`
 Docs build pipeline: `.github/workflows/deploy-docs.yml`
 
-Docs are built using mkdocs automatically on push with the above pipeline, which triggers the `pages-build-deployment` Github workflow that publishes them to a `gh-pages` branch and publishes them to `datapointchris.github.io/ichrisbirch` from that branch.
+Docs are built using mkdocs automatically on push with the above pipeline, which triggers the `pages-build-deployment` Github workflow that publishes them to a `gh-pages` branch and publishes them to `datapointchris.github.io/life` from that branch.
 
 Refer to [CICD](cicd.md) for a description of the pipeline.
 
