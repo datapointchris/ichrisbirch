@@ -139,7 +139,7 @@ Production uses **blue/green deployment** for zero-downtime deploys. See [Blue/G
 
 Infrastructure (Traefik, PostgreSQL, Redis) runs in `life-infra` and is always up. App services deploy as alternating `life-blue` / `life-green` projects. Traefik switches routing via a file provider config — no restart needed.
 
-Pushing to `main` triggers the webhook, which runs `scripts/deploy-homelab.sh`. The script builds the new color, verifies health + smoke tests, then switches traffic. If anything fails, the old color keeps serving.
+A push to `main` runs `release.yml`, which builds and pushes the images. When it finishes, GitHub fires a `workflow_run` webhook, and its receiver runs `scripts/deploy-homelab.sh`. The script pulls the new images into the idle color, verifies health + smoke tests, then switches traffic. If anything fails, the old color keeps serving.
 
 ### Start Services
 
