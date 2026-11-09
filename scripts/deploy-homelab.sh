@@ -493,6 +493,33 @@ cleanup_docker() {
   log_info "docker_cleanup_completed" | tee -a "$LOG_FILE"
 }
 
+# MIGRATION: the cutover to life's names stopped the stack it replaced and kept
+# its volumes until the database copied from them was verified. A deploy that
+# has switched traffic removes them, and a failed removal leaves them for the
+# next deploy. The older ichrisbirch-* volumes are not the cutover's, and stay.
+retire_former_stack() {
+  local former='name=^icb-(infra|blue|green)-'
+  if [[ -n "$(docker ps -q --filter "$former")" ]]; then
+    log_warn "former_stack_still_running" | tee -a "$LOG_FILE"
+    return 0
+  fi
+  local -a containers
+  mapfile -t containers < <(docker ps -aq --filter "$former")
+  if [[ ${#containers[@]} -eq 0 && -z "$(docker volume ls -q --filter 'name=^icb-prod-')" ]]; then
+    return 0
+  fi
+  [[ ${#containers[@]} -eq 0 ]] || docker rm "${containers[@]}" >/dev/null || true
+  docker network rm icb-infra_default >/dev/null 2>&1 || true
+  docker volume rm icb-prod-postgres-data icb-prod-redis-data >/dev/null 2>&1 || true
+  local left
+  left="$(docker volume ls -q --filter 'name=^icb-prod-' | wc -l)"
+  if [[ "$left" -eq 0 ]]; then
+    log_info "former_stack_removed" "containers" "${#containers[@]}" | tee -a "$LOG_FILE"
+  else
+    log_warn "former_stack_volumes_left" "containers" "${#containers[@]}" "volumes_left" "$left" | tee -a "$LOG_FILE"
+  fi
+}
+
 main() {
   DEPLOY_STARTED=true
   DEPLOY_START_TIME=$(date +%s)
@@ -526,6 +553,7 @@ main() {
   fi
   update_state
   stop_old_containers
+  retire_former_stack
   cleanup_docker
 
   DEPLOY_SUCCESS=true
